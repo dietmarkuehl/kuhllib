@@ -1,0 +1,8 @@
+kuhllib/README
+
+This repository is intended to contain yet another implementation
+of the standard C++ library. This is work in progress, intended
+primarily to provide an improved interface for the standard algorithms
+and a fast implementation of the I/O streams and locals library.
+While prototypes for most of the components planned to be implemented
+exist, many of them aren't in the repository.
