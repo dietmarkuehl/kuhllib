@@ -1,0 +1,69 @@
+// uint128_t.t.cpp                                                    -*-C++-*-
+// ----------------------------------------------------------------------------
+//  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
+//                                                                       
+//  Permission is hereby granted, free of charge, to any person          
+//  obtaining a copy of this software and associated documentation       
+//  files (the "Software"), to deal in the Software without restriction, 
+//  including without limitation the rights to use, copy, modify,        
+//  merge, publish, distribute, sublicense, and/or sell copies of        
+//  the Software, and to permit persons to whom the Software is          
+//  furnished to do so, subject to the following conditions:             
+//                                                                       
+//  The above copyright notice and this permission notice shall be       
+//  included in all copies or substantial portions of the Software.      
+//                                                                       
+//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,      
+//  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES      
+//  OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND             
+//  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT          
+//  HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,         
+//  WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING         
+//  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR        
+//  OTHER DEALINGS IN THE SOFTWARE. 
+// ----------------------------------------------------------------------------
+
+#include "uint128_t.hpp"
+#include "erltest_test.hpp"
+
+// ----------------------------------------------------------------------------
+
+static erl::test::testcase const tests[] = {
+    erl::test::expect_success("breezing", []()->bool{
+            constexpr kuhllib::uint128_t ud{};
+            constexpr kuhllib::uint128_t u0{0u};
+            return true;
+        }),
+    erl::test::expect_success("initialization", []()->bool{
+            constexpr kuhllib::uint128_t ud{};
+            constexpr kuhllib::uint128_t u1(1u);
+            constexpr kuhllib::uint128_t u12(1u, 2u);
+            return ud[0]  == 0u && ud[1]  == 0u
+                && u1[0]  == 1u && u1[1]  == 0u
+                && u12[0] == 1u && u12[1] == 2u;
+        }),
+    erl::test::expect_success("left shift", []()->bool {
+            constexpr kuhllib::uint128_t u1(1u);
+            constexpr kuhllib::uint128_t us{u1 << 5};
+            for (unsigned int step(0); step != 64; ++step) {
+                kuhllib::uint128_t result(u1 << step);
+                if (result[0] != (0x1ull << step) || result[1] != 0x0ull) {
+                    std::cout << "step=" << step << " r0=" << result[0] << " r1=" << result[1] << '\n';
+                    return false;
+                }
+            }
+            for (unsigned int step(64); step != 128; ++step) {
+                kuhllib::uint128_t result(u1 << step);
+                if (result[0] != 0x0ull || result[1] != (0x1ull << (step - 64))) {
+                    std::cout << "step=" << step << " r0=" << result[0] << " r1=" << result[1] << '\n';
+                    return false;
+                }
+            }
+            return us[0] == 32u && us[1] == 0u;
+        }),
+};
+
+int main(int ac, char* av[])
+{
+    return erl::test::run_tests("uint128_t", ac, av, ::tests);
+}
