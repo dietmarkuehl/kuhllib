@@ -45,21 +45,50 @@ static erl::test::testcase const tests[] = {
     erl::test::expect_success("left shift", []()->bool {
             constexpr kuhllib::uint128_t u1(1u);
             constexpr kuhllib::uint128_t us{u1 << 5};
+            constexpr kuhllib::uint128_t um(0x8000000000000000ull);
             for (unsigned int step(0); step != 64; ++step) {
                 kuhllib::uint128_t result(u1 << step);
                 if (result[0] != (0x1ull << step) || result[1] != 0x0ull) {
-                    std::cout << "step=" << step << " r0=" << result[0] << " r1=" << result[1] << '\n';
+                    return false;
+                }
+            }
+            for (unsigned int step(1); step <= 64; ++step) {
+                kuhllib::uint128_t result(um << step);
+                if (result[1] != (0x1ull << (step - 1u)) || result[0] != 0x0ull) {
                     return false;
                 }
             }
             for (unsigned int step(64); step != 128; ++step) {
                 kuhllib::uint128_t result(u1 << step);
                 if (result[0] != 0x0ull || result[1] != (0x1ull << (step - 64))) {
-                    std::cout << "step=" << step << " r0=" << result[0] << " r1=" << result[1] << '\n';
                     return false;
                 }
             }
             return us[0] == 32u && us[1] == 0u;
+        }),
+    erl::test::expect_success("right shift", []()->bool {
+            constexpr kuhllib::uint128_t u1(0u, 1u);
+            constexpr kuhllib::uint128_t um(0u, 0x8000000000000000ull);
+            constexpr kuhllib::uint128_t us{um >> 5};
+            for (unsigned int step(0); step != 64; ++step) {
+                kuhllib::uint128_t result(um >> step);
+                if (result[0] != 0x0ull || result[1] != (0x8000000000000000ull >> step)) {
+                    return false;
+                }
+            }
+            for (unsigned int step(1); step <= 64; ++step) {
+                kuhllib::uint128_t result(u1 >> step);
+                if (result[0] != (0x8000000000000000ull >> (step - 1u)) || result[1] != 0x0ull) {
+                    return false;
+                }
+            }
+            for (unsigned int step(64); step != 128; ++step) {
+                kuhllib::uint128_t result(um >> step);
+                if (result[1] != 0x0ull || result[0] != (0x8000000000000000ull >> (step - 64))) {
+                    return false;
+                }
+            }
+            return us[0] == 0u && us[1] == 0x0400000000000000ull;
         }),
 };
 
