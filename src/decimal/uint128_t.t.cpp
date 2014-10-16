@@ -42,29 +42,47 @@ static erl::test::testcase const tests[] = {
                 && u1[0]  == 1u && u1[1]  == 0u
                 && u12[0] == 1u && u12[1] == 2u;
         }),
+    erl::test::expect_success("equality", []()->bool {
+            return kuhllib::uint128_t() == kuhllib::uint128_t()
+                && kuhllib::uint128_t(0x12345) == kuhllib::uint128_t(0x12345)
+                && !(kuhllib::uint128_t(0x12345) == kuhllib::uint128_t(0x12245))
+                && kuhllib::uint128_t(0x12345, 0x6789) == kuhllib::uint128_t(0x12345, 0x6789)
+                && !(kuhllib::uint128_t(0x12345, 0x6689) == kuhllib::uint128_t(0x12345, 0x6789))
+                && !(kuhllib::uint128_t(0x12245, 0x6789) == kuhllib::uint128_t(0x12345, 0x6789))
+                ;
+        }),
+    erl::test::expect_success("inequality", []()->bool {
+            return !(kuhllib::uint128_t() != kuhllib::uint128_t())
+                && !(kuhllib::uint128_t(0x12345) != kuhllib::uint128_t(0x12345))
+                && kuhllib::uint128_t(0x12345) != kuhllib::uint128_t(0x12245)
+                && !(kuhllib::uint128_t(0x12345, 0x6789) != kuhllib::uint128_t(0x12345, 0x6789))
+                && kuhllib::uint128_t(0x12345, 0x6689) != kuhllib::uint128_t(0x12345, 0x6789)
+                && kuhllib::uint128_t(0x12245, 0x6789) != kuhllib::uint128_t(0x12345, 0x6789)
+                ;
+        }),
     erl::test::expect_success("left shift", []()->bool {
             constexpr kuhllib::uint128_t u1(1u);
             constexpr kuhllib::uint128_t us{u1 << 5};
             constexpr kuhllib::uint128_t um(0x8000000000000000ull);
             for (unsigned int step(0); step != 64; ++step) {
                 kuhllib::uint128_t result(u1 << step);
-                if (result[0] != (0x1ull << step) || result[1] != 0x0ull) {
+                if (result != kuhllib::uint128_t(0x1ull << step, 0u)) {
                     return false;
                 }
             }
             for (unsigned int step(1); step <= 64; ++step) {
                 kuhllib::uint128_t result(um << step);
-                if (result[1] != (0x1ull << (step - 1u)) || result[0] != 0x0ull) {
+                if (result != kuhllib::uint128_t(0u, 0x1ull << (step - 1u))) {
                     return false;
                 }
             }
             for (unsigned int step(64); step != 128; ++step) {
                 kuhllib::uint128_t result(u1 << step);
-                if (result[0] != 0x0ull || result[1] != (0x1ull << (step - 64))) {
+                if (result != kuhllib::uint128_t(0u, 0x1ull << (step - 64u))) {
                     return false;
                 }
             }
-            return us[0] == 32u && us[1] == 0u;
+            return us == kuhllib::uint128_t(32u, 0u);
         }),
     erl::test::expect_success("right shift", []()->bool {
             constexpr kuhllib::uint128_t u1(0u, 1u);
@@ -72,23 +90,23 @@ static erl::test::testcase const tests[] = {
             constexpr kuhllib::uint128_t us{um >> 5};
             for (unsigned int step(0); step != 64; ++step) {
                 kuhllib::uint128_t result(um >> step);
-                if (result[0] != 0x0ull || result[1] != (0x8000000000000000ull >> step)) {
+                if (result != kuhllib::uint128_t(0u, 0x8000000000000000ull >> step)) {
                     return false;
                 }
             }
             for (unsigned int step(1); step <= 64; ++step) {
                 kuhllib::uint128_t result(u1 >> step);
-                if (result[0] != (0x8000000000000000ull >> (step - 1u)) || result[1] != 0x0ull) {
+                if (result != kuhllib::uint128_t(0x8000000000000000ull >> (step - 1u), 0u)) {
                     return false;
                 }
             }
             for (unsigned int step(64); step != 128; ++step) {
                 kuhllib::uint128_t result(um >> step);
-                if (result[1] != 0x0ull || result[0] != (0x8000000000000000ull >> (step - 64))) {
+                if (result != kuhllib::uint128_t(0x8000000000000000ull >> (step - 64), 0u)) {
                     return false;
                 }
             }
-            return us[0] == 0u && us[1] == 0x0400000000000000ull;
+            return us == kuhllib::uint128_t(0u, 0x0400000000000000ull);
         }),
 };
 
