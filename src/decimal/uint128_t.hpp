@@ -61,6 +61,14 @@ public:
                )
             : uint128_t(0u, this->d_value[0] << (step - 64u));
     }
+    constexpr uint128_t operator>> (std::size_t step) const {
+        return step < 64u
+            ? (step == 0u
+               ? *this
+               : uint128_t((this->d_value[0] >> step) | (this->d_value[1] << (64u - step)), this->d_value[1] >> step)
+               )
+            : uint128_t(this->d_value[1] >> (step - 64u), 0u);
+    }
 };
 
 // ----------------------------------------------------------------------------
