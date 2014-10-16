@@ -43,33 +43,72 @@ class kuhllib::uint128_t
 private:
     std::uint64_t d_value[2];
 public:
-    constexpr uint128_t(): d_value{} {}
-    constexpr uint128_t(std::uint64_t value): d_value{ value, 0u } {}
-    constexpr uint128_t(std::uint64_t value0, std::uint64_t value1)
-        : d_value{ value0, value1 } {
-    }
+    constexpr uint128_t();
+    explicit constexpr uint128_t(std::uint64_t value);
+    explicit constexpr uint128_t(std::uint64_t value0, std::uint64_t value1);
 
-    std::uint64_t operator[](std::size_t index) const {
-        return this->d_value[index];
-    }
+    bool operator== (uint128_t other) const;
+    bool operator!= (uint128_t other) const;
 
-    constexpr uint128_t operator<< (std::size_t step) const {
-        return step < 64u
-            ? (step == 0u
-               ? *this
-               : uint128_t(this->d_value[0] << step, (this->d_value[1] << step) | (this->d_value[0] >> (64u - step)))
-               )
-            : uint128_t(0u, this->d_value[0] << (step - 64u));
-    }
-    constexpr uint128_t operator>> (std::size_t step) const {
-        return step < 64u
-            ? (step == 0u
-               ? *this
-               : uint128_t((this->d_value[0] >> step) | (this->d_value[1] << (64u - step)), this->d_value[1] >> step)
-               )
-            : uint128_t(this->d_value[1] >> (step - 64u), 0u);
-    }
+    std::uint64_t operator[](std::size_t index) const;
+    constexpr uint128_t operator<< (std::size_t step) const;
+    constexpr uint128_t operator>> (std::size_t step) const;
 };
+
+// ----------------------------------------------------------------------------
+
+constexpr
+kuhllib::uint128_t::uint128_t()
+  : d_value{} {
+}
+inline constexpr
+kuhllib::uint128_t::uint128_t(std::uint64_t value)
+  : d_value{ value, 0u } {
+}
+inline constexpr
+kuhllib::uint128_t::uint128_t(std::uint64_t value0, std::uint64_t value1)
+    : d_value{ value0, value1 } {
+}
+
+// ----------------------------------------------------------------------------
+
+inline bool
+kuhllib::uint128_t::operator== (kuhllib::uint128_t other) const {
+    return this->d_value[0] == other.d_value[0]
+        && this->d_value[1] == other.d_value[1];
+}
+inline bool
+kuhllib::uint128_t::operator!= (kuhllib::uint128_t other) const {
+    return !this->operator==(other);
+}
+
+// ----------------------------------------------------------------------------
+
+inline std::uint64_t
+kuhllib::uint128_t::uint128_t::operator[](std::size_t index) const {
+    return this->d_value[index];
+}
+
+// ----------------------------------------------------------------------------
+
+inline constexpr kuhllib::uint128_t
+kuhllib::uint128_t::operator<< (std::size_t step) const {
+    return step < 64u
+        ? (step == 0u
+           ? *this
+           : uint128_t(this->d_value[0] << step, (this->d_value[1] << step) | (this->d_value[0] >> (64u - step)))
+           )
+        : uint128_t(0u, this->d_value[0] << (step - 64u));
+}
+inline constexpr kuhllib::uint128_t
+kuhllib::uint128_t::operator>> (std::size_t step) const {
+    return step < 64u
+        ? (step == 0u
+           ? *this
+           : uint128_t((this->d_value[0] >> step) | (this->d_value[1] << (64u - step)), this->d_value[1] >> step)
+           )
+        : uint128_t(this->d_value[1] >> (step - 64u), 0u);
+}
 
 // ----------------------------------------------------------------------------
 
