@@ -39,7 +39,12 @@ namespace kuhllib
 {
     template <typename Rep> class uint_t;
     template <typename Rep, std::size_t> struct uint_ops;
+    template <typename Rep> struct uint_ops<Rep,  2u>;
+    template <typename Rep> struct uint_ops<Rep,  8u>;
+    template <typename Rep> struct uint_ops<Rep, 10u>;
+    template <typename Rep> struct uint_ops<Rep, 16u>;
     template <typename Rep, std::size_t> struct uint_ops10;
+    template <typename Rep> struct uint_ops10<Rep, 0u>;
 
     using uint128_t = uint_t<std::uint64_t>;
     using uint256_t = uint_t<uint128_t>;

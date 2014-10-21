@@ -24,6 +24,7 @@
 // ----------------------------------------------------------------------------
 
 #include "uint_t.hpp"
+#include <algorithm>
 #include <ostream>
 #include <iterator>
 #include <locale>
