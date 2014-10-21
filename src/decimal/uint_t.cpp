@@ -32,19 +32,21 @@
 
 namespace
 {
-    template <unsigned int Base, typename cT, typename Traits>
+    template <unsigned int Base, typename cT, typename Traits, typename Rep>
     std::basic_ostream<cT, Traits>&
     format(std::basic_ostream<cT, Traits>& out,
-           kuhllib::uint_t              value)
+           kuhllib::uint_t<Rep>            value)
     {
         std::ctype<cT> const& ct(std::use_facet<std::ctype<cT> >(out.getloc()));
         char  buffer[128];
         char* end(buffer);
 
         do {
-            *end++ = "0123456789abcdef"[(Base - 1) & std::uint64_t(value)];
+            auto p(kuhllib::uint_ops<Rep, Base>::div_mod(value));
+            *end++ = "0123456789abcdef"[static_cast<uint64_t>(p.second)];
+            value = p.first;
         }
-        while ((value = value.divide<Base>()));
+        while (value);
 
         std::transform(std::reverse_iterator<char*>(end),
                        std::reverse_iterator<char*>(buffer),
@@ -56,10 +58,10 @@ namespace
 
 // ----------------------------------------------------------------------------
 
-template <typename cT, typename Traits>
+template <typename cT, typename Traits, typename Rep>
 std::basic_ostream<cT, Traits>&
 kuhllib::operator<< (std::basic_ostream<cT, Traits>& out,
-                     kuhllib::uint_t              value)
+                     kuhllib::uint_t<Rep>            value)
 {
     switch (out.flags() & std::ios_base::basefield)
     {
@@ -70,8 +72,7 @@ kuhllib::operator<< (std::basic_ostream<cT, Traits>& out,
         return format<16u>(out, value);
     case std::ios_base::dec:
     default:
-        //-dk:TODO !!!!
-        return out << std::uint64_t(value);
+        return format<10u>(out, value);
         break;
 
     }
@@ -83,8 +84,8 @@ kuhllib::operator<< (std::basic_ostream<cT, Traits>& out,
 template
 std::basic_ostream<char, std::char_traits<char> >&
 kuhllib::operator<< (std::basic_ostream<char, std::char_traits<char> >&,
-                     kuhllib::uint_t);
+                     kuhllib::uint128_t);
 template
 std::basic_ostream<wchar_t, std::char_traits<wchar_t> >&
 kuhllib::operator<< (std::basic_ostream<wchar_t, std::char_traits<wchar_t> >&,
-                     kuhllib::uint_t);
+                     kuhllib::uint128_t);

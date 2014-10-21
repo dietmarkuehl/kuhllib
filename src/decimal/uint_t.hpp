@@ -30,35 +30,60 @@
 #include <cstddef>
 #include <iosfwd>
 #include <limits>
+#include <utility>
+#include <iostream>
 
 // ----------------------------------------------------------------------------
 
 namespace kuhllib
 {
-    class uint_t;
-    template <char...>
-    constexpr uint_t operator"" _uLL();
+    template <typename Rep> class uint_t;
+    template <typename Rep, std::size_t> struct uint_ops;
+    template <typename Rep, std::size_t> struct uint_ops10;
 
-    template <typename cT, typename Traits>
+    using uint128_t = uint_t<std::uint64_t>;
+    using uint256_t = uint_t<uint128_t>;
+
+    template <char...> constexpr uint128_t operator"" _u128();
+    template <char...> constexpr uint256_t operator"" _u256();
+
+    template <typename cT, typename Traits, typename Rep>
     std::basic_ostream<cT, Traits>&
-    operator<< (std::basic_ostream<cT, Traits>&, uint_t);
+    operator<< (std::basic_ostream<cT, Traits>&, uint_t<Rep>);
 }
 
 // ----------------------------------------------------------------------------
 
+namespace std
+{
+    template <typename Rep>
+    class numeric_limits<kuhllib::uint_t<Rep> >
+    {
+    public:
+        static constexpr std::size_t digits = 2u * std::numeric_limits<Rep>::digits;
+    };
+}
+
+// ----------------------------------------------------------------------------
+
+template <typename Rep>
 class kuhllib::uint_t
 {
-private:
-    std::uint64_t d_low;
-    std::uint64_t d_high;
 public:
-    static constexpr uint_t multiply(std::uint64_t, std::uint64_t,
-                                     std::uint64_t, std::uint64_t);
-    static constexpr uint_t multiply(std::uint64_t, std::uint64_t);
+    using rep_type = Rep;
+    static constexpr std::size_t rep_digits = std::numeric_limits<Rep>::digits;
+    static constexpr std::size_t digits = 2u * rep_digits;
+
+private:
+    rep_type d_low;
+    rep_type d_high;
+public:
+    static constexpr uint_t multiply(rep_type, rep_type, rep_type, rep_type);
+    static constexpr uint_t multiply(rep_type, rep_type);
 
     constexpr uint_t();
-    explicit constexpr uint_t(std::uint64_t value);
-    explicit constexpr uint_t(std::uint64_t low, std::uint64_t high);
+    explicit constexpr uint_t(rep_type value);
+    explicit constexpr uint_t(rep_type low, rep_type high);
 
     explicit constexpr operator bool() const;
     explicit constexpr operator std::int64_t() const;
@@ -66,6 +91,10 @@ public:
 
     constexpr bool operator== (uint_t other) const;
     constexpr bool operator!= (uint_t other) const;
+    constexpr bool operator<  (uint_t other) const;
+    constexpr bool operator<= (uint_t other) const;
+    constexpr bool operator>  (uint_t other) const;
+    constexpr bool operator>= (uint_t other) const;
 
     constexpr uint_t operator~() const;
     constexpr uint_t operator|(uint_t other) const;
@@ -75,14 +104,12 @@ public:
     constexpr uint_t operator<< (std::size_t step) const;
     constexpr uint_t operator>> (std::size_t step) const;
 
-    constexpr uint_t operator+ (std::uint64_t other) const;
-    constexpr uint_t operator+ (kuhllib::uint_t other) const;
-    template <unsigned int Factor>
-    constexpr uint_t multiply() const;
-    constexpr uint_t operator* (std::uint64_t other) const;
-    constexpr uint_t operator* (kuhllib::uint_t other) const;
-    template <unsigned int Factor>
-    constexpr uint_t divide() const;
+    constexpr uint_t operator+ (rep_type other) const;
+    constexpr uint_t operator+ (kuhllib::uint_t<Rep> other) const;
+    constexpr uint_t operator- (rep_type other) const;
+    constexpr uint_t operator- (kuhllib::uint_t<Rep> other) const;
+    constexpr uint_t operator* (rep_type other) const;
+    constexpr uint_t operator* (kuhllib::uint_t<Rep> other) const;
 };
 
 // ----------------------------------------------------------------------------
@@ -90,193 +117,266 @@ public:
 // == (xh << 32, xl) * (yh << 32, yl)
 // == ((xh * yh) << 64) + ((xh * yl) + (xl * yh) << 32) + (xl * yl)
 
-constexpr kuhllib::uint_t
-kuhllib::uint_t::multiply(std::uint64_t xh, std::uint64_t xl,
-                             std::uint64_t yh, std::uint64_t yl)
+template <typename Rep>
+constexpr kuhllib::uint_t<Rep>
+kuhllib::uint_t<Rep>::multiply(rep_type xh, rep_type xl,
+                               rep_type yh, rep_type yl)
 {
     return uint_t(xl * yl, xh * yh)
         + (uint_t(xh * yl, 0ull) + uint_t(xl * yh, 0ull)) << 32u;
 }
 
-constexpr kuhllib::uint_t
-kuhllib::uint_t::multiply(std::uint64_t x, std::uint64_t y)
+template <typename Rep>
+constexpr kuhllib::uint_t<Rep>
+kuhllib::uint_t<Rep>::multiply(rep_type x, rep_type y)
 {
-    return multiply(x >> 32, x & 0xffffffffull,
-                    y >> 32, y & 0xffffffffull);
+    return multiply(x >> (digits / 2), x & (~rep_type() >> (digits / 2)),
+                    y >> (digits / 2), y & (~rep_type() >> (digits / 2)));
 }
 
 // ----------------------------------------------------------------------------
 
+template <typename Rep>
 constexpr
-kuhllib::uint_t::uint_t()
+kuhllib::uint_t<Rep>::uint_t()
     : d_low()
     , d_high() {
 }
-inline constexpr
-kuhllib::uint_t::uint_t(std::uint64_t value)
-    : d_low(value)
-    , d_high(0u) {
+template <typename Rep>
+constexpr
+kuhllib::uint_t<Rep>::uint_t(rep_type low)
+    : d_low(low)
+    , d_high() {
 }
-inline constexpr
-kuhllib::uint_t::uint_t(std::uint64_t low, std::uint64_t high)
+template <typename Rep>
+constexpr
+kuhllib::uint_t<Rep>::uint_t(rep_type low, rep_type high)
     : d_low(low)
     , d_high(high) {
 }
 
 // ----------------------------------------------------------------------------
 
-constexpr kuhllib::uint_t::operator bool() const {
+template <typename Rep>
+constexpr kuhllib::uint_t<Rep>::operator bool() const {
     return this->d_low | this->d_high;
 }
 
-constexpr kuhllib::uint_t::operator std::int64_t() const {
+template <typename Rep>
+constexpr kuhllib::uint_t<Rep>::operator std::int64_t() const {
     return std::int64_t(this->d_low);
 }
 
-constexpr kuhllib::uint_t::operator std::uint64_t() const {
+template <typename Rep>
+constexpr kuhllib::uint_t<Rep>::operator std::uint64_t() const {
     return std::uint64_t(this->d_low);
 }
 
 // ----------------------------------------------------------------------------
 
-inline constexpr bool
-kuhllib::uint_t::operator== (kuhllib::uint_t other) const {
-    return this->d_low == other.d_low
+template <typename Rep>
+constexpr bool
+kuhllib::uint_t<Rep>::operator== (kuhllib::uint_t<Rep> other) const {
+    return this->d_low  == other.d_low
         && this->d_high == other.d_high;
 }
-inline constexpr bool
-kuhllib::uint_t::operator!= (kuhllib::uint_t other) const {
+template <typename Rep>
+constexpr bool
+kuhllib::uint_t<Rep>::operator!= (kuhllib::uint_t<Rep> other) const {
     return !this->operator==(other);
 }
 
-// ----------------------------------------------------------------------------
-
-inline constexpr kuhllib::uint_t
-kuhllib::uint_t::operator~() const
-{
-    return kuhllib::uint_t(~this->d_low, ~this->d_high);
+template <typename Rep>
+constexpr bool
+kuhllib::uint_t<Rep>::operator<  (kuhllib::uint_t<Rep> other) const {
+    return this->d_high == other.d_high
+         ? this->d_low  <  other.d_low
+         : this->d_high <  other.d_high;
 }
 
 // ----------------------------------------------------------------------------
 
-inline constexpr kuhllib::uint_t
-kuhllib::uint_t::operator|(kuhllib::uint_t other) const
+template <typename Rep>
+constexpr kuhllib::uint_t<Rep>
+kuhllib::uint_t<Rep>::operator~() const
 {
-    return kuhllib::uint_t(this->d_low | other.d_low,
-                              this->d_high | other.d_high);
-}
-
-inline constexpr kuhllib::uint_t
-kuhllib::uint_t::operator&(kuhllib::uint_t other) const
-{
-    return kuhllib::uint_t(this->d_low & other.d_low,
-                              this->d_high & other.d_high);
-}
-
-inline constexpr kuhllib::uint_t
-kuhllib::uint_t::operator^(kuhllib::uint_t other) const
-{
-    return kuhllib::uint_t(this->d_low ^ other.d_low,
-                              this->d_high ^ other.d_high);
+    return kuhllib::uint_t<Rep>(~this->d_low, ~this->d_high);
 }
 
 // ----------------------------------------------------------------------------
 
-inline constexpr kuhllib::uint_t
-kuhllib::uint_t::operator<< (std::size_t step) const {
-    return step < 64u
+template <typename Rep>
+constexpr kuhllib::uint_t<Rep>
+kuhllib::uint_t<Rep>::operator|(kuhllib::uint_t<Rep> other) const
+{
+    return kuhllib::uint_t<Rep>(this->d_low  | other.d_low,
+                                this->d_high | other.d_high);
+}
+
+template <typename Rep>
+constexpr kuhllib::uint_t<Rep>
+kuhllib::uint_t<Rep>::operator&(kuhllib::uint_t<Rep> other) const
+{
+    return kuhllib::uint_t<Rep>(this->d_low  & other.d_low,
+                                this->d_high & other.d_high);
+}
+
+template <typename Rep>
+constexpr kuhllib::uint_t<Rep>
+kuhllib::uint_t<Rep>::operator^(kuhllib::uint_t<Rep> other) const
+{
+    return kuhllib::uint_t<Rep>(this->d_low  ^ other.d_low,
+                                this->d_high ^ other.d_high);
+}
+
+// ----------------------------------------------------------------------------
+
+template <typename Rep>
+constexpr kuhllib::uint_t<Rep>
+kuhllib::uint_t<Rep>::operator<< (std::size_t step) const {
+    return step < rep_digits
         ? (step == 0u
            ? *this
-           : uint_t(this->d_low << step, (this->d_high << step) | (this->d_low >> (64u - step)))
+           : uint_t<Rep>(this->d_low << step, (this->d_high << step) | (this->d_low >> (rep_digits - step)))
            )
-        : uint_t(0u, this->d_low << (step - 64u));
+        : uint_t<Rep>(0u, this->d_low << (step - rep_digits));
 }
-inline constexpr kuhllib::uint_t
-kuhllib::uint_t::operator>> (std::size_t step) const {
-    return step < 64u
+template <typename Rep>
+constexpr kuhllib::uint_t<Rep>
+kuhllib::uint_t<Rep>::operator>> (std::size_t step) const {
+    return step < rep_digits
         ? (step == 0u
            ? *this
-           : uint_t((this->d_low >> step) | (this->d_high << (64u - step)), this->d_high >> step)
+           : uint_t<Rep>((this->d_low >> step) | (this->d_high << (rep_digits - step)), this->d_high >> step)
            )
-        : uint_t(this->d_high >> (step - 64u), 0u);
+        : uint_t<Rep>(this->d_high >> (step - rep_digits), 0u);
 }
 
 // ----------------------------------------------------------------------------
 
-inline constexpr kuhllib::uint_t
-kuhllib::uint_t::operator+(std::uint64_t other) const
+template <typename Rep>
+constexpr kuhllib::uint_t<Rep>
+kuhllib::uint_t<Rep>::operator+(rep_type other) const
 {
-    return uint_t(this->d_low + other,
-                     this->d_high + 
-                     + (std::numeric_limits<std::uint64_t>::max() - other < this->d_low));
+    return uint_t<Rep>(this->d_low + other,
+                       this->d_high + (std::numeric_limits<rep_type>::max() - other < this->d_low));
 }
 
-inline constexpr kuhllib::uint_t
-kuhllib::uint_t::operator+(kuhllib::uint_t other) const
+template <typename Rep>
+constexpr kuhllib::uint_t<Rep>
+kuhllib::uint_t<Rep>::operator+(kuhllib::uint_t<Rep> other) const
 {
-    return uint_t(this->d_low + other.d_low,
-                     this->d_high + other.d_high
-                     + (std::numeric_limits<std::uint64_t>::max() - other.d_low < this->d_low));
+    return uint_t<Rep>(this->d_low + other.d_low,
+                       this->d_high + other.d_high
+                       + (std::numeric_limits<rep_type>::max() - other.d_low < this->d_low));
 }
 
-// ----------------------------------------------------------------------------
-
-template <>
-inline constexpr kuhllib::uint_t
-kuhllib::uint_t::multiply<2u>() const
+template <typename Rep>
+constexpr kuhllib::uint_t<Rep>
+kuhllib::uint_t<Rep>::operator-(rep_type other) const
 {
-    return *this << 1u;
+    return uint_t<Rep>(this->d_low - other,
+                       this->d_high - (this->d_low < other));
 }
 
-template <>
-inline constexpr kuhllib::uint_t
-kuhllib::uint_t::multiply<8u>() const
+template <typename Rep>
+constexpr kuhllib::uint_t<Rep>
+kuhllib::uint_t<Rep>::operator-(kuhllib::uint_t<Rep> other) const
 {
-    return *this << 3u;
-}
-
-template <>
-inline constexpr kuhllib::uint_t
-kuhllib::uint_t::multiply<10u>() const
-{
-    return (*this << 3u) + (*this << 1u);
-}
-
-template <>
-inline constexpr kuhllib::uint_t
-kuhllib::uint_t::multiply<16u>() const
-{
-    return *this << 4u;
-}
-
-inline constexpr kuhllib::uint_t
-kuhllib::uint_t::operator*(std::uint64_t other) const
-{
-    return uint_t(this->d_low * other,
-                     this->d_high * other);
-}
-
-inline constexpr kuhllib::uint_t
-kuhllib::uint_t::operator*(kuhllib::uint_t ) const
-{
-    return *this;
+    return uint_t<Rep>(this->d_low - other.d_low,
+                       this->d_high - other.d_high - (this->d_low < other.d_low));
 }
 
 // ----------------------------------------------------------------------------
 
-template <>
-constexpr kuhllib::uint_t
-kuhllib::uint_t::divide<8u>() const
+template <typename Rep>
+struct kuhllib::uint_ops<Rep, 2u>
 {
-    return *this >> 3u;
-}
+    static constexpr kuhllib::uint_t<Rep>
+    multiply(kuhllib::uint_t<Rep> value) {
+        return value << 1u;
+    }
+    static constexpr kuhllib::uint_t<Rep>
+    divide(kuhllib::uint_t<Rep> value) {
+        return value >> 1u;
+    }
+    static std::pair<kuhllib::uint_t<Rep>, kuhllib::uint_t<Rep> >
+    div_mod(kuhllib::uint_t<Rep> value) {
+        return std::make_pair(value >> 1u, value & kuhllib::uint_t<Rep>(1u));
+    }
+};
 
-template <>
-constexpr kuhllib::uint_t
-kuhllib::uint_t::divide<16u>() const
+template <typename Rep>
+struct kuhllib::uint_ops<Rep, 8u>
 {
-    return *this >> 4u;
-}
+    static constexpr kuhllib::uint_t<Rep>
+    multiply(kuhllib::uint_t<Rep> value) {
+        return value << 3u;
+    }
+    static constexpr kuhllib::uint_t<Rep>
+    divide(kuhllib::uint_t<Rep> value) {
+        return value >> 3u;
+    }
+    static std::pair<kuhllib::uint_t<Rep>, kuhllib::uint_t<Rep> >
+    div_mod(kuhllib::uint_t<Rep> value) {
+        return std::make_pair(value >> 3u, value & kuhllib::uint_t<Rep>(7u));
+    }
+};
+
+
+template <typename Rep>
+struct kuhllib::uint_ops10<Rep, 0u>
+{
+    static std::pair<kuhllib::uint_t<Rep>, kuhllib::uint_t<Rep> >
+    div_mod(kuhllib::uint_t<Rep> value, kuhllib::uint_t<Rep> result) {
+        return value < kuhllib::uint_t<Rep>(10u)
+            ? std::make_pair(result << 1u, value)
+            : std::make_pair((result << 1u) + 1u, value - kuhllib::uint_t<Rep>(10u));
+    }
+};
+
+template <typename Rep, std::size_t Shift>
+struct kuhllib::uint_ops10
+{
+    static std::pair<kuhllib::uint_t<Rep>, kuhllib::uint_t<Rep> >
+    div_mod(kuhllib::uint_t<Rep> value, kuhllib::uint_t<Rep> result) {
+        return value < (kuhllib::uint_t<Rep>(10u) << Shift)
+            ? kuhllib::uint_ops10<Rep, Shift - 1u>::div_mod(value, result << 1u)
+            : kuhllib::uint_ops10<Rep, Shift - 1u>::div_mod(value - (kuhllib::uint_t<Rep>(10u) << Shift),
+                                                            (result << 1u) + 1u);
+    }
+};
+
+template <typename Rep>
+struct kuhllib::uint_ops<Rep, 10u>
+{
+    static constexpr kuhllib::uint_t<Rep>
+    multiply(kuhllib::uint_t<Rep> value) {
+        return (value << 3u) + (value << 1u);
+    }
+
+    static std::pair<kuhllib::uint_t<Rep>, kuhllib::uint_t<Rep> >
+    div_mod(kuhllib::uint_t<Rep> value) {
+        return kuhllib::uint_ops10<Rep, kuhllib::uint_t<Rep>::digits - 5u>::div_mod(value, kuhllib::uint_t<Rep>());
+    }
+};
+
+template <typename Rep>
+struct kuhllib::uint_ops<Rep, 16u>
+{
+    static constexpr kuhllib::uint_t<Rep>
+    multiply(kuhllib::uint_t<Rep> value) {
+        return value << 4u;
+    }
+    static constexpr kuhllib::uint_t<Rep>
+    divide(kuhllib::uint_t<Rep> value) {
+        return value >> 4u;
+    }
+    static std::pair<kuhllib::uint_t<Rep>, kuhllib::uint_t<Rep> >
+    div_mod(kuhllib::uint_t<Rep> value) {
+        return std::make_pair(value >> 4u, value & kuhllib::uint_t<Rep>(0xfu));
+    }
+};
 
 // ----------------------------------------------------------------------------
 
@@ -284,51 +384,56 @@ namespace kuhllib
 {
     namespace detail
     {
-        template <unsigned int Base>
-        constexpr kuhllib::uint_t
-        parse_u128_value(kuhllib::uint_t value) {
+        template <unsigned int Base, typename Rep>
+        constexpr kuhllib::uint_t<Rep>
+        parse_u128_value(kuhllib::uint_t<Rep> value) {
             return value;
         }
-        template <unsigned int Base, char Digit, char...C>
-        constexpr kuhllib::uint_t
-        parse_u128_value(kuhllib::uint_t value) {
-            return parse_u128_value<Base, C...>(value.multiply<Base>()
-                                                + kuhllib::uint_t('0' <= Digit && Digit <= '9'
-                                                                     ? Digit - '0'
-                                                                     : 10 + ('A' <= Digit && Digit <= 'F'
-                                                                             ? Digit - 'A'
-                                                                             : Digit - 'a')));
+        template <unsigned int Base, typename Rep, char Digit, char...C>
+        constexpr kuhllib::uint_t<Rep>
+        parse_u128_value(kuhllib::uint_t<Rep> value) {
+            return parse_u128_value<Base, Rep, C...>(kuhllib::uint_ops<Rep, Base>::multiply(value)
+                                                     + kuhllib::uint_t<Rep>('0' <= Digit && Digit <= '9'
+                                                                            ? Digit - '0'
+                                                                            : 10 + ('A' <= Digit && Digit <= 'F'
+                                                                                    ? Digit - 'A'
+                                                                                    : Digit - 'a')));
         }
 
-        template <unsigned int, char Base, char...C>
-        constexpr kuhllib::uint_t
+        template <typename Rep, char Base, char...C>
+        constexpr kuhllib::uint_t<Rep>
         parse_u128_base2() {
             return Base == 'x' || Base == 'X'
-                ? kuhllib::detail::parse_u128_value<16u, C...>(kuhllib::uint_t())
+                ? kuhllib::detail::parse_u128_value<16u, Rep, C...>(kuhllib::uint_t<Rep>())
                 : (Base == 'b' || Base == 'B'
-                   ? kuhllib::detail::parse_u128_value<2u, C...>(kuhllib::uint_t())
-                   : kuhllib::detail::parse_u128_value<8u, C...>(kuhllib::uint_t(Base - '0')));
+                   ? kuhllib::detail::parse_u128_value<2u, Rep, C...>(kuhllib::uint_t<Rep>())
+                   : kuhllib::detail::parse_u128_value<8u, Rep, C...>(kuhllib::uint_t<Rep>(Base - '0')));
         }
-        template <unsigned int Base>
-        constexpr kuhllib::uint_t
+        template <typename Rep>
+        constexpr kuhllib::uint_t<Rep>
         parse_u128_base2() {
-            return kuhllib::uint_t();
+            return kuhllib::uint_t<Rep>();
         }
 
-        template <char B, char...C>
-        constexpr kuhllib::uint_t
+        template <typename Rep, char B, char...C>
+        constexpr kuhllib::uint_t<Rep>
         parse_u128_base() {
             return B == '0'
-                ? kuhllib::detail::parse_u128_base2<0u, C...>()
-                : kuhllib::detail::parse_u128_value<10u, C...>(kuhllib::uint_t(B - '0'));
+                ? kuhllib::detail::parse_u128_base2<Rep, C...>()
+                : kuhllib::detail::parse_u128_value<10u, Rep, C...>(kuhllib::uint_t<Rep>(B - '0'));
         }
     }
 }
 
 template <char... C>
-constexpr kuhllib::uint_t kuhllib::operator"" _uLL()
+constexpr kuhllib::uint128_t kuhllib::operator"" _u128()
 {
-    return kuhllib::detail::parse_u128_base<C...>();
+    return kuhllib::detail::parse_u128_base<std::uint64_t, C...>();
+}
+template <char... C>
+constexpr kuhllib::uint256_t kuhllib::operator"" _u256()
+{
+    return kuhllib::detail::parse_u128_base<kuhllib::uint128_t, C...>();
 }
 
 // ----------------------------------------------------------------------------
