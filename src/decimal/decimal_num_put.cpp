@@ -1,4 +1,4 @@
-// decimal.hpp                                                        -*-C++-*-
+// decimal_num_put.cpp                                                -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,40 +23,9 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_DECIMAL
-#define INCLUDED_DECIMAL
-
-#include "decimal-class.hpp"
-#include <iosfwd>
-#include <iostream>
-#include <iomanip>
+#include "decimal_num_put.hpp"
 
 // ----------------------------------------------------------------------------
 
-namespace kuhllib
-{
-    template <int Bits>
-    bool operator== (decimal<Bits> const&, decimal<Bits> const&);
-
-    template <typename cT, typename Tr, int Bits>
-    std::basic_ostream<cT, Tr>& operator<< (std::basic_ostream<cT, Tr>& out,
-                                            decimal<Bits> const& value);
-}
-
-// ----------------------------------------------------------------------------
-
-template <int Bits>
-bool
-kuhllib::operator== (kuhllib::decimal<Bits> const& d0,
-                     kuhllib::decimal<Bits> const& d1) {
-    //-dk:TODO deal with NaNs
-    //-dk:TODO deal with zero
-    //-dk:TODO deal with different scales
-    return d0.negative()    == d1.negative()
-        && d0.significand() == d1.significand()
-        && d0.exponent()    == d1.exponent();
-}
-
-// ----------------------------------------------------------------------------
-
-#endif
+template class kuhllib::decimal_num_put<char, std::ostreambuf_iterator<char>>;
+template class kuhllib::decimal_num_put<wchar_t, std::ostreambuf_iterator<wchar_t>>;

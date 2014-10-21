@@ -72,7 +72,12 @@ struct kuhllib::decimal_config_base
     static constexpr long emin{1l - emax};
     static constexpr long bias{emax + p - 2};
 
-    static constexpr rep_type signbit{rep_type(1u) << (Bits > 64? 0: (Bits - 1))};
+    static constexpr rep_type signbit{rep_type(1u) << (k - 1)};
+    static constexpr rep_type special_mask{rep_type(3u) << (k - 3)};
+
+    static constexpr rep_type normal_exp_mask{(~rep_type() << (k - (w + 2))) >> 1};
+    static constexpr int      normal_sig_size{k - (w + 3)};
+    static constexpr rep_type normal_sig_mask{~rep_type() >> (k - normal_sig_size)};
 };
 
 // ----------------------------------------------------------------------------
@@ -94,6 +99,15 @@ struct kuhllib::decimal_config<128>
     : kuhllib::decimal_config_base<kuhllib::uint128_t, 128>
 {
 };
+
+// ----------------------------------------------------------------------------
+
+template <typename Rep, int Bits>
+constexpr Rep kuhllib::decimal_config_base<Rep, Bits>::signbit;
+template <typename Rep, int Bits>
+constexpr Rep kuhllib::decimal_config_base<Rep, Bits>::normal_exp_mask;
+template <typename Rep, int Bits>
+constexpr Rep kuhllib::decimal_config_base<Rep, Bits>::normal_sig_mask;
 
 // ----------------------------------------------------------------------------
 

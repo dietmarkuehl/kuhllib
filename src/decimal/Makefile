@@ -44,12 +44,17 @@ CC = $(CXX)
 
 LIBCXXFILES += \
 	decimal.cpp \
+	decimal_num_put.cpp \
 	erltest_test.cpp \
+	uint128_t.cpp \
 
 TSTCXXFILES += \
-	decimal.t.cpp \
-	decimal_config.t.cpp \
-	uint128_t.t.cpp \
+	uint128_t.t.cpp       \
+	decimal_base.t.cpp    \
+	decimal_config.t.cpp  \
+	decimal-class.t.cpp   \
+	decimal_num_put.t.cpp \
+	decimal.t.cpp         \
 
 CXXFILES = \
 	$(LIBCXXFILES) \
@@ -58,7 +63,18 @@ CXXFILES = \
 
 LIBOFILES = $(LIBCXXFILES:%.cpp=$(OBJ)/%.o)
 
-default: check-all
+DECTESTS = \
+	decSingle \
+	decDouble \
+	decQuad   \
+
+default: 
+	$(MAKE) check NAME=uint128_t.t
+
+all: check-all run-tests
+
+run-tests: $(OBJ)/dec-test
+	$(OBJ)/dec-test $(DECTESTS)
 
 check-all:
 	@for t in $(TSTCXXFILES:%.cpp=%); \
@@ -69,8 +85,8 @@ check-all:
 check: $(OBJ)/$(NAME)
 	$(OBJ)/$(NAME)
 
-$(OBJ)/decimal.t: $(OBJ)/libdec.a $(OBJ)/decimal.t.o
-	$(CXX) -o $@ $(LDFLAGS) $(OBJ)/decimal.t.o -ldec
+$(OBJ)/%.t: $(OBJ)/libdec.a $(OBJ)/%.t.o
+	$(CXX) -o $@ $(LDFLAGS) $@.o -ldec
 
 $(OBJ)/libdec.a: $(LIBOFILES)
 	ar rcu $@ $(LIBOFILES)
@@ -81,8 +97,11 @@ $(OBJ)/%.o: %.cpp
 
 clean:
 	$(RM) $(LIBOFILES) $(OBJ)/decimal.t.o $(OBJ)/decimal.t $(OBJ)/libdec.a
-	$(RM) make.depend
+	$(RM) $(OBJ)/make.depend
 	$(RM) mkerr olderr *~
+
+distclean: clean
+	$(RM) -r bin
 
 depend $(OBJ)/make.depend:
 	@mkdir -p $(OBJ)
