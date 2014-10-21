@@ -1,4 +1,4 @@
-// decimal.hpp                                                        -*-C++-*-
+// decimal_base.hpp                                                   -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,39 +23,38 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_DECIMAL
-#define INCLUDED_DECIMAL
-
-#include "decimal-class.hpp"
-#include <iosfwd>
-#include <iostream>
-#include <iomanip>
+#ifndef INCLUDED_DECIMAL_BASE
+#define INCLUDED_DECIMAL_BASE
 
 // ----------------------------------------------------------------------------
 
 namespace kuhllib
 {
-    template <int Bits>
-    bool operator== (decimal<Bits> const&, decimal<Bits> const&);
-
-    template <typename cT, typename Tr, int Bits>
-    std::basic_ostream<cT, Tr>& operator<< (std::basic_ostream<cT, Tr>& out,
-                                            decimal<Bits> const& value);
+    class decimal_base;
 }
 
 // ----------------------------------------------------------------------------
 
-template <int Bits>
-bool
-kuhllib::operator== (kuhllib::decimal<Bits> const& d0,
-                     kuhllib::decimal<Bits> const& d1) {
-    //-dk:TODO deal with NaNs
-    //-dk:TODO deal with zero
-    //-dk:TODO deal with different scales
-    return d0.negative()    == d1.negative()
-        && d0.significand() == d1.significand()
-        && d0.exponent()    == d1.exponent();
-}
+class kuhllib::decimal_base
+{
+public:
+    enum classification {
+        signaling_nan,
+        quiet_nan,
+        negative_infinity,
+        negative_normal,
+        // negative_subnormal: there are no subnormal decimal values
+        negative_zero,
+        positive_infinity,
+        positive_normal,
+        // positive_subnormal: there are no subnormal decimal values
+        positive_zero,
+    };
+    enum bid_t { bid }; // construct from binary integer decimal representation
+    enum dpd_t { dpd }; // construct from densely packed decimal representation
+    enum inf_t { inf }; // construct one of the infinities
+    enum nan_t { nan }; // construct a NaN
+};
 
 // ----------------------------------------------------------------------------
 

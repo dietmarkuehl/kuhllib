@@ -38,12 +38,14 @@ static erl::test::testcase const tests[] = {
             constexpr kuhllib::uint128_t ud{};
             constexpr kuhllib::uint128_t u1(1u);
             constexpr kuhllib::uint128_t u12(1u, 2u);
-            return ud[0]  == 0u && ud[1]  == 0u
-                && u1[0]  == 1u && u1[1]  == 0u
-                && u12[0] == 1u && u12[1] == 2u;
+            return ud  == kuhllib::uint128_t(0u, 0u)
+                && u1  == kuhllib::uint128_t(1u, 0u)
+                && u12 == kuhllib::uint128_t(1u, 2u);
         }),
     erl::test::expect_success("equality", []()->bool {
-            return kuhllib::uint128_t() == kuhllib::uint128_t()
+            constexpr bool rc{kuhllib::uint128_t(1) == kuhllib::uint128_t(1, 0)};
+            return rc
+                && kuhllib::uint128_t() == kuhllib::uint128_t()
                 && kuhllib::uint128_t(0x12345) == kuhllib::uint128_t(0x12345)
                 && !(kuhllib::uint128_t(0x12345) == kuhllib::uint128_t(0x12245))
                 && kuhllib::uint128_t(0x12345, 0x6789) == kuhllib::uint128_t(0x12345, 0x6789)
@@ -52,12 +54,19 @@ static erl::test::testcase const tests[] = {
                 ;
         }),
     erl::test::expect_success("inequality", []()->bool {
-            return !(kuhllib::uint128_t() != kuhllib::uint128_t())
+            constexpr bool rc{kuhllib::uint128_t(1) != kuhllib::uint128_t(1, 1)};
+            return rc
+                && !(kuhllib::uint128_t() != kuhllib::uint128_t())
                 && !(kuhllib::uint128_t(0x12345) != kuhllib::uint128_t(0x12345))
                 && kuhllib::uint128_t(0x12345) != kuhllib::uint128_t(0x12245)
                 && !(kuhllib::uint128_t(0x12345, 0x6789) != kuhllib::uint128_t(0x12345, 0x6789))
                 && kuhllib::uint128_t(0x12345, 0x6689) != kuhllib::uint128_t(0x12345, 0x6789)
                 && kuhllib::uint128_t(0x12245, 0x6789) != kuhllib::uint128_t(0x12345, 0x6789)
+                ;
+        }),
+    erl::test::expect_success("invert", []()->bool {
+            constexpr kuhllib::uint128_t all(~kuhllib::uint128_t{});
+            return all == kuhllib::uint128_t(0xFFFFFFFFFFFFFFFFull, 0xFFFFFFFFFFFFFFFFull)
                 ;
         }),
     erl::test::expect_success("left shift", []()->bool {
@@ -108,9 +117,24 @@ static erl::test::testcase const tests[] = {
             }
             return us == kuhllib::uint128_t(0u, 0x0400000000000000ull);
         }),
+    erl::test::expect_success("literal", []()->bool {
+            using namespace kuhllib;
+            return kuhllib::uint128_t() == 0_uLL
+                && kuhllib::uint128_t(9u) == 9_uLL
+                && kuhllib::uint128_t(15u) == 0xf_uLL
+                ;
+        }),
 };
 
 int main(int ac, char* av[])
 {
+    using namespace kuhllib;
+    std::cout << "9_uLL=" << 9_uLL << '\n';
+    std::cout << "0xf_uLL=" << 0xf_uLL << '\n';
+    std::cout << "0xff_uLL=" << 0xff_uLL << '\n';
+    std::cout << "1234567890_uLL=" << 1234567890_uLL << '\n';
+    std::cout << "12345678901234567890_uLL=" << 12345678901234567890_uLL << '\n';
+    std::cout << std::oct << "0x123456789abcdef0_uLL=" << 0x123456789abcdef0_uLL << '\n';
+    std::cout << std::hex << "0x123456789abcdef0_uLL=" << 0x123456789abcdef0_uLL << '\n';
     return erl::test::run_tests("uint128_t", ac, av, ::tests);
 }
