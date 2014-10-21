@@ -96,7 +96,7 @@ struct kuhllib::decimal_config<64>
 
 template <>
 struct kuhllib::decimal_config<128>
-    : kuhllib::decimal_config_base<kuhllib::uint_t, 128>
+    : kuhllib::decimal_config_base<kuhllib::uint128_t, 128>
 {
 };
 

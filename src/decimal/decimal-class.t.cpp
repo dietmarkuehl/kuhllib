@@ -86,7 +86,7 @@ static erl::test::testcase const tests[] = {
             using namespace kuhllib;
             constexpr kuhllib::decimal<32>  d32 (kuhllib::decimal<32>::bid,  0x318004D2u);
             constexpr kuhllib::decimal<64>  d64 (kuhllib::decimal<64>::bid,  0x31800000000004D2ull);
-            constexpr kuhllib::decimal<128> d128(kuhllib::decimal<128>::bid, 0x31800000000004D2_uLL);
+            constexpr kuhllib::decimal<128> d128(kuhllib::decimal<128>::bid, 0x31800000000004D2_u128);
 
             return verify_parts(make_bid<32>(0x00000000u), false, 0, -101)
                 && verify_parts(make_bid<32>(0x318004D2u), false, 1234, -2)
