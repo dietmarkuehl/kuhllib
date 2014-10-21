@@ -26,7 +26,7 @@
 #ifndef INCLUDED_DECIMAL_CONFIG
 #define INCLUDED_DECIMAL_CONFIG
 
-#include "uint128_t.hpp"
+#include "uint_t.hpp"
 #include <cinttypes>
 
 // ----------------------------------------------------------------------------
@@ -96,7 +96,7 @@ struct kuhllib::decimal_config<64>
 
 template <>
 struct kuhllib::decimal_config<128>
-    : kuhllib::decimal_config_base<kuhllib::uint128_t, 128>
+    : kuhllib::decimal_config_base<kuhllib::uint_t, 128>
 {
 };
 

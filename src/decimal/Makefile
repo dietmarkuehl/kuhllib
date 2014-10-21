@@ -46,10 +46,10 @@ LIBCXXFILES += \
 	decimal.cpp \
 	decimal_num_put.cpp \
 	erltest_test.cpp \
-	uint128_t.cpp \
+	uint_t.cpp \
 
 TSTCXXFILES += \
-	uint128_t.t.cpp       \
+	uint_t.t.cpp       \
 	decimal_base.t.cpp    \
 	decimal_config.t.cpp  \
 	decimal-class.t.cpp   \
@@ -69,7 +69,7 @@ DECTESTS = \
 	decQuad   \
 
 default: 
-	$(MAKE) check NAME=uint128_t.t
+	$(MAKE) check NAME=uint_t.t
 
 all: check-all run-tests
 
