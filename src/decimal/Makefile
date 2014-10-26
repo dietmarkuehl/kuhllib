@@ -23,8 +23,9 @@
 #   OTHER DEALINGS IN THE SOFTWARE. 
 #  ----------------------------------------------------------------------------
 
+NAME     = decimal_num_put.t
 COMPILER = clang
-SYSTEM = $(shell uname -s)
+SYSTEM   = $(shell uname -s)
 
 OBJ = bin/$(SYSTEM)-$(COMPILER)
 
@@ -69,7 +70,7 @@ DECTESTS = \
 	decQuad   \
 
 default: 
-	$(MAKE) check NAME=uint_t.t
+	$(MAKE) check
 
 all: check-all run-tests
 

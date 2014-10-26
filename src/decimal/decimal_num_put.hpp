@@ -27,6 +27,7 @@
 #define INCLUDED_DECIMAL_NUM_PUT
 
 #include "decimal.hpp"
+#include <algorithm>
 #include <locale>
 #include <iterator>
 #include <cstddef>
@@ -37,6 +38,13 @@ namespace kuhllib
 {
     template <typename cT, typename OutIt = std::ostreambuf_iterator<cT>>
     class decimal_num_put;
+
+    template <typename T>
+    T const& use_facet(std::locale const& loc);
+    template <>
+    decimal_num_put<char> const& use_facet<decimal_num_put<char> >(std::locale const&);
+    template <>
+    decimal_num_put<wchar_t> const& use_facet<decimal_num_put<wchar_t> >(std::locale const&);
 }
 
 // ----------------------------------------------------------------------------
@@ -65,12 +73,28 @@ protected:
 private:
     template <int Bits>
     iter_type format(iter_type it, std::ios_base& fmt, char_type fill, kuhllib::decimal<Bits> val) const;
+    template <typename Int>
+    iter_type format(iter_type it, std::ctype<cT> const&, Int val) const;
 };
 
 // ----------------------------------------------------------------------------
 
 template <typename cT, typename OutIt>
 std::locale::id kuhllib::decimal_num_put<cT, OutIt>::id;
+
+template <typename T>
+T const& kuhllib::use_facet(std::locale const& loc)
+{
+    return std::use_facet<T>(loc);
+}
+
+// ----------------------------------------------------------------------------
+
+template <typename cT, typename OutIt>
+kuhllib::decimal_num_put<cT, OutIt>::decimal_num_put(std::size_t refs)
+    : std::locale::facet(refs)
+{
+}
 
 // ----------------------------------------------------------------------------
 
@@ -129,11 +153,32 @@ kuhllib::decimal_num_put<cT, OutIt>::do_put(typename kuhllib::decimal_num_put<cT
 template <typename cT, typename OutIt>
 typename kuhllib::decimal_num_put<cT, OutIt>::iter_type
 kuhllib::decimal_num_put<cT, OutIt>::do_put(typename kuhllib::decimal_num_put<cT, OutIt>::iter_type it,
-                                            std::ios_base&                                          fmt,
-                                            typename kuhllib::decimal_num_put<cT, OutIt>::char_type fill,
-                                            kuhllib::decimal<128>                                   val) const
+                                            std::ios_base&                                          ,
+                                            typename kuhllib::decimal_num_put<cT, OutIt>::char_type ,
+                                            kuhllib::decimal<128>                                   ) const
 {
-    return this->format(it, fmt, fill, val);
+    //-dk:TODO format decimal<128>: return this->format(it, fmt, fill, val);
+    return it;
+}
+
+// ----------------------------------------------------------------------------
+
+template <typename cT, typename OutIt>
+    template <typename Int>
+typename kuhllib::decimal_num_put<cT, OutIt>::iter_type
+kuhllib::decimal_num_put<cT, OutIt>::format(iter_type to,
+                                            std::ctype<cT> const& ctype,
+                                            Int val) const
+{
+    cT buffer[std::numeric_limits<Int>::digits10];
+    cT* it(std::end(buffer)); 
+    do {
+        unsigned char c(static_cast<unsigned long long>(val % 10));
+        val /= 10;
+        *--it = ctype.widen("0123456789"[c]);
+    } while (val);
+    to =  std::copy(it, std::end(buffer), to);
+    return to;
 }
 
 // ----------------------------------------------------------------------------
@@ -146,20 +191,31 @@ kuhllib::decimal_num_put<cT, OutIt>::format(typename kuhllib::decimal_num_put<cT
                                             typename kuhllib::decimal_num_put<cT, OutIt>::char_type ,
                                             kuhllib::decimal<Bits>                                  val) const
 {
+    //-dk:TODO format: special values (NaN, +/-inf)
+    //-dk:TODO format: proper use of precision
+    //-dk:TODO format: scientific/fixed/...
+    //-dk:TODO format: deal with proper padding
     std::ctype<cT> const& ctype(std::use_facet<std::ctype<cT>>(fmt.getloc()));
-    //-dk:TODO deal with proper padding
     if (val.negative()) {
         *it++ = ctype.widen('-');
     }
     else if (fmt.flags() & std::ios_base::showpos) {
         *it++ = ctype.widen('+');
     }
+    it = format(it, ctype, val.significand());
+    if (val.exponent()) {
+        *it++ = 'E';
+        it = format(it, ctype, val.exponent());
+    }
     return it;
 }
 
 // ----------------------------------------------------------------------------
+// The versions for the standard streams are externally instantiated
 
 extern template class kuhllib::decimal_num_put<char, std::ostreambuf_iterator<char>>;
 extern template class kuhllib::decimal_num_put<wchar_t, std::ostreambuf_iterator<wchar_t>>;
+
+// ----------------------------------------------------------------------------
 
 #endif

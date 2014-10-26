@@ -24,12 +24,38 @@
 // ----------------------------------------------------------------------------
 
 #include "decimal_num_put.hpp"
+#include "decimal-literals.hpp"
 #include "erltest_test.hpp"
+#include <iterator>
+#include <string>
+#include <sstream>
+#include <iostream>
+
+// ----------------------------------------------------------------------------
+
+template <int Bits>
+static bool
+test(std::string const& expect, kuhllib::decimal<Bits> const& value)
+{
+    std::ostringstream out;
+    typedef kuhllib::decimal_num_put<char> facet;
+    facet const& np(kuhllib::use_facet<facet>(out.getloc()));
+    np.put(std::ostreambuf_iterator<char>(out), out, ' ', value);
+    if (out.str() != expect) {
+        std::cout << "'" << out.str() << "' vs. expected '" << expect << "'\n";
+    }
+    return out.str() == expect;
+}
 
 // ----------------------------------------------------------------------------
 
 static erl::test::testcase const tests[] = {
-    erl::test::expect_failure("placeholder", []()->bool{ return false; }),
+    erl::test::expect_success("simple output", []()->bool{
+            using namespace kuhllib;
+            return test("123", 123_DD)
+                && test("-123", -123_DD)
+                && test("-12E1", -12E+1_DD);
+        }),
 };
 
 int main(int ac, char* av[])
