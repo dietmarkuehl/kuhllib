@@ -38,6 +38,7 @@
 namespace kuhllib
 {
     template <typename Rep> class uint_t;
+
     template <typename Rep, std::size_t> struct uint_ops;
     template <typename Rep> struct uint_ops<Rep,  2u>;
     template <typename Rep> struct uint_ops<Rep,  8u>;
@@ -65,7 +66,8 @@ namespace std
     class numeric_limits<kuhllib::uint_t<Rep> >
     {
     public:
-        static constexpr std::size_t digits = 2u * std::numeric_limits<Rep>::digits;
+        static constexpr std::size_t digits   = 2u * std::numeric_limits<Rep>::digits;
+        static constexpr std::size_t digits10 = 2u * std::numeric_limits<Rep>::digits10;
     };
 }
 

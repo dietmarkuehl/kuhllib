@@ -42,8 +42,8 @@ static erl::test::testcase const tests[] = {
         }),
     erl::test::expect_success("basic output", []()->bool{
             std::ostringstream out;
-            out << kuhllib::decimal<64>(true, 12, 0);
-            return out.str() == "-12E0";
+            out << kuhllib::decimal<64>(true, 12, 1);
+            return out.str() == "-12E1";
         }),
     erl::test::expect_success("decimal<64> literal", []()->bool{
             using namespace kuhllib;

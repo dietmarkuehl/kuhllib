@@ -24,6 +24,7 @@
 // ----------------------------------------------------------------------------
 
 #include "decimal.hpp"
+#include "decimal_num_put.hpp"
 #include <ostream>
 
 // ----------------------------------------------------------------------------
@@ -33,10 +34,24 @@ std::basic_ostream<cT, Tr>&
 kuhllib::operator<< (std::basic_ostream<cT, Tr>& out,
                      kuhllib::decimal<Bits> const& value)
 {
-    return out << (value.negative()? "-": "")
-               << value.significand()
-               << 'E' << value.exponent();
-
+    try {
+        std::ostream::sentry kerberos(out);
+        if (kerberos) {
+            typedef kuhllib::decimal_num_put<cT> facet;
+            kuhllib::use_facet<facet>(out.getloc()).put(out, out, out.fill(), value);
+        }
+    }
+    catch (std::exception const& ex) {
+        try {
+            out.setstate(std::ios_base::badbit);
+        }
+        catch (...) {
+        }
+        if (out.rdstate() & std::ios_base::badbit) {
+            throw;
+        }
+    }
+    return out;
 }
 
 template

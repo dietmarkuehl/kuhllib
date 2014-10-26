@@ -29,3 +29,24 @@
 
 template class kuhllib::decimal_num_put<char, std::ostreambuf_iterator<char>>;
 template class kuhllib::decimal_num_put<wchar_t, std::ostreambuf_iterator<wchar_t>>;
+
+// ----------------------------------------------------------------------------
+template <>
+kuhllib::decimal_num_put<char> const&
+kuhllib::use_facet<kuhllib::decimal_num_put<char> >(std::locale const& loc)
+{
+    static kuhllib::decimal_num_put<char> rc(0);
+    return std::has_facet<kuhllib::decimal_num_put<char> >(loc)
+        ? std::use_facet<kuhllib::decimal_num_put<char> >(loc)
+        : rc;
+}
+
+template <>
+kuhllib::decimal_num_put<wchar_t> const&
+kuhllib::use_facet<kuhllib::decimal_num_put<wchar_t> >(std::locale const& loc)
+{
+    static kuhllib::decimal_num_put<wchar_t> rc(0);
+    return std::has_facet<kuhllib::decimal_num_put<wchar_t> >(loc)
+        ? std::use_facet<kuhllib::decimal_num_put<wchar_t> >(loc)
+        : rc;
+}
