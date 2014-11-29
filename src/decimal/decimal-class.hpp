@@ -36,6 +36,11 @@
 namespace kuhllib
 {
     template <int Bits> class decimal;
+
+    template <int Bits>
+    constexpr decimal<Bits> operator+(decimal<Bits>);
+    template <int Bits>
+    constexpr decimal<Bits> operator-(decimal<Bits>);
 }
 
 // ----------------------------------------------------------------------------
@@ -61,12 +66,9 @@ public:
 
     constexpr classification classify() const;
 
-    bool     negative() const;
-    rep_type significand() const;
-    int      exponent() const;
-
-    constexpr decimal<Bits> operator+() const;
-    constexpr decimal<Bits> operator-() const;
+    constexpr bool     negative() const;
+    constexpr rep_type significand() const;
+    constexpr int      exponent() const;
 };
 
 // ----------------------------------------------------------------------------
@@ -98,19 +100,19 @@ kuhllib::decimal<Bits>::classify() const {
 // ----------------------------------------------------------------------------
 
 template <int Bits>
-bool
+constexpr bool
 kuhllib::decimal<Bits>::negative() const {
     return bool(this->d_rep & config_type::signbit);
 }
 
 template <int Bits>
-typename kuhllib::decimal<Bits>::rep_type
+constexpr typename kuhllib::decimal<Bits>::rep_type
 kuhllib::decimal<Bits>::significand() const {
     return this->d_rep & config_type::normal_sig_mask;
 }
 
 template <int Bits>
-int
+constexpr int
 kuhllib::decimal<Bits>::exponent() const {
     return std::int64_t((this->d_rep & config_type::normal_exp_mask) >> config_type::normal_sig_size) - config_type::bias;
 }
@@ -119,14 +121,14 @@ kuhllib::decimal<Bits>::exponent() const {
 
 template <int Bits>
 constexpr kuhllib::decimal<Bits>
-kuhllib::decimal<Bits>::operator+() const {
-    return *this;
+kuhllib::operator+(kuhllib::decimal<Bits> value) {
+    return value;
 }
 
 template <int Bits>
 constexpr kuhllib::decimal<Bits>
-kuhllib::decimal<Bits>::operator-() const {
-    return decimal<Bits>(decimal<Bits>::bid, decimal_config<Bits>::signbit ^ this->d_rep);
+kuhllib::operator-(kuhllib::decimal<Bits> value) {
+    return decimal<Bits>(!value.negative(), value.significand(), value.exponent());
 }
 
 // ----------------------------------------------------------------------------
