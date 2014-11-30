@@ -73,8 +73,8 @@ protected:
 private:
     template <int Bits>
     iter_type format(iter_type it, std::ios_base& fmt, char_type fill, kuhllib::decimal<Bits> val) const;
-    template <typename Int>
-    iter_type format(iter_type it, std::ctype<cT> const&, Int val) const;
+    template <typename Integer>
+    char* format(char* end, Integer val) const;
 };
 
 // ----------------------------------------------------------------------------
@@ -164,21 +164,20 @@ kuhllib::decimal_num_put<cT, OutIt>::do_put(typename kuhllib::decimal_num_put<cT
 // ----------------------------------------------------------------------------
 
 template <typename cT, typename OutIt>
-    template <typename Int>
-typename kuhllib::decimal_num_put<cT, OutIt>::iter_type
-kuhllib::decimal_num_put<cT, OutIt>::format(iter_type to,
-                                            std::ctype<cT> const& ctype,
-                                            Int val) const
+    template <typename Integer>
+char*
+kuhllib::decimal_num_put<cT, OutIt>::format(char*   end,
+                                            Integer val) const
 {
-    cT buffer[std::numeric_limits<Int>::digits10];
-    cT* it(std::end(buffer)); 
+    char* it(end);
     do {
+        //-dk:TODO actually, the formatting needs to be done in terms of Int!
+        //-dk:TODO probably, the dividend and the remainder should be computed in one go
         unsigned char c(static_cast<unsigned long long>(val % 10));
         val /= 10;
-        *--it = ctype.widen("0123456789"[c]);
+        *--it = "0123456789"[c];
     } while (val);
-    to =  std::copy(it, std::end(buffer), to);
-    return to;
+    return it;
 }
 
 // ----------------------------------------------------------------------------
@@ -195,18 +194,35 @@ kuhllib::decimal_num_put<cT, OutIt>::format(typename kuhllib::decimal_num_put<cT
     //-dk:TODO format: proper use of precision
     //-dk:TODO format: scientific/fixed/...
     //-dk:TODO format: deal with proper padding
+
     std::ctype<cT> const& ctype(std::use_facet<std::ctype<cT>>(fmt.getloc()));
+    char                  buffer[std::numeric_limits<typename kuhllib::decimal<Bits>::rep_type>::digits10];
+    char*                 start(this->format(std::end(buffer), val.significand()));
+    unsigned int          digits(std::end(buffer) - start);
+
     if (val.negative()) {
         *it++ = ctype.widen('-');
     }
     else if (fmt.flags() & std::ios_base::showpos) {
         *it++ = ctype.widen('+');
     }
-    it = format(it, ctype, val.significand());
-    if (val.exponent()) {
-        *it++ = 'E';
-        it = format(it, ctype, val.exponent());
+    if (0 <= val.exponent()) {
+        it = std::transform(start, std::end(buffer), it, [&](char c){ return ctype.widen(c); });
+        it = std::generate_n(it, val.exponent(), [&](){ return ctype.widen('0'); });
     }
+    else {
+        unsigned int offset(-val.exponent());
+        if (offset < digits) {
+            it = std::transform(start, start + (digits - offset), it, [&](char c){ return ctype.widen(c); }); 
+            *it++ = ctype.widen('.');
+            it = std::transform(start + (digits - offset), std::end(buffer), it, [&](char c){ return ctype.widen(c); }); 
+        }
+    }
+    // if (val.exponent()) {
+    //     *it++ = ctype.widen('E');
+    //     char ebuffer[10]; //-dk:TODO use proper value
+    //     char* estart(format(std::end(ebuffer), val.exponent()));
+    // }
     return it;
 }
 

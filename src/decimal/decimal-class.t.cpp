@@ -94,6 +94,9 @@ static erl::test::testcase const tests[] = {
                 && verify_parts(make_bid<64>(0x0000000000000000ull), false, 0, -398)
                 && verify_parts(make_bid<64>(0x31800000000004D2ull), false, 1234, -2)
                 && verify_parts(make_bid<64>(0xB1800000000004D2ull), true, 1234, -2)
+                && verify_parts(make_bid<128>(0x00000000000000000000000000000000_u128), false, 0_u128, -6176)
+                //-dk:TODO && verify_parts(make_bid<128>(0x303D00000000000000000000000004D2_u128), false, 1234_u128, -2)
+                //-dk:TODO && verify_parts(make_bid<128>(0xB03D00000000000000000000000004D2_u128), true, 1234_u128, -2)
                 ;
         }),
     erl::test::expect_failure("placeholder", []()->bool{ return false; }),

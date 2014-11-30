@@ -32,12 +32,16 @@
 
 namespace kuhllib
 {
-    template <char...> constexpr decimal<32>  operator"" _df();
-    template <char...> constexpr decimal<32>  operator"" _DF();
-    template <char...> constexpr decimal<64>  operator"" _dd();
-    template <char...> constexpr decimal<64>  operator"" _DD();
-    //-dk:TODO template <char...> constexpr decimal<128> operator"" _dl();
-    //-dk:TODO template <char...> constexpr decimal<128> operator"" _DL();
+    inline namespace literals {
+        template <char...> constexpr decimal<32>  operator"" _df();
+        template <char...> constexpr decimal<32>  operator"" _DF();
+        template <char...> constexpr decimal<64>  operator"" _dd();
+        template <char...> constexpr decimal<64>  operator"" _DD();
+#if defined(KUHLLIB_DEC128_LITERALS)
+        template <char...> constexpr decimal<128> operator"" _dl();
+        template <char...> constexpr decimal<128> operator"" _DL();
+#endif
+    }
 
     namespace detail
     {
@@ -68,6 +72,17 @@ namespace kuhllib
         }
 
         template <int Bits>
+        constexpr decimal<Bits> parse_fractional(typename decimal_config<Bits>::rep_type significand, int exponent) {
+            return decimal<Bits>(false, significand, exponent);
+        }
+        template <int Bits, char Digit, char... C>
+        constexpr decimal<Bits> parse_fractional(typename decimal_config<Bits>::rep_type significand, int exponent) {
+            return Digit == 'E'
+                ? parse_exponent<Bits, C...>(significand, exponent) //-dk:TODO that's not quite right...
+                : parse_fractional<Bits, C...>(significand * 10u + Digit - '0', exponent - 1);
+        }
+
+        template <int Bits>
         constexpr decimal<Bits> parse_decimal(typename decimal_config<Bits>::rep_type significand) {
             return decimal<Bits>(false, significand, 0);
         }
@@ -75,7 +90,9 @@ namespace kuhllib
         constexpr decimal<Bits> parse_decimal(typename decimal_config<Bits>::rep_type significand) {
             return Digit == 'E'
                 ? parse_exponent<Bits, C...>(significand, 0)
-                : parse_decimal<Bits, C...>(significand * 10u + Digit - '0');
+                : (Digit == '.'
+                   ? parse_fractional<Bits, C...>(significand, 0)
+                   : parse_decimal<Bits, C...>(significand * 10u + Digit - '0'));
         }
 
         template <int Bits, char... C>
@@ -89,36 +106,36 @@ namespace kuhllib
 
 template <char... C>
 constexpr kuhllib::decimal<32>
-kuhllib::operator"" _df() {
+kuhllib::literals::operator"" _df() {
     return kuhllib::detail::parse_decimal<32, C...>();
 }
 template <char... C>
 constexpr kuhllib::decimal<32>
-kuhllib::operator"" _DF() {
+kuhllib::literals::operator"" _DF() {
     return kuhllib::detail::parse_decimal<32, C...>();
 }
 
 template <char... C>
 constexpr kuhllib::decimal<64>
-kuhllib::operator"" _dd() {
+kuhllib::literals::operator"" _dd() {
     return kuhllib::detail::parse_decimal<64, C...>();
 }
 template <char... C>
 constexpr kuhllib::decimal<64>
-kuhllib::operator"" _DD() {
+kuhllib::literals::operator"" _DD() {
     return kuhllib::detail::parse_decimal<64, C...>();
 }
 
-#if 0
+#if defined(KUHLLIB_DEC128_LITERALS)
 //-dk:TODO decimal<128> literals
 template <char... C>
 constexpr kuhllib::decimal<128>
-kuhllib::operator"" _dl() {
+kuhllib::literals::operator"" _dl() {
     return kuhllib::detail::parse_decimal<128, C...>();
 }
 template <char... C>
 constexpr kuhllib::decimal<128>
-kuhllib::operator"" _DL() {
+kuhllib::literals::operator"" _DL() {
     return kuhllib::detail::parse_decimal<128, C...>();
 }
 #endif
