@@ -24,6 +24,7 @@
 #  ----------------------------------------------------------------------------
 
 NAME     = decimal_num_put.t
+NAME     = decimal-literals.t
 COMPILER = clang
 SYSTEM   = $(shell uname -s)
 
@@ -54,6 +55,7 @@ TSTCXXFILES += \
 	decimal_base.t.cpp    \
 	decimal_config.t.cpp  \
 	decimal-class.t.cpp   \
+	decimal-literals.t.cpp   \
 	decimal_num_put.t.cpp \
 	decimal.t.cpp         \
 

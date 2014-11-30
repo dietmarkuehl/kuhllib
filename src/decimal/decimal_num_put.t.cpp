@@ -54,7 +54,10 @@ static erl::test::testcase const tests[] = {
             using namespace kuhllib;
             return test("123", 123_DD)
                 && test("-123", -123_DD)
-                && test("-12E1", -12E+1_DD);
+                && test("-120", -12E+1_DD)
+                && test("-12.0", kuhllib::decimal<64>(true, 120, -1))
+                && test("-12.0", -120E-1_DD)
+                ;
         }),
 };
 
