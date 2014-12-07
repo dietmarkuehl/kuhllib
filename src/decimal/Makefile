@@ -23,91 +23,21 @@
 #   OTHER DEALINGS IN THE SOFTWARE. 
 #  ----------------------------------------------------------------------------
 
-NAME     = decimal_num_put.t
-NAME     = decimal-literals.t
-COMPILER = clang
-SYSTEM   = $(shell uname -s)
+.PHONY: default
+default:
+	@mkdir -p build
+	cd build; cmake ..
+	cd build; $(MAKE)
 
-OBJ = bin/$(SYSTEM)-$(COMPILER)
+.PHONY: check
+check: default
+	cd build; $(MAKE) test
 
-CPPFLAGS = -std=c++11
-CXXFLAGS = -W -Wall
-LDFLAGS  = -L$(OBJ)
-
-ifeq ($(COMPILER),clang)
-    CXX = /opt/llvm-current/bin/clang++
-    DEPFLAGS = -M
-endif
-ifeq ($(COMPILER),gcc)
-    CXX = /opt/gcc-current/bin/g++
-    DEPFLAGS = -M
-endif
-CC = $(CXX)
-
-LIBCXXFILES += \
-	decimal.cpp \
-	decimal_num_put.cpp \
-	erltest_test.cpp \
-	uint_t.cpp \
-
-TSTCXXFILES += \
-	uint_t.t.cpp       \
-	decimal_base.t.cpp    \
-	decimal_config.t.cpp  \
-	decimal-class.t.cpp   \
-	decimal-literals.t.cpp   \
-	decimal_num_put.t.cpp \
-	decimal.t.cpp         \
-
-CXXFILES = \
-	$(LIBCXXFILES) \
-	$(TSTCXXFILES) \
-	erltest_test.cpp \
-
-LIBOFILES = $(LIBCXXFILES:%.cpp=$(OBJ)/%.o)
-
-DECTESTS = \
-	decSingle \
-	decDouble \
-	decQuad   \
-
-default: 
-	$(MAKE) check
-
-all: check-all run-tests
-
-run-tests: $(OBJ)/dec-test
-	$(OBJ)/dec-test $(DECTESTS)
-
-check-all:
-	@for t in $(TSTCXXFILES:%.cpp=%); \
-	do \
-	    $(MAKE) check NAME=$$t; \
-	done
-
-check: $(OBJ)/$(NAME)
-	$(OBJ)/$(NAME)
-
-$(OBJ)/%.t: $(OBJ)/libdec.a $(OBJ)/%.t.o
-	$(CXX) -o $@ $(LDFLAGS) $@.o -ldec
-
-$(OBJ)/libdec.a: $(LIBOFILES)
-	ar rcu $@ $(LIBOFILES)
-
-$(OBJ)/%.o: %.cpp
-	@mkdir -p $(OBJ)
-	$(CXX) -o $@ -c $(CPPFLAGS) $(CXXFLAGS) $(@:$(OBJ)/%.o=%.cpp)
-
+.PHONY: clean
 clean:
-	$(RM) $(LIBOFILES) $(OBJ)/decimal.t.o $(OBJ)/decimal.t $(OBJ)/libdec.a
-	$(RM) $(OBJ)/make.depend
-	$(RM) mkerr olderr *~
+	cd build: $(MAKE) clean
 
-distclean: clean
-	$(RM) -r bin
-
-depend $(OBJ)/make.depend:
-	@mkdir -p $(OBJ)
-	$(CXX) $(CPPFLAGS) $(DEPFLAGS) $(CXXFILES) | fixdepend $(OBJ) > $(OBJ)/make.depend
-
-include $(OBJ)/make.depend
+.PHONY: distclean
+distclean:
+	$(RM) -rf build
+	$(RM) *~ mkerr olderr

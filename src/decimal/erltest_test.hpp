@@ -333,16 +333,29 @@ erl::test::expect_exception(char const* name, bool(*test)(erl::test::context&))
 
 inline
 int
-erl::test::run_tests(char const* name, int, char*[],
+erl::test::run_tests(char const* name, int ac, char *av[],
                      erl::test::testcase const* begin,
                      erl::test::testcase const* end)
 {
     std::ptrdiff_t success(0);
-    for (erl::test::testcase const* it(begin); it != end; ++it) {
-        it->run(std::cout, it - begin + 1, name) && ++success;
+    int count(0);
+    if (ac == 1) {
+        count = end - begin;
+        for (erl::test::testcase const* it(begin); it != end; ++it) {
+            it->run(std::cout, it - begin + 1, name) && ++success;
+        }
+    }
+    else {
+        for (int i(1); i != ac; ++i) {
+            int idx(atoi(av[i]));
+            if (0 < idx && idx <= std::distance(begin, end)) {
+                ++count;
+                (begin + idx - 1)->run(std::cout, idx, name) && ++success;
+            }
+        }
     }
     std::cout << name << ": "
-              << success << "/" << (end - begin) << " succeeded\n";
+              << success << "/" << count << " succeeded\n";
     return success == (end - begin)? EXIT_SUCCESS: EXIT_FAILURE;
 }
 
