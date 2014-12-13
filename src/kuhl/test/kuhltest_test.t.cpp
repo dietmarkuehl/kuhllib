@@ -23,7 +23,7 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "kuhltest_test.hpp"
+#include "kuhl/test/kuhltest_test.hpp"
 #include <sstream>
 #include <iostream>
 

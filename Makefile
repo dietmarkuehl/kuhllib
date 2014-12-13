@@ -30,7 +30,7 @@ ifneq ($(CMAKE_CXX),)
 endif
 
 .PHONY: default
-default: cmake build
+default: check
 
 .PHONY: cmake
 cmake:
@@ -38,12 +38,18 @@ cmake:
 	cd $(BUILDDIR); cmake $(CMAKE_CXX_ARG) ../src
 
 .PHONY: build
-build:
+build: cmake
 	cd $(BUILDDIR); $(MAKE)
 
+.PHONY: verbose
+verbose: cmake
+	cd $(BUILDDIR); $(MAKE) VERBOSE=1
+
 .PHONY: check
+check: build test
+
 .PHONY: test
-check test:
+test:
 	cd $(BUILDDIR); $(MAKE) test
 
 .PHONY: clean

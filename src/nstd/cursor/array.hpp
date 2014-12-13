@@ -1,4 +1,4 @@
-// kuhltest.hpp                                                       -*-C++-*-
+// nstd/cursor/array.hpp                                              -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,13 +23,34 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_KUHLTEST
-#define INCLUDED_KUHLTEST
+#ifndef INCLUDED_NSTD_CURSOR_ARRAY
+#define INCLUDED_NSTD_CURSOR_ARRAY
+
+#include <cstddef>
 
 // ----------------------------------------------------------------------------
-// This header merely aggregates different components.
 
-#include "kuhltest_test.hpp"
+namespace nstd
+{
+    namespace cursor
+    {
+        // Returns: a cursor to the start of a built-in array.
+        template <typename T, std::size_t Size>
+        auto constexpr begin(T (&array)[Size]) -> T* {
+            return array;
+        }
+        // Returns: a cursor to the end of a built-in array.
+        template <typename T, std::size_t Size>
+        auto constexpr end(T (&array)[Size]) -> T* {
+            return array + Size;
+        }
+        // Returns: the size of a built-in array.
+        template <typename T, std::size_t Size>
+        auto constexpr size(T (&)[Size]) -> std::size_t {
+            return Size;
+        }
+    }
+}
 
 // ----------------------------------------------------------------------------
 
