@@ -28,6 +28,7 @@ project(nstd::type_traits)
 
 enable_testing()
 foreach(test
+        enable_if.t 
         integral_constant.t 
         is_same.t 
         )

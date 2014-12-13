@@ -26,6 +26,7 @@
 #ifndef INCLUDED_NSTD_CURSOR_SINGLE_PASS
 #define INCLUDED_NSTD_CURSOR_SINGLE_PASS
 
+#include "nstd/type_traits/enable_if.hpp"
 #include <limits>
 #include <utility>
 
@@ -52,8 +53,8 @@ namespace nstd
             auto cursor_key(T&& cursor) -> decltype(*cursor) {
                 return *cursor;
             }
-            template <typename T>
-            auto cursor_key(T cursor) -> typename std::enable_if<std::numeric_limits<T>::is_integer, T>::type {
+            template <typename T, typename = nstd::type_traits::enable_if_t<std::numeric_limits<T>::is_integer>>
+            auto cursor_key(T cursor) -> T {
                 return cursor;
             }
 
