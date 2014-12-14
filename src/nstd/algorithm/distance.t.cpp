@@ -25,14 +25,29 @@
 
 #include "nstd/algorithm/distance.hpp"
 #include "nstd/cursor/model_single_pass.hpp"
-#include "nstd/type_traits/is_same.hpp"
 #include <cstddef>
 #include "kuhl/test.hpp"
 
 namespace KT = kuhl::test;
 namespace NA = nstd::algorithm;
 namespace NC = nstd::cursor;
-namespace NT = nstd::type_traits;
+
+// ----------------------------------------------------------------------------
+
+namespace
+{
+    struct single_pass_cursor: NC::single_pass {
+        using distance_type = unsigned char;
+        int index;
+        explicit single_pass_cursor(int index): index(index) {}
+    };
+    auto cursor_at_same_pos(single_pass_cursor const& c0, single_pass_cursor const& c1) -> bool {
+        return c0.index == c1.index;
+    }
+    auto cursor_step(single_pass_cursor& c) -> void {
+        ++c.index;
+    }
+}
 
 // ----------------------------------------------------------------------------
 
@@ -40,11 +55,27 @@ static KT::testcase const tests[] = {
     KT::expect_success("single_pass cursors rvalues", [](KT::context& c)->bool{
             int array[] = { 1, 2, 3 };
             auto dist(NA::distance(NC::single_pass_begin(array), NC::single_pass_end(array)));
-            return assert_equal(c, dist, 3u)
-                // && NT::is_same<std::size_t, decltype(dist)>::value
+            return assert_equal(c, "three elements", dist, 3u)
+                && KT::assert_type<std::size_t, decltype(dist)>(c, "distance_type")
                 ;
         }),
-    KT::expect_failure("placeholder", []()->bool{ return false; }),
+    KT::expect_success("single_pass cursors lvalues", [](KT::context& c)->bool{
+            int array[] = { 1, 2, 3, 4 };
+            auto it(NC::single_pass_begin(array));
+            auto end(NC::single_pass_end(array));
+            auto dist(NA::distance(it, end));
+            return assert_equal(c, "four elements", dist, 4u)
+                && assert_equal(c, "it didn't move", it.get_pointer(), NC::single_pass_begin(array).get_pointer())
+                && KT::assert_type<std::size_t, decltype(dist)>(c, "distance_type")
+                ;
+        }),
+    KT::expect_success("custom cursor", [](KT::context& c)->bool {
+            single_pass_cursor it(0), end(17);
+            auto dist(NA::distance(it, end));
+            return assert_equal(c, "17 elements", dist, 17u)
+                && KT::assert_type<unsigned char, decltype(dist)>(c, "distance_type")
+                ;
+        }),
 };
 
 int main(int ac, char* av[])

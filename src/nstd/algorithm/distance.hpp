@@ -26,6 +26,7 @@
 #ifndef INCLUDED_NSTD_ALGORITHM_DISTANCE
 #define INCLUDED_NSTD_ALGORITHM_DISTANCE
 
+#include "nstd/cursor/single_pass.hpp"
 #include <cstddef>
 
 // ----------------------------------------------------------------------------
@@ -39,14 +40,28 @@ namespace nstd
             struct distance
             {
                 constexpr distance() noexcept(true) {}
+
                 template <typename SinglePass, typename EndPoint>
-                std::size_t operator()(SinglePass it, EndPoint end) const {
-                    return 3u;
-                }
+                auto operator()(SinglePass it, EndPoint end) const -> nstd::cursor::distance_type_t<SinglePass>;
+                //-dk:TODO random access version
+                //-dk:TODO segmented version
             };
         }
-        constexpr nstd::algorithm::detail::distance distance;
+        constexpr nstd::algorithm::detail::distance distance{};
     }
+}
+
+// ----------------------------------------------------------------------------
+
+template <typename SinglePass, typename EndPoint>
+auto nstd::algorithm::detail::distance::operator()(SinglePass it, EndPoint end) const -> nstd::cursor::distance_type_t<SinglePass> {
+    namespace NC = nstd::cursor;
+    std::size_t rc{};
+    while (!NC::at_same_pos(it, end)) {
+        ++rc;
+        NC::step(it);
+    }
+    return rc;
 }
 
 // ----------------------------------------------------------------------------

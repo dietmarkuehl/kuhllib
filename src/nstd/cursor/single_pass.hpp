@@ -26,6 +26,7 @@
 #ifndef INCLUDED_NSTD_CURSOR_SINGLE_PASS
 #define INCLUDED_NSTD_CURSOR_SINGLE_PASS
 
+#include "nstd/type_traits/declval.hpp"
 #include "nstd/type_traits/enable_if.hpp"
 #include <limits>
 #include <utility>
@@ -40,6 +41,7 @@ namespace nstd
 {
     namespace cursor
     {
+
         namespace detail {
             template <typename T>
             auto cursor_step(T& cursor) -> void {
@@ -70,23 +72,47 @@ namespace nstd
             };
 
             template <typename S, typename T>
-            auto constexpr cursor_at_same_pos(S const& cursor0, T const& cursor1) -> bool {
+            auto cursor_at_same_pos(S const& cursor0, T const& cursor1) -> bool {
                 return cursor0 == cursor1;
             }
 
             struct at_same_pos {
                 template <typename S, typename T>
-                auto constexpr operator()(S&& cursor0, T&& cursor1) const -> bool {
+                auto operator()(S&& cursor0, T&& cursor1) const -> bool {
+                    using detail::cursor_at_same_pos;
                     return cursor_at_same_pos(std::forward<S>(cursor0), std::forward<T>(cursor1));
                 }
             };
+
+            struct distance_type_delegate {
+                template <typename T>
+                static auto size(T const&) -> typename T::distance_type;
+                static auto size(...) -> std::size_t;
+            };
+
+            template <typename T>
+            auto cursor_distance_type(T cursor) -> decltype(distance_type_delegate::size(cursor));
+
+            template <typename T>
+            auto distance_type(T cursor) -> decltype(cursor_distance_type(cursor));
         }
 
         constexpr nstd::cursor::detail::step        step{};
         constexpr nstd::cursor::detail::key         key{};
         constexpr nstd::cursor::detail::at_same_pos at_same_pos{};
+
+        template <typename T> struct distance_type;
+        template <typename T>
+        using distance_type_t = typename nstd::cursor::distance_type<T>::type;
     }
 }
+
+// ----------------------------------------------------------------------------
+
+template <typename T>
+struct nstd::cursor::distance_type {
+    typedef decltype(nstd::cursor::detail::distance_type(nstd::type_traits::declval<T>())) type;
+};
 
 // ----------------------------------------------------------------------------
 
