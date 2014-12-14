@@ -27,6 +27,7 @@
 #define INCLUDED_NSTD_CURSOR_CATEGORY
 
 #include "nstd/type_traits/choose_type.hpp"
+#include "nstd/type_traits/declval.hpp"
 #include "nstd/type_traits/is_convertible.hpp"
 #include "nstd/type_traits/remove_cv.hpp"
 
@@ -36,10 +37,24 @@ namespace nstd
 {
     namespace cursor
     {
+        struct none;
         struct single_pass;
         struct forward;
         struct bidirectional;
         struct random_access;
+
+        namespace detail {
+            template <typename T>
+            auto cursor_category(T&&) -> typename nstd::type_traits::choose_type<
+                nstd::type_traits::choice<nstd::type_traits::is_convertible<T*, nstd::cursor::random_access*>::value, nstd::cursor::random_access>,
+                nstd::type_traits::choice<nstd::type_traits::is_convertible<T*, nstd::cursor::bidirectional*>::value, nstd::cursor::bidirectional>,
+                nstd::type_traits::choice<nstd::type_traits::is_convertible<T*, nstd::cursor::forward*>::value, nstd::cursor::forward>,
+                nstd::type_traits::choice<nstd::type_traits::is_convertible<T*, nstd::cursor::single_pass*>::value, nstd::cursor::single_pass>
+                >::type;
+
+            template <typename T>
+            auto get_category() -> decltype(cursor_category(nstd::type_traits::declval<T>()));
+        }
         
         template <typename T> struct category;
         template <typename T>
@@ -87,13 +102,8 @@ struct nstd::cursor::random_access
 
 template <typename T>
 struct nstd::cursor::category
-    : nstd::type_traits::choose_type<
-        nstd::type_traits::choice<nstd::type_traits::is_convertible<nstd::type_traits::remove_cv_t<T>*, nstd::cursor::random_access*>::value, nstd::cursor::random_access>,
-        nstd::type_traits::choice<nstd::type_traits::is_convertible<nstd::type_traits::remove_cv_t<T>*, nstd::cursor::bidirectional*>::value, nstd::cursor::bidirectional>,
-        nstd::type_traits::choice<nstd::type_traits::is_convertible<nstd::type_traits::remove_cv_t<T>*, nstd::cursor::forward*>::value, nstd::cursor::forward>,
-        nstd::type_traits::choice<nstd::type_traits::is_convertible<nstd::type_traits::remove_cv_t<T>*, nstd::cursor::single_pass*>::value, nstd::cursor::single_pass>
-    >
 {
+    using type = decltype(nstd::cursor::detail::get_category<nstd::type_traits::remove_cv_t<T>>());
 };
 
 // ----------------------------------------------------------------------------

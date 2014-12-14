@@ -31,6 +31,10 @@
 #include <utility>
 
 // ----------------------------------------------------------------------------
+// To implement a single_pass cursor C provide the following operations:
+// - cursor_step(C&)              move to the next element
+// - cursor_key(C)                access the key at the given position
+// - cursor_at_same_pas(C c, E e) return true if c and e are at the same position
 
 namespace nstd
 {
@@ -66,7 +70,7 @@ namespace nstd
             };
 
             template <typename S, typename T>
-            auto constexpr cursor_at_same_pos(S&& cursor0, T&& cursor1) -> bool {
+            auto constexpr cursor_at_same_pos(S const& cursor0, T const& cursor1) -> bool {
                 return cursor0 == cursor1;
             }
 
