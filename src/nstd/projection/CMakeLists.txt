@@ -24,9 +24,13 @@
 #  ----------------------------------------------------------------------------
 
 cmake_minimum_required(VERSION 3.0.0)
-project(nstd)
+project(nstd::projection)
 
-add_subdirectory(algorithm)
-add_subdirectory(cursor)
-add_subdirectory(projection)
-add_subdirectory(type_traits)
+enable_testing()
+foreach(test
+	model_value.t
+        )
+  add_executable(${test} ${test})
+  target_link_libraries(${test} PUBLIC kuhltest)
+  add_test(${test} ${test})
+endforeach(test)

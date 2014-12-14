@@ -24,7 +24,7 @@
 #  ----------------------------------------------------------------------------
 
 cmake_minimum_required(VERSION 3.0.0)
-project(kuhl::cursor)
+project(nstd::cursor)
 
 enable_testing()
 foreach(test
