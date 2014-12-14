@@ -1,4 +1,4 @@
-// kuhl/test.hpp                                                      -*-C++-*-
+// kuhl/test/context.t.cpp                                            -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,15 +23,39 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_KUHL_TEST
-#define INCLUDED_KUHL_TEST
+#include "kuhl/test.hpp"
+#include <string>
 
-// ----------------------------------------------------------------------------
-// This header merely aggregates different components.
-
-#include "kuhl/test/kuhltest_test.hpp"
-#include "kuhl/test/assertions.hpp"
+namespace KT = kuhl::test;
 
 // ----------------------------------------------------------------------------
 
-#endif
+static KT::testcase const tests[] = {
+    KT::expect_success("default constructed context is empty", [](KT::context& c)->bool{
+            KT::context d;
+            return d.empty()
+                && assert_equal(c, d.c_str(), std::string());
+        }),
+    KT::expect_success("context with a message", [](KT::context& c)->bool{
+            KT::context d;
+            std::string message1("message1");
+            std::string message2("message2");
+            d << message1 << message2;
+            return !d.empty()
+                && assert_equal(c, d.c_str(), message1 + message2);
+        }),
+    KT::expect_success("reset context removes prior message", [](KT::context& c)->bool{
+            KT::context d;
+            std::string message1("hello, world");
+            std::string message2("goodbye");
+            d << message1;
+            d.reset();
+            d << message2;
+            return assert_equal(c, d.c_str(), message2);
+        }),
+};
+
+int main(int ac, char* av[])
+{
+    return KT::run_tests("kuhl::test::context", ac, av, ::tests);
+}

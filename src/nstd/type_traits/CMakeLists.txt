@@ -40,5 +40,6 @@ foreach(test
         remove_cv.t 
         )
   add_executable(${test} ${test})
+  target_link_libraries(${test} PUBLIC kuhltest)
   add_test(${test} ${test})
 endforeach(test)

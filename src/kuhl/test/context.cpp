@@ -1,4 +1,4 @@
-// kuhl/test.hpp                                                      -*-C++-*-
+// kuhl/test/context.cpp                                              -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,15 +23,47 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_KUHL_TEST
-#define INCLUDED_KUHL_TEST
-
-// ----------------------------------------------------------------------------
-// This header merely aggregates different components.
-
-#include "kuhl/test/kuhltest_test.hpp"
-#include "kuhl/test/assertions.hpp"
+#include "kuhl/test/context.hpp"
 
 // ----------------------------------------------------------------------------
 
-#endif
+kuhl::test::context_sbuf::context_sbuf()
+    : std::streambuf() {
+    this->reset();
+}
+
+auto kuhl::test::context_sbuf::reset() -> void {
+    this->setp(buffer, buffer + sizeof(buffer) - 1);
+}
+
+auto kuhl::test::context_sbuf::empty() const -> bool {
+    return this->pbase() == this->pptr();
+}
+
+auto kuhl::test::context_sbuf::c_str() const -> char const* {
+    *this->pptr() = 0;
+    return this->pbase();
+}
+
+// ----------------------------------------------------------------------------
+
+kuhl::test::context::context()
+    : kuhl::test::context_sbuf()
+    , std::ios(this)
+    , std::ostream(this) {
+}
+
+kuhl::test::context::~context() {
+}
+
+auto kuhl::test::context::reset() -> void {
+    this->kuhl::test::context_sbuf::reset();
+}
+
+auto kuhl::test::context::empty() const -> bool {
+    return this->kuhl::test::context_sbuf::empty();
+}
+
+auto kuhl::test::context::c_str() const -> const char* {
+    return this->kuhl::test::context_sbuf::c_str();
+}

@@ -26,5 +26,6 @@
 cmake_minimum_required(VERSION 3.0.0)
 project(nstd)
 
+add_subdirectory(algorithm)
 add_subdirectory(cursor)
 add_subdirectory(type_traits)

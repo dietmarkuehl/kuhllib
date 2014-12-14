@@ -1,4 +1,4 @@
-// kuhl/test.hpp                                                      -*-C++-*-
+// kuhl/test/assertions.cpp                                           -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,15 +23,22 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_KUHL_TEST
-#define INCLUDED_KUHL_TEST
-
-// ----------------------------------------------------------------------------
-// This header merely aggregates different components.
-
-#include "kuhl/test/kuhltest_test.hpp"
 #include "kuhl/test/assertions.hpp"
 
 // ----------------------------------------------------------------------------
 
-#endif
+auto kuhl::test::assert_true(kuhl::test::context& c, char const* message, bool value) -> bool
+{
+    if (!value) {
+        c << message;
+    }
+    return value;
+}
+
+auto kuhl::test::assert_false(kuhl::test::context& c, char const* message, bool value) -> bool
+{
+    if (value) {
+        c << message;
+    }
+    return !value;
+}

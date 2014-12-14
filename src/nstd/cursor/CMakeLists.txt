@@ -34,5 +34,6 @@ foreach(test
         single_pass.t 
         )
   add_executable(${test} ${test})
+  target_link_libraries(${test} PUBLIC kuhltest)
   add_test(${test} ${test})
 endforeach(test)

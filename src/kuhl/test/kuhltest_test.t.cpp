@@ -24,6 +24,7 @@
 // ----------------------------------------------------------------------------
 
 #include "kuhl/test/kuhltest_test.hpp"
+#include "kuhl/test/assertions.hpp"
 #include <sstream>
 #include <iostream>
 
@@ -43,7 +44,7 @@ static kuhl::test::testcase const tests[] = {
             bool rc(test.run(out, 17, "global name"));
             return rc == true
                 && out.str() == " 17: global name                   test name"
-                "                               OK\n";
+                "                                OK\n";
         }),
     KT::expect_success("test failure", []()->bool{
             KT::testcase test(KT::expect_success("test name",
@@ -53,7 +54,7 @@ static kuhl::test::testcase const tests[] = {
 
             return rc == false
                 && out.str() == " 17: global name                   test name"
-                "                               fail\n";
+                "                                fail\n";
         }),
     KT::expect_success("test unexpected exception", []()->bool{
             KT::testcase test(KT::expect_success("test name",
@@ -73,7 +74,7 @@ static kuhl::test::testcase const tests[] = {
 
             return rc == true
                 && out.str() == " 17: global name                   test name"
-                "                               OK (unexpected)\n";
+                "                                OK (unexpected)\n";
         }),
     KT::expect_success("test expected failure", []()->bool{
             KT::testcase test(KT::expect_failure("test name",
@@ -83,7 +84,7 @@ static kuhl::test::testcase const tests[] = {
 
             return rc == false
                 && out.str() == " 17: global name                   test name"
-                "                               fail (expected)\n";
+                "                                fail (expected)\n";
         }),
     KT::expect_success("test exception instead of failure", []()->bool{
             KT::testcase test(KT::expect_failure("test name",
@@ -106,7 +107,7 @@ static kuhl::test::testcase const tests[] = {
 
             return rc == true
                 && out.str() == " 17: global name                   test name"
-                "                               OK (received exception)\n";
+                "                                OK (received exception)\n";
         }),
     KT::expect_success("test expected different exception", []()->bool{
             KT::testcase test(KT::expect_exception<int>("test name",
@@ -118,7 +119,7 @@ static kuhl::test::testcase const tests[] = {
 
             return rc == false
                 && out.str() == " 17: global name                   test name"
-                "                               fail (different exception)\n";
+                "                                fail (different exception)\n";
         }),
     KT::expect_success("test success instead of exception", []()->bool{
             KT::testcase test(KT::expect_exception<int>("test name",
@@ -128,7 +129,7 @@ static kuhl::test::testcase const tests[] = {
 
             return rc == false
                 && out.str() == " 17: global name                   test name"
-                "                               fail (OK instead of exception)"
+                "                                fail (OK instead of exception)"
                 "\n";
         }),
     KT::expect_success("test failure instead of exception", []()->bool{
@@ -139,7 +140,7 @@ static kuhl::test::testcase const tests[] = {
 
             return rc == false
                 && out.str() == " 17: global name                   test name"
-                "                               fail (instead of exception)\n";
+                "                                fail (instead of exception)\n";
         }),
     KT::expect_success("test ctxt success", []()->bool{
             KT::testcase test(KT::expect_success("test name",
@@ -151,7 +152,7 @@ static kuhl::test::testcase const tests[] = {
 
             return rc == true
                 && out.str() == " 17: global name                   test name"
-                "                               OK\n";
+                "                                OK\n";
         }),
     KT::expect_success("test ctxt failure", []()->bool{
             KT::testcase test(KT::expect_success("test name",
@@ -163,7 +164,7 @@ static kuhl::test::testcase const tests[] = {
 
             return rc == false
                 && out.str() == " 17: global name                   test name"
-                "                               fail\n";
+                "                                fail\n";
         }),
     KT::expect_success("test ctxt unexpected exception", []()->bool{
             KT::testcase test(KT::expect_success("test name",
@@ -187,9 +188,9 @@ static kuhl::test::testcase const tests[] = {
 
             return rc == true
                 && out.str() == " 17: global name                   test name"
-                "                               OK (unexpected)\n";
+                "                                OK (unexpected)\n";
         }),
-    KT::expect_success("test ctxt expected failure", []()->bool{
+    KT::expect_success("test ctxt expected failure", [](KT::context& c)->bool{
             KT::testcase test(KT::expect_failure("test name",
                                                  [](KT::context&){
                                                      return false;
@@ -197,9 +198,10 @@ static kuhl::test::testcase const tests[] = {
             std::ostringstream out;
             bool rc(test.run(out, 17, "global name"));
 
-            return rc == false
-                && out.str() == " 17: global name                   test name"
-                "                               fail (expected)\n";
+            return assert_false(c, "result", rc)
+                && assert_equal(c, "message",
+                                out.str(), " 17: global name                   test name"
+                                "                                fail (expected)\n");
         }),
     KT::expect_success("test ctxt exception instead of failure", []()->bool{
             KT::testcase test(KT::expect_failure("test name",
@@ -214,7 +216,7 @@ static kuhl::test::testcase const tests[] = {
                 "                               exception (fail expected)\n";
         }),
 
-    KT::expect_success("test ctxt expected exception", []()->bool{
+    KT::expect_success("test ctxt expected exception", [](KT::context& c)->bool{
             KT::testcase test(KT::expect_exception<int>("test name",
                                                         [](KT::context&)->bool{
                                                             throw int();
@@ -222,9 +224,10 @@ static kuhl::test::testcase const tests[] = {
             std::ostringstream out;
             bool rc(test.run(out, 17, "global name"));
 
-            return rc == true
-                && out.str() == " 17: global name                   test name"
-                "                               OK (received exception)\n";
+            return assert_true(c, "result", rc)
+                && assert_equal(c, "message", out.str(),
+                                " 17: global name                   test name"
+                                "                                OK (received exception)\n");
         }),
     KT::expect_success("test ctxt expected different exception", []()->bool{
             KT::testcase test(KT::expect_exception<int>("test name",
@@ -236,7 +239,7 @@ static kuhl::test::testcase const tests[] = {
 
             return rc == false
                 && out.str() == " 17: global name                   test name"
-                "                               fail (different exception)\n";
+                "                                fail (different exception)\n";
         }),
     KT::expect_success("test ctxt success instead of exception", []()->bool{
             KT::testcase test(KT::expect_exception<int>("test name",
@@ -248,7 +251,7 @@ static kuhl::test::testcase const tests[] = {
 
             return rc == false
                 && out.str() == " 17: global name                   test name"
-                "                               fail (OK instead of exception)"
+                "                                fail (OK instead of exception)"
                 "\n";
         }),
     KT::expect_success("test ctxt failure instead of exception", []()->bool{
@@ -261,7 +264,7 @@ static kuhl::test::testcase const tests[] = {
 
             return rc == false
                 && out.str() == " 17: global name                   test name"
-                "                               fail (instead of exception)\n";
+                "                                fail (instead of exception)\n";
         }),
 };
 

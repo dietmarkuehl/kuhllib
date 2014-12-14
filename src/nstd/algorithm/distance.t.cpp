@@ -1,4 +1,4 @@
-// kuhl/test.hpp                                                      -*-C++-*-
+// nstd/algorithm/distance.t.cpp                                      -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,15 +23,31 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_KUHL_TEST
-#define INCLUDED_KUHL_TEST
+#include "nstd/algorithm/distance.hpp"
+#include "nstd/cursor/model_single_pass.hpp"
+#include "nstd/type_traits/is_same.hpp"
+#include <cstddef>
+#include "kuhl/test.hpp"
+
+namespace KT = kuhl::test;
+namespace NA = nstd::algorithm;
+namespace NC = nstd::cursor;
+namespace NT = nstd::type_traits;
 
 // ----------------------------------------------------------------------------
-// This header merely aggregates different components.
 
-#include "kuhl/test/kuhltest_test.hpp"
-#include "kuhl/test/assertions.hpp"
+static KT::testcase const tests[] = {
+    KT::expect_success("single_pass cursors rvalues", [](KT::context& c)->bool{
+            int array[] = { 1, 2, 3 };
+            auto dist(NA::distance(NC::single_pass_begin(array), NC::single_pass_end(array)));
+            return assert_equal(c, dist, 3u)
+                // && NT::is_same<std::size_t, decltype(dist)>::value
+                ;
+        }),
+    KT::expect_failure("placeholder", []()->bool{ return false; }),
+};
 
-// ----------------------------------------------------------------------------
-
-#endif
+int main(int ac, char* av[])
+{
+    return KT::run_tests("algorithm::distance", ac, av, ::tests);
+}

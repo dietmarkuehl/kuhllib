@@ -1,4 +1,4 @@
-// kuhl/test.hpp                                                      -*-C++-*-
+// kuhl/test/context.hpp                                              -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,14 +23,48 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_KUHL_TEST
-#define INCLUDED_KUHL_TEST
+#ifndef INCLUDED_KUHL_TEST_CONTEXT
+#define INCLUDED_KUHL_TEST_CONTEXT
+
+#include <ostream>
 
 // ----------------------------------------------------------------------------
-// This header merely aggregates different components.
 
-#include "kuhl/test/kuhltest_test.hpp"
-#include "kuhl/test/assertions.hpp"
+namespace kuhl
+{
+    namespace test {
+        class context_sbuf;
+        class context;
+    }
+
+}
+
+// ----------------------------------------------------------------------------
+
+class kuhl::test::context_sbuf
+    : public std::streambuf
+{
+    char buffer[256];
+public:
+    context_sbuf();
+    auto reset() -> void;
+    auto empty() const -> bool;
+    auto c_str() const -> char const*;
+};
+
+// ----------------------------------------------------------------------------
+
+class kuhl::test::context
+    : private virtual kuhl::test::context_sbuf
+    , public std::ostream
+{
+public:
+    context();
+    ~context();
+    auto reset() -> void;
+    auto empty() const -> bool;
+    auto c_str() const -> const char*;
+};
 
 // ----------------------------------------------------------------------------
 

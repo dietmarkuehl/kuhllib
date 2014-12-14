@@ -1,4 +1,4 @@
-// kuhl/test.hpp                                                      -*-C++-*-
+// nstd/algorithm/distance.hpp                                        -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,14 +23,31 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_KUHL_TEST
-#define INCLUDED_KUHL_TEST
+#ifndef INCLUDED_NSTD_ALGORITHM_DISTANCE
+#define INCLUDED_NSTD_ALGORITHM_DISTANCE
+
+#include <cstddef>
 
 // ----------------------------------------------------------------------------
-// This header merely aggregates different components.
 
-#include "kuhl/test/kuhltest_test.hpp"
-#include "kuhl/test/assertions.hpp"
+namespace nstd
+{
+    namespace algorithm
+    {
+        namespace detail
+        {
+            struct distance
+            {
+                constexpr distance() noexcept(true) {}
+                template <typename SinglePass, typename EndPoint>
+                std::size_t operator()(SinglePass it, EndPoint end) const {
+                    return 3u;
+                }
+            };
+        }
+        constexpr nstd::algorithm::detail::distance distance;
+    }
+}
 
 // ----------------------------------------------------------------------------
 

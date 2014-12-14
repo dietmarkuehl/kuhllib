@@ -26,6 +26,7 @@
 #ifndef INCLUDED_KUHLTEST_TEST
 #define INCLUDED_KUHLTEST_TEST
 
+#include "kuhl/test/context.hpp"
 #include <iostream>
 #include <iomanip>
 #include <cstdlib>
@@ -36,7 +37,6 @@ namespace kuhl
 {
     namespace test
     {
-        class context;
         class testcase;
 
         kuhl::test::testcase
@@ -68,11 +68,6 @@ namespace kuhl
 }
 
 // ----------------------------------------------------------------------------
-
-class kuhl::test::context
-{
-    // for now, this is intentionally left blank
-};
 
 class kuhl::test::testcase
 {
@@ -162,8 +157,11 @@ kuhl::test::testcase::expect_success_with_context(std::ostream&       out,
                                                  kuhl::test::context& context) const
 {
     try {
+        context.reset();
         bool result(this->d_context(context));
-        out << (result? "OK": "fail") << '\n';
+        out << (result? " OK": " fail")
+            << (context.empty()? "": " ") << context.c_str()
+            << '\n';
         return result;
     }
     catch (...) {
@@ -179,7 +177,7 @@ kuhl::test::testcase::expect_failure_with_context(std::ostream&       out,
 {
     try {
         bool result(this->d_context(context));
-        out << (result? "OK (unexpected)": "fail (expected)") << '\n';
+        out << (result? " OK (unexpected)": " fail (expected)") << '\n';
         return result;
     }
     catch (...) {
@@ -195,7 +193,7 @@ kuhl::test::testcase::expect_success_without_context(std::ostream&       out,
 {
     try {
         bool result(this->d_no_context());
-        out << (result? "OK": "fail") << '\n';
+        out << (result? " OK": " fail") << '\n';
         return result;
     }
     catch (...) {
@@ -211,7 +209,7 @@ kuhl::test::testcase::expect_failure_without_context(std::ostream&       out,
 {
     try {
         bool result(this->d_no_context());
-        out << (result? "OK (unexpected)": "fail (expected)") << '\n';
+        out << (result? " OK (unexpected)": " fail (expected)") << '\n';
         return result;
     }
     catch (...) {
@@ -230,16 +228,16 @@ kuhl::test::testcase::expect_exception_with_context(
     try {
         bool result(this->d_context(context));
         out << (result
-                      ? "fail (OK instead of exception)"
-                      : "fail (instead of exception)") << '\n';
+                      ? " fail (OK instead of exception)"
+                      : " fail (instead of exception)") << '\n';
         return false;
     }
     catch (Exception const&) {
-        out << "OK (received exception)\n";
+        out << " OK (received exception)\n";
         return true;
     }
     catch (...) {
-        out << "fail (different exception)\n";
+        out << " fail (different exception)\n";
         return false;
     }
 }
@@ -254,16 +252,16 @@ kuhl::test::testcase::expect_exception_without_context(
     try {
         bool result(this->d_no_context());
         out << (result
-                      ? "fail (OK instead of exception)"
-                      : "fail (instead of exception)") << '\n';
+                      ? " fail (OK instead of exception)"
+                      : " fail (instead of exception)") << '\n';
         return false;
     }
     catch (Exception const&) {
-        out << "OK (received exception)\n";
+        out << " OK (received exception)\n";
         return true;
     }
     catch (...) {
-        out << "fail (different exception)\n";
+        out << " fail (different exception)\n";
         return false;
     }
 }

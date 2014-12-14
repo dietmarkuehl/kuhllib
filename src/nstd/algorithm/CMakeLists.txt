@@ -24,18 +24,11 @@
 #  ----------------------------------------------------------------------------
 
 cmake_minimum_required(VERSION 3.0.0)
-project(kuhl::test)
-
-add_library(kuhltest STATIC
-	assertions.cpp
-	context.cpp
-	)
+project(nstd::algorithm)
 
 enable_testing()
 foreach(test
-        assertions.t
-        context.t
-        kuhltest_test.t
+        distance.t
         )
   add_executable(${test} ${test})
   target_link_libraries(${test} PUBLIC kuhltest)
