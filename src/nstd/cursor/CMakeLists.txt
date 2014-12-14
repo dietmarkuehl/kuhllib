@@ -30,6 +30,7 @@ enable_testing()
 foreach(test
         array.t 
         category.t 
+	model_key.t
 	model_single_pass.t
         single_pass.t 
         )

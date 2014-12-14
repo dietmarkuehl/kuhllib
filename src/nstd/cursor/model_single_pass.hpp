@@ -27,7 +27,7 @@
 #define INCLUDED_NSTD_CURSOR_MODEL_SINGLE_PASS
 
 #include "nstd/cursor/category.hpp"
-#include <utility>
+#include "nstd/cursor/model_key.hpp"
 #include <cstddef>
 
 // ----------------------------------------------------------------------------
@@ -38,7 +38,6 @@ namespace nstd
 {
     namespace cursor
     {
-        template <typename T> class model_key;
         template <typename T> class model_single_pass_end;
         template <typename T> class model_single_pass;
 
@@ -58,18 +57,6 @@ namespace nstd
         auto single_pass_end(T (&array)[Size]) -> model_single_pass_end<T>;
     }
 }
-
-// ----------------------------------------------------------------------------
-
-template <typename T>
-class nstd::cursor::model_key
-{
-    T key;
-public:
-    template <typename S>
-    explicit model_key(S&& key): key(std::forward<S>(key)) {}
-    T const& get_key() const { return this->key; }
-};
 
 // ----------------------------------------------------------------------------
 

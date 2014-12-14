@@ -76,6 +76,13 @@ static KT::testcase const tests[] = {
                 && KT::assert_type<unsigned char, decltype(dist)>(c, "distance_type")
                 ;
         }),
+    KT::expect_success("length of empty sequence", [](KT::context& c)->bool {
+            single_pass_cursor it(17), end(17);
+            auto dist(NA::distance(it, end));
+            return assert_equal(c, "sequence is empty", dist, 0u)
+                && KT::assert_type<unsigned char, decltype(dist)>(c, "distance_type")
+                ;
+        }),
 };
 
 int main(int ac, char* av[])
