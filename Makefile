@@ -23,7 +23,7 @@
 #   OTHER DEALINGS IN THE SOFTWARE. 
 #  ----------------------------------------------------------------------------
 
-COMPILER = clang
+COMPILER = unknown
 BUILDDIR = build-$(COMPILER)
 ifneq ($(CMAKE_CXX),)
     CMAKE_CXX_ARG = -DCMAKE_CXX_COMPILER=$(CMAKE_CXX)

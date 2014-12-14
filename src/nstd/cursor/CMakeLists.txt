@@ -29,6 +29,7 @@ project(kuhl::cursor)
 enable_testing()
 foreach(test
         array.t 
+        category.t 
         single_pass.t 
         )
   add_executable(${test} ${test})

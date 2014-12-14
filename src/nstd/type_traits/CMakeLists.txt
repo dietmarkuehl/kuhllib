@@ -28,9 +28,16 @@ project(nstd::type_traits)
 
 enable_testing()
 foreach(test
+        add_rvalue_reference.t 
+        choose_type.t 
+        declval.t 
         enable_if.t 
         integral_constant.t 
+        is_convertible.t 
         is_same.t 
+        remove_const.t 
+        remove_volatile.t 
+        remove_cv.t 
         )
   add_executable(${test} ${test})
   add_test(${test} ${test})
