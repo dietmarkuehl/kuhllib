@@ -28,6 +28,7 @@ project(nstd::projection)
 
 enable_testing()
 foreach(test
+	model_readable.t
 	model_value.t
         )
   add_executable(${test} ${test})
