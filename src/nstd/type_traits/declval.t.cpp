@@ -28,6 +28,7 @@
 #include "kuhl/test.hpp"
 
 namespace NT = nstd::type_traits;
+namespace KT = kuhl::test;
 
 // ----------------------------------------------------------------------------
 
@@ -38,34 +39,54 @@ namespace
 
 // ----------------------------------------------------------------------------
 
-static kuhl::test::testcase const tests[] = {
-    kuhl::test::expect_success("declval for a value is an rvalue", []()->bool{
+static KT::testcase const tests[] = {
+    KT::expect_success("declval for a value is an rvalue", []()->bool{
             return NT::is_same<foo&&, decltype(NT::declval<foo>())>::value;
         }),
-    kuhl::test::expect_success("declval for a const value is a const rvalue", []()->bool{
+    KT::expect_success("declval for a const value is a const rvalue", []()->bool{
             return NT::is_same<foo const&&, decltype(NT::declval<foo const>())>::value;
         }),
-    kuhl::test::expect_success("declval for a volatile value is a volatile rvalue", []()->bool{
+    KT::expect_success("declval for a volatile value is a volatile rvalue", []()->bool{
             return NT::is_same<foo volatile&&, decltype(NT::declval<foo volatile>())>::value;
         }),
-    kuhl::test::expect_success("declval for a const volatile value is a const volatile rvalue", []()->bool{
+    KT::expect_success("declval for a const volatile value is a const volatile rvalue", []()->bool{
             return NT::is_same<foo const volatile&&, decltype(NT::declval<foo const volatile>())>::value;
         }),
-    kuhl::test::expect_success("declval for an lvalue stays an lvalue", []()->bool{
+    KT::expect_success("declval for an lvalue stays an lvalue", []()->bool{
             return NT::is_same<foo&, decltype(NT::declval<foo&>())>::value;
         }),
-    kuhl::test::expect_success("declval for a const lvalue stays a const lvalue", []()->bool{
+    KT::expect_success("declval for a const lvalue stays a const lvalue", []()->bool{
             return NT::is_same<foo const&, decltype(NT::declval<foo const&>())>::value;
         }),
-    kuhl::test::expect_success("declval for a volatile lvalue stays a volatile lvalue", []()->bool{
+    KT::expect_success("declval for a volatile lvalue stays a volatile lvalue", []()->bool{
             return NT::is_same<foo volatile&, decltype(NT::declval<foo volatile&>())>::value;
         }),
-    kuhl::test::expect_success("declval for a const volatile lvalue stays a const volatile lvalue", []()->bool{
+    KT::expect_success("declval for a const volatile lvalue stays a const volatile lvalue", []()->bool{
             return NT::is_same<foo const volatile&, decltype(NT::declval<foo const volatile&>())>::value;
+        }),
+    KT::expect_success("declval for rvalue doesn't throw", [](KT::context& c)->bool{
+            return assert_true(c, noexcept(NT::declval<foo>()))
+                ;
+        }),
+    KT::expect_success("declval for lvalue doesn't throw", [](KT::context& c)->bool{
+            return assert_true(c, noexcept(NT::declval<foo&>()))
+                ;
+        }),
+    KT::expect_success("declval for lvalue const doesn't throw", [](KT::context& c)->bool{
+            return assert_true(c, noexcept(NT::declval<foo const &>()))
+                ;
+        }),
+    KT::expect_success("declval for lvalue volatile doesn't throw", [](KT::context& c)->bool{
+            return assert_true(c, noexcept(NT::declval<foo volatile &>()))
+                ;
+        }),
+    KT::expect_success("declval for lvalue const volatile doesn't throw", [](KT::context& c)->bool{
+            return assert_true(c, noexcept(NT::declval<foo const volatile &>()))
+                ;
         }),
 };
 
 int main(int ac, char* av[])
 {
-    return kuhl::test::run_tests("type_traits::declval()", ac, av, ::tests);
+    return KT::run_tests("type_traits::declval()", ac, av, ::tests);
 }

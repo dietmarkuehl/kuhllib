@@ -45,6 +45,18 @@ static KT::testcase const tests[] = {
                 && assert_equal(c, "assertion message", d.c_str(), std::string("failed assertion"));
                 ;
         }),
+    KT::expect_success("successful assertion for true: true", [](KT::context& c)->bool{
+            KT::context d;
+            return assert_true(c, "assertion passed", assert_true(d, true))
+                && assert_true(c, "no message", d.empty())
+                ;
+        }),
+    KT::expect_success("failed assertion for true: false", [](KT::context& c)->bool{
+            KT::context d;
+            return assert_false(c, "assertion failed", assert_true(d, false))
+                && assert_true(c, "the message is empty", d.empty())
+                ;
+        }),
     KT::expect_success("successful assertion for false: true and no message", [](KT::context& c)->bool{
             KT::context d;
             return assert_true(c, "assertion passed", assert_false(d, "successful assertion", false))
@@ -56,6 +68,18 @@ static KT::testcase const tests[] = {
             return assert_false(c, "assertion failed", assert_false(d, "failed assertion", true))
                 && assert_false(c, "the message is non-empty", d.empty())
                 && assert_equal(c, "assertion message", d.c_str(), std::string("failed assertion"));
+                ;
+        }),
+    KT::expect_success("successful assertion for false: true", [](KT::context& c)->bool{
+            KT::context d;
+            return assert_true(c, "assertion passed", assert_false(d, false))
+                && assert_true(c, "no message", d.empty())
+                ;
+        }),
+    KT::expect_success("failed assertion for false: false", [](KT::context& c)->bool{
+            KT::context d;
+            return assert_false(c, "assertion failed", assert_false(d, true))
+                && assert_true(c, "the message is empty", d.empty())
                 ;
         }),
     KT::expect_success("successful equal: true and no message", [](KT::context& c)->bool{

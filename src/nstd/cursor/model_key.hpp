@@ -26,7 +26,7 @@
 #ifndef INCLUDED_NSTD_CURSOR_MODEL_KEY
 #define INCLUDED_NSTD_CURSOR_MODEL_KEY
 
-#include <utility>
+#include "nstd/utility/forward.hpp"
 
 // ----------------------------------------------------------------------------
 
@@ -46,7 +46,7 @@ class nstd::cursor::model_key
     T key;
 public:
     template <typename S>
-    explicit model_key(S&& key): key(std::forward<S>(key)) {}
+    explicit model_key(S&& key): key(nstd::utility::forward<S>(key)) {}
     T const& get_key() const { return this->key; }
 };
 

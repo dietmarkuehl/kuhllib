@@ -26,7 +26,7 @@
 #ifndef INCLUDED_NSTD_PROJECTION_MODEL_VALUE
 #define INCLUDED_NSTD_PROJECTION_MODEL_VALUE
 
-#include <utility>
+#include "nstd/utility/forward.hpp"
 
 // ----------------------------------------------------------------------------
 
@@ -46,7 +46,7 @@ class nstd::projection::model_value
     T value;
 public:
     template <typename S>
-    explicit model_value(S&& value): value(std::forward<S>(value)) {}
+    explicit model_value(S&& value): value(nstd::utility::forward<S>(value)) {}
     T const& get_value() const { return this->value; }
 };
 

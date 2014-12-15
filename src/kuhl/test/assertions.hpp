@@ -41,7 +41,9 @@ namespace kuhl
         }
 
         auto assert_true(kuhl::test::context&, char const* message, bool value) -> bool;
+        auto assert_true(kuhl::test::context&, bool value) -> bool;
         auto assert_false(kuhl::test::context&, char const* message, bool value) -> bool;
+        auto assert_false(kuhl::test::context&, bool value) -> bool;
 
         template <typename A0, typename A1>
         auto assert_equal(kuhl::test::context& context, char const* message, A0&& a0, A1&& a1) -> bool;

@@ -1,4 +1,4 @@
-// nstd/type_traits/declval.hpp                                       -*-C++-*-
+// nstd/type_traits/remove_reference.hpp                              -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,21 +23,42 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_TYPE_TRAITS_DECLVAL
-#define INCLUDED_NSTD_TYPE_TRAITS_DECLVAL
-
-#include "nstd/type_traits/add_rvalue_reference.hpp"
+#ifndef INCLUDED_NSTD_TYPE_TRAITS_REMOVE_REFERENCE
+#define INCLUDED_NSTD_TYPE_TRAITS_REMOVE_REFERENCE
 
 // ----------------------------------------------------------------------------
 
 namespace nstd
 {
-    namespace type_traits
-    {
+    namespace type_traits {
+        template <typename T> struct remove_reference;
+        template <typename T> struct remove_reference<T&>;
+        template <typename T> struct remove_reference<T&&>;
         template <typename T>
-        auto declval() noexcept(true) -> nstd::type_traits::add_rvalue_reference_t<T>;
+        using remove_reference_t = typename nstd::type_traits::remove_reference<T>::type;
     }
+
 }
+
+// ----------------------------------------------------------------------------
+
+template <typename T>
+struct nstd::type_traits::remove_reference
+{
+    using type = T;
+};
+
+template <typename T>
+struct nstd::type_traits::remove_reference<T&>
+{
+    using type = T;
+};
+
+template <typename T>
+struct nstd::type_traits::remove_reference<T&&>
+{
+    using type = T;
+};
 
 // ----------------------------------------------------------------------------
 

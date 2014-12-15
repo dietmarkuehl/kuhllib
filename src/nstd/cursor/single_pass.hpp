@@ -28,8 +28,8 @@
 
 #include "nstd/type_traits/declval.hpp"
 #include "nstd/type_traits/enable_if.hpp"
+#include "nstd/utility/forward.hpp"
 #include <limits>
-#include <utility>
 
 // ----------------------------------------------------------------------------
 // To implement a single_pass cursor C provide the following operations:
@@ -67,7 +67,7 @@ namespace nstd
             struct key {
                 template <typename T>
                 auto constexpr operator()(T&& cursor) const -> decltype(cursor_key(cursor)) {
-                    return cursor_key(std::forward<T>(cursor));
+                    return cursor_key(nstd::utility::forward<T>(cursor));
                 }
             };
 
@@ -80,7 +80,7 @@ namespace nstd
                 template <typename S, typename T>
                 auto operator()(S&& cursor0, T&& cursor1) const -> bool {
                     using detail::cursor_at_same_pos;
-                    return cursor_at_same_pos(std::forward<S>(cursor0), std::forward<T>(cursor1));
+                    return cursor_at_same_pos(nstd::utility::forward<S>(cursor0), nstd::utility::forward<T>(cursor1));
                 }
             };
 

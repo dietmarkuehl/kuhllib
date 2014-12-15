@@ -24,21 +24,11 @@
 #  ----------------------------------------------------------------------------
 
 cmake_minimum_required(VERSION 3.0.0)
-project(nstd::type_traits)
+project(nstd::utility)
 
 enable_testing()
 foreach(test
-        add_rvalue_reference.t 
-        choose_type.t 
-        declval.t 
-        enable_if.t 
-        integral_constant.t 
-        is_convertible.t 
-        is_same.t 
-        remove_const.t 
-        remove_reference.t 
-        remove_volatile.t 
-        remove_cv.t 
+	forward.t
         )
   add_executable(${test} ${test})
   target_link_libraries(${test} PUBLIC kuhltest)
