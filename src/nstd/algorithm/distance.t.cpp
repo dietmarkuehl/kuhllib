@@ -37,7 +37,7 @@ namespace NC = nstd::cursor;
 namespace
 {
     struct single_pass_cursor: NC::single_pass {
-        using distance_type = unsigned char;
+        using difference_type = unsigned char;
         int index;
         explicit single_pass_cursor(int index): index(index) {}
     };
@@ -56,7 +56,7 @@ static KT::testcase const tests[] = {
             int array[] = { 1, 2, 3 };
             auto dist(NA::distance(NC::single_pass_begin(array), NC::single_pass_end(array)));
             return assert_equal(c, "three elements", dist, 3u)
-                && KT::assert_type<std::size_t, decltype(dist)>(c, "distance_type")
+                && KT::assert_type<std::size_t, decltype(dist)>(c, "difference_type")
                 ;
         }),
     KT::expect_success("single_pass cursors lvalues", [](KT::context& c)->bool{
@@ -66,21 +66,21 @@ static KT::testcase const tests[] = {
             auto dist(NA::distance(it, end));
             return assert_equal(c, "four elements", dist, 4u)
                 && assert_equal(c, "it didn't move", it.get_pointer(), NC::single_pass_begin(array).get_pointer())
-                && KT::assert_type<std::size_t, decltype(dist)>(c, "distance_type")
+                && KT::assert_type<std::size_t, decltype(dist)>(c, "difference_type")
                 ;
         }),
     KT::expect_success("custom cursor", [](KT::context& c)->bool {
             single_pass_cursor it(0), end(17);
             auto dist(NA::distance(it, end));
             return assert_equal(c, "17 elements", dist, 17u)
-                && KT::assert_type<unsigned char, decltype(dist)>(c, "distance_type")
+                && KT::assert_type<unsigned char, decltype(dist)>(c, "difference_type")
                 ;
         }),
     KT::expect_success("length of empty sequence", [](KT::context& c)->bool {
             single_pass_cursor it(17), end(17);
             auto dist(NA::distance(it, end));
             return assert_equal(c, "sequence is empty", dist, 0u)
-                && KT::assert_type<unsigned char, decltype(dist)>(c, "distance_type")
+                && KT::assert_type<unsigned char, decltype(dist)>(c, "difference_type")
                 ;
         }),
 };

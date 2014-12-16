@@ -84,34 +84,34 @@ namespace nstd
                 }
             };
 
-            struct distance_type_delegate {
+            struct difference_type_delegate {
                 template <typename T>
-                static auto size(T const&) -> typename T::distance_type;
+                static auto size(T const&) -> typename T::difference_type;
                 static auto size(...) -> std::size_t;
             };
 
             template <typename T>
-            auto cursor_distance_type(T cursor) -> decltype(distance_type_delegate::size(cursor));
+            auto cursor_difference_type(T cursor) -> decltype(difference_type_delegate::size(cursor));
 
             template <typename T>
-            auto distance_type(T cursor) -> decltype(cursor_distance_type(cursor));
+            auto difference_type(T cursor) -> decltype(cursor_difference_type(cursor));
         }
 
         constexpr nstd::cursor::detail::step        step{};
         constexpr nstd::cursor::detail::key         key{};
         constexpr nstd::cursor::detail::at_same_pos at_same_pos{};
 
-        template <typename T> struct distance_type;
+        template <typename T> struct difference_type;
         template <typename T>
-        using distance_type_t = typename nstd::cursor::distance_type<T>::type;
+        using difference_type_t = typename nstd::cursor::difference_type<T>::type;
     }
 }
 
 // ----------------------------------------------------------------------------
 
 template <typename T>
-struct nstd::cursor::distance_type {
-    typedef decltype(nstd::cursor::detail::distance_type(nstd::type_traits::declval<T>())) type;
+struct nstd::cursor::difference_type {
+    typedef decltype(nstd::cursor::detail::difference_type(nstd::type_traits::declval<T>())) type;
 };
 
 // ----------------------------------------------------------------------------

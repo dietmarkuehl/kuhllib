@@ -42,7 +42,7 @@ namespace nstd
                 constexpr distance() noexcept(true) {}
 
                 template <typename SinglePass, typename EndPoint>
-                auto operator()(SinglePass it, EndPoint end) const -> nstd::cursor::distance_type_t<SinglePass>;
+                auto operator()(SinglePass it, EndPoint end) const -> nstd::cursor::difference_type_t<SinglePass>;
                 //-dk:TODO random access version
                 //-dk:TODO segmented version
             };
@@ -54,7 +54,7 @@ namespace nstd
 // ----------------------------------------------------------------------------
 
 template <typename SinglePass, typename EndPoint>
-auto nstd::algorithm::detail::distance::operator()(SinglePass it, EndPoint end) const -> nstd::cursor::distance_type_t<SinglePass> {
+auto nstd::algorithm::detail::distance::operator()(SinglePass it, EndPoint end) const -> nstd::cursor::difference_type_t<SinglePass> {
     namespace NC = nstd::cursor;
     std::size_t rc{};
     while (!NC::at_same_pos(it, end)) {
