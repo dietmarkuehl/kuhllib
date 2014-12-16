@@ -24,7 +24,7 @@
 #  ----------------------------------------------------------------------------
 
 cmake_minimum_required(VERSION 3.0.0)
-project(nstd::projection)
+project(nstd_projection)
 
 enable_testing()
 foreach(test

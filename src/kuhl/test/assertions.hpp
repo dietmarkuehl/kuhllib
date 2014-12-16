@@ -77,18 +77,21 @@ auto kuhl::test::assert_equal(kuhl::test::context& context, A0&& a0, A1&& a1) ->
 template <typename T0, typename T1>
 struct kuhl::test::detail::is_same {
     static constexpr bool value{false};
+    static auto print(kuhl::test::context& context, char const* message) -> void {
+        context << message;
+    }
 };
 template <typename T>
 struct kuhl::test::detail::is_same<T, T> {
     static constexpr bool value{true};
+    static auto print(kuhl::test::context&, char const*) -> void {
+    }
 };
 
 template <typename T0, typename T1>
 auto kuhl::test::assert_type(kuhl::test::context& context, char const* message) -> bool
 {
-    if (!kuhl::test::detail::is_same<T0, T1>::value) {
-        context << message;
-    }
+    kuhl::test::detail::is_same<T0, T1>::print(context, message);
     return kuhl::test::detail::is_same<T0, T1>::value;
 }
 

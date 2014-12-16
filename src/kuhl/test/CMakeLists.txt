@@ -24,7 +24,7 @@
 #  ----------------------------------------------------------------------------
 
 cmake_minimum_required(VERSION 3.0.0)
-project(kuhl::test)
+project(kuhl_test)
 
 add_library(kuhltest STATIC
 	assertions.cpp

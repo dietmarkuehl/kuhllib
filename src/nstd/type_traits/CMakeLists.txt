@@ -24,7 +24,7 @@
 #  ----------------------------------------------------------------------------
 
 cmake_minimum_required(VERSION 3.0.0)
-project(nstd::type_traits)
+project(nstd_type_traits)
 
 enable_testing()
 foreach(test

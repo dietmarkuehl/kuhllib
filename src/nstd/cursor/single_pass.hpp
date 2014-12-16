@@ -66,7 +66,7 @@ namespace nstd
 
             struct key {
                 template <typename T>
-                auto constexpr operator()(T&& cursor) const -> decltype(cursor_key(cursor)) {
+                auto operator()(T&& cursor) const -> decltype(cursor_key(cursor)) {
                     return cursor_key(nstd::utility::forward<T>(cursor));
                 }
             };

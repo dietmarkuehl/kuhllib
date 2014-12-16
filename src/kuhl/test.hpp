@@ -30,6 +30,7 @@
 // This header merely aggregates different components.
 
 #include "kuhl/test/kuhltest_test.hpp"
+#include "kuhl/test/context.hpp"
 #include "kuhl/test/assertions.hpp"
 
 // ----------------------------------------------------------------------------

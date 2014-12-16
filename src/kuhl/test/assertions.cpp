@@ -35,7 +35,7 @@ auto kuhl::test::assert_true(kuhl::test::context& c, char const* message, bool v
     return value;
 }
 
-auto kuhl::test::assert_true(kuhl::test::context& c, bool value) -> bool
+auto kuhl::test::assert_true(kuhl::test::context&, bool value) -> bool
 {
     return value;
 }
@@ -48,7 +48,7 @@ auto kuhl::test::assert_false(kuhl::test::context& c, char const* message, bool 
     return !value;
 }
 
-auto kuhl::test::assert_false(kuhl::test::context& c, bool value) -> bool
+auto kuhl::test::assert_false(kuhl::test::context&, bool value) -> bool
 {
     return !value;
 }

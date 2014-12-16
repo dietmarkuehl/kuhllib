@@ -24,21 +24,24 @@
 #  ----------------------------------------------------------------------------
 
 cmake_minimum_required(VERSION 3.0.0)
-project(kuhl::lib)
+project(kuhllib)
 
-add_definitions(-std=c++11)
 include_directories(${CMAKE_SOURCE_DIR})
+
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+else()
+    add_definitions(-std=c++11)
+endif()
 
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror")
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror")
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w2 -Werror")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w2 -Werror")
 endif()
-
 
 enable_testing()
 add_subdirectory(kuhl)

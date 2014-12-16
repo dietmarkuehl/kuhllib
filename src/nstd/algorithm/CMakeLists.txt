@@ -24,7 +24,7 @@
 #  ----------------------------------------------------------------------------
 
 cmake_minimum_required(VERSION 3.0.0)
-project(nstd::algorithm)
+project(nstd_algorithm)
 
 enable_testing()
 foreach(test

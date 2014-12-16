@@ -65,23 +65,23 @@ static KT::testcase const tests[] = {
             return NT::is_same<foo const volatile&, decltype(NT::declval<foo const volatile&>())>::value;
         }),
     KT::expect_success("declval for rvalue doesn't throw", [](KT::context& c)->bool{
-            return assert_true(c, noexcept(NT::declval<foo>()))
+            return KT::assert_true(c, noexcept(NT::declval<foo>()))
                 ;
         }),
     KT::expect_success("declval for lvalue doesn't throw", [](KT::context& c)->bool{
-            return assert_true(c, noexcept(NT::declval<foo&>()))
+            return KT::assert_true(c, noexcept(NT::declval<foo&>()))
                 ;
         }),
     KT::expect_success("declval for lvalue const doesn't throw", [](KT::context& c)->bool{
-            return assert_true(c, noexcept(NT::declval<foo const &>()))
+            return KT::assert_true(c, noexcept(NT::declval<foo const &>()))
                 ;
         }),
     KT::expect_success("declval for lvalue volatile doesn't throw", [](KT::context& c)->bool{
-            return assert_true(c, noexcept(NT::declval<foo volatile &>()))
+            return KT::assert_true(c, noexcept(NT::declval<foo volatile &>()))
                 ;
         }),
     KT::expect_success("declval for lvalue const volatile doesn't throw", [](KT::context& c)->bool{
-            return assert_true(c, noexcept(NT::declval<foo const volatile &>()))
+            return KT::assert_true(c, noexcept(NT::declval<foo const volatile &>()))
                 ;
         }),
 };

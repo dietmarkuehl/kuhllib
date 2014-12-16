@@ -76,11 +76,11 @@ static KT::testcase const tests[] = {
                 ;
         }),
     KT::expect_success("forward() doesn't throw", [](KT::context& c)->bool{
-            return assert_true(c, "rvlaue", noexcept(NU::forward<foo&&>(NT::declval<foo>())))
-                && assert_true(c, "lvlaue", noexcept(NU::forward<foo&>(NT::declval<foo&>())))
-                && assert_true(c, "lvlaue const", noexcept(NU::forward<foo const&>(NT::declval<foo const&>())))
-                && assert_true(c, "lvlaue volatile", noexcept(NU::forward<foo volatile&>(NT::declval<foo volatile&>())))
-                && assert_true(c, "lvlaue const volatile", noexcept(NU::forward<foo const volatile&>(NT::declval<foo const volatile&>())))
+            return KT::assert_true(c, "rvlaue", noexcept(NU::forward<foo&&>(NT::declval<foo>())))
+                && KT::assert_true(c, "lvlaue", noexcept(NU::forward<foo&>(NT::declval<foo&>())))
+                && KT::assert_true(c, "lvlaue const", noexcept(NU::forward<foo const&>(NT::declval<foo const&>())))
+                && KT::assert_true(c, "lvlaue volatile", noexcept(NU::forward<foo volatile&>(NT::declval<foo volatile&>())))
+                && KT::assert_true(c, "lvlaue const volatile", noexcept(NU::forward<foo const volatile&>(NT::declval<foo const volatile&>())))
                 ;
         }),
 };
