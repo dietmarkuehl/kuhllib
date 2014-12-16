@@ -29,8 +29,9 @@ project(nstd_algorithm)
 enable_testing()
 foreach(test
         distance.t
+        find_if.t
         )
   add_executable(${test} ${test})
   target_link_libraries(${test} PUBLIC kuhltest)
-  add_test(${test} ${test})
+  add_test(NAME ${test} COMMAND $<TARGET_FILE:${test}>)
 endforeach(test)
