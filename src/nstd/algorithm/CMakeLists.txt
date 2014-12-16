@@ -29,6 +29,7 @@ project(nstd_algorithm)
 enable_testing()
 foreach(test
         distance.t
+        find.t
         find_if.t
         )
   add_executable(${test} ${test})

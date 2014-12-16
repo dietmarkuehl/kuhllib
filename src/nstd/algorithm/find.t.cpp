@@ -1,4 +1,4 @@
-// nstd/algorithm/find_if.t.cpp                                       -*-C++-*-
+// nstd/algorithm/find.t.cpp                                          -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,68 +23,65 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/algorithm/find_if.hpp"
+#include "nstd/algorithm/find.hpp"
 #include "nstd/cursor/single_pass.hpp"
 #include "nstd/cursor/model_single_pass.hpp"
 #include "nstd/projection/model_readable.hpp"
 #include "nstd/projection/model_value.hpp"
+#include "nstd/utility/equality_comparable.hpp"
 #include "kuhl/test.hpp"
 
 namespace NA = nstd::algorithm;
 namespace NC = nstd::cursor;
 namespace NP = nstd::projection;
+namespace NU = nstd::utility;
 namespace KT = kuhl::test;
 
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
-    KT::expect_success("find_if() on empty range finds end", [](KT::context& c)->bool{
+    KT::expect_success("find() on empty range finds end", [](KT::context& c)->bool{
             int array[] = { 1 };
             auto begin = NC::single_pass_begin(array);
             NC::step(begin);
             auto end = NC::single_pass_end(array);
-            auto it = NA::find_if(NP::model_readable(), begin, end,
-                                  [](NP::model_value<int> const& v) { return v.get_value() == 17; });
+            auto it = NA::find(NP::model_readable(), begin, end, NP::model_value<int, NU::equality_comparable>(17));
             return KT::assert_true(c, "cursor at end", NC::at_same_pos(it, end))
                 && KT::assert_type<NC::model_single_pass<int>, decltype(it)>(c, "a cursor is returned")
                 ;
         }),
-    KT::expect_success("find_if() on range without match find end", [](KT::context& c)->bool{
+    KT::expect_success("find() on range without match find end", [](KT::context& c)->bool{
             int array[] = { 1, 2, 3, 4, 5, 6, 7 };
             auto begin = NC::single_pass_begin(array);
             auto end = NC::single_pass_end(array);
-            auto it = NA::find_if(NP::model_readable(), begin, end,
-                                  [](NP::model_value<int> const& v) { return v.get_value() == 17; });
+            auto it = NA::find(NP::model_readable(), begin, end, NP::model_value<int, NU::equality_comparable>(17));
             return KT::assert_true(c, "cursor at end", NC::at_same_pos(it, end))
                 && KT::assert_type<NC::model_single_pass<int>, decltype(it)>(c, "a cursor is returned")
                 ;
         }),
-    KT::expect_success("find_if() on range where first element matches finds begin", [](KT::context& c)->bool{
+    KT::expect_success("find() on range where first element matches finds begin", [](KT::context& c)->bool{
             int array[] = { 1, 2, 3, 4, 5, 6, 7 };
             auto begin = NC::single_pass_begin(array);
             auto end = NC::single_pass_end(array);
-            auto it = NA::find_if(NP::model_readable(), begin, end,
-                                  [](NP::model_value<int> const& v) { return v.get_value() == 1; });
+            auto it = NA::find(NP::model_readable(), begin, end, NP::model_value<int, NU::equality_comparable>(1));
             return KT::assert_equal(c, "cursor at beginning", begin.get_pointer(), it.get_pointer())
                 && KT::assert_type<NC::model_single_pass<int>, decltype(it)>(c, "a cursor is returned")
                 ;
         }),
-    KT::expect_success("find_if() on range where middle element matches finds middle", [](KT::context& c)->bool{
+    KT::expect_success("find() on range where middle element matches finds middle", [](KT::context& c)->bool{
             int array[] = { 1, 2, 3, 4, 5, 6, 7 };
             auto begin = NC::single_pass_begin(array);
             auto end = NC::single_pass_end(array);
-            auto it = NA::find_if(NP::model_readable(), begin, end,
-                                  [](NP::model_value<int> const& v) { return v.get_value() == 4; });
+            auto it = NA::find(NP::model_readable(), begin, end, NP::model_value<int, NU::equality_comparable>(4));
             return KT::assert_equal(c, "cursor at beginning", begin.get_pointer() + 3, it.get_pointer())
                 && KT::assert_type<NC::model_single_pass<int>, decltype(it)>(c, "a cursor is returned")
                 ;
         }),
-    KT::expect_success("find_if() on range where last element matches finds last", [](KT::context& c)->bool{
+    KT::expect_success("find() on range where last element matches finds last", [](KT::context& c)->bool{
             int array[] = { 1, 2, 3, 4, 5, 6, 7 };
             auto begin = NC::single_pass_begin(array);
             auto end = NC::single_pass_end(array);
-            auto it = NA::find_if(NP::model_readable(), begin, end,
-                                  [](NP::model_value<int> const& v) { return v.get_value() == 7; });
+            auto it = NA::find(NP::model_readable(), begin, end, NP::model_value<int, NU::equality_comparable>(7));
             return KT::assert_equal(c, "cursor at beginning", begin.get_pointer() + 6, it.get_pointer())
                 && KT::assert_type<NC::model_single_pass<int>, decltype(it)>(c, "a cursor is returned")
                 ;
@@ -94,5 +91,5 @@ static KT::testcase const tests[] = {
 
 int main(int ac, char* av[])
 {
-    return KT::run_tests("algorithm::find_if", ac, av, ::tests);
+    return KT::run_tests("algorithm::find", ac, av, ::tests);
 }

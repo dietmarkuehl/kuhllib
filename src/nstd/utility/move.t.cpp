@@ -1,4 +1,4 @@
-// nstd/projection/model_value.hpp                                    -*-C++-*-
+// nstd/utility/move.t.cpp                                            -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,53 +23,52 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_PROJECTION_MODEL_VALUE
-#define INCLUDED_NSTD_PROJECTION_MODEL_VALUE
+#include "nstd/utility/move.hpp"
+#include "nstd/type_traits/declval.hpp"
+#include "kuhl/test.hpp"
 
-#include "nstd/utility/forward.hpp"
+namespace NT = nstd::type_traits;
+namespace NU = nstd::utility;
+namespace KT = kuhl::test;
 
 // ----------------------------------------------------------------------------
 
-namespace nstd
+namespace
 {
-    namespace projection {
-        template <typename T, typename...> class model_value;
-        template <typename S, typename...SP, typename T, typename... TP>
-        int compare(model_value<S, SP...> const&, model_value<T, TP...> const&);
-    }
-
+    struct foo {
+        foo() = default;
+        foo(foo const&) = delete;
+        foo(foo&&) = delete;
+    };
 }
 
 // ----------------------------------------------------------------------------
 
-template <typename T, typename...>
-class nstd::projection::model_value
-{
-    T value;
-public:
-    model_value(model_value<T>& other): value(other.value) {}
-    model_value(model_value<T> const& other): value(other.value) {}
-    model_value(model_value<T>&& other): value(other.value) {}
-    
-    template <typename S, typename... P>
-    model_value(model_value<S, P...>& other): value(other.get_value()) {}
-    template <typename S, typename... P>
-    model_value(model_value<S, P...> const& other): value(other.get_value()) {}
-    template <typename S, typename... P>
-    model_value(model_value<S, P...>&& other): value(other.get_value()) {}
-
-    template <typename S>
-    explicit model_value(S&& value): value(nstd::utility::forward<S>(value)) {}
-    T const& get_value() const { return this->value; }
+static KT::testcase const tests[] = {
+    KT::expect_success("move() value yields an rvalue reference", [](KT::context& c)->bool{
+            return KT::assert_type<foo&&, decltype(NU::move(NT::declval<foo>()))>(c, "type (declval)")
+                && KT::assert_type<foo&&, decltype(NU::move(foo()))>(c, "type (temporary)")
+                ;
+        }),
+    KT::expect_success("move() const value yields a const rvalue reference", [](KT::context& c)->bool{
+            return KT::assert_type<foo const&&, decltype(NU::move(NT::declval<foo const>()))>(c, "type")
+                ;
+        }),
+    KT::expect_success("move() reference yields a rvalue reference", [](KT::context& c)->bool{
+            foo object{};
+            return KT::assert_type<foo&&, decltype(NU::move(NT::declval<foo&>()))>(c, "type (declval)")
+                && KT::assert_type<foo&&, decltype(NU::move(object))>(c, "type (object)")
+                ;
+        }),
+    KT::expect_success("move() const reference yields a const rvalue reference", [](KT::context& c)->bool{
+            foo const object{};
+            return KT::assert_type<foo const&&, decltype(NU::move(NT::declval<foo const&>()))>(c, "type (declval)")
+                && KT::assert_type<foo const&&, decltype(NU::move(object))>(c, "type (object)")
+                ;
+        }),
 };
 
-// ----------------------------------------------------------------------------
-
-template <typename S, typename...SP, typename T, typename... TP>
-int nstd::projection::compare(model_value<S, SP...> const& v0, model_value<T, TP...> const& v1) {
-    return v0.get_value() - v1.get_value();
+int main(int ac, char* av[])
+{
+    return KT::run_tests("utility::move", ac, av, ::tests);
 }
-
-// ----------------------------------------------------------------------------
-
-#endif

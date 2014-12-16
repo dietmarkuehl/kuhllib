@@ -1,4 +1,4 @@
-// nstd/projection/model_value.hpp                                    -*-C++-*-
+// nstd/algorithm/find.hpp                                            -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,51 +23,41 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_PROJECTION_MODEL_VALUE
-#define INCLUDED_NSTD_PROJECTION_MODEL_VALUE
+#ifndef INCLUDED_NSTD_ALGORITHM_FIND
+#define INCLUDED_NSTD_ALGORITHM_FIND
 
-#include "nstd/utility/forward.hpp"
+#include "nstd/algorithm/find_if.hpp"
+#include "nstd/utility/move.hpp"
 
 // ----------------------------------------------------------------------------
 
 namespace nstd
 {
-    namespace projection {
-        template <typename T, typename...> class model_value;
-        template <typename S, typename...SP, typename T, typename... TP>
-        int compare(model_value<S, SP...> const&, model_value<T, TP...> const&);
+    namespace algorithm {
+        namespace detail {
+            struct find {
+                template <typename T>
+                struct predicate {
+                    T value;
+                    predicate(T value): value(value) {}
+                    template <typename S>
+                    auto operator()(S&& value) const -> bool {
+                        return this->value == value;
+                    }
+                };
+            public:
+                template <typename Projection,
+                          typename SinglePass, typename EndPoint,
+                          typename Value>
+                auto operator()(Projection projection, SinglePass begin, EndPoint end, Value value) const -> SinglePass {
+                    // return nstd::algorithm::find_if(projection, begin, end, predicate<Value>(nstd::utility::move(value)));
+                    return nstd::algorithm::find_if(projection, begin, end, predicate<Value>(value));
+                }
+            };
+        }
+        constexpr nstd::algorithm::detail::find find{};
     }
 
-}
-
-// ----------------------------------------------------------------------------
-
-template <typename T, typename...>
-class nstd::projection::model_value
-{
-    T value;
-public:
-    model_value(model_value<T>& other): value(other.value) {}
-    model_value(model_value<T> const& other): value(other.value) {}
-    model_value(model_value<T>&& other): value(other.value) {}
-    
-    template <typename S, typename... P>
-    model_value(model_value<S, P...>& other): value(other.get_value()) {}
-    template <typename S, typename... P>
-    model_value(model_value<S, P...> const& other): value(other.get_value()) {}
-    template <typename S, typename... P>
-    model_value(model_value<S, P...>&& other): value(other.get_value()) {}
-
-    template <typename S>
-    explicit model_value(S&& value): value(nstd::utility::forward<S>(value)) {}
-    T const& get_value() const { return this->value; }
-};
-
-// ----------------------------------------------------------------------------
-
-template <typename S, typename...SP, typename T, typename... TP>
-int nstd::projection::compare(model_value<S, SP...> const& v0, model_value<T, TP...> const& v1) {
-    return v0.get_value() - v1.get_value();
 }
 
 // ----------------------------------------------------------------------------

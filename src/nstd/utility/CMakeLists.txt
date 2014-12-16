@@ -28,7 +28,9 @@ project(nstd_utility)
 
 enable_testing()
 foreach(test
+	equality_comparable.t
 	forward.t
+	move.t
         )
   add_executable(${test} ${test})
   target_link_libraries(${test} PUBLIC kuhltest)
