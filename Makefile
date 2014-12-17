@@ -63,3 +63,11 @@ all:
 clean:
 	$(RM) -r $(BUILDDIR)
 	$(RM) *~ mkerr olderr
+
+.PHONY: clean-all
+clean-all:
+	$(MAKE) clean
+	$(MAKE) COMPILER=clang clean
+	$(MAKE) COMPILER=gcc clean
+	$(MAKE) COMPILER=intel clean
+

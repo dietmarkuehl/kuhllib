@@ -33,6 +33,7 @@ foreach(test
         distance.t
         find.t
         find_if.t
+        none_of.t
         )
   add_executable(${test} ${test})
   target_link_libraries(${test} PUBLIC kuhltest)
