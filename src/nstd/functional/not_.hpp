@@ -1,4 +1,4 @@
-// nstd/algorithm/distance.hpp                                        -*-C++-*-
+// nstd/functional/not_.hpp                                           -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,45 +23,48 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_ALGORITHM_DISTANCE
-#define INCLUDED_NSTD_ALGORITHM_DISTANCE
+#ifndef INCLUDED_NSTD_FUNCTIONAL_NOT_
+#define INCLUDED_NSTD_FUNCTIONAL_NOT_
 
-#include "nstd/cursor/single_pass.hpp"
-#include <cstddef>
+#include "nstd/utility/forward.hpp"
 
 // ----------------------------------------------------------------------------
 
 namespace nstd
 {
-    namespace algorithm
-    {
-        namespace detail
-        {
-            struct distance
-            {
-                constexpr distance() noexcept(true) {}
-
-                template <typename SinglePass, typename EndPoint>
-                auto operator()(SinglePass it, EndPoint end) const -> nstd::cursor::difference_type_t<SinglePass>;
-                //-dk:TODO random access version
-                //-dk:TODO segmented version
-            };
-        }
-        constexpr nstd::algorithm::detail::distance distance{};
+    namespace functional {
+        template <typename Predicate> class n_ary_negate;
+        template <typename Predicate>
+        auto not_(Predicate&& predicate) -> nstd::functional::n_ary_negate<Predicate>;
     }
 }
 
 // ----------------------------------------------------------------------------
 
-template <typename SinglePass, typename EndPoint>
-auto nstd::algorithm::detail::distance::operator()(SinglePass it, EndPoint end) const -> nstd::cursor::difference_type_t<SinglePass> {
-    namespace NC = nstd::cursor;
-    nstd::cursor::difference_type_t<SinglePass> rc{};
-    while (!NC::at_same_pos(it, end)) {
-        ++rc;
-        NC::step(it);
+template <typename Predicate>
+class nstd::functional::n_ary_negate
+{
+    Predicate predicate;
+ public:
+    template <typename P>
+    n_ary_negate(P&& predicate)
+        : predicate(nstd::utility::forward<P>(predicate)) {
     }
-    return rc;
+    
+    template <typename... Args>
+    auto operator()(Args&&... args) -> bool {
+        return !this->predicate(nstd::utility::forward<Args>(args)...);
+    }
+    template <typename... Args>
+    auto operator()(Args&&... args) const -> bool {
+        return !this->predicate(nstd::utility::forward<Args>(args)...);
+    }
+};
+
+template <typename Predicate>
+auto nstd::functional::not_(Predicate&& predicate) -> nstd::functional::n_ary_negate<Predicate>
+{
+    return nstd::functional::n_ary_negate<Predicate>(nstd::utility::forward<Predicate>(predicate));
 }
 
 // ----------------------------------------------------------------------------

@@ -24,11 +24,14 @@
 #  ----------------------------------------------------------------------------
 
 cmake_minimum_required(VERSION 3.0.0)
-project(nstd)
+project(nstd_algorithm)
 
-add_subdirectory(algorithm)
-add_subdirectory(cursor)
-add_subdirectory(functional)
-add_subdirectory(projection)
-add_subdirectory(type_traits)
-add_subdirectory(utility)
+enable_testing()
+foreach(test
+	model_predicate.t
+	not_.t
+        )
+  add_executable(${test} ${test})
+  target_link_libraries(${test} PUBLIC kuhltest)
+  add_test(NAME ${test} COMMAND $<TARGET_FILE:${test}>)
+endforeach(test)

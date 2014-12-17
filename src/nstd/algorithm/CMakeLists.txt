@@ -28,6 +28,7 @@ project(nstd_algorithm)
 
 enable_testing()
 foreach(test
+	all_of.t
         distance.t
         find.t
         find_if.t

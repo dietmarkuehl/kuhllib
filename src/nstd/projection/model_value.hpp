@@ -47,9 +47,8 @@ class nstd::projection::model_value
 {
     T value;
 public:
-    model_value(model_value<T>& other): value(other.value) {}
-    model_value(model_value<T> const& other): value(other.value) {}
-    model_value(model_value<T>&& other): value(other.value) {}
+    model_value(model_value const& other): value(other.value) {}
+    model_value(model_value&& other): value(other.value) {}
     
     template <typename S, typename... P>
     model_value(model_value<S, P...>& other): value(other.get_value()) {}

@@ -1,4 +1,4 @@
-// nstd/algorithm/distance.hpp                                        -*-C++-*-
+// nstd/functional/model_predicate.hpp                                -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,46 +23,33 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_ALGORITHM_DISTANCE
-#define INCLUDED_NSTD_ALGORITHM_DISTANCE
+#ifndef INCLUDED_NSTD_FUNCTIONAL_MODEL_PREDICATE
+#define INCLUDED_NSTD_FUNCTIONAL_MODEL_PREDICATE
 
-#include "nstd/cursor/single_pass.hpp"
-#include <cstddef>
+#include "nstd/projection/model_value.hpp"
 
 // ----------------------------------------------------------------------------
 
 namespace nstd
 {
-    namespace algorithm
-    {
-        namespace detail
-        {
-            struct distance
-            {
-                constexpr distance() noexcept(true) {}
-
-                template <typename SinglePass, typename EndPoint>
-                auto operator()(SinglePass it, EndPoint end) const -> nstd::cursor::difference_type_t<SinglePass>;
-                //-dk:TODO random access version
-                //-dk:TODO segmented version
-            };
-        }
-        constexpr nstd::algorithm::detail::distance distance{};
+    namespace functional {
+        class model_predicate;
     }
+
 }
 
 // ----------------------------------------------------------------------------
 
-template <typename SinglePass, typename EndPoint>
-auto nstd::algorithm::detail::distance::operator()(SinglePass it, EndPoint end) const -> nstd::cursor::difference_type_t<SinglePass> {
-    namespace NC = nstd::cursor;
-    nstd::cursor::difference_type_t<SinglePass> rc{};
-    while (!NC::at_same_pos(it, end)) {
-        ++rc;
-        NC::step(it);
+class nstd::functional::model_predicate
+{
+private:
+    int value;
+public:
+    model_predicate(int value): value(value) {}
+    auto operator()(nstd::projection::model_value<int> value) const -> bool {
+        return this->value == value.get_value();
     }
-    return rc;
-}
+};
 
 // ----------------------------------------------------------------------------
 

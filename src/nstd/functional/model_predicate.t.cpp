@@ -1,4 +1,4 @@
-// nstd/algorithm/distance.hpp                                        -*-C++-*-
+// nstd/functional/model_predicate.t.cpp                              -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,47 +23,30 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_ALGORITHM_DISTANCE
-#define INCLUDED_NSTD_ALGORITHM_DISTANCE
+#include "nstd/functional/model_predicate.hpp"
+#include "nstd/projection/model_value.hpp"
+#include "kuhl/test.hpp"
 
-#include "nstd/cursor/single_pass.hpp"
-#include <cstddef>
+namespace NF = nstd::functional;
+namespace NP = nstd::projection;
+namespace KT = kuhl::test;
 
 // ----------------------------------------------------------------------------
 
-namespace nstd
+static KT::testcase const tests[] = {
+    KT::expect_success("a matching value yields true", [](KT::context& c)->bool{
+            return KT::assert_true(c, "value", NF::model_predicate(43)(NP::model_value<int>(43)))
+                && KT::assert_type<bool, decltype(NF::model_predicate(43)(NP::model_value<int>(43)))>(c, "type")
+                ;
+        }),
+    KT::expect_success("a mismatching value yields false", [](KT::context& c)->bool{
+            return KT::assert_false(c, "value", NF::model_predicate(17)(NP::model_value<int>(43)))
+                && KT::assert_type<bool, decltype(NF::model_predicate(17)(NP::model_value<int>(43)))>(c, "type")
+                ;
+        }),
+};
+
+int main(int ac, char* av[])
 {
-    namespace algorithm
-    {
-        namespace detail
-        {
-            struct distance
-            {
-                constexpr distance() noexcept(true) {}
-
-                template <typename SinglePass, typename EndPoint>
-                auto operator()(SinglePass it, EndPoint end) const -> nstd::cursor::difference_type_t<SinglePass>;
-                //-dk:TODO random access version
-                //-dk:TODO segmented version
-            };
-        }
-        constexpr nstd::algorithm::detail::distance distance{};
-    }
+    return KT::run_tests("functional::model_predicate", ac, av, ::tests);
 }
-
-// ----------------------------------------------------------------------------
-
-template <typename SinglePass, typename EndPoint>
-auto nstd::algorithm::detail::distance::operator()(SinglePass it, EndPoint end) const -> nstd::cursor::difference_type_t<SinglePass> {
-    namespace NC = nstd::cursor;
-    nstd::cursor::difference_type_t<SinglePass> rc{};
-    while (!NC::at_same_pos(it, end)) {
-        ++rc;
-        NC::step(it);
-    }
-    return rc;
-}
-
-// ----------------------------------------------------------------------------
-
-#endif

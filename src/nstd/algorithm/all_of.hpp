@@ -1,4 +1,4 @@
-// nstd/algorithm/distance.hpp                                        -*-C++-*-
+// nstd/algorithm/all_of.hpp                                          -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,45 +23,42 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_ALGORITHM_DISTANCE
-#define INCLUDED_NSTD_ALGORITHM_DISTANCE
+#ifndef INCLUDED_NSTD_ALGORITHM_ALL_OF
+#define INCLUDED_NSTD_ALGORITHM_ALL_OF
 
+#include "nstd/algorithm/find_if.hpp"
 #include "nstd/cursor/single_pass.hpp"
-#include <cstddef>
+#include "nstd/functional/not_.hpp"
 
 // ----------------------------------------------------------------------------
 
 namespace nstd
 {
-    namespace algorithm
-    {
-        namespace detail
-        {
-            struct distance
-            {
-                constexpr distance() noexcept(true) {}
-
-                template <typename SinglePass, typename EndPoint>
-                auto operator()(SinglePass it, EndPoint end) const -> nstd::cursor::difference_type_t<SinglePass>;
-                //-dk:TODO random access version
-                //-dk:TODO segmented version
+    namespace algorithm {
+        namespace detail {
+            struct all_of {
+                constexpr all_of() noexcept(true) {}
+                template <typename Readable,
+                          typename SinglePass, typename EndPoint,
+                          typename UnaryPredicate>
+                auto operator()(Readable, SinglePass, EndPoint, UnaryPredicate) const -> bool;
             };
         }
-        constexpr nstd::algorithm::detail::distance distance{};
+        constexpr nstd::algorithm::detail::all_of all_of{};
     }
+
 }
 
 // ----------------------------------------------------------------------------
 
-template <typename SinglePass, typename EndPoint>
-auto nstd::algorithm::detail::distance::operator()(SinglePass it, EndPoint end) const -> nstd::cursor::difference_type_t<SinglePass> {
-    namespace NC = nstd::cursor;
-    nstd::cursor::difference_type_t<SinglePass> rc{};
-    while (!NC::at_same_pos(it, end)) {
-        ++rc;
-        NC::step(it);
-    }
-    return rc;
+template <typename Readable,
+          typename SinglePass, typename EndPoint,
+          typename UnaryPredicate>
+auto nstd::algorithm::detail::all_of::operator()(Readable readable,
+                                                 SinglePass begin, EndPoint end,
+                                                 UnaryPredicate predicate) const -> bool {
+    return nstd::cursor::at_same_pos(nstd::algorithm::find_if(readable, begin, end, nstd::functional::not_(predicate)),
+                                     end);
 }
 
 // ----------------------------------------------------------------------------
