@@ -31,6 +31,8 @@ foreach(test
 	equality_comparable.t
 	forward.t
 	move.t
+	pair.t
+	swap.t
         )
   add_executable(${test} ${test})
   target_link_libraries(${test} PUBLIC kuhltest)

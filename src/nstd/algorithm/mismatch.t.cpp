@@ -1,4 +1,4 @@
-// nstd/type_traits/add_rvalue_reference.hpp                          -*-C++-*-
+// nstd/algorithm/mismatch.t.cpp                                      -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,57 +23,21 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_TYPE_TRAITS_ADD_RVALUE_REFERENCE
-#define INCLUDED_NSTD_TYPE_TRAITS_ADD_RVALUE_REFERENCE
+#include "nstd/algorithm/mismatch.hpp"
+#include "kuhl/test.hpp"
+
+namespace NA = nstd::algorithm;
+namespace KT = kuhl::test;
 
 // ----------------------------------------------------------------------------
 
-namespace nstd
+static KT::testcase const tests[] = {
+    KT::expect_failure("placeholder", [](KT::context& c)->bool{
+           return false;
+        }),
+};
+
+int main(int ac, char* av[])
 {
-    namespace type_traits
-    {
-        template <typename> struct add_rvalue_reference;
-        template <> struct add_rvalue_reference<void>;
-        template <> struct add_rvalue_reference<void const>;
-        template <> struct add_rvalue_reference<void volatile>;
-        template <> struct add_rvalue_reference<void const volatile>;
-        template <typename T>
-        using add_rvalue_reference_t = typename nstd::type_traits::add_rvalue_reference<T>::type;
-    }
+    return KT::run_tests("TODO", ac, av, ::tests);
 }
-
-// ----------------------------------------------------------------------------
-
-template <typename T>
-struct nstd::type_traits::add_rvalue_reference
-{
-    using type = T&&;
-};
-
-template <>
-struct nstd::type_traits::add_rvalue_reference<void>
-{
-    using type = void;
-};
-
-template <>
-struct nstd::type_traits::add_rvalue_reference<void const>
-{
-    using type = void const;
-};
-
-template <>
-struct nstd::type_traits::add_rvalue_reference<void volatile>
-{
-    using type = void volatile;
-};
-
-template <>
-struct nstd::type_traits::add_rvalue_reference<void const volatile>
-{
-    using type = void const volatile;
-};
-
-// ----------------------------------------------------------------------------
-
-#endif

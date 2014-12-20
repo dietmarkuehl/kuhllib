@@ -1,4 +1,4 @@
-// nstd/type_traits/add_rvalue_reference.hpp                          -*-C++-*-
+// nstd/type_traits/condition.hpp                                     -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,55 +23,33 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_TYPE_TRAITS_ADD_RVALUE_REFERENCE
-#define INCLUDED_NSTD_TYPE_TRAITS_ADD_RVALUE_REFERENCE
+#ifndef INCLUDED_NSTD_TYPE_TRAITS_CONDITION
+#define INCLUDED_NSTD_TYPE_TRAITS_CONDITION
 
 // ----------------------------------------------------------------------------
 
 namespace nstd
 {
-    namespace type_traits
-    {
-        template <typename> struct add_rvalue_reference;
-        template <> struct add_rvalue_reference<void>;
-        template <> struct add_rvalue_reference<void const>;
-        template <> struct add_rvalue_reference<void volatile>;
-        template <> struct add_rvalue_reference<void const volatile>;
-        template <typename T>
-        using add_rvalue_reference_t = typename nstd::type_traits::add_rvalue_reference<T>::type;
+    namespace type_traits {
+        template <bool, typename T0, typename T1> struct condition;
+        template <typename T0, typename T1> struct condition<true, T0, T1>;
+        template <typename T0, typename T1> struct condition<false, T0, T1>;
+        
+        template <bool Condition, typename T0, typename T1>
+        using condition_t = typename condition<Condition, T0, T1>::type;
     }
+
 }
 
 // ----------------------------------------------------------------------------
 
-template <typename T>
-struct nstd::type_traits::add_rvalue_reference
-{
-    using type = T&&;
+template <typename T0, typename T1>
+struct nstd::type_traits::condition<true, T0, T1> {
+    using type = T0;
 };
-
-template <>
-struct nstd::type_traits::add_rvalue_reference<void>
-{
-    using type = void;
-};
-
-template <>
-struct nstd::type_traits::add_rvalue_reference<void const>
-{
-    using type = void const;
-};
-
-template <>
-struct nstd::type_traits::add_rvalue_reference<void volatile>
-{
-    using type = void volatile;
-};
-
-template <>
-struct nstd::type_traits::add_rvalue_reference<void const volatile>
-{
-    using type = void const volatile;
+template <typename T0, typename T1>
+struct nstd::type_traits::condition<false, T0, T1> {
+    using type = T1;
 };
 
 // ----------------------------------------------------------------------------

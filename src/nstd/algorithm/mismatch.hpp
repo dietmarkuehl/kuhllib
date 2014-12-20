@@ -1,4 +1,4 @@
-// nstd/type_traits/add_rvalue_reference.hpp                          -*-C++-*-
+// nstd/algorithm/mismatch.hpp                                        -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,56 +23,41 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_TYPE_TRAITS_ADD_RVALUE_REFERENCE
-#define INCLUDED_NSTD_TYPE_TRAITS_ADD_RVALUE_REFERENCE
+#ifndef INCLUDED_NSTD_ALGORITHM_MISMATCH
+#define INCLUDED_NSTD_ALGORITHM_MISMATCH
+
+#include "nstd/utility/pair.hpp"
 
 // ----------------------------------------------------------------------------
 
 namespace nstd
 {
-    namespace type_traits
-    {
-        template <typename> struct add_rvalue_reference;
-        template <> struct add_rvalue_reference<void>;
-        template <> struct add_rvalue_reference<void const>;
-        template <> struct add_rvalue_reference<void volatile>;
-        template <> struct add_rvalue_reference<void const volatile>;
-        template <typename T>
-        using add_rvalue_reference_t = typename nstd::type_traits::add_rvalue_reference<T>::type;
+    namespace algorithm {
+        namespace detail {
+            struct mismatch {
+                constexpr mismatch() noexcept(true) {}
+                template <typename Readable1, typename SinglePass1, typename EndPoint1,
+                          typename Readable2, typename SinglePass2, typename EndPoint2>
+                auto operator()(Readable1, SinglePass1, EndPoint1,
+                                Readable2, SinglePass2, EndPoint2) const
+                    -> nstd::utility::pair<SinglePass1, SinglePass2>;
+            };
+        }
+        constexpr nstd::algorithm::detail::mismatch mismatch{};
     }
+
 }
 
 // ----------------------------------------------------------------------------
 
-template <typename T>
-struct nstd::type_traits::add_rvalue_reference
+template <typename Readable1, typename SinglePass1, typename EndPoint1,
+          typename Readable2, typename SinglePass2, typename EndPoint2>
+auto nstd::algorithm::detail::mismatch::operator()(Readable1, SinglePass1 cursor1, EndPoint1,
+                                                   Readable2, SinglePass2 cursor2, EndPoint2) const
+    -> nstd::utility::pair<SinglePass1, SinglePass2>
 {
-    using type = T&&;
-};
-
-template <>
-struct nstd::type_traits::add_rvalue_reference<void>
-{
-    using type = void;
-};
-
-template <>
-struct nstd::type_traits::add_rvalue_reference<void const>
-{
-    using type = void const;
-};
-
-template <>
-struct nstd::type_traits::add_rvalue_reference<void volatile>
-{
-    using type = void volatile;
-};
-
-template <>
-struct nstd::type_traits::add_rvalue_reference<void const volatile>
-{
-    using type = void const volatile;
-};
+    return nstd::utility::pair<SinglePass1, SinglePass2>(cursor1, cursor2);
+}
 
 // ----------------------------------------------------------------------------
 

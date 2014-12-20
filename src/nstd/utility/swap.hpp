@@ -1,4 +1,4 @@
-// nstd/type_traits/add_rvalue_reference.hpp                          -*-C++-*-
+// nstd/utility/swap.hpp                                              -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,56 +23,26 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_TYPE_TRAITS_ADD_RVALUE_REFERENCE
-#define INCLUDED_NSTD_TYPE_TRAITS_ADD_RVALUE_REFERENCE
+#ifndef INCLUDED_NSTD_UTILITY_SWAP
+#define INCLUDED_NSTD_UTILITY_SWAP
+
+#include "nstd/type_traits/is_nothrow_move_assignable.hpp"
+#include "nstd/type_traits/is_nothrow_move_constructible.hpp"
+#include <cstddef>
 
 // ----------------------------------------------------------------------------
 
 namespace nstd
 {
-    namespace type_traits
-    {
-        template <typename> struct add_rvalue_reference;
-        template <> struct add_rvalue_reference<void>;
-        template <> struct add_rvalue_reference<void const>;
-        template <> struct add_rvalue_reference<void volatile>;
-        template <> struct add_rvalue_reference<void const volatile>;
+    namespace utility {
         template <typename T>
-        using add_rvalue_reference_t = typename nstd::type_traits::add_rvalue_reference<T>::type;
+        auto swap(T&, T&) noexcept(nstd::type_traits::is_nothrow_move_assignable<T>::value
+                                   && nstd::type_traits::is_nothrow_move_constructible<T>::value) -> void;
+        template <typename T, std::size_t N>
+        auto swap(T (&a0)[N], T(&a1)[N]) noexcept(noexcept(swap(a0[0], a1[0]))) -> void;
     }
+
 }
-
-// ----------------------------------------------------------------------------
-
-template <typename T>
-struct nstd::type_traits::add_rvalue_reference
-{
-    using type = T&&;
-};
-
-template <>
-struct nstd::type_traits::add_rvalue_reference<void>
-{
-    using type = void;
-};
-
-template <>
-struct nstd::type_traits::add_rvalue_reference<void const>
-{
-    using type = void const;
-};
-
-template <>
-struct nstd::type_traits::add_rvalue_reference<void volatile>
-{
-    using type = void volatile;
-};
-
-template <>
-struct nstd::type_traits::add_rvalue_reference<void const volatile>
-{
-    using type = void const volatile;
-};
 
 // ----------------------------------------------------------------------------
 

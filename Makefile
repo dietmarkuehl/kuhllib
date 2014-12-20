@@ -54,10 +54,10 @@ test:
 
 .PHONY: all
 all:
-	$(MAKE)
-	$(MAKE) COMPILER=clang CMAKE_CXX_ARG=/opt/llvm-current/bin/clang++
-	$(MAKE) COMPILER=gcc CMAKE_CXX_ARG=/opt/gcc-current/bin/g++
-	$(MAKE) COMPILER=intel CMAKE_CXX_ARG=/opt/intel/bin/icc
+	-$(MAKE)
+	-$(MAKE) COMPILER=clang CMAKE_CXX_ARG=/opt/llvm-current/bin/clang++
+	-$(MAKE) COMPILER=gcc CMAKE_CXX_ARG=/opt/gcc-current/bin/g++
+	-$(MAKE) COMPILER=intel CMAKE_CXX_ARG=/opt/intel/bin/icc
 
 .PHONY: clean
 clean:

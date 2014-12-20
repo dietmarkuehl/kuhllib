@@ -1,4 +1,4 @@
-// nstd/type_traits/add_rvalue_reference.hpp                          -*-C++-*-
+// nstd/type_traits/is_void.t.cpp                                     -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,57 +23,42 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_TYPE_TRAITS_ADD_RVALUE_REFERENCE
-#define INCLUDED_NSTD_TYPE_TRAITS_ADD_RVALUE_REFERENCE
+#include "nstd/type_traits/is_void.hpp"
+#include "kuhl/test.hpp"
+
+namespace NT = nstd::type_traits;
+namespace KT = kuhl::test;
 
 // ----------------------------------------------------------------------------
 
-namespace nstd
-{
-    namespace type_traits
-    {
-        template <typename> struct add_rvalue_reference;
-        template <> struct add_rvalue_reference<void>;
-        template <> struct add_rvalue_reference<void const>;
-        template <> struct add_rvalue_reference<void volatile>;
-        template <> struct add_rvalue_reference<void const volatile>;
-        template <typename T>
-        using add_rvalue_reference_t = typename nstd::type_traits::add_rvalue_reference<T>::type;
-    }
+namespace {
+    class foo;
 }
 
 // ----------------------------------------------------------------------------
 
-template <typename T>
-struct nstd::type_traits::add_rvalue_reference
-{
-    using type = T&&;
+static KT::testcase const tests[] = {
+    KT::expect_success("foo", [](KT::context& c)->bool{
+            constexpr bool value = NT::is_void<foo>::value;
+            KT::use(value);
+            return KT::assert_false(c, "foo", NT::is_void<foo>::value)
+                ;
+        }),
+    KT::expect_success("void", [](KT::context& c)->bool{
+            constexpr bool value = NT::is_void<void>::value;
+            KT::use(value);
+            return KT::assert_true(c, "void", NT::is_void<void>::value)
+                ;
+        }),
+    KT::expect_success("void cv", [](KT::context& c)->bool{
+            return KT::assert_false(c, "void const", NT::is_void<void const>::value)
+                && KT::assert_false(c, "void volatile", NT::is_void<void volatile>::value)
+                && KT::assert_false(c, "void const volatile", NT::is_void<void const volatile>::value)
+                ;
+        }),
 };
 
-template <>
-struct nstd::type_traits::add_rvalue_reference<void>
+int main(int ac, char* av[])
 {
-    using type = void;
-};
-
-template <>
-struct nstd::type_traits::add_rvalue_reference<void const>
-{
-    using type = void const;
-};
-
-template <>
-struct nstd::type_traits::add_rvalue_reference<void volatile>
-{
-    using type = void volatile;
-};
-
-template <>
-struct nstd::type_traits::add_rvalue_reference<void const volatile>
-{
-    using type = void const volatile;
-};
-
-// ----------------------------------------------------------------------------
-
-#endif
+    return KT::run_tests("type_traits::is_void", ac, av, ::tests);
+}

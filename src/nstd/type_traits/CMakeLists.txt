@@ -29,12 +29,19 @@ project(nstd_type_traits)
 enable_testing()
 foreach(test
         add_rvalue_reference.t 
+        add_lvalue_reference.t 
         choose_type.t 
+        condition.t 
         declval.t 
         enable_if.t 
         integral_constant.t 
+        is_assignable.t 
         is_convertible.t 
+	is_move_assignable.t
+	is_nothrow_move_assignable.t
+	is_nothrow_move_constructible.t
         is_same.t 
+        is_void.t 
         remove_const.t 
         remove_reference.t 
         remove_volatile.t 

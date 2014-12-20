@@ -1,4 +1,4 @@
-// nstd/type_traits/add_rvalue_reference.hpp                          -*-C++-*-
+// nstd/type_traits/condition.t.cpp                                   -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,57 +23,36 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_TYPE_TRAITS_ADD_RVALUE_REFERENCE
-#define INCLUDED_NSTD_TYPE_TRAITS_ADD_RVALUE_REFERENCE
+#include "nstd/type_traits/condition.hpp"
+#include "kuhl/test.hpp"
+
+namespace NT = nstd::type_traits;
+namespace KT = kuhl::test;
 
 // ----------------------------------------------------------------------------
 
-namespace nstd
+namespace
 {
-    namespace type_traits
-    {
-        template <typename> struct add_rvalue_reference;
-        template <> struct add_rvalue_reference<void>;
-        template <> struct add_rvalue_reference<void const>;
-        template <> struct add_rvalue_reference<void volatile>;
-        template <> struct add_rvalue_reference<void const volatile>;
-        template <typename T>
-        using add_rvalue_reference_t = typename nstd::type_traits::add_rvalue_reference<T>::type;
-    }
+    struct foo;
+    struct bar;
 }
 
 // ----------------------------------------------------------------------------
 
-template <typename T>
-struct nstd::type_traits::add_rvalue_reference
-{
-    using type = T&&;
+static KT::testcase const tests[] = {
+    KT::expect_success("condition<true, foo, bar>", [](KT::context& c)->bool{
+            return KT::assert_type<foo, NT::condition<true, foo, bar>::type>(c, "expect foo")
+                && KT::assert_type<foo, NT::condition_t<true, foo, bar>>(c, "expect foo")
+                ;
+        }),
+    KT::expect_success("condition<false, foo, bar>", [](KT::context& c)->bool{
+            return KT::assert_type<bar, NT::condition<false, foo, bar>::type>(c, "expect bar")
+                && KT::assert_type<bar, NT::condition_t<false, foo, bar>>(c, "expect bar")
+                ;
+        }),
 };
 
-template <>
-struct nstd::type_traits::add_rvalue_reference<void>
+int main(int ac, char* av[])
 {
-    using type = void;
-};
-
-template <>
-struct nstd::type_traits::add_rvalue_reference<void const>
-{
-    using type = void const;
-};
-
-template <>
-struct nstd::type_traits::add_rvalue_reference<void volatile>
-{
-    using type = void volatile;
-};
-
-template <>
-struct nstd::type_traits::add_rvalue_reference<void const volatile>
-{
-    using type = void const volatile;
-};
-
-// ----------------------------------------------------------------------------
-
-#endif
+    return KT::run_tests("type_traits::condition", ac, av, ::tests);
+}

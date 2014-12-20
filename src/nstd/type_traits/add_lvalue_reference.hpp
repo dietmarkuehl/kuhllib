@@ -1,4 +1,4 @@
-// nstd/type_traits/add_rvalue_reference.hpp                          -*-C++-*-
+// nstd/type_traits/add_lvalue_reference.hpp                          -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,53 +23,54 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_TYPE_TRAITS_ADD_RVALUE_REFERENCE
-#define INCLUDED_NSTD_TYPE_TRAITS_ADD_RVALUE_REFERENCE
+#ifndef INCLUDED_NSTD_TYPE_TRAITS_ADD_LVALUE_REFERENCE
+#define INCLUDED_NSTD_TYPE_TRAITS_ADD_LVALUE_REFERENCE
 
 // ----------------------------------------------------------------------------
 
 namespace nstd
 {
-    namespace type_traits
-    {
-        template <typename> struct add_rvalue_reference;
-        template <> struct add_rvalue_reference<void>;
-        template <> struct add_rvalue_reference<void const>;
-        template <> struct add_rvalue_reference<void volatile>;
-        template <> struct add_rvalue_reference<void const volatile>;
+    namespace type_traits {
+        template <typename> struct add_lvalue_reference;
+        template <> struct add_lvalue_reference<void>;
+        template <> struct add_lvalue_reference<void const>;
+        template <> struct add_lvalue_reference<void volatile>;
+        template <> struct add_lvalue_reference<void const volatile>;
+
         template <typename T>
-        using add_rvalue_reference_t = typename nstd::type_traits::add_rvalue_reference<T>::type;
+        using add_lvalue_reference_t = typename add_lvalue_reference<T>::type;
     }
+
 }
 
 // ----------------------------------------------------------------------------
 
 template <typename T>
-struct nstd::type_traits::add_rvalue_reference
+struct nstd::type_traits::add_lvalue_reference
 {
-    using type = T&&;
+    using type = T&;
 };
 
 template <>
-struct nstd::type_traits::add_rvalue_reference<void>
+struct nstd::type_traits::add_lvalue_reference<void>
 {
     using type = void;
 };
 
 template <>
-struct nstd::type_traits::add_rvalue_reference<void const>
+struct nstd::type_traits::add_lvalue_reference<void const>
 {
     using type = void const;
 };
 
 template <>
-struct nstd::type_traits::add_rvalue_reference<void volatile>
+struct nstd::type_traits::add_lvalue_reference<void volatile>
 {
     using type = void volatile;
 };
 
 template <>
-struct nstd::type_traits::add_rvalue_reference<void const volatile>
+struct nstd::type_traits::add_lvalue_reference<void const volatile>
 {
     using type = void const volatile;
 };

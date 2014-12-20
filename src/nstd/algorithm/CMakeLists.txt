@@ -33,6 +33,8 @@ foreach(test
         distance.t
         find.t
         find_if.t
+	for_each.t
+	mismatch.t
         none_of.t
         )
   add_executable(${test} ${test})

@@ -24,10 +24,10 @@
 // ----------------------------------------------------------------------------
 
 #include "nstd/type_traits/add_rvalue_reference.hpp"
-#include "nstd/type_traits/is_same.hpp"
 #include "kuhl/test.hpp"
 
 namespace NT = nstd::type_traits;
+namespace KT = kuhl::test;
 
 // ----------------------------------------------------------------------------
 
@@ -39,24 +39,35 @@ namespace
 // ----------------------------------------------------------------------------
 
 static kuhl::test::testcase const tests[] = {
-    kuhl::test::expect_success("non-reference types get an rvalue reference", []()->bool{
-            return NT::is_same<foo&&, typename NT::add_rvalue_reference<foo>::type>::value
-                && NT::is_same<foo&&, NT::add_rvalue_reference_t<foo>>::value
+    kuhl::test::expect_success("void stays void", [](KT::context& c)->bool{
+            return KT::assert_type<void, NT::add_rvalue_reference<void>::type>(c, "add_rvalue_reference void")
+                && KT::assert_type<void, NT::add_rvalue_reference_t<void>>(c, "add_rvalue_reference_t void")
+                && KT::assert_type<void const, NT::add_rvalue_reference<void const>::type>(c, "add_rvalue_reference void const")
+                && KT::assert_type<void const, NT::add_rvalue_reference_t<void const>>(c, "add_rvalue_reference_t void const")
+                && KT::assert_type<void volatile, NT::add_rvalue_reference<void volatile>::type>(c, "add_rvalue_reference void volatile")
+                && KT::assert_type<void volatile, NT::add_rvalue_reference_t<void volatile>>(c, "add_rvalue_reference_t void volatile")
+                && KT::assert_type<void const volatile, NT::add_rvalue_reference<void const volatile>::type>(c, "add_rvalue_reference void const volatile")
+                && KT::assert_type<void const volatile, NT::add_rvalue_reference_t<void const volatile>>(c, "add_rvalue_reference_t void const volatile")
                 ;
         }),
-    kuhl::test::expect_success("function types get an rvalue reference", []()->bool{
-            return NT::is_same<foo(&&)(foo), typename NT::add_rvalue_reference<foo(foo)>::type>::value
-                && NT::is_same<foo(&&)(foo), NT::add_rvalue_reference_t<foo(foo)>>::value
+    kuhl::test::expect_success("non-reference types get an rvalue reference", [](KT::context& c)->bool{
+            return KT::assert_type<foo&&, NT::add_rvalue_reference<foo>::type>(c, "add_rvalue_reference")
+                && KT::assert_type<foo&&, NT::add_rvalue_reference_t<foo>>(c, "add_rvalue_reference_t")
                 ;
         }),
-    kuhl::test::expect_success("reference types stay reference types", []()->bool{
-            return NT::is_same<foo&, typename NT::add_rvalue_reference<foo&>::type>::value
-                && NT::is_same<foo&, NT::add_rvalue_reference_t<foo&>>::value
+    kuhl::test::expect_success("function types get an rvalue reference", [](KT::context& c)->bool{
+            return KT::assert_type<foo(&&)(foo), NT::add_rvalue_reference<foo(foo)>::type>(c, "add_rvalue_reference")
+                && KT::assert_type<foo(&&)(foo), NT::add_rvalue_reference_t<foo(foo)>>(c, "add_rvalue_reference_t")
                 ;
         }),
-    kuhl::test::expect_success("const reference types stay const reference types", []()->bool{
-            return NT::is_same<foo const&, typename NT::add_rvalue_reference<foo const&>::type>::value
-                && NT::is_same<foo const&, NT::add_rvalue_reference_t<foo const&>>::value
+    kuhl::test::expect_success("reference types stay reference types", [](KT::context& c)->bool{
+            return KT::assert_type<foo&, NT::add_rvalue_reference<foo&>::type>(c, "add_rvalue_reference")
+                && KT::assert_type<foo&, NT::add_rvalue_reference_t<foo&>>(c, "add_rvalue_reference_t")
+                ;
+        }),
+    kuhl::test::expect_success("const reference types stay const reference types", [](KT::context& c)->bool{
+            return KT::assert_type<foo const&, NT::add_rvalue_reference<foo const&>::type>(c, "add_rvalue_reference")
+                && KT::assert_type<foo const&, NT::add_rvalue_reference_t<foo const&>>(c, "add_rvalue_reference_t")
                 ;
         }),
 };

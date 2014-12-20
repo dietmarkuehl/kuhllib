@@ -1,4 +1,4 @@
-// nstd/type_traits/add_rvalue_reference.hpp                          -*-C++-*-
+// nstd/type_traits/is_move_assignable.hpp                            -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,55 +23,32 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_TYPE_TRAITS_ADD_RVALUE_REFERENCE
-#define INCLUDED_NSTD_TYPE_TRAITS_ADD_RVALUE_REFERENCE
+#ifndef INCLUDED_NSTD_TYPE_TRAITS_IS_MOVE_ASSIGNABLE
+#define INCLUDED_NSTD_TYPE_TRAITS_IS_MOVE_ASSIGNABLE
+
+#include "nstd/type_traits/add_lvalue_reference.hpp"
+#include "nstd/type_traits/add_rvalue_reference.hpp"
+#include "nstd/type_traits/integral_constant.hpp"
+#include "nstd/type_traits/is_assignable.hpp"
 
 // ----------------------------------------------------------------------------
 
 namespace nstd
 {
-    namespace type_traits
-    {
-        template <typename> struct add_rvalue_reference;
-        template <> struct add_rvalue_reference<void>;
-        template <> struct add_rvalue_reference<void const>;
-        template <> struct add_rvalue_reference<void volatile>;
-        template <> struct add_rvalue_reference<void const volatile>;
-        template <typename T>
-        using add_rvalue_reference_t = typename nstd::type_traits::add_rvalue_reference<T>::type;
+    namespace type_traits {
+        template <typename> struct is_move_assignable;
     }
+
 }
 
 // ----------------------------------------------------------------------------
 
 template <typename T>
-struct nstd::type_traits::add_rvalue_reference
+struct nstd::type_traits::is_move_assignable
+    : nstd::type_traits::integral_constant<bool,
+        nstd::type_traits::is_assignable<nstd::type_traits::add_lvalue_reference_t<T>,
+                                         nstd::type_traits::add_rvalue_reference_t<T>>::value>
 {
-    using type = T&&;
-};
-
-template <>
-struct nstd::type_traits::add_rvalue_reference<void>
-{
-    using type = void;
-};
-
-template <>
-struct nstd::type_traits::add_rvalue_reference<void const>
-{
-    using type = void const;
-};
-
-template <>
-struct nstd::type_traits::add_rvalue_reference<void volatile>
-{
-    using type = void volatile;
-};
-
-template <>
-struct nstd::type_traits::add_rvalue_reference<void const volatile>
-{
-    using type = void const volatile;
 };
 
 // ----------------------------------------------------------------------------

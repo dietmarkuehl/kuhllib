@@ -1,4 +1,4 @@
-// nstd/type_traits/add_rvalue_reference.hpp                          -*-C++-*-
+// nstd/type_traits/is_assignable.hpp                                 -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,55 +23,48 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_TYPE_TRAITS_ADD_RVALUE_REFERENCE
-#define INCLUDED_NSTD_TYPE_TRAITS_ADD_RVALUE_REFERENCE
+#ifndef INCLUDED_NSTD_TYPE_TRAITS_IS_ASSIGNABLE
+#define INCLUDED_NSTD_TYPE_TRAITS_IS_ASSIGNABLE
+
+#include "nstd/type_traits/condition.hpp"
+#include "nstd/type_traits/declval.hpp"
+#include "nstd/type_traits/integral_constant.hpp"
+#include "nstd/type_traits/is_void.hpp"
+#include "nstd/type_traits/remove_cv.hpp"
 
 // ----------------------------------------------------------------------------
 
 namespace nstd
 {
-    namespace type_traits
-    {
-        template <typename> struct add_rvalue_reference;
-        template <> struct add_rvalue_reference<void>;
-        template <> struct add_rvalue_reference<void const>;
-        template <> struct add_rvalue_reference<void volatile>;
-        template <> struct add_rvalue_reference<void const volatile>;
-        template <typename T>
-        using add_rvalue_reference_t = typename nstd::type_traits::add_rvalue_reference<T>::type;
+    namespace type_traits {
+        namespace detail {
+            template <typename S, typename T,
+                      typename = decltype(nstd::type_traits::declval<
+                                              nstd::type_traits::condition_t<
+                                                  nstd::type_traits::is_void<
+                                                      nstd::type_traits::remove_cv_t<S>
+                                                      >::value, int const, S>
+                                              >() = nstd::type_traits::declval<
+                                                  nstd::type_traits::condition_t<
+                                                      nstd::type_traits::is_void<
+                                                          nstd::type_traits::remove_cv_t<T>
+                                                          >::value, int const, T>
+                                           >())>
+            auto test(int) -> nstd::type_traits::true_type;
+            template <typename S, typename T>
+            auto test(...) -> nstd::type_traits::false_type;
+        }
+        template <typename S, typename T> struct is_assignable;
     }
+
 }
 
 // ----------------------------------------------------------------------------
 
-template <typename T>
-struct nstd::type_traits::add_rvalue_reference
+template <typename S, typename T>
+struct nstd::type_traits::is_assignable
+    : nstd::type_traits::integral_constant<bool, decltype(nstd::type_traits::detail::test<S, T>(0))::value>
 {
-    using type = T&&;
-};
-
-template <>
-struct nstd::type_traits::add_rvalue_reference<void>
-{
-    using type = void;
-};
-
-template <>
-struct nstd::type_traits::add_rvalue_reference<void const>
-{
-    using type = void const;
-};
-
-template <>
-struct nstd::type_traits::add_rvalue_reference<void volatile>
-{
-    using type = void volatile;
-};
-
-template <>
-struct nstd::type_traits::add_rvalue_reference<void const volatile>
-{
-    using type = void const volatile;
 };
 
 // ----------------------------------------------------------------------------

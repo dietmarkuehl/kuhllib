@@ -1,4 +1,4 @@
-// nstd/type_traits/add_rvalue_reference.hpp                          -*-C++-*-
+// nstd/algorithm/for_each.hpp                                        -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,56 +23,35 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_TYPE_TRAITS_ADD_RVALUE_REFERENCE
-#define INCLUDED_NSTD_TYPE_TRAITS_ADD_RVALUE_REFERENCE
+#ifndef INCLUDED_NSTD_ALGORITHM_FOR_EACH
+#define INCLUDED_NSTD_ALGORITHM_FOR_EACH
 
 // ----------------------------------------------------------------------------
 
 namespace nstd
 {
-    namespace type_traits
-    {
-        template <typename> struct add_rvalue_reference;
-        template <> struct add_rvalue_reference<void>;
-        template <> struct add_rvalue_reference<void const>;
-        template <> struct add_rvalue_reference<void volatile>;
-        template <> struct add_rvalue_reference<void const volatile>;
-        template <typename T>
-        using add_rvalue_reference_t = typename nstd::type_traits::add_rvalue_reference<T>::type;
+    namespace algorithm {
+        namespace detail {
+            struct for_each {
+                constexpr for_each() noexcept(true) {}
+                template <typename Readable, typename SinglePass, typename EndPoint, typename Callable>
+                auto operator()(Readable, SinglePass, EndPoint, Callable) const -> Callable;
+            };
+        }
+        constexpr nstd::algorithm::detail::for_each for_each{};
     }
+
 }
 
 // ----------------------------------------------------------------------------
 
-template <typename T>
-struct nstd::type_traits::add_rvalue_reference
+template <typename Readable, typename SinglePass, typename EndPoint, typename Callable>
+auto nstd::algorithm::detail::for_each::operator()(Readable,
+                                                   SinglePass, EndPoint,
+                                                   Callable fun) const -> Callable
 {
-    using type = T&&;
-};
-
-template <>
-struct nstd::type_traits::add_rvalue_reference<void>
-{
-    using type = void;
-};
-
-template <>
-struct nstd::type_traits::add_rvalue_reference<void const>
-{
-    using type = void const;
-};
-
-template <>
-struct nstd::type_traits::add_rvalue_reference<void volatile>
-{
-    using type = void volatile;
-};
-
-template <>
-struct nstd::type_traits::add_rvalue_reference<void const volatile>
-{
-    using type = void const volatile;
-};
+    return fun;
+}
 
 // ----------------------------------------------------------------------------
 
