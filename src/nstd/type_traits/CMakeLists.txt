@@ -36,8 +36,10 @@ foreach(test
         enable_if.t 
         integral_constant.t 
         is_assignable.t 
+        is_constructible.t 
         is_convertible.t 
 	is_move_assignable.t
+	is_nothrow_constructible.t
 	is_nothrow_move_assignable.t
 	is_nothrow_move_constructible.t
         is_same.t 

@@ -1,4 +1,4 @@
-// nstd/type_traits/is_nothrow_move_constructible.hpp                 -*-C++-*-
+// nstd/type_traits/is_constructible.hpp                              -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,30 +23,43 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_TYPE_TRAITS_IS_NOTHROW_MOVE_CONSTRUCTIBLE
-#define INCLUDED_NSTD_TYPE_TRAITS_IS_NOTHROW_MOVE_CONSTRUCTIBLE
+#ifndef INCLUDED_NSTD_TYPE_TRAITS_IS_CONSTRUCTIBLE
+#define INCLUDED_NSTD_TYPE_TRAITS_IS_CONSTRUCTIBLE
 
 #include "nstd/type_traits/add_rvalue_reference.hpp"
-#include "nstd/type_traits/is_nothrow_constructible.hpp"
-#include "nstd/type_traits/is_void.hpp"
-#include "nstd/type_traits/remove_cv.hpp"
+#include "nstd/type_traits/declval.hpp"
+#include "nstd/type_traits/integral_constant.hpp"
 
 // ----------------------------------------------------------------------------
 
 namespace nstd
 {
     namespace type_traits {
-        template <typename> struct is_nothrow_move_constructible;
+        namespace detail {
+            template <typename... Args> struct is_constructible;
+        }
+        template <typename, typename...> struct is_constructible;
     }
 }
 
 // ----------------------------------------------------------------------------
 
-template <typename T>
-struct nstd::type_traits::is_nothrow_move_constructible
+template <typename... Args>
+struct nstd::type_traits::detail::is_constructible {
+    template <typename T,
+              typename = decltype(T(nstd::type_traits::declval<nstd::type_traits::add_rvalue_reference_t<Args>>()...))>
+    static auto test(int) -> nstd::type_traits::true_type;
+    template <typename T>
+    static auto test(...) -> nstd::type_traits::false_type;
+};
+            
+// ----------------------------------------------------------------------------
+
+template <typename T, typename... Args>
+struct nstd::type_traits::is_constructible
     : nstd::type_traits::integral_constant<bool,
-        !nstd::type_traits::is_void<nstd::type_traits::remove_cv_t<T>>::value
-        && nstd::type_traits::is_nothrow_constructible<T, nstd::type_traits::add_rvalue_reference_t<T>>::value> {
+        decltype(nstd::type_traits::detail::is_constructible<Args...>::template test<T>(0))::value>
+{
 };
 
 // ----------------------------------------------------------------------------
