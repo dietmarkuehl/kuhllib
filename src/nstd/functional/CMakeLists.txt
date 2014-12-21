@@ -28,6 +28,7 @@ project(nstd_algorithm)
 
 enable_testing()
 foreach(test
+	equal_to.t
 	model_predicate.t
 	not_.t
         )

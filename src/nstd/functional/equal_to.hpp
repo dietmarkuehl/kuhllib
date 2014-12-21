@@ -1,4 +1,4 @@
-// nstd/algorithm/mismatch.t.cpp                                      -*-C++-*-
+// nstd/functional/equal_to.hpp                                       -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,21 +23,41 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/algorithm/mismatch.hpp"
-#include "kuhl/test.hpp"
+#ifndef INCLUDED_NSTD_FUNCTIONAL_EQUAL_TO
+#define INCLUDED_NSTD_FUNCTIONAL_EQUAL_TO
 
-namespace NA = nstd::algorithm;
-namespace KT = kuhl::test;
+#include "nstd/utility/forward.hpp"
 
 // ----------------------------------------------------------------------------
 
-static KT::testcase const tests[] = {
-    KT::expect_failure("placeholder", [](KT::context& c)->bool{
-           return false;
-        }),
+namespace nstd
+{
+    namespace functional {
+        template <typename = void> struct equal_to;
+        template <> struct equal_to<void>;
+    }
+
+}
+
+// ----------------------------------------------------------------------------
+
+template <typename T>
+struct nstd::functional::equal_to {
+    using first_argument_type  = T;
+    using second_argument_type = T;
+    using result_type          = bool;
+    auto constexpr operator()(T const& a0, T const& a1) const -> bool { return a0 == a1; }
 };
 
-int main(int ac, char* av[])
-{
-    return KT::run_tests("algorithm::mismatch", ac, av, ::tests);
-}
+template <>
+struct nstd::functional::equal_to<void> {
+    template <typename T0, typename T1>
+    auto constexpr operator()(T0&& a0, T1&& a1) const
+        -> decltype(nstd::utility::forward<T0>(a0) == nstd::utility::forward<T1>(a1)) {
+        return nstd::utility::forward<T0>(a0) == nstd::utility::forward<T1>(a1);
+    }
+};
+
+// ----------------------------------------------------------------------------
+
+#endif
