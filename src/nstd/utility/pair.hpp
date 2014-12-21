@@ -35,6 +35,13 @@
 namespace nstd
 {
     namespace utility {
+        namespace detail {
+            namespace pair {
+                using nstd::utility::swap;
+                template <typename T>
+                void test_noexcept(T& object) noexcept(noexcept(swap(object, object)));
+            }
+        }
         template <typename T0, typename T1>
         struct pair;
     }
@@ -97,7 +104,8 @@ struct nstd::utility::pair
         return *this;
     }
 
-    auto swap(pair<T0, T1>& other) -> void {
+    auto swap(pair<T0, T1>& other) noexcept(noexcept(nstd::utility::detail::pair::test_noexcept(other.first))
+                                            && noexcept(nstd::utility::detail::pair::test_noexcept(other.second)))-> void {
         using nstd::utility::swap;
         swap(this->first,  other.first);
         swap(this->second, other.second);

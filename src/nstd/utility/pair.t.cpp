@@ -38,18 +38,41 @@ namespace
     struct movable {
         int value;
         explicit movable(int value): value(value) {}
-        movable(movable&&) = default;
+        movable(movable&& other): value(other.value) { other.value = -1; }
         movable(movable const&) = delete;
-        movable& operator=(movable&&) = default;
+        movable& operator=(movable&& other) {
+            this->value = other.value;
+            other.value = -1;
+            return *this;
+        }
         movable& operator=(movable&) = delete;
+    };
+    struct nothrow_movable {
+        int value;
+        explicit nothrow_movable(int value): value(value) {}
+        nothrow_movable(nothrow_movable&& other) noexcept(true): value(other.value) { other.value = -1; }
+        nothrow_movable(nothrow_movable const&) = delete;
+        auto operator=(nothrow_movable&& other) noexcept(true) -> nothrow_movable& {
+            this->value = other.value;
+            other.value = -1;
+            return *this;
+        }
+        auto operator=(nothrow_movable&) -> nothrow_movable& = delete;
     };
     struct copyable {
         int value;
         explicit copyable(int value): value(value) {}
-        //copyable(copyable&&) = delete;
-        copyable(copyable const&) = default;
-        copyable& operator=(copyable&&) = delete;
-        copyable& operator=(copyable&) = default;
+        copyable(copyable const& other) noexcept(false): value(other.value) {}
+        copyable& operator=(copyable const& other) noexcept(false) {
+            this->value = other.value;
+            return *this;
+        }
+    };
+    struct nothrow_copyable {
+        int value;
+        explicit nothrow_copyable(int value): value(value) {}
+        nothrow_copyable(nothrow_copyable const&) noexcept(true) = default;
+        nothrow_copyable& operator=(nothrow_copyable const&) noexcept(true) = default;
     };
     struct foo {
         int value;
@@ -242,8 +265,82 @@ static KT::testcase const tests[] = {
                 && KT::assert_equal(c, "value of p2.second", 12, p2.second.value)
                 ;
         }),
-    KT::expect_success("swap()", [](KT::context& c)->bool{
-            return false; //-dk:TODO
+    KT::expect_success("swap() int, int", [](KT::context& c)->bool{
+            NU::pair<int, int> p0{ 1, 2 };
+            NU::pair<int, int> p1{ 3, 4 };
+            p0.swap(p1);
+            return KT::assert_true(c, "noexcept", noexcept(p0.swap(p1)))
+                && KT::assert_equal(c, "p0.first",  3, p0.first)
+                && KT::assert_equal(c, "p0.second", 4, p0.second)
+                && KT::assert_equal(c, "p1.first",  1, p1.first)
+                && KT::assert_equal(c, "p1.second", 2, p1.second)
+                ;
+        }),
+    KT::expect_success("swap() movable, nothrow_movable", [](KT::context& c)->bool{
+            NU::pair<movable, nothrow_movable> p0{ 1, 2 };
+            NU::pair<movable, nothrow_movable> p1{ 3, 4 };
+            p0.swap(p1);
+            return KT::assert_false(c, "noexcept", noexcept(p0.swap(p1)))
+                && KT::assert_equal(c, "p0.first",  3, p0.first.value)
+                && KT::assert_equal(c, "p0.second", 4, p0.second.value)
+                && KT::assert_equal(c, "p1.first",  1, p1.first.value)
+                && KT::assert_equal(c, "p1.second", 2, p1.second.value)
+                ;
+        }),
+    KT::expect_success("swap() movable, nothrow_movable", [](KT::context& c)->bool{
+            NU::pair<nothrow_movable, movable> p0{ 1, 2 };
+            NU::pair<nothrow_movable, movable> p1{ 3, 4 };
+            p0.swap(p1);
+            return KT::assert_false(c, "noexcept", noexcept(p0.swap(p1)))
+                && KT::assert_equal(c, "p0.first",  3, p0.first.value)
+                && KT::assert_equal(c, "p0.second", 4, p0.second.value)
+                && KT::assert_equal(c, "p1.first",  1, p1.first.value)
+                && KT::assert_equal(c, "p1.second", 2, p1.second.value)
+                ;
+        }),
+    KT::expect_success("swap() nothrow_movable, nothrow_movable", [](KT::context& c)->bool{
+            NU::pair<nothrow_movable, nothrow_movable> p0{ 1, 2 };
+            NU::pair<nothrow_movable, nothrow_movable> p1{ 3, 4 };
+            p0.swap(p1);
+            return KT::assert_true(c, "noexcept", noexcept(p0.swap(p1)))
+                && KT::assert_equal(c, "p0.first",  3, p0.first.value)
+                && KT::assert_equal(c, "p0.second", 4, p0.second.value)
+                && KT::assert_equal(c, "p1.first",  1, p1.first.value)
+                && KT::assert_equal(c, "p1.second", 2, p1.second.value)
+                ;
+        }),
+    KT::expect_success("swap() copyable, nothrow_copyable", [](KT::context& c)->bool{
+            NU::pair<copyable, nothrow_copyable> p0{ 1, 2 };
+            NU::pair<copyable, nothrow_copyable> p1{ 3, 4 };
+            p0.swap(p1);
+            return KT::assert_false(c, "noexcept", noexcept(p0.swap(p1)))
+                && KT::assert_equal(c, "p0.first",  3, p0.first.value)
+                && KT::assert_equal(c, "p0.second", 4, p0.second.value)
+                && KT::assert_equal(c, "p1.first",  1, p1.first.value)
+                && KT::assert_equal(c, "p1.second", 2, p1.second.value)
+                ;
+        }),
+    KT::expect_success("swap() copyable, nothrow_copyable", [](KT::context& c)->bool{
+            NU::pair<nothrow_copyable, copyable> p0{ 1, 2 };
+            NU::pair<nothrow_copyable, copyable> p1{ 3, 4 };
+            p0.swap(p1);
+            return KT::assert_false(c, "noexcept", noexcept(p0.swap(p1)))
+                && KT::assert_equal(c, "p0.first",  3, p0.first.value)
+                && KT::assert_equal(c, "p0.second", 4, p0.second.value)
+                && KT::assert_equal(c, "p1.first",  1, p1.first.value)
+                && KT::assert_equal(c, "p1.second", 2, p1.second.value)
+                ;
+        }),
+    KT::expect_success("swap() nothrow_copyable, nothrow_copyable", [](KT::context& c)->bool{
+            NU::pair<nothrow_copyable, nothrow_copyable> p0{ 1, 2 };
+            NU::pair<nothrow_copyable, nothrow_copyable> p1{ 3, 4 };
+            p0.swap(p1);
+            return KT::assert_true(c, "noexcept", noexcept(p0.swap(p1)))
+                && KT::assert_equal(c, "p0.first",  3, p0.first.value)
+                && KT::assert_equal(c, "p0.second", 4, p0.second.value)
+                && KT::assert_equal(c, "p1.first",  1, p1.first.value)
+                && KT::assert_equal(c, "p1.second", 2, p1.second.value)
+                ;
         }),
 };
 
