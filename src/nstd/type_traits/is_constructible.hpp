@@ -46,8 +46,9 @@ namespace nstd
 
 template <typename... Args>
 struct nstd::type_traits::detail::is_constructible {
-    template <typename T,
-              typename = decltype(T(nstd::type_traits::declval<nstd::type_traits::add_rvalue_reference_t<Args>>()...))>
+    template <typename T>
+    static auto create() -> nstd::type_traits::add_rvalue_reference_t<T>;
+    template <typename T, typename = decltype(T(create<Args>()...))>
     static auto test(int) -> nstd::type_traits::true_type;
     template <typename T>
     static auto test(...) -> nstd::type_traits::false_type;

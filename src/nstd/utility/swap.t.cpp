@@ -31,13 +31,94 @@ namespace KT = kuhl::test;
 
 // ----------------------------------------------------------------------------
 
+namespace
+{
+    struct movable {
+        int value;
+        movable(int value): value(value) {}
+        movable(movable&& other): value(other.value) { other.value = -1; }
+        movable(movable const&) = delete;
+        auto operator= (movable&& other) -> void {
+            value = other.value;
+            other.value = -1;
+        }
+        auto operator= (movable const&) -> void = delete;
+    };
+    struct nothrow_movable {
+        int value;
+        nothrow_movable(int value): value(value) {}
+        nothrow_movable(nothrow_movable&& other) noexcept(true): value(other.value) { other.value = -1; }
+        nothrow_movable(nothrow_movable const&) = delete;
+        auto operator= (nothrow_movable&& other) noexcept(true) -> void {
+            value = other.value;
+            other.value = -1;
+        }
+        auto operator= (nothrow_movable const&) -> void = delete;
+    };
+    struct copyable {
+        int value;
+        copyable(int value): value(value) {}
+        copyable(copyable const& other): value(other.value) { }
+        auto operator= (copyable const& other) -> void {
+            value = other.value;
+        }
+    };
+    struct nothrow_copyable {
+        int value;
+        nothrow_copyable(int value): value(value) {}
+        nothrow_copyable(nothrow_copyable const& other) noexcept(true): value(other.value) {}
+        auto operator= (nothrow_copyable const& other) noexcept(true) -> void {
+            value = other.value;
+        }
+    };
+}
+
+// ----------------------------------------------------------------------------
+
 static KT::testcase const tests[] = {
-    KT::expect_failure("placeholder", [](KT::context& c)->bool{
-           return false;
+    KT::expect_success("int", [](KT::context& c)->bool{
+            int a{17}, b{43};
+            NU::swap(a, b);
+            return KT::assert_true(c, "noexcept", noexcept(NU::swap(a, b)))
+                && KT::assert_equal(c, "a", 43, a)
+                && KT::assert_equal(c, "b", 17, b)
+                ;
+        }),
+    KT::expect_success("movable", [](KT::context& c)->bool{
+            movable a{17}, b{43};
+            NU::swap(a, b);
+            return KT::assert_false(c, "noexcept", noexcept(NU::swap(a, b)))
+                && KT::assert_equal(c, "a", 43, a.value)
+                && KT::assert_equal(c, "b", 17, b.value)
+                ;
+        }),
+    KT::expect_success("nothrow_movable", [](KT::context& c)->bool{
+            nothrow_movable a{17}, b{43};
+            NU::swap(a, b);
+            return KT::assert_true(c, "noexcept", noexcept(NU::swap(a, b)))
+                && KT::assert_equal(c, "a", 43, a.value)
+                && KT::assert_equal(c, "b", 17, b.value)
+                ;
+        }),
+    KT::expect_success("copyable", [](KT::context& c)->bool{
+            copyable a{17}, b{43};
+            NU::swap(a, b);
+            return KT::assert_false(c, "noexcept", noexcept(NU::swap(a, b)))
+                && KT::assert_equal(c, "a", 43, a.value)
+                && KT::assert_equal(c, "b", 17, b.value)
+                ;
+        }),
+    KT::expect_success("nothrow_copyable", [](KT::context& c)->bool{
+            nothrow_copyable a{17}, b{43};
+            NU::swap(a, b);
+            return KT::assert_true(c, "noexcept", noexcept(NU::swap(a, b)))
+                && KT::assert_equal(c, "a", 43, a.value)
+                && KT::assert_equal(c, "b", 17, b.value)
+                ;
         }),
 };
 
 int main(int ac, char* av[])
 {
-    return KT::run_tests("TODO", ac, av, ::tests);
+    return KT::run_tests("utility::swap", ac, av, ::tests);
 }
