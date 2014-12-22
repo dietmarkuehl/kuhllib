@@ -74,7 +74,10 @@ static KT::testcase const tests[] = {
         }),
     KT::expect_success("void/int", [](KT::context& c)->bool{
             constexpr NF::equal_to<> predicate{};
-            constexpr bool           value{predicate(17, 17)};
+#ifndef KUHLLIB_INTEL
+            constexpr
+#endif
+                bool           value{predicate(17, 17)};
             KT::use(value);
             return KT::assert_type<bool, decltype(predicate(17, 17))>(c, "type")
                 && KT::assert_true(c, "equal", predicate(17, 17))

@@ -45,7 +45,7 @@ static KT::testcase const tests[] = {
             auto begin = NC::single_pass_begin(array);
             NC::step(begin);
             auto end = NC::single_pass_end(array);
-            auto it = NA::find(NP::model_readable(), begin, end, NP::model_value<int, NU::equality_comparable>(17));
+            auto it = NA::find(NP::model_readable<>(), begin, end, NP::model_value<int, NU::equality_comparable>(17));
             return KT::assert_true(c, "cursor at end", NC::at_same_pos(it, end))
                 && KT::assert_type<NC::model_single_pass<int>, decltype(it)>(c, "a cursor is returned")
                 ;
@@ -54,7 +54,7 @@ static KT::testcase const tests[] = {
             int array[] = { 1, 2, 3, 4, 5, 6, 7 };
             auto begin = NC::single_pass_begin(array);
             auto end = NC::single_pass_end(array);
-            auto it = NA::find(NP::model_readable(), begin, end, NP::model_value<int, NU::equality_comparable>(17));
+            auto it = NA::find(NP::model_readable<>(), begin, end, NP::model_value<int, NU::equality_comparable>(17));
             return KT::assert_true(c, "cursor at end", NC::at_same_pos(it, end))
                 && KT::assert_type<NC::model_single_pass<int>, decltype(it)>(c, "a cursor is returned")
                 ;
@@ -63,7 +63,7 @@ static KT::testcase const tests[] = {
             int array[] = { 1, 2, 3, 4, 5, 6, 7 };
             auto begin = NC::single_pass_begin(array);
             auto end = NC::single_pass_end(array);
-            auto it = NA::find(NP::model_readable(), begin, end, NP::model_value<int, NU::equality_comparable>(1));
+            auto it = NA::find(NP::model_readable<>(), begin, end, NP::model_value<int, NU::equality_comparable>(1));
             return KT::assert_equal(c, "cursor at beginning", begin.get_pointer(), it.get_pointer())
                 && KT::assert_type<NC::model_single_pass<int>, decltype(it)>(c, "a cursor is returned")
                 ;
@@ -72,7 +72,7 @@ static KT::testcase const tests[] = {
             int array[] = { 1, 2, 3, 4, 5, 6, 7 };
             auto begin = NC::single_pass_begin(array);
             auto end = NC::single_pass_end(array);
-            auto it = NA::find(NP::model_readable(), begin, end, NP::model_value<int, NU::equality_comparable>(4));
+            auto it = NA::find(NP::model_readable<>(), begin, end, NP::model_value<int, NU::equality_comparable>(4));
             return KT::assert_equal(c, "cursor at beginning", begin.get_pointer() + 3, it.get_pointer())
                 && KT::assert_type<NC::model_single_pass<int>, decltype(it)>(c, "a cursor is returned")
                 ;
@@ -81,7 +81,7 @@ static KT::testcase const tests[] = {
             int array[] = { 1, 2, 3, 4, 5, 6, 7 };
             auto begin = NC::single_pass_begin(array);
             auto end = NC::single_pass_end(array);
-            auto it = NA::find(NP::model_readable(), begin, end, NP::model_value<int, NU::equality_comparable>(7));
+            auto it = NA::find(NP::model_readable<>(), begin, end, NP::model_value<int, NU::equality_comparable>(7));
             return KT::assert_equal(c, "cursor at beginning", begin.get_pointer() + 6, it.get_pointer())
                 && KT::assert_type<NC::model_single_pass<int>, decltype(it)>(c, "a cursor is returned")
                 ;

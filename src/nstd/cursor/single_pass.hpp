@@ -29,6 +29,7 @@
 #include "nstd/type_traits/declval.hpp"
 #include "nstd/type_traits/enable_if.hpp"
 #include "nstd/utility/forward.hpp"
+#include "nstd/utility/pair.hpp"
 #include <limits>
 
 // ----------------------------------------------------------------------------
@@ -53,6 +54,12 @@ namespace nstd
                 auto operator()(T& cursor) const -> void {
                     cursor_step(cursor);
                 }
+                template <typename T>
+                auto operator()(T& cursor, std::size_t n) const -> void {
+                    for (; 0u < n; --n) {
+                        this->operator()(cursor);
+                    }
+                }
             };
 
             template <typename T>
@@ -74,6 +81,13 @@ namespace nstd
             template <typename S, typename T>
             auto cursor_at_same_pos(S const& cursor0, T const& cursor1) -> bool {
                 return cursor0 == cursor1;
+            }
+            template <typename S0, typename S1, typename T0, typename T1>
+            auto cursor_at_same_pos(nstd::utility::pair<S0, S1> const& p0,
+                                    nstd::utility::pair<T0, T1> const& p1) -> bool {
+                using detail::cursor_at_same_pos;
+                return cursor_at_same_pos(p0.first, p1.first)
+                    && cursor_at_same_pos(p0.second, p1.second);
             }
 
             struct at_same_pos {

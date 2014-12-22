@@ -34,26 +34,29 @@
 namespace nstd
 {
     namespace projection {
+        template <typename...>
         struct model_readable;
     }
 
 }
 
 // ----------------------------------------------------------------------------
-
+  
+template <typename... P>
 struct nstd::projection::model_readable
 {
     constexpr model_readable() noexcept(true) {}
     template <typename T>
-    auto operator()(nstd::cursor::model_key<T> const& key) const -> nstd::projection::model_value<T>;
+    auto operator()(nstd::cursor::model_key<T> const& key) const -> nstd::projection::model_value<T, P...>;
 };
 
 // ----------------------------------------------------------------------------
 
-template <typename T>
-auto nstd::projection::model_readable::operator()(nstd::cursor::model_key<T> const& key) const
-    -> nstd::projection::model_value<T> {
-    return nstd::projection::model_value<T>(key.get_key());
+template <typename... P>
+    template <typename T>
+auto nstd::projection::model_readable<P...>::operator()(nstd::cursor::model_key<T> const& key) const
+    -> nstd::projection::model_value<T, P...> {
+    return nstd::projection::model_value<T, P...>(key.get_key());
 }
 
 // ----------------------------------------------------------------------------

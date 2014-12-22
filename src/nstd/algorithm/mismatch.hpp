@@ -26,6 +26,8 @@
 #ifndef INCLUDED_NSTD_ALGORITHM_MISMATCH
 #define INCLUDED_NSTD_ALGORITHM_MISMATCH
 
+#include "nstd/cursor/single_pass.hpp"
+#include "nstd/functional/equal_to.hpp"
 #include "nstd/utility/pair.hpp"
 
 // ----------------------------------------------------------------------------
@@ -36,6 +38,13 @@ namespace nstd
         namespace detail {
             struct mismatch {
                 constexpr mismatch() noexcept(true) {}
+                template <typename Readable1, typename SinglePass1, typename EndPoint1,
+                          typename Readable2, typename SinglePass2, typename EndPoint2,
+                          typename Predicate>
+                auto operator()(Readable1, SinglePass1, EndPoint1,
+                                Readable2, SinglePass2, EndPoint2,
+                                Predicate) const
+                    -> nstd::utility::pair<SinglePass1, SinglePass2>;
                 template <typename Readable1, typename SinglePass1, typename EndPoint1,
                           typename Readable2, typename SinglePass2, typename EndPoint2>
                 auto operator()(Readable1, SinglePass1, EndPoint1,
@@ -51,12 +60,29 @@ namespace nstd
 // ----------------------------------------------------------------------------
 
 template <typename Readable1, typename SinglePass1, typename EndPoint1,
-          typename Readable2, typename SinglePass2, typename EndPoint2>
-auto nstd::algorithm::detail::mismatch::operator()(Readable1, SinglePass1 cursor1, EndPoint1,
-                                                   Readable2, SinglePass2 cursor2, EndPoint2) const
+          typename Readable2, typename SinglePass2, typename EndPoint2,
+          typename Predicate>
+auto nstd::algorithm::detail::mismatch::operator()(Readable1 readable1, SinglePass1 cursor1, EndPoint1 end1,
+                                                   Readable2 readable2, SinglePass2 cursor2, EndPoint2 end2,
+                                                   Predicate predicate) const
     -> nstd::utility::pair<SinglePass1, SinglePass2>
 {
+    while (!nstd::cursor::at_same_pos(cursor1, end1)
+           && !nstd::cursor::at_same_pos(cursor2, end2)
+           && predicate(readable1(nstd::cursor::key(cursor1)), readable2(nstd::cursor::key(cursor2)))) {
+        nstd::cursor::step(cursor1);
+        nstd::cursor::step(cursor2);
+    }
     return nstd::utility::pair<SinglePass1, SinglePass2>(cursor1, cursor2);
+}
+
+template <typename Readable1, typename SinglePass1, typename EndPoint1,
+          typename Readable2, typename SinglePass2, typename EndPoint2>
+auto nstd::algorithm::detail::mismatch::operator()(Readable1 readable1, SinglePass1 begin1, EndPoint1 end1,
+                                                   Readable2 readable2, SinglePass2 begin2, EndPoint2 end2) const
+    -> nstd::utility::pair<SinglePass1, SinglePass2>
+{
+    return this->operator()(readable1, begin1, end1, readable2, begin2, end2, nstd::functional::equal_to<>());
 }
 
 // ----------------------------------------------------------------------------

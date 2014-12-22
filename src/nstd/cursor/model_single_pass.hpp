@@ -48,6 +48,9 @@ namespace nstd
         template <typename T>
         auto cursor_key(model_single_pass<T> const& cursor) -> model_key<T>;
         template <typename T>
+        auto cursor_at_same_pos(model_single_pass<T> const& cursor0,
+                                model_single_pass<T> const& cursor1) -> bool;
+        template <typename T>
         auto cursor_at_same_pos(model_single_pass<T> const&     cursor,
                                 model_single_pass_end<T> const& end) -> bool;
 
@@ -94,6 +97,13 @@ template <typename T>
 auto nstd::cursor::cursor_key(model_single_pass<T> const& cursor) -> nstd::cursor::model_key<T>
 {
     return cursor.get_key();
+}
+
+template <typename T>
+auto nstd::cursor::cursor_at_same_pos(model_single_pass<T> const& cursor0,
+                                      model_single_pass<T> const& cursor1) -> bool
+{
+    return cursor0.get_pointer() == cursor1.get_pointer();
 }
 
 template <typename T>

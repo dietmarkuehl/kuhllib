@@ -34,12 +34,12 @@ namespace KT = kuhl::test;
 
 static KT::testcase const tests[] = {
     KT::expect_success("result", [](KT::context& c)->bool{
-            constexpr NP::model_readable projection;
+            constexpr NP::model_readable<> projection;
             return assert_equal(c, "three", 3, projection(NC::model_key<int>(3)).get_value())
                 ;
         }),
     KT::expect_success("type", [](KT::context& c)->bool{
-            constexpr NP::model_readable projection;
+            constexpr NP::model_readable<> projection;
             auto result(projection(NC::model_key<long>(3l)));
             return KT::assert_type<NP::model_value<long>, decltype(result)>(c, "model_value<long>")
                 ;
@@ -48,5 +48,5 @@ static KT::testcase const tests[] = {
 
 int main(int ac, char* av[])
 {
-    return KT::run_tests("projectin::model_readable", ac, av, ::tests);
+    return KT::run_tests("projection::model_readable", ac, av, ::tests);
 }

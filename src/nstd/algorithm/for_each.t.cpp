@@ -50,11 +50,15 @@ namespace
 
         template <typename T, std::size_t Size>
         auto check_values(T (&array)[Size]) -> bool {
+#if 0
             auto result = NA::mismatch(NP::model_readable(), values.begin(), values.end(),
                                        NP::model_readable(), NC::single_pass_begin(array), NC::single_pass_end(array));
             return NC::at_same_pos(result.first, values.end())
                 && NC::at_same_pos(result.second, NC::single_pass_end(array))
                 ;
+#else
+            return false;
+#endif
         }
     };
 }
@@ -64,11 +68,11 @@ namespace
 static KT::testcase const tests[] = {
     KT::expect_success("for_each() function isn't necessarily copyable", [](KT::context& c)->bool{
             int array[] = { 1, 2, 3, 4, 5 };
-            return KT::assert_type<movable, decltype(NA::for_each(NP::model_readable(),
+            return KT::assert_type<movable, decltype(NA::for_each(NP::model_readable<>(),
                                                                   NC::single_pass_begin(array), NC::single_pass_end(array),
                                                                   movable()))>(c, "return type")
                 && KT::assert_true(c, "registered all calls",
-                                   NA::for_each(NP::model_readable(),
+                                   NA::for_each(NP::model_readable<>(),
                                                 NC::single_pass_begin(array), NC::single_pass_end(array),
                                                 movable()).check_values(array))
                 ;

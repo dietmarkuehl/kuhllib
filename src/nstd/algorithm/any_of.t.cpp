@@ -45,36 +45,36 @@ static KT::testcase const tests[] = {
             NC::step(begin);
             auto end(NC::single_pass_end(array));
             return KT::assert_true(c, "the cursors start out equal", NC::at_same_pos(begin, end))
-                && KT::assert_false(c, NA::any_of(NP::model_readable(), begin, end, NF::model_predicate(17)))
-                && KT::assert_type<bool, decltype(NA::any_of(NP::model_readable(), begin, end, NF::model_predicate(17)))>(c, "type")
+                && KT::assert_false(c, NA::any_of(NP::model_readable<>(), begin, end, NF::model_predicate(17)))
+                && KT::assert_type<bool, decltype(NA::any_of(NP::model_readable<>(), begin, end, NF::model_predicate(17)))>(c, "type")
                 ;
         }),
     KT::expect_success("range with first value matching yields true", [](KT::context& c)->bool{
             int array[] = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
             auto begin(NC::single_pass_begin(array));
             auto end(NC::single_pass_end(array));
-            return KT::assert_true(c, NA::any_of(NP::model_readable(), begin, end, NF::model_predicate(1)))
+            return KT::assert_true(c, NA::any_of(NP::model_readable<>(), begin, end, NF::model_predicate(1)))
                 ;
         }),
     KT::expect_success("range with a middle value matching yields true", [](KT::context& c)->bool{
             int array[] = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
             auto begin(NC::single_pass_begin(array));
             auto end(NC::single_pass_end(array));
-            return KT::assert_true(c, NA::any_of(NP::model_readable(), begin, end, NF::model_predicate(4)))
+            return KT::assert_true(c, NA::any_of(NP::model_readable<>(), begin, end, NF::model_predicate(4)))
                 ;
         }),
     KT::expect_success("range with the last value mismatching yields true", [](KT::context& c)->bool{
             int array[] = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
             auto begin(NC::single_pass_begin(array));
             auto end(NC::single_pass_end(array));
-            return KT::assert_true(c, NA::any_of(NP::model_readable(), begin, end, NF::model_predicate(9)))
+            return KT::assert_true(c, NA::any_of(NP::model_readable<>(), begin, end, NF::model_predicate(9)))
                 ;
         }),
     KT::expect_success("range with the no value matching yields false", [](KT::context& c)->bool{
             int array[] = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
             auto begin(NC::single_pass_begin(array));
             auto end(NC::single_pass_end(array));
-            return KT::assert_false(c, NA::any_of(NP::model_readable(), begin, end, NF::model_predicate(17)))
+            return KT::assert_false(c, NA::any_of(NP::model_readable<>(), begin, end, NF::model_predicate(17)))
                 ;
         }),
 };

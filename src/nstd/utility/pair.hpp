@@ -29,6 +29,7 @@
 #include "nstd/utility/forward.hpp"
 #include "nstd/utility/move.hpp"
 #include "nstd/utility/swap.hpp"
+#include <ostream>
 
 // ----------------------------------------------------------------------------
 
@@ -42,8 +43,23 @@ namespace nstd
                 void test_noexcept(T& object) noexcept(noexcept(swap(object, object)));
             }
         }
+        template <typename, typename> struct pair;
+
+        template <typename S0, typename S1, typename T0, typename T1>
+        auto constexpr operator== (nstd::utility::pair<S0, S1> const&,
+                                   nstd::utility::pair<T0, T1> const&) -> bool;
+        template <typename S0, typename S1, typename T0, typename T1>
+        auto constexpr operator!= (nstd::utility::pair<S0, S1> const&,
+                                   nstd::utility::pair<T0, T1> const&) -> bool;
+
+        //-dk:TODO deduce the return type for make_pair() correctly!
         template <typename T0, typename T1>
-        struct pair;
+        auto constexpr make_pair(T0&& a0, T1&& a1)
+            -> nstd::utility::pair<T0, T1>;
+
+        template <typename cT, typename Traits, typename T0, typename T1>
+        auto operator<< (std::basic_ostream<cT, Traits>&, nstd::utility::pair<T0, T1> const&)
+            -> std::basic_ostream<cT, Traits>&;
     }
 
 }
@@ -111,6 +127,27 @@ struct nstd::utility::pair
         swap(this->second, other.second);
     }
 };
+
+// ----------------------------------------------------------------------------
+
+template <typename S0, typename S1, typename T0, typename T1>
+auto constexpr nstd::utility::operator== (nstd::utility::pair<S0, S1> const& p0,
+                                          nstd::utility::pair<T0, T1> const& p1) -> bool {
+    return p0.first == p1.first && p0.second == p1.second;
+}
+template <typename S0, typename S1, typename T0, typename T1>
+auto constexpr nstd::utility::operator!= (nstd::utility::pair<S0, S1> const& p0,
+                                          nstd::utility::pair<T0, T1> const& p1) -> bool {
+    return !(p0 == p1);
+}
+
+// ----------------------------------------------------------------------------
+
+template <typename T0, typename T1>
+auto constexpr nstd::utility::make_pair(T0&& a0, T1&& a1)
+    -> nstd::utility::pair<T0, T1> {
+    return nstd::utility::pair<T0, T1>(nstd::utility::forward<T0>(a0), nstd::utility::forward<T1>(a1));
+}
 
 // ----------------------------------------------------------------------------
 
