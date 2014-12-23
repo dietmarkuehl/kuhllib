@@ -27,14 +27,18 @@
 #include "nstd/algorithm/mismatch.hpp"
 #include "nstd/cursor/single_pass.hpp"
 #include "nstd/cursor/model_single_pass.hpp"
+#include "nstd/projection/identity.hpp"
 #include "nstd/projection/model_readable.hpp"
+#include "nstd/utility/equality_comparable.hpp"
 #include "kuhl/test.hpp"
 #include <vector>
 #include <cstddef>
+#include <iostream>
 
 namespace NA = nstd::algorithm;
 namespace NC = nstd::cursor;
 namespace NP = nstd::projection;
+namespace NU = nstd::utility;
 namespace KT = kuhl::test;
 
 // ----------------------------------------------------------------------------
@@ -46,19 +50,19 @@ namespace
 
         movable() = default;
         movable(movable&&) = default;
-        movable(movable&) = delete;
+        movable(movable const&) = delete;
+        void operator()(NP::model_value<int> value) {
+            this->values.push_back(value.get_value());
+        }
 
         template <typename T, std::size_t Size>
         auto check_values(T (&array)[Size]) -> bool {
-#if 0
-            auto result = NA::mismatch(NP::model_readable(), values.begin(), values.end(),
-                                       NP::model_readable(), NC::single_pass_begin(array), NC::single_pass_end(array));
+            auto result = NA::mismatch(NP::identity, values.begin(), values.end(),
+                                       NP::model_readable<NU::equality_comparable>(), NC::single_pass_begin(array), NC::single_pass_end(array));
             return NC::at_same_pos(result.first, values.end())
                 && NC::at_same_pos(result.second, NC::single_pass_end(array))
                 ;
-#else
             return false;
-#endif
         }
     };
 }
@@ -68,13 +72,14 @@ namespace
 static KT::testcase const tests[] = {
     KT::expect_success("for_each() function isn't necessarily copyable", [](KT::context& c)->bool{
             int array[] = { 1, 2, 3, 4, 5 };
-            return KT::assert_type<movable, decltype(NA::for_each(NP::model_readable<>(),
-                                                                  NC::single_pass_begin(array), NC::single_pass_end(array),
-                                                                  movable()))>(c, "return type")
+            return KT::assert_type<NU::pair<NC::model_single_pass<int>, movable>,
+                                   decltype(NA::for_each(NP::model_readable<>(),
+                                                         NC::single_pass_begin(array), NC::single_pass_end(array),
+                                                         movable()))>(c, "return type")
                 && KT::assert_true(c, "registered all calls",
                                    NA::for_each(NP::model_readable<>(),
                                                 NC::single_pass_begin(array), NC::single_pass_end(array),
-                                                movable()).check_values(array))
+                                                movable()).second.check_values(array))
                 ;
         }),
 };

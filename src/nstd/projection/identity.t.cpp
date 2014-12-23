@@ -1,4 +1,4 @@
-// nstd/algorithm/for_each.hpp                                        -*-C++-*-
+// nstd/projection/identity.t.cpp                                     -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,45 +23,45 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_ALGORITHM_FOR_EACH
-#define INCLUDED_NSTD_ALGORITHM_FOR_EACH
+#include "nstd/projection/identity.hpp"
+#include "kuhl/test.hpp"
 
-#include "nstd/cursor/single_pass.hpp"
-#include "nstd/utility/pair.hpp"
+namespace NP = nstd::projection;
+namespace KT = kuhl::test;
 
 // ----------------------------------------------------------------------------
 
-namespace nstd
+namespace
 {
-    namespace algorithm {
-        namespace detail {
-            struct for_each {
-                constexpr for_each() noexcept(true) {}
-                template <typename Readable, typename SinglePass, typename EndPoint, typename Callable>
-                auto operator()(Readable, SinglePass, EndPoint, Callable) const
-                    -> nstd::utility::pair<SinglePass, Callable>;
-            };
-        }
-        constexpr nstd::algorithm::detail::for_each for_each{};
-    }
-
+    struct foo {};
 }
 
 // ----------------------------------------------------------------------------
 
-template <typename Readable, typename SinglePass, typename EndPoint, typename Callable>
-auto nstd::algorithm::detail::for_each::operator()(Readable readable,
-                                                   SinglePass cur, EndPoint end,
-                                                   Callable fun) const
-    -> nstd::utility::pair<SinglePass, Callable>
+static KT::testcase const tests[] = {
+    KT::expect_success("identity of a reference", [](KT::context& c)->bool{
+            foo object{};
+            int value{17};
+            NP::identity(value, 19);
+            return KT::assert_type<foo&, decltype(NP::identity(object))>(c, "type")
+                && KT::assert_equal(c, "same object", &object, &NP::identity(object))
+                && KT::assert_equal(c, "value", 19, value)
+                ;
+        }),
+    KT::expect_success("identity of a const reference", [](KT::context& c)->bool{
+            foo const object{};
+            return KT::assert_type<foo const&, decltype(NP::identity(object))>(c, "type")
+                && KT::assert_equal(c, "same object", &object, &NP::identity(object))
+                ;
+        }),
+    KT::expect_success("identity of temporary", [](KT::context& c)->bool{
+            foo const object{};
+            return KT::assert_type<foo, decltype(NP::identity(foo{}))>(c, "type")
+                ;
+        }),
+};
+
+int main(int ac, char* av[])
 {
-    namespace NC = nstd::cursor;
-    for (; !NC::at_same_pos(cur, end); NC::step(cur)) {
-        fun(readable(NC::key(cur)));
-    }
-    return nstd::utility::make_pair(cur, std::move(fun));
+    return KT::run_tests("projection::identity", ac, av, ::tests);
 }
-
-// ----------------------------------------------------------------------------
-
-#endif

@@ -1,4 +1,4 @@
-// nstd/algorithm/for_each.hpp                                        -*-C++-*-
+// nstd/projection/identity.hpp                                       -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,43 +23,29 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_ALGORITHM_FOR_EACH
-#define INCLUDED_NSTD_ALGORITHM_FOR_EACH
+#ifndef INCLUDED_NSTD_PROJECTION_IDENTITY
+#define INCLUDED_NSTD_PROJECTION_IDENTITY
 
-#include "nstd/cursor/single_pass.hpp"
-#include "nstd/utility/pair.hpp"
+#include "nstd/utility/move.hpp"
 
 // ----------------------------------------------------------------------------
 
 namespace nstd
 {
-    namespace algorithm {
+    namespace projection {
         namespace detail {
-            struct for_each {
-                constexpr for_each() noexcept(true) {}
-                template <typename Readable, typename SinglePass, typename EndPoint, typename Callable>
-                auto operator()(Readable, SinglePass, EndPoint, Callable) const
-                    -> nstd::utility::pair<SinglePass, Callable>;
+            struct identity {
+                template <typename T>
+                T operator()(T&& value) const { return value; }
+                template <typename T, typename V>
+                void operator()(T& reference, V&& value) const {
+                    reference = nstd::utility::move(value);
+                }
             };
         }
-        constexpr nstd::algorithm::detail::for_each for_each{};
+        constexpr nstd::projection::detail::identity identity{};
     }
 
-}
-
-// ----------------------------------------------------------------------------
-
-template <typename Readable, typename SinglePass, typename EndPoint, typename Callable>
-auto nstd::algorithm::detail::for_each::operator()(Readable readable,
-                                                   SinglePass cur, EndPoint end,
-                                                   Callable fun) const
-    -> nstd::utility::pair<SinglePass, Callable>
-{
-    namespace NC = nstd::cursor;
-    for (; !NC::at_same_pos(cur, end); NC::step(cur)) {
-        fun(readable(NC::key(cur)));
-    }
-    return nstd::utility::make_pair(cur, std::move(fun));
 }
 
 // ----------------------------------------------------------------------------

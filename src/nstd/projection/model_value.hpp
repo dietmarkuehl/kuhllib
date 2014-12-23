@@ -35,7 +35,11 @@ namespace nstd
     namespace projection {
         template <typename T, typename...> class model_value;
         template <typename S, typename...SP, typename T, typename... TP>
-        int compare(model_value<S, SP...> const&, model_value<T, TP...> const&);
+        auto compare(model_value<S, SP...> const&, model_value<T, TP...> const&) -> int;
+        template <typename S, typename...SP>
+        auto compare(model_value<S, SP...> const&, S const&) -> int;
+        template <typename S, typename...SP>
+        auto compare(S const&, model_value<S, SP...> const&) -> int;
     }
 
 }
@@ -65,8 +69,20 @@ public:
 // ----------------------------------------------------------------------------
 
 template <typename S, typename...SP, typename T, typename... TP>
-int nstd::projection::compare(model_value<S, SP...> const& v0, model_value<T, TP...> const& v1) {
+auto nstd::projection::compare(model_value<S, SP...> const& v0, model_value<T, TP...> const& v1)
+    -> int {
     return v0.get_value() - v1.get_value();
+}
+
+template <typename S, typename...SP>
+auto nstd::projection::compare(nstd::projection::model_value<S, SP...> const& v0, S const& v1)
+    -> int {
+    return v0.get_value() - v1;
+}
+template <typename S, typename...SP>
+auto nstd::projection::compare(S const& v0, nstd::projection::model_value<S, SP...> const& v1)
+    -> int {
+    return v0 - v1.get_value();
 }
 
 // ----------------------------------------------------------------------------

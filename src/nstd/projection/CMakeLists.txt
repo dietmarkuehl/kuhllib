@@ -28,6 +28,7 @@ project(nstd_projection)
 
 enable_testing()
 foreach(test
+	identity.t
 	model_readable.t
 	model_value.t
         )
