@@ -28,9 +28,13 @@ project(nstd_algorithm)
 
 enable_testing()
 foreach(test
+	bind.t
 	equal_to.t
+	mem_fn.t
 	model_predicate.t
 	not_.t
+	placeholders.t
+	reference_wrapper.t
         )
   add_executable(${test} ${test})
   target_link_libraries(${test} PUBLIC kuhltest)

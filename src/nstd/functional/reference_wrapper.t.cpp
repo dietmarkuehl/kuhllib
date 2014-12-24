@@ -1,4 +1,4 @@
-// nstd/projection/identity.t.cpp                                     -*-C++-*-
+// nstd/functional/reference_wrapper.t.cpp                            -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,44 +23,21 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/projection/identity.hpp"
+#include "nstd/functional/reference_wrapper.hpp"
 #include "kuhl/test.hpp"
 
-namespace NP = nstd::projection;
+namespace NF = nstd::functional;
 namespace KT = kuhl::test;
 
 // ----------------------------------------------------------------------------
 
-namespace
-{
-    struct foo {};
-}
-
-// ----------------------------------------------------------------------------
-
 static KT::testcase const tests[] = {
-    KT::expect_success("identity of a reference", [](KT::context& c)->bool{
-            foo object{};
-            int value{17};
-            NP::identity(value, 19);
-            return KT::assert_type<foo&, decltype(NP::identity(object))>(c, "type")
-                && KT::assert_equal(c, "same object", &object, &NP::identity(object))
-                && KT::assert_equal(c, "value", 19, value)
-                ;
-        }),
-    KT::expect_success("identity of a const reference", [](KT::context& c)->bool{
-            foo const object{};
-            return KT::assert_type<foo const&, decltype(NP::identity(object))>(c, "type")
-                && KT::assert_equal(c, "same object", &object, &NP::identity(object))
-                ;
-        }),
-    KT::expect_success("identity of temporary", [](KT::context& c)->bool{
-            return KT::assert_type<foo, decltype(NP::identity(foo{}))>(c, "type")
-                ;
+    KT::expect_failure("placeholder", [](KT::context& c)->bool{
+           return false;
         }),
 };
 
 int main(int ac, char* av[])
 {
-    return KT::run_tests("projection::identity", ac, av, ::tests);
+    return KT::run_tests("functional::reference_wrapper", ac, av, ::tests);
 }

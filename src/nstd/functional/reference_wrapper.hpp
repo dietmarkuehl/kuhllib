@@ -1,4 +1,4 @@
-// nstd/projection/identity.t.cpp                                     -*-C++-*-
+// nstd/functional/reference_wrapper.hpp                              -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,44 +23,38 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/projection/identity.hpp"
-#include "kuhl/test.hpp"
-
-namespace NP = nstd::projection;
-namespace KT = kuhl::test;
+#ifndef INCLUDED_NSTD_FUNCTIONAL_REFERENCE_WRAPPER
+#define INCLUDED_NSTD_FUNCTIONAL_REFERENCE_WRAPPER
 
 // ----------------------------------------------------------------------------
 
-namespace
+namespace nstd
 {
-    struct foo {};
+    namespace functional {
+        template <typename> class reference_wrapper;
+
+        template <typename T>
+        nstd::functional::reference_wrapper<T> ref(T&) noexcept(true);
+        template <typename T>
+        nstd::functional::reference_wrapper<T> ref(nstd::functional::reference_wrapper<T>) noexcept(true);
+        template <typename T>
+        nstd::functional::reference_wrapper<T const> cref(T const&) noexcept(true);
+        template <typename T>
+        nstd::functional::reference_wrapper<T const> cref(nstd::functional::reference_wrapper<T>) noexcept(true);
+
+        template <typename T> void ref(T const&&) = delete;
+        template <typename T> void cref(T const&&) = delete;
+    }
+
 }
 
 // ----------------------------------------------------------------------------
 
-static KT::testcase const tests[] = {
-    KT::expect_success("identity of a reference", [](KT::context& c)->bool{
-            foo object{};
-            int value{17};
-            NP::identity(value, 19);
-            return KT::assert_type<foo&, decltype(NP::identity(object))>(c, "type")
-                && KT::assert_equal(c, "same object", &object, &NP::identity(object))
-                && KT::assert_equal(c, "value", 19, value)
-                ;
-        }),
-    KT::expect_success("identity of a const reference", [](KT::context& c)->bool{
-            foo const object{};
-            return KT::assert_type<foo const&, decltype(NP::identity(object))>(c, "type")
-                && KT::assert_equal(c, "same object", &object, &NP::identity(object))
-                ;
-        }),
-    KT::expect_success("identity of temporary", [](KT::context& c)->bool{
-            return KT::assert_type<foo, decltype(NP::identity(foo{}))>(c, "type")
-                ;
-        }),
+template <typename>
+class nstd::functional::reference_wrapper
+{
 };
 
-int main(int ac, char* av[])
-{
-    return KT::run_tests("projection::identity", ac, av, ::tests);
-}
+// ----------------------------------------------------------------------------
+
+#endif

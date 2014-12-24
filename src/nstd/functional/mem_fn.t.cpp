@@ -1,4 +1,4 @@
-// nstd/projection/identity.t.cpp                                     -*-C++-*-
+// nstd/functional/mem_fn.t.cpp                                       -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,44 +23,55 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/projection/identity.hpp"
+#include "nstd/functional/mem_fn.hpp"
 #include "kuhl/test.hpp"
+#include <tuple>
 
-namespace NP = nstd::projection;
+namespace NF = nstd::functional;
 namespace KT = kuhl::test;
 
 // ----------------------------------------------------------------------------
 
-namespace
-{
-    struct foo {};
+namespace {
+    struct foo {
+        int mem;
+        foo(int mem): mem(mem) {}
+        std::tuple<int> mem0() { return std::make_tuple(this->mem); }
+        std::tuple<int> omem0() { return std::make_tuple(this->mem); }
+        std::tuple<int, int> mem1(int v0) { return std::make_tuple(this->mem, v0); }
+        std::tuple<int, int> omem1(int v0) { return std::make_tuple(this->mem, v0); }
+        std::tuple<int, int, int> mem2(int v0, int v1) { return std::make_tuple(this->mem, v0, v1); }
+        std::tuple<int, int, int> omem2(int v0, int v1) { return std::make_tuple(this->mem, v0, v1); }
+    };
 }
 
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
-    KT::expect_success("identity of a reference", [](KT::context& c)->bool{
-            foo object{};
-            int value{17};
-            NP::identity(value, 19);
-            return KT::assert_type<foo&, decltype(NP::identity(object))>(c, "type")
-                && KT::assert_equal(c, "same object", &object, &NP::identity(object))
-                && KT::assert_equal(c, "value", 19, value)
+    KT::expect_success("mem_fn(mem0)", [](KT::context& c)->bool{
+            foo f(18);
+            return KT::assert_true(c, "call()", std::make_tuple(18) == NF::mem_fn(&foo::mem0)(f))
+                && KT::assert_true(c, "equal", NF::mem_fn(&foo::mem0) == NF::mem_fn(&foo::mem0))
+                && KT::assert_false(c, "not equal", NF::mem_fn(&foo::mem0) == NF::mem_fn(&foo::omem0))
                 ;
         }),
-    KT::expect_success("identity of a const reference", [](KT::context& c)->bool{
-            foo const object{};
-            return KT::assert_type<foo const&, decltype(NP::identity(object))>(c, "type")
-                && KT::assert_equal(c, "same object", &object, &NP::identity(object))
+    KT::expect_success("mem_fn(mem1)", [](KT::context& c)->bool{
+            foo f(18);
+            return KT::assert_true(c, "call()", std::make_tuple(18, 43) == NF::mem_fn(&foo::mem1)(f, 43))
+                && KT::assert_true(c, "equal", NF::mem_fn(&foo::mem1) == NF::mem_fn(&foo::mem1))
+                && KT::assert_false(c, "not equal", NF::mem_fn(&foo::mem1) == NF::mem_fn(&foo::omem1))
                 ;
         }),
-    KT::expect_success("identity of temporary", [](KT::context& c)->bool{
-            return KT::assert_type<foo, decltype(NP::identity(foo{}))>(c, "type")
+    KT::expect_success("mem_fn(mem2)", [](KT::context& c)->bool{
+            foo f(18);
+            return KT::assert_true(c, "call()", std::make_tuple(18, 43, 11) == NF::mem_fn(&foo::mem2)(f, 43, 11))
+                && KT::assert_true(c, "equal", NF::mem_fn(&foo::mem2) == NF::mem_fn(&foo::mem2))
+                && KT::assert_false(c, "not equal", NF::mem_fn(&foo::mem2) == NF::mem_fn(&foo::omem2))
                 ;
         }),
 };
 
 int main(int ac, char* av[])
 {
-    return KT::run_tests("projection::identity", ac, av, ::tests);
+    return KT::run_tests("functional::mem_fn", ac, av, ::tests);
 }

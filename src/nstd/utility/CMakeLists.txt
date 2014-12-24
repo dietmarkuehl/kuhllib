@@ -30,6 +30,7 @@ enable_testing()
 foreach(test
 	equality_comparable.t
 	forward.t
+	integer_sequence.t
 	move.t
 	pair.t
 	swap.t

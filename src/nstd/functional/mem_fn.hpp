@@ -1,4 +1,4 @@
-// nstd/projection/identity.t.cpp                                     -*-C++-*-
+// nstd/functional/mem_fn.hpp                                         -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,44 +23,43 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/projection/identity.hpp"
-#include "kuhl/test.hpp"
+#ifndef INCLUDED_NSTD_FUNCTIONAL_MEM_FN
+#define INCLUDED_NSTD_FUNCTIONAL_MEM_FN
 
-namespace NP = nstd::projection;
-namespace KT = kuhl::test;
+#include "nstd/utility/forward.hpp"
 
 // ----------------------------------------------------------------------------
 
-namespace
+namespace nstd
 {
-    struct foo {};
+    namespace functional {
+        namespace detail {
+            template <typename R, typename T>
+            class mem_fn {
+                R T::*mem_fun;
+            public:
+                explicit mem_fn(R T::*mem_fun): mem_fun(mem_fun) {}
+                template <typename Object, typename... Args>
+                auto operator()(Object&& object, Args&&... args)
+                    -> decltype((object.*(this->mem_fun))(nstd::utility::forward<Args>(args)...)) {
+                    return (object.*(this->mem_fun))(nstd::utility::forward<Args>(args)...);
+                }
+                bool operator==(mem_fn const& other) const {
+                    return this->mem_fun == other.mem_fun;
+                }
+                bool operator!=(mem_fn const& other) const {
+                    return !(*this == other);
+                }
+            };
+        }
+        template <typename R, typename T>
+        nstd::functional::detail::mem_fn<R, T> mem_fn(R T::*mem_fun) {
+            return nstd::functional::detail::mem_fn<R, T>(mem_fun);
+        }
+    }
+
 }
 
 // ----------------------------------------------------------------------------
 
-static KT::testcase const tests[] = {
-    KT::expect_success("identity of a reference", [](KT::context& c)->bool{
-            foo object{};
-            int value{17};
-            NP::identity(value, 19);
-            return KT::assert_type<foo&, decltype(NP::identity(object))>(c, "type")
-                && KT::assert_equal(c, "same object", &object, &NP::identity(object))
-                && KT::assert_equal(c, "value", 19, value)
-                ;
-        }),
-    KT::expect_success("identity of a const reference", [](KT::context& c)->bool{
-            foo const object{};
-            return KT::assert_type<foo const&, decltype(NP::identity(object))>(c, "type")
-                && KT::assert_equal(c, "same object", &object, &NP::identity(object))
-                ;
-        }),
-    KT::expect_success("identity of temporary", [](KT::context& c)->bool{
-            return KT::assert_type<foo, decltype(NP::identity(foo{}))>(c, "type")
-                ;
-        }),
-};
-
-int main(int ac, char* av[])
-{
-    return KT::run_tests("projection::identity", ac, av, ::tests);
-}
+#endif
