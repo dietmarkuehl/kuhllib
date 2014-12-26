@@ -31,9 +31,49 @@ namespace KT = kuhl::test;
 
 // ----------------------------------------------------------------------------
 
+namespace
+{
+    struct foo {};
+}
+
+// ----------------------------------------------------------------------------
+
 static KT::testcase const tests[] = {
-    KT::expect_failure("placeholder", [](KT::context& c)->bool{
-           return false;
+    KT::expect_success("typedefs", [](KT::context& c)->bool{
+            return KT::assert_type<foo, NF::reference_wrapper<foo>::type>(c, "type")
+                ;
+        }),
+    KT::expect_success("ctors", [](KT::context& c)->bool{
+            foo object;
+            NF::reference_wrapper<foo> const ref0(object);
+            NF::reference_wrapper<foo> const ref1(ref0);
+            return KT::assert_true(c, "noexcept", noexcept(NF::reference_wrapper<foo>(object)))
+                && KT::assert_equal(c, "init object (conversion)", &object, &static_cast<foo&>(ref0))
+                && KT::assert_equal(c, "init object", &object, &ref0.get())
+                && KT::assert_true(c, "noexcept", noexcept(NF::reference_wrapper<foo>(ref0)))
+                && KT::assert_equal(c, "copy object (conversion)", &object, &static_cast<foo&>(ref1))
+                && KT::assert_equal(c, "copy object", &object, &ref1.get())
+                ;
+        }),
+    KT::expect_success("assignment", [](KT::context& c)->bool{
+            foo object0;
+            foo object1;
+            NF::reference_wrapper<foo> const ref0(object0);
+            NF::reference_wrapper<foo>       ref1(object1);
+            ref1 = ref0;
+            return KT::assert_type<NF::reference_wrapper<foo>&, decltype(ref1 = ref0)>(c, "assignment type")
+                && KT::assert_true(c, "noexept", noexcept(ref1 = ref0))
+                && KT::assert_equal(c, "copy object (conversion)", &object0, &static_cast<foo&>(ref1))
+                && KT::assert_equal(c, "copy object", &object0, &ref1.get())
+                ;
+        }),
+    KT::expect_success("accessor", [](KT::context& c)->bool{
+            foo object0;
+            NF::reference_wrapper<foo> const ref0(object0);
+            return KT::assert_type<foo&, decltype(ref0.get())>(c, "get() type")
+                && KT::assert_equal(c, "object (conversion)", &object0, &static_cast<foo&>(ref0))
+                && KT::assert_equal(c, "object", &object0, &ref0.get())
+                ;
         }),
 };
 

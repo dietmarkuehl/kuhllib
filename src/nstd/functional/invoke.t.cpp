@@ -1,4 +1,4 @@
-// nstd/functional/reference_wrapper.hpp                              -*-C++-*-
+// nstd/functional/invoke.t.cpp                                       -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,53 +23,49 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_FUNCTIONAL_REFERENCE_WRAPPER
-#define INCLUDED_NSTD_FUNCTIONAL_REFERENCE_WRAPPER
+#include "nstd/functional/invoke.hpp"
+#include "kuhl/test.hpp"
 
-#include "nstd/type_traits/result_of.hpp"
+namespace NF = nstd::functional;
+namespace KT = kuhl::test;
 
 // ----------------------------------------------------------------------------
 
-namespace nstd
+namespace
 {
-    namespace functional {
-        template <typename> class reference_wrapper;
-
-        template <typename T>
-        nstd::functional::reference_wrapper<T> ref(T&) noexcept(true);
-        template <typename T>
-        nstd::functional::reference_wrapper<T> ref(nstd::functional::reference_wrapper<T>) noexcept(true);
-        template <typename T>
-        nstd::functional::reference_wrapper<T const> cref(T const&) noexcept(true);
-        template <typename T>
-        nstd::functional::reference_wrapper<T const> cref(nstd::functional::reference_wrapper<T>) noexcept(true);
-
-        template <typename T> void ref(T const&&) = delete;
-        template <typename T> void cref(T const&&) = delete;
-    }
-
+    int fun(char, double) { return 41; }
+    struct function {
+        int operator()(char, double) { return 42; }
+    };
+    struct type {
+        int member(char, double) { return 43; }
+    };
 }
 
 // ----------------------------------------------------------------------------
 
-template <typename T>
-class nstd::functional::reference_wrapper
-{
-    T* pointer;
-public:
-    using type = T;
-    //-dk:TODO function related typedefs
-
-    reference_wrapper(T& object) noexcept(true): pointer(&object) {}
-    reference_wrapper(T&&) = delete;
-
-    operator T&() const noexcept(true) { return *this->pointer; }
-    auto get() const noexcept(true) -> T& { return *this->pointer; }
-
-    template <typename... Args>
-    auto operator()(Args&&...) const -> nstd::type_traits::result_of_t<T&(Args...)>;
+static KT::testcase const tests[] = {
+    KT::expect_success("invoke(fun)", [](KT::context& c)->bool{
+            return KT::assert_type<int, decltype(NF::invoke(fun, 'c', 3.14))>(c, "type")
+                && KT::assert_equal(c, "call", 41, NF::invoke(fun, 'c', 3.14))
+               ;
+        }),
+    KT::expect_success("invoke(function())", [](KT::context& c)->bool{
+            return KT::assert_type<int, decltype(NF::invoke(function(), 'c', 3.14))>(c, "type")
+                && KT::assert_equal(c, "call", 42, NF::invoke(function(), 'c', 3.14))
+               ;
+        }),
+#if 0
+    KT::expect_success("invoke(&type::member)", [](KT::context& c)->bool{
+            type object;
+            return KT::assert_type<int, decltype(NF::invoke(&type::member, object, 'c', 3.14))>(c, "type")
+                && KT::assert_equal(c, "call", 42, NF::invoke(&type::member, object, 'c', 3.14))
+               ;
+        }),
+#endif
 };
 
-// ----------------------------------------------------------------------------
-
-#endif
+int main(int ac, char* av[])
+{
+    return KT::run_tests("functional::invoke", ac, av, ::tests);
+}

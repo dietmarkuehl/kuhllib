@@ -1,4 +1,4 @@
-// nstd/functional/reference_wrapper.hpp                              -*-C++-*-
+// nstd/type_traits/is_member_pointer.hpp                             -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,52 +23,33 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_FUNCTIONAL_REFERENCE_WRAPPER
-#define INCLUDED_NSTD_FUNCTIONAL_REFERENCE_WRAPPER
+#ifndef INCLUDED_NSTD_TYPE_TRAITS_IS_MEMBER_POINTER
+#define INCLUDED_NSTD_TYPE_TRAITS_IS_MEMBER_POINTER
 
-#include "nstd/type_traits/result_of.hpp"
+#include "nstd/type_traits/integral_constant.hpp"
 
 // ----------------------------------------------------------------------------
 
 namespace nstd
 {
-    namespace functional {
-        template <typename> class reference_wrapper;
-
-        template <typename T>
-        nstd::functional::reference_wrapper<T> ref(T&) noexcept(true);
-        template <typename T>
-        nstd::functional::reference_wrapper<T> ref(nstd::functional::reference_wrapper<T>) noexcept(true);
-        template <typename T>
-        nstd::functional::reference_wrapper<T const> cref(T const&) noexcept(true);
-        template <typename T>
-        nstd::functional::reference_wrapper<T const> cref(nstd::functional::reference_wrapper<T>) noexcept(true);
-
-        template <typename T> void ref(T const&&) = delete;
-        template <typename T> void cref(T const&&) = delete;
+    namespace type_traits {
+        template <typename> struct is_member_pointer;
+        template <typename T, typename S> struct is_member_pointer<T S::*>;
     }
 
 }
 
 // ----------------------------------------------------------------------------
 
-template <typename T>
-class nstd::functional::reference_wrapper
-{
-    T* pointer;
-public:
-    using type = T;
-    //-dk:TODO function related typedefs
-
-    reference_wrapper(T& object) noexcept(true): pointer(&object) {}
-    reference_wrapper(T&&) = delete;
-
-    operator T&() const noexcept(true) { return *this->pointer; }
-    auto get() const noexcept(true) -> T& { return *this->pointer; }
-
-    template <typename... Args>
-    auto operator()(Args&&...) const -> nstd::type_traits::result_of_t<T&(Args...)>;
+template <typename>
+struct ::nstd::type_traits::is_member_pointer
+    : ::nstd::type_traits::false_type {
 };
+template <typename T, typename S>
+struct ::nstd::type_traits::is_member_pointer<T S::*>
+    : ::nstd::type_traits::true_type {
+};
+
 
 // ----------------------------------------------------------------------------
 

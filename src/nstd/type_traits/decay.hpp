@@ -1,4 +1,4 @@
-// nstd/functional/reference_wrapper.hpp                              -*-C++-*-
+// nstd/type_traits/decay.hpp                                         -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,29 +23,24 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_FUNCTIONAL_REFERENCE_WRAPPER
-#define INCLUDED_NSTD_FUNCTIONAL_REFERENCE_WRAPPER
+#ifndef INCLUDED_NSTD_TYPE_TRAITS_DECAY
+#define INCLUDED_NSTD_TYPE_TRAITS_DECAY
 
-#include "nstd/type_traits/result_of.hpp"
+#include "nstd/type_traits/choose_type.hpp"
+#include "nstd/type_traits/is_array.hpp"
+#include "nstd/type_traits/is_function.hpp"
+#include "nstd/type_traits/remove_cv.hpp"
+#include "nstd/type_traits/remove_extent.hpp"
+#include "nstd/type_traits/remove_reference.hpp"
 
 // ----------------------------------------------------------------------------
 
 namespace nstd
 {
-    namespace functional {
-        template <typename> class reference_wrapper;
-
+    namespace type_traits {
+        template <typename> struct decay;
         template <typename T>
-        nstd::functional::reference_wrapper<T> ref(T&) noexcept(true);
-        template <typename T>
-        nstd::functional::reference_wrapper<T> ref(nstd::functional::reference_wrapper<T>) noexcept(true);
-        template <typename T>
-        nstd::functional::reference_wrapper<T const> cref(T const&) noexcept(true);
-        template <typename T>
-        nstd::functional::reference_wrapper<T const> cref(nstd::functional::reference_wrapper<T>) noexcept(true);
-
-        template <typename T> void ref(T const&&) = delete;
-        template <typename T> void cref(T const&&) = delete;
+        using decay_t = typename ::nstd::type_traits::decay<T>::type;
     }
 
 }
@@ -53,21 +48,20 @@ namespace nstd
 // ----------------------------------------------------------------------------
 
 template <typename T>
-class nstd::functional::reference_wrapper
+struct ::nstd::type_traits::decay
 {
-    T* pointer;
+private:
+    using auxilary = ::nstd::type_traits::remove_reference_t<T>;
+
 public:
-    using type = T;
-    //-dk:TODO function related typedefs
-
-    reference_wrapper(T& object) noexcept(true): pointer(&object) {}
-    reference_wrapper(T&&) = delete;
-
-    operator T&() const noexcept(true) { return *this->pointer; }
-    auto get() const noexcept(true) -> T& { return *this->pointer; }
-
-    template <typename... Args>
-    auto operator()(Args&&...) const -> nstd::type_traits::result_of_t<T&(Args...)>;
+    using type = ::nstd::type_traits::choose_type_t<
+            ::nstd::type_traits::choice< ::nstd::type_traits::is_array<auxilary>::value,
+                                        ::nstd::type_traits::remove_extent_t<auxilary>*>,
+            ::nstd::type_traits::choice< ::nstd::type_traits::is_function<auxilary>::value,
+                                        auxilary*>,
+            ::nstd::type_traits::choice<true,
+                                        ::nstd::type_traits::remove_cv_t<auxilary> >
+        >;
 };
 
 // ----------------------------------------------------------------------------

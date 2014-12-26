@@ -1,4 +1,4 @@
-// nstd/functional/reference_wrapper.hpp                              -*-C++-*-
+// nstd/type_traits/remove_extent.hpp                                 -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,51 +23,39 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_FUNCTIONAL_REFERENCE_WRAPPER
-#define INCLUDED_NSTD_FUNCTIONAL_REFERENCE_WRAPPER
+#ifndef INCLUDED_NSTD_TYPE_TRAITS_REMOVE_EXTENT
+#define INCLUDED_NSTD_TYPE_TRAITS_REMOVE_EXTENT
 
-#include "nstd/type_traits/result_of.hpp"
+#include <cstddef>
 
 // ----------------------------------------------------------------------------
 
 namespace nstd
 {
-    namespace functional {
-        template <typename> class reference_wrapper;
-
+    namespace type_traits {
+        template <typename> struct remove_extent;
+        template <typename T, ::std::size_t Size> struct remove_extent<T[Size]>;
+        template <typename T> struct remove_extent<T[]>;
         template <typename T>
-        nstd::functional::reference_wrapper<T> ref(T&) noexcept(true);
-        template <typename T>
-        nstd::functional::reference_wrapper<T> ref(nstd::functional::reference_wrapper<T>) noexcept(true);
-        template <typename T>
-        nstd::functional::reference_wrapper<T const> cref(T const&) noexcept(true);
-        template <typename T>
-        nstd::functional::reference_wrapper<T const> cref(nstd::functional::reference_wrapper<T>) noexcept(true);
-
-        template <typename T> void ref(T const&&) = delete;
-        template <typename T> void cref(T const&&) = delete;
+        using remove_extent_t = typename ::nstd::type_traits::remove_extent<T>::type;
     }
-
 }
 
 // ----------------------------------------------------------------------------
 
 template <typename T>
-class nstd::functional::reference_wrapper
-{
-    T* pointer;
-public:
+struct ::nstd::type_traits::remove_extent {
     using type = T;
-    //-dk:TODO function related typedefs
+};
 
-    reference_wrapper(T& object) noexcept(true): pointer(&object) {}
-    reference_wrapper(T&&) = delete;
+template <typename T, ::std::size_t Size>
+struct ::nstd::type_traits::remove_extent<T[Size]> {
+    using type = T;
+};
 
-    operator T&() const noexcept(true) { return *this->pointer; }
-    auto get() const noexcept(true) -> T& { return *this->pointer; }
-
-    template <typename... Args>
-    auto operator()(Args&&...) const -> nstd::type_traits::result_of_t<T&(Args...)>;
+template <typename T>
+struct ::nstd::type_traits::remove_extent<T[]> {
+    using type = T;
 };
 
 // ----------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-// nstd/functional/reference_wrapper.hpp                              -*-C++-*-
+// nstd/type_traits/is_array.hpp                                      -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,51 +23,39 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_FUNCTIONAL_REFERENCE_WRAPPER
-#define INCLUDED_NSTD_FUNCTIONAL_REFERENCE_WRAPPER
+#ifndef INCLUDED_NSTD_TYPE_TRAITS_IS_ARRAY
+#define INCLUDED_NSTD_TYPE_TRAITS_IS_ARRAY
 
-#include "nstd/type_traits/result_of.hpp"
+#include "nstd/type_traits/integral_constant.hpp"
+#include <cstddef>
 
 // ----------------------------------------------------------------------------
 
 namespace nstd
 {
-    namespace functional {
-        template <typename> class reference_wrapper;
-
-        template <typename T>
-        nstd::functional::reference_wrapper<T> ref(T&) noexcept(true);
-        template <typename T>
-        nstd::functional::reference_wrapper<T> ref(nstd::functional::reference_wrapper<T>) noexcept(true);
-        template <typename T>
-        nstd::functional::reference_wrapper<T const> cref(T const&) noexcept(true);
-        template <typename T>
-        nstd::functional::reference_wrapper<T const> cref(nstd::functional::reference_wrapper<T>) noexcept(true);
-
-        template <typename T> void ref(T const&&) = delete;
-        template <typename T> void cref(T const&&) = delete;
+    namespace type_traits {
+        template <typename> struct is_array;
+        template <typename T, ::std::size_t Size> struct is_array<T[Size]>;
+        template <typename T> struct is_array<T[]>;
     }
 
 }
 
 // ----------------------------------------------------------------------------
 
+template <typename>
+struct ::nstd::type_traits::is_array
+    : ::nstd::type_traits::false_type {
+};
+
+template <typename T, ::std::size_t Size>
+struct ::nstd::type_traits::is_array<T[Size]>
+    : ::nstd::type_traits::true_type {
+};
+
 template <typename T>
-class nstd::functional::reference_wrapper
-{
-    T* pointer;
-public:
-    using type = T;
-    //-dk:TODO function related typedefs
-
-    reference_wrapper(T& object) noexcept(true): pointer(&object) {}
-    reference_wrapper(T&&) = delete;
-
-    operator T&() const noexcept(true) { return *this->pointer; }
-    auto get() const noexcept(true) -> T& { return *this->pointer; }
-
-    template <typename... Args>
-    auto operator()(Args&&...) const -> nstd::type_traits::result_of_t<T&(Args...)>;
+struct ::nstd::type_traits::is_array<T[]>
+    : ::nstd::type_traits::true_type {
 };
 
 // ----------------------------------------------------------------------------

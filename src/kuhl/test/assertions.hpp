@@ -38,6 +38,13 @@ namespace kuhl
         namespace detail {
             template <typename T0, typename T1> struct is_same;
             template <typename T> struct is_same<T, T>;
+
+            struct no_nested_type {
+                template <typename T, typename = typename T::type>
+                static auto test(void*) -> bool { return false; }
+                template <typename T>
+                static auto test(...) -> bool { return true; }
+            };
         }
 
         auto assert_true(kuhl::test::context&, char const* message, bool value) -> bool;
@@ -52,6 +59,8 @@ namespace kuhl
 
         template <typename T0, typename T1>
         auto assert_type(kuhl::test::context& context, char const* message) -> bool;
+        template <typename T>
+        auto assert_no_nested_type(kuhl::test::context& context, char const* message) -> bool;
     }
 
 }
@@ -97,5 +106,16 @@ auto kuhl::test::assert_type(kuhl::test::context& context, char const* message) 
 
 // ----------------------------------------------------------------------------
 
+template <typename T>
+auto kuhl::test::assert_no_nested_type(kuhl::test::context& context, char const* message) -> bool
+{
+    if (!kuhl::test::detail::no_nested_type::test<T>(0)) {
+        context << message;
+        return false;
+    }
+    return true;
+}
+
+// ----------------------------------------------------------------------------
 
 #endif

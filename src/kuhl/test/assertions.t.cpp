@@ -31,6 +31,13 @@ namespace KT = kuhl::test;
 
 // ----------------------------------------------------------------------------
 
+namespace {
+    struct foo {};
+    struct bar { using type = int; };
+}
+
+// ----------------------------------------------------------------------------
+
 static KT::testcase const tests[] = {
     KT::expect_success("successful assertion for true: true and no message", [](KT::context& c)->bool{
             KT::context d;
@@ -106,6 +113,16 @@ static KT::testcase const tests[] = {
                 && assert_false(c, "there is a message", d.empty())
                 && assert_equal(c, "message", d.c_str(), std::string("type check"))
                 ;
+        }),
+    KT::expect_success("nested type exists", [](KT::context& c) -> bool {
+            KT::context d;
+            return assert_true(c, KT::assert_no_nested_type<int>(d, "int"))
+                && assert_true(c, KT::assert_no_nested_type<foo>(d, "foo"))
+                && assert_false(c, KT::assert_no_nested_type<bar>(d, "bar"))
+                && assert_false(c, "there is a message", d.empty())
+                && assert_equal(c, "message", d.c_str(), std::string("bar"))
+                ;
+
         }),
 };
 

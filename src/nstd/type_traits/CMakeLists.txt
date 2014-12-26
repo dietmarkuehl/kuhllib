@@ -32,12 +32,16 @@ foreach(test
         add_lvalue_reference.t 
         choose_type.t 
         condition.t 
+        decay.t 
         declval.t 
         enable_if.t 
         integral_constant.t 
+        is_array.t 
         is_assignable.t 
         is_constructible.t 
         is_convertible.t 
+        is_function.t 
+	is_member_pointer.t
 	is_move_assignable.t
 	is_nothrow_constructible.t
 	is_nothrow_move_assignable.t
@@ -45,9 +49,11 @@ foreach(test
         is_same.t 
         is_void.t 
         remove_const.t 
+        remove_extent.t 
         remove_reference.t 
         remove_volatile.t 
         remove_cv.t 
+        result_of.t 
         )
   add_executable(${test} ${test})
   target_link_libraries(${test} PUBLIC kuhltest)

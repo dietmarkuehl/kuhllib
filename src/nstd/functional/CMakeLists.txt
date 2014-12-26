@@ -30,6 +30,7 @@ enable_testing()
 foreach(test
 	bind.t
 	equal_to.t
+	invoke.t
 	mem_fn.t
 	model_predicate.t
 	not_.t
