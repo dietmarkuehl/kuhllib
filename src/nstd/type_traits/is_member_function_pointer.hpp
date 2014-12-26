@@ -1,4 +1,4 @@
-// nstd/functional/invoke.t.cpp                                       -*-C++-*-
+// nstd/type_traits/is_member_function_pointer.hpp                    -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,49 +23,34 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/functional/invoke.hpp"
-#include "kuhl/test.hpp"
+#ifndef INCLUDED_NSTD_TYPE_TRAITS_IS_MEMBER_FUNCTION_POINTER
+#define INCLUDED_NSTD_TYPE_TRAITS_IS_MEMBER_FUNCTION_POINTER
 
-namespace NF = nstd::functional;
-namespace KT = kuhl::test;
+#include "nstd/type_traits/integral_constant.hpp"
+#include "nstd/type_traits/is_function.hpp"
 
 // ----------------------------------------------------------------------------
 
-namespace
+namespace nstd
 {
-    int fun(char, double) { return 41; }
-    struct function {
-        int operator()(char, double) { return 42; }
-    };
-    struct type {
-        int member(char, double) { return 43; }
-    };
+    namespace type_traits {
+        template <typename> struct is_member_function_pointer;
+        template <typename T, typename S> struct is_member_function_pointer<T S::*>;
+    }
+
 }
 
 // ----------------------------------------------------------------------------
 
-static KT::testcase const tests[] = {
-    KT::expect_success("invoke(fun)", [](KT::context& c)->bool{
-            return KT::assert_type<int, decltype(NF::invoke(fun, 'c', 3.14))>(c, "type")
-                && KT::assert_equal(c, "call", 41, NF::invoke(fun, 'c', 3.14))
-               ;
-        }),
-    KT::expect_success("invoke(function())", [](KT::context& c)->bool{
-            return KT::assert_type<int, decltype(NF::invoke(function(), 'c', 3.14))>(c, "type")
-                && KT::assert_equal(c, "call", 42, NF::invoke(function(), 'c', 3.14))
-               ;
-        }),
-#if 1
-    KT::expect_success("invoke(&type::member)", [](KT::context& c)->bool{
-            type object;
-            return KT::assert_type<int, decltype(NF::invoke(&type::member, object, 'c', 3.14))>(c, "type")
-                && KT::assert_equal(c, "call", 43, NF::invoke(&type::member, object, 'c', 3.14))
-               ;
-        }),
-#endif
+template <typename>
+struct ::nstd::type_traits::is_member_function_pointer
+    : ::nstd::type_traits::false_type {
+};
+template <typename T, typename S>
+struct ::nstd::type_traits::is_member_function_pointer<T S::*>
+    : ::nstd::type_traits::integral_constant<bool, ::nstd::type_traits::is_function<T>::value> {
 };
 
-int main(int ac, char* av[])
-{
-    return KT::run_tests("functional::invoke", ac, av, ::tests);
-}
+// ----------------------------------------------------------------------------
+
+#endif

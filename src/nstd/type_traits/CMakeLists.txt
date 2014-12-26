@@ -41,6 +41,8 @@ foreach(test
         is_constructible.t 
         is_convertible.t 
         is_function.t 
+	is_member_function_pointer.t
+	is_member_object_pointer.t
 	is_member_pointer.t
 	is_move_assignable.t
 	is_nothrow_constructible.t
