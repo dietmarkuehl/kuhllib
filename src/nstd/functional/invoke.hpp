@@ -50,8 +50,8 @@ namespace nstd
             template <bool, bool, typename, typename, typename...> struct invoke_member_fun_type;
             template <typename Fun, typename Class, typename Obj, typename... Args>
                 struct invoke_member_fun_type<true,  true, Fun Class::*, Obj, Args...>;
-            template <typename Fun, typename Obj, typename... Args>
-                struct invoke_member_fun_type<true, false, Fun, Obj, Args...>;
+            template <typename Fun, typename Class, typename Obj, typename... Args>
+                struct invoke_member_fun_type<true, false, Fun Class::*, Obj, Args...>;
             template <typename Type, typename Class, typename Obj>
                 struct invoke_member_fun_type<false,  true, Type Class::*, Obj>;
             template <typename Type, typename Class, typename Obj>
@@ -81,12 +81,12 @@ namespace nstd
 // ----------------------------------------------------------------------------
 
 template <bool, bool, typename, typename, typename...>
-struct ::nstd::functional::detail::invoke_member_fun_type {
+struct nstd::functional::detail::invoke_member_fun_type {
     using type = void;
     using choice_type = ::nstd::type_traits::choice<false, ::nstd::functional::detail::invoke_empty>;
 };
 template <typename Fun, typename Class, typename Obj, typename... Args>
-struct ::nstd::functional::detail::invoke_member_fun_type<true,  true, Fun Class::*, Obj, Args...> {
+struct nstd::functional::detail::invoke_member_fun_type<true,  true, Fun Class::*, Obj, Args...> {
     template <typename F, typename = decltype((::nstd::type_traits::declval<Obj>().*nstd::type_traits::declval<F>())
                                               (::nstd::type_traits::declval<Args>()...))>
     static auto test(int) -> ::nstd::type_traits::true_type;
@@ -95,7 +95,7 @@ struct ::nstd::functional::detail::invoke_member_fun_type<true,  true, Fun Class
 
     template <typename> struct result_type;
     template <typename RC, typename... A> struct result_type<RC(A...)> { using type = RC; };
-    template <typename RC, typename... A> struct result_type<RC(A......)> { using type = RC; };
+    template <typename RC, typename... A> struct result_type<RC(A..., ...)> { using type = RC; };
 
     using type = typename result_type<Fun>::type;
     using choice_type = ::nstd::type_traits::choice<decltype(test<Fun Class::*>(0))::value,
@@ -107,7 +107,7 @@ struct ::nstd::functional::detail::invoke_member_fun_type<true,  true, Fun Class
     }
 };
 template <typename Fun, typename Class, typename Obj, typename... Args>
-struct ::nstd::functional::detail::invoke_member_fun_type<true,  false, Fun Class::*, Obj, Args...> {
+struct nstd::functional::detail::invoke_member_fun_type<true,  false, Fun Class::*, Obj, Args...> {
     template <typename O, typename F, typename = decltype((*::nstd::type_traits::declval<O>().*nstd::type_traits::declval<F>())
                                               (::nstd::type_traits::declval<Args>()...))>
     static auto test(int) -> ::nstd::type_traits::true_type;
@@ -116,7 +116,7 @@ struct ::nstd::functional::detail::invoke_member_fun_type<true,  false, Fun Clas
 
     template <typename> struct result_type;
     template <typename RC, typename... A> struct result_type<RC(A...)> { using type = RC; };
-    template <typename RC, typename... A> struct result_type<RC(A......)> { using type = RC; };
+    template <typename RC, typename... A> struct result_type<RC(A..., ...)> { using type = RC; };
 
     using type = typename result_type<Fun>::type;
     using choice_type = ::nstd::type_traits::choice<decltype(test<Obj, Fun Class::*>(0))::value,
@@ -128,7 +128,7 @@ struct ::nstd::functional::detail::invoke_member_fun_type<true,  false, Fun Clas
     }
 };
 template <typename Type, typename Class, typename Obj>
-struct ::nstd::functional::detail::invoke_member_fun_type<false,  true, Type Class::*, Obj> {
+struct nstd::functional::detail::invoke_member_fun_type<false,  true, Type Class::*, Obj> {
     template <typename O, typename F, typename = decltype(::nstd::type_traits::declval<O>().*nstd::type_traits::declval<F>())>
     static auto test(int) -> ::nstd::type_traits::true_type;
     template <typename, typename>
@@ -144,7 +144,7 @@ struct ::nstd::functional::detail::invoke_member_fun_type<false,  true, Type Cla
     }
 };
 template <typename Type, typename Class, typename Obj>
-struct ::nstd::functional::detail::invoke_member_fun_type<false,  false, Type Class::*, Obj> {
+struct nstd::functional::detail::invoke_member_fun_type<false,  false, Type Class::*, Obj> {
     template <typename O, typename F, typename = decltype((*::nstd::type_traits::declval<O>()).*nstd::type_traits::declval<F>())>
     static auto test(int) -> ::nstd::type_traits::true_type;
     template <typename, typename>
@@ -161,12 +161,12 @@ struct ::nstd::functional::detail::invoke_member_fun_type<false,  false, Type Cl
 };
 
 template <bool, typename, typename...>
-struct ::nstd::functional::detail::invoke_member_fun {
+struct nstd::functional::detail::invoke_member_fun {
     using type = void;
     using choice_type = ::nstd::type_traits::choice<false, ::nstd::functional::detail::invoke_empty>;
 };
 template <bool Ref, typename Fun, typename Class, typename Object, typename... Args>
-struct ::nstd::functional::detail::invoke_member_fun<Ref, Fun Class::*, Object, Args...> {
+struct nstd::functional::detail::invoke_member_fun<Ref, Fun Class::*, Object, Args...> {
     static constexpr bool is_function = ::nstd::type_traits::is_member_function_pointer<Fun Class::*>::value;
     using choice_type
         = typename ::nstd::functional::detail::invoke_member_fun_type<is_function, Ref, Fun Class::*, Object, Args...>::choice_type;
@@ -175,7 +175,7 @@ struct ::nstd::functional::detail::invoke_member_fun<Ref, Fun Class::*, Object, 
 // ----------------------------------------------------------------------------
 
 template <typename Fun, typename... Args>
-struct ::nstd::functional::detail::invoke_non_member_type<true, Fun, Args...> {
+struct nstd::functional::detail::invoke_non_member_type<true, Fun, Args...> {
     using type = decltype(::nstd::type_traits::declval<Fun>()(::nstd::type_traits::declval<Args>()...));
     using choice_type = ::nstd::type_traits::choice<true, ::nstd::functional::detail::invoke_non_member_type<true, Fun, Args...>>;
     
@@ -186,13 +186,13 @@ struct ::nstd::functional::detail::invoke_non_member_type<true, Fun, Args...> {
     }
 };
 template <typename Fun, typename... Args>
-struct ::nstd::functional::detail::invoke_non_member_type<false, Fun, Args...> {
+struct nstd::functional::detail::invoke_non_member_type<false, Fun, Args...> {
     using type = void;
     using choice_type = ::nstd::type_traits::choice<false, ::nstd::functional::detail::invoke_empty>;
 };
 
 template <typename Fun, typename... Args>
-struct ::nstd::functional::detail::invoke_non_member
+struct nstd::functional::detail::invoke_non_member
 {
     template <typename F, typename = decltype(::nstd::type_traits::declval<F>()(::nstd::type_traits::declval<Args>()...))>
     static auto test(int) -> ::nstd::type_traits::true_type;
@@ -205,7 +205,7 @@ struct ::nstd::functional::detail::invoke_non_member
 // ----------------------------------------------------------------------------
 
 template <typename Fun, typename... Args>
-struct ::nstd::functional::detail::invoke
+struct nstd::functional::detail::invoke
     : ::nstd::functional::detail::invoke_type<Fun, Args...> {
 };
 

@@ -26,6 +26,7 @@
 #ifndef INCLUDED_NSTD_TYPE_TRAITS_RESULT_OF
 #define INCLUDED_NSTD_TYPE_TRAITS_RESULT_OF
 
+#include "nstd/functional/invoke.hpp"
 #include "nstd/type_traits/enable_if.hpp"
 #include "nstd/type_traits/integral_constant.hpp"
 #include "nstd/type_traits/is_member_pointer.hpp"
@@ -39,19 +40,25 @@ namespace nstd
         namespace detail {
             template <typename... Args>
             struct result_of_test {
+#if 0
                 template <typename F,
                           typename = decltype(::nstd::type_traits::declval<F>()(::nstd::type_traits::declval<Args>()...), 0)>
                 static ::nstd::type_traits::true_type test(int);
                 template <typename F,
                           typename = typename ::nstd::type_traits::enable_if< ::nstd::type_traits::is_member_pointer<F>::value>::type>
                 static ::nstd::type_traits::true_type test(short);
+#else
+                template <typename F,
+                          typename = decltype(::nstd::functional::invoke(::nstd::type_traits::declval<F>(),
+                                                                         ::nstd::type_traits::declval<Args>()...))>
+                static ::nstd::type_traits::true_type test(int);
+#endif
                 template <typename F>
                 static ::nstd::type_traits::false_type test(...);
             };
-            template <bool, typename> struct result_of;
-            template <typename Fun, typename... Args> struct result_of<true, Fun(Args...)>;
-            template <typename T, typename S, typename Object, typename... Args> struct result_of<true, auto(Object, Args...) -> T S::*>;
-            template <typename T> struct result_of<false, T>;
+            template <bool, typename, typename...> struct result_of;
+            template <typename Fun, typename... Args> struct result_of<false, Fun, Args...>;
+            template <typename Fun, typename... Args> struct result_of<true, Fun, Args...>;
         }
         template <typename> class result_of;
         template <typename Fun, typename... Args> class result_of<Fun(Args...)>;
@@ -63,25 +70,22 @@ namespace nstd
 
 // ----------------------------------------------------------------------------
 
-template <typename T>
-struct ::nstd::type_traits::detail::result_of<false, T> {
+template <typename Fun, typename... Args>
+struct nstd::type_traits::detail::result_of<false, Fun, Args...> {
 };
 template <typename Fun, typename... Args>
-struct ::nstd::type_traits::detail::result_of<true, Fun(Args...)> {
-    using type = decltype(::nstd::type_traits::declval<Fun>()(::nstd::type_traits::declval<Args>()...));
-};
-template <typename T, typename S, typename Object, typename... Args>
-struct ::nstd::type_traits::detail::result_of<true, auto(Object, Args...) -> T S::*> {
-    using type = decltype((::nstd::type_traits::declval<Object>().*::nstd::type_traits::declval<T S::*>())(::nstd::type_traits::declval<Args>()...));
+struct nstd::type_traits::detail::result_of<true, Fun, Args...> {
+    using type = decltype(::nstd::functional::invoke(::nstd::type_traits::declval<Fun>(),
+                                                     ::nstd::type_traits::declval<Args>()...));
 };
 
 // ----------------------------------------------------------------------------
 
 template <typename Fun, typename... Args>
-class ::nstd::type_traits::result_of<Fun(Args...)>
+class nstd::type_traits::result_of<Fun(Args...)>
     : public ::nstd::type_traits::detail::result_of<
             decltype(::nstd::type_traits::detail::result_of_test<Args...>::template test<Fun>(0))::value,
-        Fun(Args...)> {
+            Fun, Args...> {
 };
 
 // ----------------------------------------------------------------------------

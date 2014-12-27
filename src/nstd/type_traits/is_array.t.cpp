@@ -53,6 +53,7 @@ static KT::testcase const tests[] = {
             constexpr bool mf1(NT::is_array<int(foo::*)(int)>::value);
             constexpr bool mf2(NT::is_array<int(foo::*)(int, int)>::value);
             return KT::assert_false(c, "int", ir)
+                && KT::assert_false(c, "foo", ifo)
                 && KT::assert_false(c, "int()", if0)
                 && KT::assert_false(c, "int(int)", if1)
                 && KT::assert_false(c, "int(int, int)", if2)

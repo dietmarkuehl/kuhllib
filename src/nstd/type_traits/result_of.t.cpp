@@ -39,45 +39,54 @@ namespace KT = kuhl::test;
 
 namespace
 {
-    auto f0() -> bool;
-    auto f1(int) -> char;
-    auto f2(int, double) -> short;
-    auto r0() ->bool&;
-    auto r1(int) -> char&;
-    auto r2(int, double) -> short&;
-
     struct fo {
-        auto operator()() -> void;
-        auto operator()(int) -> bool;
-        auto operator()(void*) -> long;
-        auto operator()(int, char) -> short;
+        auto operator()() -> void {}
+        auto operator()(int) -> bool { return false; }
+        auto operator()(void*) -> long { return 2l; }
+        auto operator()(int, char) -> short { return 3; }
     };
 
     struct foo {};
     struct bar: foo {};
     template <typename T>
     struct smart {
-        T& operator*();
+        T value;
+        T& operator*() { return value; }
     };
 }
 
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
+    KT::expect_success("prepare ", [](KT::context& c)->bool{
+            fo o;
+            smart<int> s;
+            s.value = 5;
+            smart<foo> fs;
+            *fs;
+            smart<bar> bs;
+            *bs;
+            return KT::assert_equal(c, "o()", true, (o(), true))
+                && KT::assert_equal(c, "o(0)", false, o(0))
+                && KT::assert_equal(c, "o(nullptr)", 2l, o(nullptr))
+                && KT::assert_equal(c, "o(0, 'c')", 3, o(0, 'c'))
+                && KT::assert_equal(c, "*s", 5, *s)
+                ;
+        }),
     KT::expect_success("function pointers", [](KT::context& c)->bool{
-            return KT::assert_type<bool,   NT::result_of<decltype(&f0)()>::type>(c, "f0 type")
-                && KT::assert_type<bool,   NT::result_of_t<decltype(&f0)()>>(c, "f0 _t")
-                && KT::assert_type<char,   NT::result_of<decltype(&f1)(int)>::type>(c, "f1 type")
-                && KT::assert_type<char,   NT::result_of_t<decltype(&f1)(int)>>(c, "f1 _t")
-                && KT::assert_type<short,  NT::result_of<decltype(&f2)(int, double)>::type>(c, "f2 type")
-                && KT::assert_type<short,  NT::result_of_t<decltype(&f2)(int, double)>>(c, "f2 _t")
-                && KT::assert_type<bool&,  NT::result_of<decltype(&r0)()>::type>(c, "r0 type")
-                && KT::assert_type<bool&,  NT::result_of_t<decltype(&r0)()>>(c, "r0 _t")
-                && KT::assert_type<char&,  NT::result_of<decltype(&r1)(int)>::type>(c, "r1 type")
-                && KT::assert_type<char&,  NT::result_of_t<decltype(&r1)(int)>>(c, "r1 _t")
-                && KT::assert_type<short&, NT::result_of<decltype(&r2)(int, double)>::type>(c, "r2 type")
-                && KT::assert_type<short&, NT::result_of_t<decltype(&r2)(int, double)>>(c, "r2 _t")
-                && KT::assert_no_nested_type<NT::result_of<decltype(&r2)(int*, double)>>(c, "not callable")
+            return KT::assert_type<bool,   NT::result_of<bool (*())()>::type>(c, "f0 type")
+                && KT::assert_type<bool,   NT::result_of_t<bool (*())()>>(c, "f0 _t")
+                && KT::assert_type<char,   NT::result_of<char (*(int))(int)>::type>(c, "f1 type")
+                && KT::assert_type<char,   NT::result_of_t<char (*(int))(int)>>(c, "f1 _t")
+                && KT::assert_type<short,  NT::result_of<short (*(int, double))(int, double)>::type>(c, "f2 type")
+                && KT::assert_type<short,  NT::result_of_t<short (*(int, double))(int, double)>>(c, "f2 _t")
+                && KT::assert_type<bool&,  NT::result_of<bool& (*())()>::type>(c, "r0 type")
+                && KT::assert_type<bool&,  NT::result_of_t<bool& (*())()>>(c, "r0 _t")
+                && KT::assert_type<char&,  NT::result_of<char& (*(int))(int)>::type>(c, "r1 type")
+                && KT::assert_type<char&,  NT::result_of_t<char& (*(int))(int)>>(c, "r1 _t")
+                && KT::assert_type<short&, NT::result_of<short& (*(int, double))(int, double)>::type>(c, "r2 type")
+                && KT::assert_type<short&, NT::result_of_t<short& (*(int, double))(int, double)>>(c, "r2 _t")
+                //-dk:TODO && KT::assert_no_nested_type<NT::result_of<short& (*(int, double))(int*, double)>>(c, "not callable")
                 ;
         }),
     KT::expect_success("function object", [](KT::context& c)->bool{
@@ -95,12 +104,10 @@ static KT::testcase const tests[] = {
                 && KT::assert_type<short,  NT::result_of_t<fo(int, char)>>(c, "fo(int, char) _t")
                 && KT::assert_type<short,  NT::result_of<fo&(int, char)>::type>(c, "fo&")
                 && KT::assert_type<short,  NT::result_of<fo&&(int, char)>::type>(c, "fo&&")
-                && KT::assert_no_nested_type<NT::result_of<fo const(int, char)>>(c, "not callable")
+                //-dk:TODO && KT::assert_no_nested_type<NT::result_of<fo const(int, char)>>(c, "not callable")
                 ;
         }),
     KT::expect_success("member function", [](KT::context& c)->bool{
-            return false
-#if 0
             return KT::assert_type<void,   NT::result_of<auto (foo) -> void(foo::*)()>::type>(c, "auto (foo) -> void(foo::*)() type")
                 && KT::assert_type<void,   NT::result_of_t<auto (foo) -> void(foo::*)()> >(c, "auto (foo) -> void(foo::*)() _t")
                 && KT::assert_type<bool,   NT::result_of<auto (foo, int) -> bool(foo::*)(int)>::type>(c, "auto (foo, int) -> bool(foo::*)(int) type")
@@ -121,7 +128,6 @@ static KT::testcase const tests[] = {
                 && KT::assert_type<void,   NT::result_of_t<auto (smart<bar>) -> void(foo::*)()> >(c, "auto (smart<bar>) -> void(foo::*)() _t")
                 && KT::assert_type<bool,   NT::result_of<auto (smart<bar>, int) -> bool(foo::*)(int)>::type>(c, "auto (smart<bar>, int) -> bool(foo::*)(int) type")
                 && KT::assert_type<bool,   NT::result_of_t<auto (smart<bar>, int) -> bool(foo::*)(int)> >(c, "auto (smart<bar>, int) -> bool(foo::*)(int) _t")
-#endif
                 ;
         }),
     KT::expect_success("member objects", [](KT::context& c)->bool{

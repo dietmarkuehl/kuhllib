@@ -44,17 +44,17 @@ namespace nstd
 // ----------------------------------------------------------------------------
 
 template <typename T>
-struct ::nstd::type_traits::remove_extent {
+struct nstd::type_traits::remove_extent {
     using type = T;
 };
 
 template <typename T, ::std::size_t Size>
-struct ::nstd::type_traits::remove_extent<T[Size]> {
+struct nstd::type_traits::remove_extent<T[Size]> {
     using type = T;
 };
 
 template <typename T>
-struct ::nstd::type_traits::remove_extent<T[]> {
+struct nstd::type_traits::remove_extent<T[]> {
     using type = T;
 };
 

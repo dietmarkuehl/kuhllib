@@ -56,7 +56,7 @@ test:
 all:
 	-$(MAKE)
 	-$(MAKE) COMPILER=clang CMAKE_CXX_ARG=/opt/llvm-current/bin/clang++
-	-$(MAKE) COMPILER=gcc CMAKE_CXX_ARG=/opt/gcc-current/bin/g++
+	-$(MAKE) COMPILER=gcc CMAKE_CXX_ARG=/opt/gcc-4.9.2/bin/g++
 	-$(MAKE) COMPILER=intel CMAKE_CXX_ARG=/opt/intel/bin/icc
 
 .PHONY: clean

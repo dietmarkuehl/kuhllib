@@ -35,7 +35,7 @@ namespace nstd
     namespace type_traits {
         template <typename> struct is_function;
         template <typename R, typename... A> struct is_function<auto(A...)->R>;
-        template <typename R, typename... A> struct is_function<auto(A......)->R>;
+        template <typename R, typename... A> struct is_function<auto(A..., ...)->R>;
     }
 
 }
@@ -43,15 +43,15 @@ namespace nstd
 // ----------------------------------------------------------------------------
 
 template <typename>
-struct ::nstd::type_traits::is_function
+struct nstd::type_traits::is_function
     : ::nstd::type_traits::false_type {
 };
 template <typename R, typename... A>
-struct ::nstd::type_traits::is_function<auto(A...)->R>
+struct nstd::type_traits::is_function<auto(A...)->R>
     : ::nstd::type_traits::true_type {
 };
 template <typename R, typename... A>
-struct ::nstd::type_traits::is_function<auto(A......)->R>
+struct nstd::type_traits::is_function<auto(A..., ...)->R>
     : ::nstd::type_traits::true_type {
 };
 

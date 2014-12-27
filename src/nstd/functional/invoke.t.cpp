@@ -48,7 +48,7 @@ namespace
     struct derived: base {
         base value;
         derived(int value): base(value), value(value * 2) {}
-        auto operator*() -> base& { return this->value; }
+        //-dk:TODO auto operator*() -> base& { return this->value; }
     };
 
     template <typename T>

@@ -61,19 +61,20 @@ namespace {
         foo(int mem): mem(mem) {}
         std::tuple<int> mem0() { return std::make_tuple(this->mem); }
         std::tuple<int> omem0() { return std::make_tuple(this->mem); }
-        std::tuple<int, int> mem1(int v0) { return std::make_tuple(this->mem, v0); }
-        std::tuple<int, int> omem1(int v0) { return std::make_tuple(this->mem, v0); }
-        std::tuple<int, int, int> mem2(int v0, int v1) { return std::make_tuple(this->mem, v0, v1); }
-        std::tuple<int, int, int> omem2(int v0, int v1) { return std::make_tuple(this->mem, v0, v1); }
+        //-dk:TODO std::tuple<int, int> mem1(int v0) { return std::make_tuple(this->mem, v0); }
+        //-dk:TODO std::tuple<int, int> omem1(int v0) { return std::make_tuple(this->mem, v0); }
+        //-dk:TODO std::tuple<int, int, int> mem2(int v0, int v1) { return std::make_tuple(this->mem, v0, v1); }
+        //-dk:TODO std::tuple<int, int, int> omem2(int v0, int v1) { return std::make_tuple(this->mem, v0, v1); }
 
         bool operator== (foo const& other) const { return this->mem == other.mem; }
-        bool operator!= (foo const& other) const { return !(*this == other); }
+        //-dk:TODO bool operator!= (foo const& other) const { return !(*this == other); }
     };
 }
 
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
+#if 0
     KT::expect_success("bind(f<>)", [](KT::context& c)->bool{
             return KT::assert_type<std::tuple<>, decltype(NF::bind(f<>)())>(c, "type 0")
                 && KT::assert_true(c, "call", std::tuple<>() == NF::bind(f<>)())
@@ -83,6 +84,7 @@ static KT::testcase const tests[] = {
                 && KT::assert_true(c, "not equal f<>/g<>", NF::bind(f<>) != NF::bind(g<>))
                 ;
         }),
+#endif
     KT::expect_success("bind(f<int>)", [](KT::context& c)->bool{
             return KT::assert_type<std::tuple<int>, decltype(NF::bind(f<int>, 17)())>(c, "type 1")
                 && KT::assert_true(c, "call()", std::tuple<int>(17) == NF::bind(f<int>, 17)())

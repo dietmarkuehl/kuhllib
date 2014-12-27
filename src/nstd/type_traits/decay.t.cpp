@@ -26,13 +26,7 @@
 #include "nstd/type_traits/decay.hpp"
 #include "kuhl/test.hpp"
 
-#if 0
-#include <type_traits>
-namespace NT = std;
-namespace std { template <typename T> using decay_t = typename std::decay<T>::type; }
-#else
 namespace NT = nstd::type_traits;
-#endif
 namespace KT = kuhl::test;
 
 // ----------------------------------------------------------------------------

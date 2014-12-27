@@ -42,11 +42,11 @@ namespace nstd
 // ----------------------------------------------------------------------------
 
 template <typename>
-struct ::nstd::type_traits::is_member_pointer
+struct nstd::type_traits::is_member_pointer
     : ::nstd::type_traits::false_type {
 };
 template <typename T, typename S>
-struct ::nstd::type_traits::is_member_pointer<T S::*>
+struct nstd::type_traits::is_member_pointer<T S::*>
     : ::nstd::type_traits::true_type {
 };
 

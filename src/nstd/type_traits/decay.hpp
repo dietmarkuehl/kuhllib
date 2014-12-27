@@ -48,7 +48,7 @@ namespace nstd
 // ----------------------------------------------------------------------------
 
 template <typename T>
-struct ::nstd::type_traits::decay
+struct nstd::type_traits::decay
 {
 private:
     using auxilary = ::nstd::type_traits::remove_reference_t<T>;

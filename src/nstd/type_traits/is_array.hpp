@@ -38,23 +38,22 @@ namespace nstd
         template <typename T, ::std::size_t Size> struct is_array<T[Size]>;
         template <typename T> struct is_array<T[]>;
     }
-
 }
 
 // ----------------------------------------------------------------------------
 
 template <typename>
-struct ::nstd::type_traits::is_array
+struct nstd::type_traits::is_array
     : ::nstd::type_traits::false_type {
 };
 
 template <typename T, ::std::size_t Size>
-struct ::nstd::type_traits::is_array<T[Size]>
+struct nstd::type_traits::is_array<T[Size]>
     : ::nstd::type_traits::true_type {
 };
 
 template <typename T>
-struct ::nstd::type_traits::is_array<T[]>
+struct nstd::type_traits::is_array<T[]>
     : ::nstd::type_traits::true_type {
 };
 

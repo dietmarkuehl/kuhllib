@@ -43,11 +43,11 @@ namespace nstd
 // ----------------------------------------------------------------------------
 
 template <typename>
-struct ::nstd::type_traits::is_member_object_pointer
+struct nstd::type_traits::is_member_object_pointer
     : ::nstd::type_traits::false_type {
 };
 template <typename T, typename S>
-struct ::nstd::type_traits::is_member_object_pointer<T S::*>
+struct nstd::type_traits::is_member_object_pointer<T S::*>
     : ::nstd::type_traits::integral_constant<bool, !::nstd::type_traits::is_function<T>::value> {
 };
 
