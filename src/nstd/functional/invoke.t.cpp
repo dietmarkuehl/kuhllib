@@ -34,11 +34,21 @@ namespace KT = kuhl::test;
 namespace
 {
     int fun(char, double) { return 41; }
+    int funv(char, double, ...) { return 40; }
     struct function {
         int operator()(char, double) { return 42; }
+        long operator()(int, double, ...) { return 45; }
     };
-    struct type {
-        int member(char, double) { return 43; }
+    struct base {
+        int value;
+        base(int value): value(value) {}
+        int member(char, double) { return this->value + 43; }
+        int vararg(char, double, ...) { return this->value + 44; }
+    };
+    struct derived: base {
+        base value;
+        derived(int value): base(value), value(value * 2) {}
+        base& operator*() { return this->value; }
     };
 }
 
@@ -50,19 +60,93 @@ static KT::testcase const tests[] = {
                 && KT::assert_equal(c, "call", 41, NF::invoke(fun, 'c', 3.14))
                ;
         }),
+    KT::expect_success("invoke(funv)", [](KT::context& c)->bool{
+            return KT::assert_type<int, decltype(NF::invoke(funv, 'c', 3.14, 'a', 'b'))>(c, "type")
+                && KT::assert_equal(c, "call", 40, NF::invoke(funv, 'c', 3.14, 'a', 'b'))
+               ;
+        }),
     KT::expect_success("invoke(function())", [](KT::context& c)->bool{
             return KT::assert_type<int, decltype(NF::invoke(function(), 'c', 3.14))>(c, "type")
                 && KT::assert_equal(c, "call", 42, NF::invoke(function(), 'c', 3.14))
                ;
         }),
-#if 1
-    KT::expect_success("invoke(&type::member)", [](KT::context& c)->bool{
-            type object;
-            return KT::assert_type<int, decltype(NF::invoke(&type::member, object, 'c', 3.14))>(c, "type")
-                && KT::assert_equal(c, "call", 43, NF::invoke(&type::member, object, 'c', 3.14))
+    KT::expect_success("invoke(function()) (vararg)", [](KT::context& c)->bool{
+            return KT::assert_type<long, decltype(NF::invoke(function(), 'c', 3.14, 'a', 'b'))>(c, "type")
+                && KT::assert_equal(c, "call", 45, NF::invoke(function(), 'c', 3.14, 'a', 'b'))
                ;
         }),
-#endif
+    KT::expect_success("invoke(&base::member, base)", [](KT::context& c)->bool{
+            base object(10);
+            return KT::assert_type<int, decltype(NF::invoke(&base::member, object, 'c', 3.14))>(c, "type")
+                && KT::assert_equal(c, "call", 53, NF::invoke(&base::member, object, 'c', 3.14))
+               ;
+        }),
+    KT::expect_success("invoke(&base::vararg, base)", [](KT::context& c)->bool{
+            base object(13);
+            return KT::assert_type<int, decltype(NF::invoke(&base::vararg, object, 'c', 3.14, 3, 4))>(c, "type")
+                && KT::assert_equal(c, "call", 57, NF::invoke(&base::vararg, object, 'c', 3.14, 3, 4))
+               ;
+        }),
+    KT::expect_success("invoke(&base::member, derived)", [](KT::context& c)->bool{
+            derived object(11);
+            return KT::assert_type<int, decltype(NF::invoke(&base::member, object, 'c', 3.14))>(c, "type")
+                && KT::assert_equal(c, "call", 54, NF::invoke(&base::member, object, 'c', 3.14))
+               ;
+        }),
+    KT::expect_success("invoke(&base::vararg, derived)", [](KT::context& c)->bool{
+            derived object(12);
+            return KT::assert_type<int, decltype(NF::invoke(&base::vararg, object, 'c', 3.14, 3, 4))>(c, "type")
+                && KT::assert_equal(c, "call", 56, NF::invoke(&base::vararg, object, 'c', 3.14, 3, 4))
+               ;
+        }),
+    KT::expect_success("invoke(&base::value, base)", [](KT::context& c)->bool{
+            base object(10);
+            return KT::assert_type<int, decltype(NF::invoke(&base::value, object))>(c, "type")
+                && KT::assert_equal(c, "call", 10, NF::invoke(&base::value, object))
+               ;
+        }),
+    KT::expect_success("invoke(&base::value, derived)", [](KT::context& c)->bool{
+            derived object(11);
+            return KT::assert_type<int, decltype(NF::invoke(&base::value, object))>(c, "type")
+                && KT::assert_equal(c, "call", 11, NF::invoke(&base::value, object))
+               ;
+        }),
+    KT::expect_success("invoke(&base::member, base*)", [](KT::context& c)->bool{
+            base object(10);
+            return KT::assert_type<int, decltype(NF::invoke(&base::member, &object, 'c', 3.14))>(c, "type")
+                && KT::assert_equal(c, "call", 53, NF::invoke(&base::member, &object, 'c', 3.14))
+               ;
+        }),
+    KT::expect_success("invoke(&base::vararg, base*)", [](KT::context& c)->bool{
+            base object(13);
+            return KT::assert_type<int, decltype(NF::invoke(&base::vararg, &object, 'c', 3.14, 3, 4))>(c, "type")
+                && KT::assert_equal(c, "call", 57, NF::invoke(&base::vararg, &object, 'c', 3.14, 3, 4))
+               ;
+        }),
+    KT::expect_success("invoke(&base::member, derived*)", [](KT::context& c)->bool{
+            derived object(11);
+            return KT::assert_type<int, decltype(NF::invoke(&base::member, &object, 'c', 3.14))>(c, "type")
+                && KT::assert_equal(c, "call", 54, NF::invoke(&base::member, &object, 'c', 3.14))
+               ;
+        }),
+    KT::expect_success("invoke(&base::vararg, derived*)", [](KT::context& c)->bool{
+            derived object(12);
+            return KT::assert_type<int, decltype(NF::invoke(&base::vararg, &object, 'c', 3.14, 3, 4))>(c, "type")
+                && KT::assert_equal(c, "call", 56, NF::invoke(&base::vararg, &object, 'c', 3.14, 3, 4))
+               ;
+        }),
+    KT::expect_success("invoke(&base::value, base*)", [](KT::context& c)->bool{
+            base object(10);
+            return KT::assert_type<int, decltype(NF::invoke(&base::value, &object))>(c, "type")
+                && KT::assert_equal(c, "call", 10, NF::invoke(&base::value, &object))
+               ;
+        }),
+    KT::expect_success("invoke(&base::value, derived*)", [](KT::context& c)->bool{
+            derived object(11);
+            return KT::assert_type<int, decltype(NF::invoke(&base::value, &object))>(c, "type")
+                && KT::assert_equal(c, "call", 11, NF::invoke(&base::value, &object))
+               ;
+        }),
 };
 
 int main(int ac, char* av[])
