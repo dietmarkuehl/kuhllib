@@ -109,13 +109,13 @@ static KT::testcase const tests[] = {
         }),
     KT::expect_success("invoke(&base::value, base)", [](KT::context& c)->bool{
             base object(10);
-            return KT::assert_type<int, decltype(NF::invoke(&base::value, object))>(c, "type")
+            return KT::assert_type<int&, decltype(NF::invoke(&base::value, object))>(c, "type")
                 && KT::assert_equal(c, "call", 10, NF::invoke(&base::value, object))
                ;
         }),
     KT::expect_success("invoke(&base::value, derived)", [](KT::context& c)->bool{
             derived object(11);
-            return KT::assert_type<int, decltype(NF::invoke(&base::value, object))>(c, "type")
+            return KT::assert_type<int&, decltype(NF::invoke(&base::value, object))>(c, "type")
                 && KT::assert_equal(c, "call", 11, NF::invoke(&base::value, object))
                ;
         }),
@@ -145,13 +145,13 @@ static KT::testcase const tests[] = {
         }),
     KT::expect_success("invoke(&base::value, base*)", [](KT::context& c)->bool{
             base object(10);
-            return KT::assert_type<int, decltype(NF::invoke(&base::value, &object))>(c, "type")
+            return KT::assert_type<int&, decltype(NF::invoke(&base::value, &object))>(c, "type")
                 && KT::assert_equal(c, "call", 10, NF::invoke(&base::value, &object))
                ;
         }),
     KT::expect_success("invoke(&base::value, derived*)", [](KT::context& c)->bool{
             derived object(11);
-            return KT::assert_type<int, decltype(NF::invoke(&base::value, &object))>(c, "type")
+            return KT::assert_type<int&, decltype(NF::invoke(&base::value, &object))>(c, "type")
                 && KT::assert_equal(c, "call", 11, NF::invoke(&base::value, &object))
                ;
         }),
@@ -181,13 +181,13 @@ static KT::testcase const tests[] = {
         }),
     KT::expect_success("invoke(&base::value, smart_ptr<base>)", [](KT::context& c)->bool{
             smart_ptr<base> object(10);
-            return KT::assert_type<int, decltype(NF::invoke(&base::value, object))>(c, "type")
+            return KT::assert_type<int&, decltype(NF::invoke(&base::value, object))>(c, "type")
                 && KT::assert_equal(c, "call", 10, NF::invoke(&base::value, object))
                ;
         }),
     KT::expect_success("invoke(&base::value, smart_ptr<derived>)", [](KT::context& c)->bool{
             smart_ptr<derived> object(11);
-            return KT::assert_type<int, decltype(NF::invoke(&base::value, object))>(c, "type")
+            return KT::assert_type<int&, decltype(NF::invoke(&base::value, object))>(c, "type")
                 && KT::assert_equal(c, "call", 11, NF::invoke(&base::value, object))
                ;
         }),
