@@ -36,19 +36,27 @@ namespace
     int fun(char, double) { return 41; }
     int funv(char, double, ...) { return 40; }
     struct function {
-        int operator()(char, double) { return 42; }
-        long operator()(int, double, ...) { return 45; }
+        auto operator()(char, double) -> int { return 42; }
+        auto operator()(int, double, ...) -> long { return 45; }
     };
     struct base {
         int value;
         base(int value): value(value) {}
-        int member(char, double) { return this->value + 43; }
-        int vararg(char, double, ...) { return this->value + 44; }
+        auto member(char, double) -> int { return this->value + 43; }
+        auto vararg(char, double, ...) -> int { return this->value + 44; }
     };
     struct derived: base {
         base value;
         derived(int value): base(value), value(value * 2) {}
-        base& operator*() { return this->value; }
+        auto operator*() -> base& { return this->value; }
+    };
+
+    template <typename T>
+    struct smart_ptr {
+        T pointee;
+        template <typename... A>
+        smart_ptr(A... a): pointee(a...) {}
+        auto operator*() -> T& { return pointee; }
     };
 }
 
@@ -145,6 +153,42 @@ static KT::testcase const tests[] = {
             derived object(11);
             return KT::assert_type<int, decltype(NF::invoke(&base::value, &object))>(c, "type")
                 && KT::assert_equal(c, "call", 11, NF::invoke(&base::value, &object))
+               ;
+        }),
+    KT::expect_success("invoke(&base::member, smart_ptr<base>)", [](KT::context& c)->bool{
+            smart_ptr<base> object(10);
+            return KT::assert_type<int, decltype(NF::invoke(&base::member, object, 'c', 3.14))>(c, "type")
+                && KT::assert_equal(c, "call", 53, NF::invoke(&base::member, object, 'c', 3.14))
+               ;
+        }),
+    KT::expect_success("invoke(&base::vararg, smart_ptr<base>)", [](KT::context& c)->bool{
+            smart_ptr<base> object(13);
+            return KT::assert_type<int, decltype(NF::invoke(&base::vararg, object, 'c', 3.14, 3, 4))>(c, "type")
+                && KT::assert_equal(c, "call", 57, NF::invoke(&base::vararg, object, 'c', 3.14, 3, 4))
+               ;
+        }),
+    KT::expect_success("invoke(&base::member, smart_ptr<derived>)", [](KT::context& c)->bool{
+            smart_ptr<derived> object(11);
+            return KT::assert_type<int, decltype(NF::invoke(&base::member, object, 'c', 3.14))>(c, "type")
+                && KT::assert_equal(c, "call", 54, NF::invoke(&base::member, object, 'c', 3.14))
+               ;
+        }),
+    KT::expect_success("invoke(&base::vararg, smart_ptr<derived>)", [](KT::context& c)->bool{
+            smart_ptr<derived> object(12);
+            return KT::assert_type<int, decltype(NF::invoke(&base::vararg, object, 'c', 3.14, 3, 4))>(c, "type")
+                && KT::assert_equal(c, "call", 56, NF::invoke(&base::vararg, object, 'c', 3.14, 3, 4))
+               ;
+        }),
+    KT::expect_success("invoke(&base::value, smart_ptr<base>)", [](KT::context& c)->bool{
+            smart_ptr<base> object(10);
+            return KT::assert_type<int, decltype(NF::invoke(&base::value, object))>(c, "type")
+                && KT::assert_equal(c, "call", 10, NF::invoke(&base::value, object))
+               ;
+        }),
+    KT::expect_success("invoke(&base::value, smart_ptr<derived>)", [](KT::context& c)->bool{
+            smart_ptr<derived> object(11);
+            return KT::assert_type<int, decltype(NF::invoke(&base::value, object))>(c, "type")
+                && KT::assert_equal(c, "call", 11, NF::invoke(&base::value, object))
                ;
         }),
 };
