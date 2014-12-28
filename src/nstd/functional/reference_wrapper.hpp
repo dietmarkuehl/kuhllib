@@ -73,6 +73,10 @@ public:
     auto operator()(Args&&... args) const -> nstd::type_traits::result_of_t<T&(Args...)> {
         return ::nstd::functional::invoke(this->get(), nstd::utility::forward<Args>(args)...);
     }
+
+    // extension
+    auto operator==(nstd::functional::reference_wrapper<T> other) const noexcept(true) -> bool;
+    auto operator!=(nstd::functional::reference_wrapper<T> other) const noexcept(true) -> bool;
 };
 
 // ----------------------------------------------------------------------------
@@ -99,6 +103,20 @@ template <typename T>
 auto nstd::functional::cref(nstd::functional::reference_wrapper<T> value) noexcept(true)
     -> nstd::functional::reference_wrapper<T const>  {
     return nstd::functional::reference_wrapper<T const>(value.get());
+}
+
+// ----------------------------------------------------------------------------
+
+template <typename T>
+auto nstd::functional::reference_wrapper<T>::operator==(nstd::functional::reference_wrapper<T> other) const noexcept(true)
+    -> bool {
+    return this->pointer == other.pointer;
+}
+
+template <typename T>
+auto nstd::functional::reference_wrapper<T>::operator!=(nstd::functional::reference_wrapper<T> other) const noexcept(true)
+    -> bool {
+    return !(*this == other);
 }
 
 // ----------------------------------------------------------------------------
