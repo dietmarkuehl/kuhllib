@@ -26,7 +26,9 @@
 #ifndef INCLUDED_NSTD_FUNCTIONAL_REFERENCE_WRAPPER
 #define INCLUDED_NSTD_FUNCTIONAL_REFERENCE_WRAPPER
 
+#include "nstd/functional/invoke.hpp"
 #include "nstd/type_traits/result_of.hpp"
+#include "nstd/utility/forward.hpp"
 
 // ----------------------------------------------------------------------------
 
@@ -36,18 +38,19 @@ namespace nstd
         template <typename> class reference_wrapper;
 
         template <typename T>
-        nstd::functional::reference_wrapper<T> ref(T&) noexcept(true);
+        auto ref(T&) noexcept(true) -> nstd::functional::reference_wrapper<T>;
         template <typename T>
-        nstd::functional::reference_wrapper<T> ref(nstd::functional::reference_wrapper<T>) noexcept(true);
+        auto ref(nstd::functional::reference_wrapper<T>) noexcept(true) -> nstd::functional::reference_wrapper<T>;
         template <typename T>
-        nstd::functional::reference_wrapper<T const> cref(T const&) noexcept(true);
-        template <typename T>
-        nstd::functional::reference_wrapper<T const> cref(nstd::functional::reference_wrapper<T>) noexcept(true);
+        auto ref(T const&&) -> void = delete;
 
-        template <typename T> void ref(T const&&) = delete;
-        template <typename T> void cref(T const&&) = delete;
+        template <typename T>
+        auto cref(T const&) noexcept(true) -> nstd::functional::reference_wrapper<T const>;
+        template <typename T>
+        auto cref(nstd::functional::reference_wrapper<T>) noexcept(true) -> nstd::functional::reference_wrapper<T const>;
+        template <typename T>
+        auto cref(T const&&) -> void = delete;
     }
-
 }
 
 // ----------------------------------------------------------------------------
@@ -67,8 +70,36 @@ public:
     auto get() const noexcept(true) -> T& { return *this->pointer; }
 
     template <typename... Args>
-    auto operator()(Args&&...) const -> nstd::type_traits::result_of_t<T&(Args...)>;
+    auto operator()(Args&&... args) const -> nstd::type_traits::result_of_t<T&(Args...)> {
+        return ::nstd::functional::invoke(this->get(), nstd::utility::forward<Args>(args)...);
+    }
 };
+
+// ----------------------------------------------------------------------------
+
+template <typename T>
+auto nstd::functional::ref(T& object) noexcept(true)
+-> nstd::functional::reference_wrapper<T> {
+    return nstd::functional::reference_wrapper<T>(object);
+}
+template <typename T>
+auto nstd::functional::ref(nstd::functional::reference_wrapper<T> value) noexcept(true)
+    -> nstd::functional::reference_wrapper<T>  {
+    return value;
+}
+
+// ----------------------------------------------------------------------------
+
+template <typename T>
+auto nstd::functional::cref(T const& object) noexcept(true)
+-> nstd::functional::reference_wrapper<T const> {
+    return nstd::functional::reference_wrapper<T const>(object);
+}
+template <typename T>
+auto nstd::functional::cref(nstd::functional::reference_wrapper<T> value) noexcept(true)
+    -> nstd::functional::reference_wrapper<T const>  {
+    return nstd::functional::reference_wrapper<T const>(value.get());
+}
 
 // ----------------------------------------------------------------------------
 
