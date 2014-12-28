@@ -99,7 +99,9 @@ namespace {
             return NT::true_type();
         }
         template <typename T>
-        NT::false_type operator()(int, int, T, int) { return NT::false_type(); }
+        NT::false_type operator()(int, int, T, int) {
+            return NT::false_type();
+        }
     };
 }
 
@@ -111,6 +113,9 @@ static KT::testcase const tests[] = {
             int value1{18};
             int value2{19};
             return KT::assert_false(c, "bind(., ., ., ., 4) type",
+                                    NF::bind(ref_test0(), 0, 0, 0, 4)())
+#if 1
+                && KT::assert_false(c, "bind(., value0, ., ., 4) type",
                                    NF::bind(ref_test0(), value0, 0, 0, 4)())
                 && KT::assert_true(c, "bind(., ref, ., ., 4) type",
                                    NF::bind(ref_test0(), NF::ref(value0), 0, 0, 4)())
@@ -125,9 +130,9 @@ static KT::testcase const tests[] = {
                 && KT::assert_true(c, "bind(., .,, ., ref 6) type",
                                    NF::bind(ref_test2(), 0, 0, NF::ref(value2), 6)())
                 && KT::assert_equal(c, "bind(., .,, ., ref 6) result", 6, value2)
+#endif
                 ;
         }),
-#if 0
     KT::expect_success("bind(f<>)", [](KT::context& c)->bool{
             return KT::assert_type<std::tuple<>, decltype(NF::bind(f<>)())>(c, "type 0")
                 && KT::assert_true(c, "call", std::tuple<>() == NF::bind(f<>)())
@@ -137,44 +142,10 @@ static KT::testcase const tests[] = {
                 && KT::assert_true(c, "not equal f<>/g<>", NF::bind(f<>) != NF::bind(g<>))
                 ;
         }),
-#endif
 #if 0
     KT::expect_success("bind(f<int>)", [](KT::context& c)->bool{
             return KT::assert_type<std::tuple<int>, decltype(NF::bind(f<int>, 17)())>(c, "type 1")
-                && KT::assert_true(c, "call()", std::tuple<int>(17) == NF::bind(f<int>, 17)())
-                && KT::assert_true(c, "call(17)(1, 2, 3, 4)", std::tuple<int>(17) == NF::bind(f<int>, 17)(1, 2, 3, 4))
-                && KT::assert_true(c, "call(_1)(21, 22, 23, 24)", std::tuple<int>(21) == NF::bind(f<int>, NFP::_1)(21, 22, 23, 24))
-                && KT::assert_true(c, "call(_2)(21, 22, 23, 24)", std::tuple<int>(22) == NF::bind(f<int>, NFP::_2)(21, 22, 23, 24))
-                && KT::assert_true(c, "call(_3)(21, 22, 23, 24)", std::tuple<int>(23) == NF::bind(f<int>, NFP::_3)(21, 22, 23, 24))
-                && KT::assert_true(c, "call(_4)(21, 22, 23, 24)", std::tuple<int>(24) == NF::bind(f<int>, NFP::_4)(21, 22, 23, 24))
-                && KT::assert_true(c, "equal f<int>, 17/f<int>, 17", NF::bind(f<int>, 17) == NF::bind(f<int>, 17))
-                && KT::assert_false(c, "equal f<int>, 17/f<int>, 18", NF::bind(f<int>, 17) == NF::bind(f<int>, 18))
-                && KT::assert_false(c, "equal f<int>, 17/g<int>, 17", NF::bind(f<int>, 17) == NF::bind(g<int>, 17))
-                && KT::assert_false(c, "not equal f<int>, 17/f<int>, 17", NF::bind(f<int>, 17) != NF::bind(f<int>, 17))
-                && KT::assert_true(c, "not equal f<int>, 17/f<int>, 18", NF::bind(f<int>, 17) != NF::bind(f<int>, 18))
-                && KT::assert_true(c, "not equal f<int>, 17/g<int>, 17", NF::bind(f<int>, 17) != NF::bind(g<int>, 17))
-                ;
-        }),
-#endif
-    KT::expect_success("bind(foo::mem0, ..)", [](KT::context& c)->bool{
-            return true;
-                ;
-        }),
-#if 0
-    KT::expect_success("bind(f<>)", [](KT::context& c)->bool{
-            return KT::assert_type<std::tuple<>, decltype(NF::bind(f<>)())>(c, "type 0")
-                && KT::assert_true(c, "call", std::tuple<>() == NF::bind(f<>)())
-                && KT::assert_true(c, "equal f<>/f<>", NF::bind(f<>) == NF::bind(f<>))
-                && KT::assert_false(c, "equal f<>/g<>", NF::bind(f<>) == NF::bind(g<>))
-                && KT::assert_false(c, "not equal f<>/f<>", NF::bind(f<>) != NF::bind(f<>))
-                && KT::assert_true(c, "not equal f<>/g<>", NF::bind(f<>) != NF::bind(g<>))
-                ;
-        }),
-#endif
-#if 0
-    KT::expect_success("bind(f<int>)", [](KT::context& c)->bool{
-            return KT::assert_type<std::tuple<int>, decltype(NF::bind(f<int>, 17)())>(c, "type 1")
-                && KT::assert_true(c, "call()", std::tuple<int>(17) == NF::bind(f<int>, 17)())
+                && KT::assert_true(c, "call(17)()", std::tuple<int>(17) == NF::bind(f<int>, 17)())
                 && KT::assert_true(c, "call(17)(1, 2, 3, 4)", std::tuple<int>(17) == NF::bind(f<int>, 17)(1, 2, 3, 4))
                 && KT::assert_true(c, "call(_1)(21, 22, 23, 24)", std::tuple<int>(21) == NF::bind(f<int>, NFP::_1)(21, 22, 23, 24))
                 && KT::assert_true(c, "call(_2)(21, 22, 23, 24)", std::tuple<int>(22) == NF::bind(f<int>, NFP::_2)(21, 22, 23, 24))
@@ -194,13 +165,10 @@ static KT::testcase const tests[] = {
             foo f0(19);
             foo f1(19);
             foo f2(20);
-            return true
-#if 1
-                && KT::assert_true(c, "bind(foo::mem0, f0)", std::make_tuple(19) == NF::bind(&foo::mem0, f0)())
+            return KT::assert_true(c, "bind(foo::mem0, f0)", std::make_tuple(19) == NF::bind(&foo::mem0, f0)())
                 && KT::assert_true(c, "equal bind(foo::mem0, f0/f1", NF::bind(&foo::mem0, f0) == NF::bind(&foo::mem0, f1))
                 && KT::assert_false(c, "equal bind(foo::mem0, f0/f2)", NF::bind(&foo::mem0, f0) == NF::bind(&foo::mem0, f2))
                 && KT::assert_false(c, "equal bind(foo::omem0, f0/f1)", NF::bind(&foo::mem0, f0) == NF::bind(&foo::omem0, f1))
-#endif
                 ; 
         }),
 #endif

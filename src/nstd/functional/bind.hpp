@@ -27,11 +27,14 @@
 #define INCLUDED_NSTD_FUNCTIONAL_BIND
 
 #include "nstd/functional/invoke.hpp"
+#include "nstd/functional/is_bind_expression.hpp"
 #include "nstd/functional/placeholders.hpp"
 #include "nstd/functional/reference_wrapper.hpp"
+#include "nstd/type_traits/decay.hpp"
 #include "nstd/type_traits/declval.hpp"
 #include "nstd/type_traits/enable_if.hpp"
 #include "nstd/type_traits/remove_reference.hpp"
+#include "nstd/type_traits/result_of.hpp"
 #include "nstd/utility/forward.hpp"
 #include "nstd/utility/integer_sequence.hpp"
 #include "nstd/utility/move.hpp"
@@ -44,21 +47,30 @@ namespace nstd
 {
     namespace functional {
         namespace detail {
-            template <int, typename Bound, typename Args>
-            auto bind_get_arg(Bound& bound, Args const&) 
-                -> typename nstd::type_traits::enable_if<0 == nstd::functional::is_placeholder<Bound>::value, Bound>::type {
-                return bound;
-            }
             template <int, typename T, typename Args>
             auto bind_get_arg(nstd::functional::reference_wrapper<T> bound, Args const&) 
                 -> T& {
                 return bound.get();
             }
+#if 0
+            template <int, typename Bound, typename... Args>
+            auto bind_get_arg(Bound& bound, std::tuple<Args...> const& args)
+                -> typename nstd::type_traits::enable_if<nstd::functional::is_bind_expression<Bound>::value,
+                                                         nstd::type_traits::result_of_t<Bound(Args...)> >::type {
+                return bound;
+            }
+#endif
             template <int Index, typename Bound, typename Args>
             auto bind_get_arg(Bound const&, Args const& args)
                 -> typename nstd::type_traits::enable_if<0 != nstd::functional::is_placeholder<Bound>::value,
                                                          typename std::tuple_element<Bound::value - 1u, Args>::type>::type {
                 return std::get<Bound::value - 1u>(args);
+            }
+            template <int Index, typename Bound, typename Args>
+            auto bind_get_arg(Bound& bound, Args const& args)
+                -> typename nstd::type_traits::enable_if<0 == nstd::functional::is_placeholder<Bound>::value,
+                                                         Bound>::type {
+                return bound;
             }
 
             template <typename Indices, typename Fun, typename... Bound>
@@ -79,8 +91,18 @@ namespace nstd
 template <std::size_t... Indices, typename Fun, typename... Bound>
 struct nstd::functional::detail::binder<nstd::utility::index_sequence<Indices...>, Fun, Bound...>
 {
-    Fun fun;
-    std::tuple<Bound...>                        bound;
+private:
+    nstd::type_traits::decay_t<Fun> fun;
+    std::tuple<Bound...>            bound;
+
+    template <typename Args>
+    auto call(Args&& args)
+        -> decltype(nstd::functional::invoke(this->fun,
+                                             nstd::functional::detail::bind_get_arg<Indices>(std::get<Indices>(this->bound), args)...)) {
+        return nstd::functional::invoke(this->fun,
+                                        nstd::functional::detail::bind_get_arg<Indices>(std::get<Indices>(this->bound), args)...);
+    }
+public:
     template <typename F>
     binder(F&& fun, Bound&&...  bound)
         : fun(nstd::utility::forward<F>(fun))
@@ -89,16 +111,9 @@ struct nstd::functional::detail::binder<nstd::utility::index_sequence<Indices...
 
     template <typename... Args>
     auto operator()(Args&&... args)
-        -> decltype(nstd::functional::invoke(this->fun,
-                                             nstd::functional::detail::bind_get_arg<Indices>(std::get<Indices>(this->bound),
-                                                                     std::tuple<Args...>(nstd::utility::forward<Args>(args)...))...)) {
-        namespace D = nstd::functional::detail;
-        auto tmp{std::tuple<Args...>(nstd::utility::forward<Args>(args)...)};
-        return (this->fun)(D::bind_get_arg<Indices>(std::get<Indices>(this->bound), tmp)...);
-        return nstd::functional::invoke(this->fun,
-                                        nstd::functional::detail::bind_get_arg<Indices>(std::get<Indices>(this->bound), tmp)...);
+        -> decltype(this->call(std::tuple<Args...>(nstd::utility::forward<Args>(args)...))) {
+        return this->call(std::tuple<Args...>(nstd::utility::forward<Args>(args)...));
     }
-
     auto operator== (binder const& other) const -> bool {
         return this->fun == other.fun && this->bound == other.bound;
     }
