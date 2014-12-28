@@ -31,6 +31,7 @@ foreach(test
 	bind.t
 	equal_to.t
 	invoke.t
+	is_bind_expression.t
 	mem_fn.t
 	model_predicate.t
 	not_.t
