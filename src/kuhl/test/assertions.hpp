@@ -39,6 +39,17 @@ namespace kuhl
             template <typename T0, typename T1> struct is_same;
             template <typename T> struct is_same<T, T>;
 
+            struct static_bool {
+                template <typename T, typename = decltype(T::value)>
+                static auto test(void*) -> bool { return true; }
+                template <typename T>
+                static auto test(...) -> bool { return false; }
+
+                template <typename T, bool = T::value>
+                static auto value(void*) -> bool { return T::value; }
+                template <typename T>
+                static auto value(...) -> bool { return false; }
+            };
             struct no_nested_type {
                 template <typename T, typename = typename T::type>
                 static auto test(void*) -> bool { return false; }
@@ -47,6 +58,10 @@ namespace kuhl
             };
         }
 
+        template <typename>
+        auto assert_static_true(context&, char const* message) -> bool;
+        template <typename>
+        auto assert_static_false(context&, char const* message) -> bool;
         auto assert_true(kuhl::test::context&, char const* message, bool value) -> bool;
         auto assert_true(kuhl::test::context&, bool value) -> bool;
         auto assert_false(kuhl::test::context&, char const* message, bool value) -> bool;
@@ -63,6 +78,38 @@ namespace kuhl
         auto assert_no_nested_type(kuhl::test::context& context, char const* message) -> bool;
     }
 
+}
+
+// ----------------------------------------------------------------------------
+
+template <typename T>
+auto kuhl::test::assert_static_true(context& c, char const* message) -> bool {
+    if (!kuhl::test::detail::static_bool::test<T>(0)) {
+        c << "no value: " << message;
+        return false;
+    }
+    else if (!kuhl::test::detail::static_bool::value<T>(0)) {
+        c << "wrong value: " << message;
+        return false;
+    }
+    else {
+        return true;
+    }
+}
+
+template <typename T>
+auto kuhl::test::assert_static_false(context& c, char const* message) -> bool {
+    if (!kuhl::test::detail::static_bool::test<T>(0)) {
+        c << "no value: " << message;
+        return false;
+    }
+    else if (kuhl::test::detail::static_bool::value<T>(0)) {
+        c << "wrong value: " << message;
+        return false;
+    }
+    else {
+        return true;
+    }
 }
 
 // ----------------------------------------------------------------------------

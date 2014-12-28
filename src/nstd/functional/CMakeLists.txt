@@ -37,6 +37,7 @@ foreach(test
 	not_.t
 	placeholders.t
 	reference_wrapper.t
+	tuple_call.t
         )
   add_executable(${test} ${test})
   target_link_libraries(${test} PUBLIC kuhltest)

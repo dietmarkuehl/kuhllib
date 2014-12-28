@@ -30,6 +30,7 @@
 #include "nstd/functional/is_bind_expression.hpp"
 #include "nstd/functional/placeholders.hpp"
 #include "nstd/functional/reference_wrapper.hpp"
+#include "nstd/functional/tuple_call.hpp"
 #include "nstd/type_traits/decay.hpp"
 #include "nstd/type_traits/declval.hpp"
 #include "nstd/type_traits/enable_if.hpp"
@@ -52,14 +53,12 @@ namespace nstd
                 -> T& {
                 return bound.get();
             }
-#if 0
             template <int, typename Bound, typename... Args>
             auto bind_get_arg(Bound& bound, std::tuple<Args...> const& args)
                 -> typename nstd::type_traits::enable_if<nstd::functional::is_bind_expression<Bound>::value,
                                                          nstd::type_traits::result_of_t<Bound(Args...)> >::type {
-                return bound;
+                return nstd::functional::tuple_call(bound, args);
             }
-#endif
             template <int Index, typename Bound, typename Args>
             auto bind_get_arg(Bound const&, Args const& args)
                 -> typename nstd::type_traits::enable_if<0 != nstd::functional::is_placeholder<Bound>::value,
@@ -78,6 +77,11 @@ namespace nstd
             template <std::size_t... Indices, typename Fun, typename... Bound>
             struct binder<nstd::utility::index_sequence<Indices...>, Fun, Bound...>;
         }
+
+        template <typename Indices, typename Fun, typename... Bound>
+        struct is_bind_expression<nstd::functional::detail::binder<Indices, Fun, Bound...> >
+            : nstd::type_traits::true_type {
+        };
 
         template <typename Fun, typename... Args>
         auto bind(Fun&&, Args&&...)

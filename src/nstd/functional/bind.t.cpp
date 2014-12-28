@@ -103,6 +103,17 @@ namespace {
             return NT::false_type();
         }
     };
+
+    struct inner {
+        int value;
+        inner(int value): value(value) {}
+        auto operator()(int value) ->int { return this->value + value; }
+    };
+    struct outer {
+        int value;
+        outer(int value): value(value) {}
+        auto operator()(int value) -> int { return this->value + value; }
+    };
 }
 
 // ----------------------------------------------------------------------------
@@ -112,9 +123,14 @@ static KT::testcase const tests[] = {
             int value0{17};
             int value1{18};
             int value2{19};
-            return KT::assert_false(c, "bind(., ., ., ., 4) type",
+            return KT::assert_static_true<NF::is_bind_expression<decltype(NF::bind(ref_test0(), 0, 0, 0, 4))> >(c,
+                                                                   "is binder bind(ref_test0(), 0, 0, 0, 4)")
+                && KT::assert_static_true<NF::is_bind_expression<decltype(NF::bind(ref_test0(), value0, 0, 0, 4))> >(c,
+                                                                   "is binder bind(ref_test0(), value0, 0, 0, 4)")
+                && KT::assert_static_true<NF::is_bind_expression<decltype(NF::bind(ref_test0(), NF::ref(value0), 0, 0, 4))> >(c,
+                                                                   "is binder bind(ref_test0(), NF::ref(value0), 0, 0, 4)")
+                && KT::assert_false(c, "bind(., ., ., ., 4) type",
                                     NF::bind(ref_test0(), 0, 0, 0, 4)())
-#if 1
                 && KT::assert_false(c, "bind(., value0, ., ., 4) type",
                                    NF::bind(ref_test0(), value0, 0, 0, 4)())
                 && KT::assert_true(c, "bind(., ref, ., ., 4) type",
@@ -130,7 +146,22 @@ static KT::testcase const tests[] = {
                 && KT::assert_true(c, "bind(., .,, ., ref 6) type",
                                    NF::bind(ref_test2(), 0, 0, NF::ref(value2), 6)())
                 && KT::assert_equal(c, "bind(., .,, ., ref 6) result", 6, value2)
-#endif
+                ;
+        }),
+    KT::expect_success("componsition", [](KT::context& c)->bool {
+            return KT::assert_equal(c, "bind(inner(1), 10)()", 11, NF::bind(inner(1), 10)(2000, 3000, 4000))
+                && KT::assert_equal(c, "bind(inner(1), _1)()", 2001, NF::bind(inner(1), NFP::_1)(2000, 3000, 4000))
+                && KT::assert_equal(c, "bind(inner(1), _2)()", 3001, NF::bind(inner(1), NFP::_2)(2000, 3000, 4000))
+                && KT::assert_equal(c, "bind(inner(1), _3)()", 4001, NF::bind(inner(1), NFP::_3)(2000, 3000, 4000))
+                && KT::assert_equal(c, "bind(outer(10), 100)()", 110, NF::bind(outer(10), 100)(2000, 3000, 4000))
+                && KT::assert_equal(c, "bind(outer(10), bind(inner(1), 100))()", 111,
+                                    NF::bind(outer(10), NF::bind(inner(1), 100))(2000, 3000, 4000))
+                && KT::assert_equal(c, "bind(outer(10), bind(inner(1), _1))()", 2011,
+                                    NF::bind(outer(10), NF::bind(inner(1), NFP::_1))(2000, 3000, 4000))
+                && KT::assert_equal(c, "bind(outer(10), bind(inner(1), _2))()", 3011,
+                                    NF::bind(outer(10), NF::bind(inner(1), NFP::_2))(2000, 3000, 4000))
+                && KT::assert_equal(c, "bind(outer(10), bind(inner(1), _3))()", 4011,
+                                    NF::bind(outer(10), NF::bind(inner(1), NFP::_3))(2000, 3000, 4000))
                 ;
         }),
     KT::expect_success("bind(f<>)", [](KT::context& c)->bool{
@@ -142,7 +173,6 @@ static KT::testcase const tests[] = {
                 && KT::assert_true(c, "not equal f<>/g<>", NF::bind(f<>) != NF::bind(g<>))
                 ;
         }),
-#if 0
     KT::expect_success("bind(f<int>)", [](KT::context& c)->bool{
             return KT::assert_type<std::tuple<int>, decltype(NF::bind(f<int>, 17)())>(c, "type 1")
                 && KT::assert_true(c, "call(17)()", std::tuple<int>(17) == NF::bind(f<int>, 17)())
@@ -159,8 +189,6 @@ static KT::testcase const tests[] = {
                 && KT::assert_true(c, "not equal f<int>, 17/g<int>, 17", NF::bind(f<int>, 17) != NF::bind(g<int>, 17))
                 ;
         }),
-#endif
-#if 0
     KT::expect_success("bind(foo::mem0, ..)", [](KT::context& c)->bool{
             foo f0(19);
             foo f1(19);
@@ -171,7 +199,6 @@ static KT::testcase const tests[] = {
                 && KT::assert_false(c, "equal bind(foo::omem0, f0/f1)", NF::bind(&foo::mem0, f0) == NF::bind(&foo::omem0, f1))
                 ; 
         }),
-#endif
 };
 
 int main(int ac, char* av[])

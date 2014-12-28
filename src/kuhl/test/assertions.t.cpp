@@ -34,12 +34,54 @@ namespace KT = kuhl::test;
 namespace {
     struct foo {};
     struct bar { using type = int; };
+    struct test_true_type { static constexpr bool value = true; };
+    struct test_false_type { static constexpr bool value = false; };
 }
 
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
-    KT::expect_success("successful assertion for true: true and no message", [](KT::context& c)->bool{
+    KT::expect_success("successful static assertion for true: true and no message", [](KT::context& c)->bool{
+            KT::context d;
+            return assert_true(c, "assertion passed", KT::assert_static_true<test_true_type>(d, "successful assertion"))
+                && assert_true(c, "no message", d.empty())
+                ;
+        }),
+    KT::expect_success("failed static assertion for true: missing value", [](KT::context& c)->bool{
+            KT::context d;
+            return assert_false(c, "assertion failed", KT::assert_static_true<foo>(d, "failed assertion"))
+                && assert_true(c, "message", !d.empty())
+                && assert_equal(c, "failed assertion message", d.c_str(), std::string("no value: failed assertion"));
+                ;
+        }),
+    KT::expect_success("failed static assertion for true: wrong value", [](KT::context& c)->bool{
+            KT::context d;
+            return assert_false(c, "assertion failed", KT::assert_static_true<test_false_type>(d, "failed assertion"))
+                && assert_true(c, "message", !d.empty())
+                && assert_equal(c, "failed assertion message", d.c_str(), std::string("wrong value: failed assertion"));
+                ;
+        }),
+    KT::expect_success("successful static assertion for false: true and no message", [](KT::context& c)->bool{
+            KT::context d;
+            return assert_true(c, "assertion passed", KT::assert_static_false<test_false_type>(d, "successful assertion"))
+                && assert_true(c, "no message", d.empty())
+                ;
+        }),
+    KT::expect_success("failed static assertion for false: missing value", [](KT::context& c)->bool{
+            KT::context d;
+            return assert_false(c, "assertion failed", KT::assert_static_false<foo>(d, "failed assertion"))
+                && assert_true(c, "message", !d.empty())
+                && assert_equal(c, "failed assertion message", d.c_str(), std::string("no value: failed assertion"));
+                ;
+        }),
+    KT::expect_success("failed static assertion for false: wrong value", [](KT::context& c)->bool{
+            KT::context d;
+            return assert_false(c, "assertion failed", KT::assert_static_false<test_true_type>(d, "failed assertion"))
+                && assert_true(c, "message", !d.empty())
+                && assert_equal(c, "failed assertion message", d.c_str(), std::string("wrong value: failed assertion"));
+                ;
+        }),
+    KT::expect_success("successful assertion for false: true and no message", [](KT::context& c)->bool{
             KT::context d;
             return assert_true(c, "assertion passed", assert_true(d, "successful assertion", true))
                 && assert_true(c, "no message", d.empty())
