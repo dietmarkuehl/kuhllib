@@ -161,6 +161,8 @@ static KT::testcase const tests[] = {
             foo o1;
             return KT::assert_type<bool, decltype(NF::ref(o0) == NF::ref(o1))>(c, "ref(o0) == ref(o1) type")
                 && KT::assert_type<bool, decltype(NF::cref(o0) == NF::cref(o1))>(c, "cref(o0) == cref(o1) type")
+                && KT::assert_true(c, "noexcept(NF::ref(o0) == NF::ref(o1))", noexcept(NF::ref(o0) == NF::ref(o1)))
+                && KT::assert_true(c, "noexcept(NF::cref(o0) == NF::cref(o1))", noexcept(NF::cref(o0) == NF::cref(o1)))
                 && KT::assert_true(c, "ref(o0) == ref(o0)", NF::ref(o0) == NF::ref(o0))
                 && KT::assert_false(c, "ref(o0) == ref(o1)", NF::ref(o0) == NF::ref(o1))
                 && KT::assert_false(c, "ref(o0) != ref(o0)", NF::ref(o0) != NF::ref(o0))
