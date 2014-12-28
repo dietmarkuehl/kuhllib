@@ -26,7 +26,10 @@
 #ifndef INCLUDED_NSTD_FUNCTIONAL_MEM_FN
 #define INCLUDED_NSTD_FUNCTIONAL_MEM_FN
 
+#include "nstd/functional/invoke.hpp"
 #include "nstd/utility/forward.hpp"
+#include "nstd/type_traits/declval.hpp"
+#include "nstd/type_traits/is_function.hpp"
 
 // ----------------------------------------------------------------------------
 
@@ -34,30 +37,109 @@ namespace nstd
 {
     namespace functional {
         namespace detail {
+            template <typename>        struct mem_fn_types;
+            template <typename R, typename T> struct mem_fn_types<R (T::*)()>;
+            template <typename R, typename T> struct mem_fn_types<R (T::*)() const>;
+            template <typename R, typename T> struct mem_fn_types<R (T::*)() volatile>;
+            template <typename R, typename T> struct mem_fn_types<R (T::*)() const volatile>;
+            template <typename R, typename T, typename A> struct mem_fn_types<R (T::*)(A)>;
+            template <typename R, typename T, typename A> struct mem_fn_types<R (T::*)(A) const>;
+            template <typename R, typename T, typename A> struct mem_fn_types<R (T::*)(A) volatile>;
+            template <typename R, typename T, typename A> struct mem_fn_types<R (T::*)(A) const volatile>;
+            template <typename R, typename T, typename... A> struct mem_fn_types<R (T::*)(A...)>;
+
             template <typename R, typename T>
-            class mem_fn {
-                R T::*mem_fun;
-            public:
-                explicit mem_fn(R T::*mem_fun): mem_fun(mem_fun) {}
-                template <typename Object, typename... Args>
-                auto operator()(Object&& object, Args&&... args)
-                    -> decltype((object.*(this->mem_fun))(nstd::utility::forward<Args>(args)...)) {
-                    return (object.*(this->mem_fun))(nstd::utility::forward<Args>(args)...);
-                }
-                bool operator==(mem_fn const& other) const {
-                    return this->mem_fun == other.mem_fun;
-                }
-                bool operator!=(mem_fn const& other) const {
-                    return !(*this == other);
-                }
-            };
+            struct mem_fn;
         }
         template <typename R, typename T>
-        nstd::functional::detail::mem_fn<R, T> mem_fn(R T::*mem_fun) {
-            return nstd::functional::detail::mem_fn<R, T>(mem_fun);
-        }
+        auto mem_fn(R T::*mem_fun)
+            -> nstd::functional::detail::mem_fn<R, T>;
     }
 
+}
+
+// ----------------------------------------------------------------------------
+
+template <typename R>
+struct nstd::functional::detail::mem_fn_types {
+};
+template <typename R, typename T>
+struct nstd::functional::detail:: mem_fn_types<R (T::*)()> {
+    using result_type = R;
+    using argument_type = T*;
+};
+template <typename R, typename T>
+struct nstd::functional::detail:: mem_fn_types<R (T::*)() const> {
+    using result_type = R;
+    using argument_type = T const*;
+};
+template <typename R, typename T>
+struct nstd::functional::detail:: mem_fn_types<R (T::*)() volatile> {
+    using result_type = R;
+    using argument_type = T volatile*;
+};
+template <typename R, typename T>
+struct nstd::functional::detail:: mem_fn_types<R (T::*)() const volatile> {
+    using result_type = R;
+    using argument_type = T const volatile*;
+};
+template <typename R, typename T, typename A>
+struct nstd::functional::detail:: mem_fn_types<R (T::*)(A)> {
+    using result_type          = R;
+    using first_argument_type  = T*;
+    using second_argument_type = A;
+};
+template <typename R, typename T, typename A>
+struct nstd::functional::detail:: mem_fn_types<R (T::*)(A) const> {
+    using result_type          = R;
+    using first_argument_type  = T const*;
+    using second_argument_type = A;
+};
+template <typename R, typename T, typename A>
+struct nstd::functional::detail:: mem_fn_types<R (T::*)(A) volatile> {
+    using result_type          = R;
+    using first_argument_type  = T volatile*;
+    using second_argument_type = A;
+};
+template <typename R, typename T, typename A>
+struct nstd::functional::detail:: mem_fn_types<R (T::*)(A) const volatile> {
+    using result_type          = R;
+    using first_argument_type  = T const volatile*;
+    using second_argument_type = A;
+};
+template <typename R, typename T, typename... A>
+struct nstd::functional::detail:: mem_fn_types<R (T::*)(A...)> {
+    using result_type = R;
+};
+
+// ----------------------------------------------------------------------------
+
+template <typename R, typename T>
+struct nstd::functional::detail::mem_fn
+    : nstd::functional::detail::mem_fn_types<R T::*> {
+private:
+    R T::*mem_fun;
+public:
+    explicit mem_fn(R T::*mem_fun): mem_fun(mem_fun) {}
+    template <typename... Args>
+    auto operator()(Args&&... args) const
+        -> decltype(nstd::functional::invoke(nstd::type_traits::declval<R T::*>(), nstd::utility::forward<Args>(args)...)) {
+        return nstd::functional::invoke(this->mem_fun, nstd::utility::forward<Args>(args)...);
+    }
+    bool operator==(mem_fn const& other) const {
+        return this->mem_fun == other.mem_fun;
+    }
+    bool operator!=(mem_fn const& other) const {
+        return !(*this == other);
+    }
+};
+
+// ----------------------------------------------------------------------------
+
+template <typename R, typename T>
+auto nstd::functional::mem_fn(R T::*mem_fun)
+    -> nstd::functional::detail::mem_fn<R, T> {
+    return nstd::functional::detail::mem_fn<R, T>(mem_fun);
 }
 
 // ----------------------------------------------------------------------------

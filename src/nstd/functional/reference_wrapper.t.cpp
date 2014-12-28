@@ -52,26 +52,32 @@ namespace
                   typename = decltype(NF::reference_wrapper<T>(T()))>
         static auto test(int) -> NT::true_type;
         template <typename T>
-        static auto test(...) -> NT::false_type;
+        static auto test(...) -> NT::false_type { return NT::false_type(); }
     };
 
     struct ref_rvalue {
         template <typename T, typename = decltype(NF::ref(T()))>
         static auto test(int) -> NT::true_type;
         template <typename T>
-        static auto test(...) -> NT::false_type;
+        static auto test(...) -> NT::false_type { return NT::false_type(); }
     };
     struct cref_rvalue {
         template <typename T, typename = decltype(NF::cref(T()))>
         static auto test(int) -> NT::true_type;
         template <typename T>
-        static auto test(...) -> NT::false_type;
+        static auto test(...) -> NT::false_type { return NT::false_type(); }
     };
 }
 
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
+    KT::expect_success("prepare", [](KT::context& c)->bool{
+            return KT::assert_false(c, "move ctor test", move_ctor::test<foo>(0))
+                && KT::assert_false(c, "ref rvalue test", ref_rvalue::test<foo>(0))
+                && KT::assert_false(c, "cref rvalue test", cref_rvalue::test<foo>(0))
+                ;
+        }),
     KT::expect_success("typedefs", [](KT::context& c)->bool{
             return KT::assert_type<foo, NF::reference_wrapper<foo>::type>(c, "type")
                 //-dk:TODO result_type

@@ -106,10 +106,12 @@ static KT::testcase const tests[] = {
             foo f1(19);
             foo f2(20);
             return true
+#if 1
                 && KT::assert_true(c, "bind(foo::mem0, f0)", std::make_tuple(19) == NF::bind(&foo::mem0, f0)())
                 && KT::assert_true(c, "equal bind(foo::mem0, f0/f1", NF::bind(&foo::mem0, f0) == NF::bind(&foo::mem0, f1))
                 && KT::assert_false(c, "equal bind(foo::mem0, f0/f2)", NF::bind(&foo::mem0, f0) == NF::bind(&foo::mem0, f2))
                 && KT::assert_false(c, "equal bind(foo::omem0, f0/f1)", NF::bind(&foo::mem0, f0) == NF::bind(&foo::omem0, f1))
+#endif
                 ; 
         }),
 };

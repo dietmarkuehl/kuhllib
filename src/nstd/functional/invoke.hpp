@@ -26,7 +26,6 @@
 #ifndef INCLUDED_NSTD_FUNCTIONAL_INVOKE
 #define INCLUDED_NSTD_FUNCTIONAL_INVOKE
 
-#include "nstd/functional/mem_fn.hpp"
 #include "nstd/type_traits/add_lvalue_reference.hpp"
 #include "nstd/type_traits/choose_type.hpp"
 #include "nstd/type_traits/declval.hpp"
@@ -65,8 +64,8 @@ namespace nstd
 
             template <typename Fun, typename... Args>
             using invoke_type = ::nstd::type_traits::choose_type_t<
-                typename ::nstd::functional::detail::invoke_member_fun<true,  Fun, Args...>::choice_type,
-                typename ::nstd::functional::detail::invoke_member_fun<false, Fun, Args...>::choice_type,
+                typename ::nstd::functional::detail::invoke_member_fun<true,  ::nstd::type_traits::decay_t<Fun>, Args...>::choice_type,
+                typename ::nstd::functional::detail::invoke_member_fun<false, ::nstd::type_traits::decay_t<Fun>, Args...>::choice_type,
                 typename ::nstd::functional::detail::invoke_non_member<Fun, Args...>::choice_type,
                 ::nstd::type_traits::choice<true, ::nstd::functional::detail::invoke_empty>
                 >;
@@ -200,7 +199,7 @@ template <typename Fun, typename... Args>
 struct nstd::functional::detail::invoke_non_member_type<true, Fun, Args...> {
     using type = decltype(::nstd::type_traits::declval<Fun>()(::nstd::type_traits::declval<Args>()...));
     using choice_type = ::nstd::type_traits::choice<true, ::nstd::functional::detail::invoke_non_member_type<true, Fun, Args...>>;
-    
+
     template <typename F, typename... A>
     static auto invoke(F&& fun, A&&... args)
         -> decltype(::nstd::type_traits::declval<F>()(::nstd::type_traits::declval<A>()...)) {
