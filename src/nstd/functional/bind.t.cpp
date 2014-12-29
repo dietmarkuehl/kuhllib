@@ -119,11 +119,23 @@ namespace {
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
-    KT::expect_success("bind(f<>)", [](KT::context& c)->bool{
+    KT::expect_success("prepare", [](KT::context& c)->bool{
+            int value{0};
+            return KT::assert_false(c, "ref_test0", ref_test0()(0, 1, 2, 3)())
+                && KT::assert_true(c, "ref_test0", ref_test0()(value, 1, 2, 3)())
+                && KT::assert_false(c, "ref_test1", ref_test1()(0, 1, 2, 3)())
+                && KT::assert_true(c, "ref_test1", ref_test1()(0, value, 2, 3)())
+                && KT::assert_false(c, "ref_test2", ref_test2()(0, 1, 2, 3)())
+                && KT::assert_true(c, "ref_test2", ref_test2()(0, 1, value, 3)())
+                ;
+        }),
+    KT::expect_success("ref_test", [](KT::context& c)->bool{
             int value0{17};
             int value1{18};
             int value2{19};
-            return KT::assert_static_true<NF::is_bind_expression<decltype(NF::bind(ref_test0(), 0, 0, 0, 4))> >(c,
+            return true
+#ifndef KUHLLIB_INTEL
+                && KT::assert_static_true<NF::is_bind_expression<decltype(NF::bind(ref_test0(), 0, 0, 0, 4))> >(c,
                                                                    "is binder bind(ref_test0(), 0, 0, 0, 4)")
                 && KT::assert_static_true<NF::is_bind_expression<decltype(NF::bind(ref_test0(), value0, 0, 0, 4))> >(c,
                                                                    "is binder bind(ref_test0(), value0, 0, 0, 4)")
@@ -146,6 +158,7 @@ static KT::testcase const tests[] = {
                 && KT::assert_true(c, "bind(., .,, ., ref 6) type",
                                    NF::bind(ref_test2(), 0, 0, NF::ref(value2), 6)())
                 && KT::assert_equal(c, "bind(., .,, ., ref 6) result", 6, value2)
+#endif
                 ;
         }),
     KT::expect_success("componsition", [](KT::context& c)->bool {
@@ -165,12 +178,15 @@ static KT::testcase const tests[] = {
                 ;
         }),
     KT::expect_success("bind(f<>)", [](KT::context& c)->bool{
-            return KT::assert_type<std::tuple<>, decltype(NF::bind(f<>)())>(c, "type 0")
+            return true
+#ifndef KUHLLIB_INTEL
+                && KT::assert_type<std::tuple<>, decltype(NF::bind(f<>)())>(c, "type 0")
                 && KT::assert_true(c, "call", std::tuple<>() == NF::bind(f<>)())
                 && KT::assert_true(c, "equal f<>/f<>", NF::bind(f<>) == NF::bind(f<>))
                 && KT::assert_false(c, "equal f<>/g<>", NF::bind(f<>) == NF::bind(g<>))
                 && KT::assert_false(c, "not equal f<>/f<>", NF::bind(f<>) != NF::bind(f<>))
                 && KT::assert_true(c, "not equal f<>/g<>", NF::bind(f<>) != NF::bind(g<>))
+#endif
                 ;
         }),
     KT::expect_success("bind(f<int>)", [](KT::context& c)->bool{
