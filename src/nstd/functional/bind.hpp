@@ -67,7 +67,8 @@ namespace nstd
             }
             template <int Index, typename Bound, typename Args>
             auto bind_get_arg(Bound& bound, Args const& args)
-                -> typename nstd::type_traits::enable_if<0 == nstd::functional::is_placeholder<Bound>::value,
+                -> typename nstd::type_traits::enable_if<0 == nstd::functional::is_placeholder<Bound>::value 
+                                                         && !nstd::functional::is_bind_expression<Bound>::value,
                                                          Bound>::type {
                 return bound;
             }
