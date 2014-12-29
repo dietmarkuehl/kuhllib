@@ -1,4 +1,4 @@
-// nstd/functional/tuple_call.t.cpp                                   -*-C++-*-
+// nstd/functional/tuple_invoke.t.cpp                                 -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,7 +23,7 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/functional/tuple_call.hpp"
+#include "nstd/functional/tuple_invoke.hpp"
 #include "nstd/utility/forward.hpp"
 #include "nstd/type_traits/decay.hpp"
 #include <tuple>
@@ -48,24 +48,24 @@ namespace {
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
-    KT::expect_success("call with no argument", [](KT::context& c)->bool{
-            return KT::assert_type<std::tuple<>, decltype(NF::tuple_call(foo(), std::make_tuple()))>(c, "type")
-                && KT::assert_true(c, "value", std::tuple<>() == NF::tuple_call(foo(), std::make_tuple()))
+    KT::expect_success("invoke with no argument", [](KT::context& c)->bool{
+            return KT::assert_type<std::tuple<>, decltype(NF::tuple_invoke(foo(), std::make_tuple()))>(c, "type")
+                && KT::assert_true(c, "value", std::tuple<>() == NF::tuple_invoke(foo(), std::make_tuple()))
                 ;
         }),
-    KT::expect_success("call with one argument", [](KT::context& c)->bool{
-            return KT::assert_type<std::tuple<int>, decltype(NF::tuple_call(foo(), std::make_tuple(17)))>(c, "type")
-                && KT::assert_true(c, "value", std::tuple<int>(17) == NF::tuple_call(foo(), std::make_tuple(17)))
+    KT::expect_success("invoke with one argument", [](KT::context& c)->bool{
+            return KT::assert_type<std::tuple<int>, decltype(NF::tuple_invoke(foo(), std::make_tuple(17)))>(c, "type")
+                && KT::assert_true(c, "value", std::tuple<int>(17) == NF::tuple_invoke(foo(), std::make_tuple(17)))
                 ;
         }),
-    KT::expect_success("call with two arguments", [](KT::context& c)->bool{
-            return KT::assert_type<std::tuple<int, char>, decltype(NF::tuple_call(foo(), std::make_tuple(17, 'c')))>(c, "type")
-                && KT::assert_true(c, "value", std::tuple<int, char>(17, 'c') == NF::tuple_call(foo(), std::make_tuple(17, 'c')))
+    KT::expect_success("invoke with two arguments", [](KT::context& c)->bool{
+            return KT::assert_type<std::tuple<int, char>, decltype(NF::tuple_invoke(foo(), std::make_tuple(17, 'c')))>(c, "type")
+                && KT::assert_true(c, "value", std::tuple<int, char>(17, 'c') == NF::tuple_invoke(foo(), std::make_tuple(17, 'c')))
                 ;
         }),
 };
 
 int main(int ac, char* av[])
 {
-    return KT::run_tests("functional::tuple_call", ac, av, ::tests);
+    return KT::run_tests("functional::tuple_invoke", ac, av, ::tests);
 }

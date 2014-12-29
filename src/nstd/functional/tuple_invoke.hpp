@@ -1,4 +1,4 @@
-// nstd/functional/tuple_call.hpp                                     -*-C++-*-
+// nstd/functional/tuple_invoke.hpp                                   -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,8 +23,8 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_FUNCTIONAL_TUPLE_CALL
-#define INCLUDED_NSTD_FUNCTIONAL_TUPLE_CALL
+#ifndef INCLUDED_NSTD_FUNCTIONAL_TUPLE_INVOKE
+#define INCLUDED_NSTD_FUNCTIONAL_TUPLE_INVOKE
 
 #include "nstd/utility/forward.hpp"
 #include "nstd/utility/integer_sequence.hpp"
@@ -38,21 +38,21 @@ namespace nstd
     namespace functional {
         namespace detail {
             template <typename>
-            struct tuple_call;
+            struct tuple_invoke;
             template <std::size_t... I>
-            struct tuple_call<nstd::utility::index_sequence<I...> > {
+            struct tuple_invoke<nstd::utility::index_sequence<I...> > {
                 template <typename Fun, typename Args>
-                static auto call(Fun&& fun, Args&& args)
+                static auto invoke(Fun&& fun, Args&& args)
                     -> decltype(nstd::utility::forward<Fun>(fun)(std::get<I>(args)...)) {
                     return nstd::utility::forward<Fun>(fun)(std::get<I>(args)...);
                 }
             };
         }
         template <typename Fun, typename Args>
-        auto tuple_call(Fun&& fun, Args&& args)
-            -> decltype(nstd::functional::detail::tuple_call<nstd::utility::make_index_sequence<std::tuple_size<nstd::type_traits::decay_t<Args> >::value> >::call(nstd::utility::forward<Fun>(fun),
+        auto tuple_invoke(Fun&& fun, Args&& args)
+            -> decltype(nstd::functional::detail::tuple_invoke<nstd::utility::make_index_sequence<std::tuple_size<nstd::type_traits::decay_t<Args> >::value> >::invoke(nstd::utility::forward<Fun>(fun),
                                                                          nstd::utility::forward<Args>(args))) {
-            return nstd::functional::detail::tuple_call<nstd::utility::make_index_sequence<std::tuple_size<nstd::type_traits::decay_t<Args> >::value> >::call(nstd::utility::forward<Fun>(fun),
+            return nstd::functional::detail::tuple_invoke<nstd::utility::make_index_sequence<std::tuple_size<nstd::type_traits::decay_t<Args> >::value> >::invoke(nstd::utility::forward<Fun>(fun),
                                                                     nstd::utility::forward<Args>(args));
         }
     }
