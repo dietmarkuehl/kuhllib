@@ -58,7 +58,29 @@ namespace
         template <typename T, std::size_t Size>
         auto check_values(T (&array)[Size]) -> bool {
             auto result = NA::mismatch(NP::identity, values.begin(), values.end(),
-                                       NP::model_readable<NU::equality_comparable>(), NC::single_pass_begin(array), NC::single_pass_end(array));
+                                       NP::model_readable<NU::equality_comparable>(),
+                                       NC::single_pass_begin(array), NC::single_pass_end(array));
+            return NC::at_same_pos(result.first, values.end())
+                && NC::at_same_pos(result.second, NC::single_pass_end(array))
+                ;
+            return false;
+        }
+        bool empty() const { return this->values.empty(); }
+    };
+    struct copyable {
+        std::vector<int> values;
+
+        copyable() = default;
+        copyable(copyable const&) = default;
+        void operator()(NP::model_value<int> value) {
+            this->values.push_back(value.get_value());
+        }
+
+        template <typename T, std::size_t Size>
+        auto check_values(T (&array)[Size]) -> bool {
+            auto result = NA::mismatch(NP::identity, values.begin(), values.end(),
+                                       NP::model_readable<NU::equality_comparable>(),
+                                       NC::single_pass_begin(array), NC::single_pass_end(array));
             return NC::at_same_pos(result.first, values.end())
                 && NC::at_same_pos(result.second, NC::single_pass_end(array))
                 ;
@@ -70,6 +92,19 @@ namespace
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
+    KT::expect_success("for_each() on an empty sequence", [](KT::context& c)->bool{
+            int array[] = { 0 };
+            auto it(NC::single_pass_begin(array));
+            NC::step(it);
+            auto end(NC::single_pass_end(array));
+            return KT::assert_true(c, "initially at end", NC::at_same_pos(it, end))
+                && KT::assert_true(c, "iterator is at end",
+                                   NC::at_same_pos(NA::for_each(NP::model_readable<>(), it, end, movable()).first,
+                                                   end))
+                && KT::assert_true(c, "no call registered",
+                                   NA::for_each(NP::model_readable<>(), it, end, movable()).second.empty())
+                ;
+        }),
     KT::expect_success("for_each() function isn't necessarily copyable", [](KT::context& c)->bool{
             int array[] = { 1, 2, 3, 4, 5 };
             return KT::assert_type<NU::pair<NC::model_single_pass<int>, movable>,
@@ -80,6 +115,18 @@ static KT::testcase const tests[] = {
                                    NA::for_each(NP::model_readable<>(),
                                                 NC::single_pass_begin(array), NC::single_pass_end(array),
                                                 movable()).second.check_values(array))
+                ;
+        }),
+    KT::expect_success("for_each() function can be copyable", [](KT::context& c)->bool{
+            int array[] = { 1, 2, 3, 4, 5 };
+            return KT::assert_type<NU::pair<NC::model_single_pass<int>, copyable>,
+                                   decltype(NA::for_each(NP::model_readable<>(),
+                                                         NC::single_pass_begin(array), NC::single_pass_end(array),
+                                                         copyable()))>(c, "return type")
+                && KT::assert_true(c, "registered all calls",
+                                   NA::for_each(NP::model_readable<>(),
+                                                NC::single_pass_begin(array), NC::single_pass_end(array),
+                                                copyable()).second.check_values(array))
                 ;
         }),
 };

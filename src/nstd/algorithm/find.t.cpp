@@ -39,7 +39,55 @@ namespace KT = kuhl::test;
 
 // ----------------------------------------------------------------------------
 
+namespace
+{
+    struct marker {};
+    struct put {
+        int value;
+        explicit put(int value, marker): value(value) {}
+        put(put const&) = delete;
+        put(put&&) = delete;
+        auto operator=(put const&) -> void = delete;
+        auto operator=(put&&) -> void = delete;
+    };
+    bool operator== (NP::model_value<int> const& value, put const& other) {
+        return value.get_value() == other.value;
+    }
+}
+
+// ----------------------------------------------------------------------------
+
 static KT::testcase const tests[] = {
+    KT::expect_success("find()'s value doesn't have to be copyable or movable",
+                       [](KT::context& c)->bool{
+            int array[] = { 1, 2, 3 };
+            auto it0(NC::single_pass_begin(array));
+            auto it1(it0);
+            NC::step(it1);
+            auto it2(it1);
+            NC::step(it2);
+            return KT::assert_true(c, "first",
+                                   NC::at_same_pos(NA::find(NP::model_readable<>(),
+                                                            NC::single_pass_begin(array), NC::single_pass_end(array),
+                                                            put(1, marker())),
+                                                   NC::single_pass_begin(array)))
+                && KT::assert_true(c, "second",
+                                   NC::at_same_pos(NA::find(NP::model_readable<>(),
+                                                            NC::single_pass_begin(array), NC::single_pass_end(array),
+                                                            put(2, marker())),
+                                                   it1))
+                && KT::assert_true(c, "third",
+                                   NC::at_same_pos(NA::find(NP::model_readable<>(),
+                                                            NC::single_pass_begin(array), NC::single_pass_end(array),
+                                                            put(3, marker())),
+                                                   it2))
+                && KT::assert_true(c, "not found",
+                                   NC::at_same_pos(NA::find(NP::model_readable<>(),
+                                                            NC::single_pass_begin(array), NC::single_pass_end(array),
+                                                            put(4, marker())),
+                                                   NC::single_pass_end(array)))
+                ;
+        }),
     KT::expect_success("find() on empty range finds end", [](KT::context& c)->bool{
             int array[] = { 1 };
             auto begin = NC::single_pass_begin(array);

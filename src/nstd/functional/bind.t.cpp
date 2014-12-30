@@ -30,12 +30,7 @@
 #include "kuhl/test.hpp"
 #include <tuple>
 
-#if 1
 namespace NF = nstd::functional;
-#else
-#include <functional>
-namespace NF = std;
-#endif
 namespace NFP = NF::placeholders;
 namespace NT = nstd::type_traits;
 
@@ -64,13 +59,12 @@ namespace {
         foo(int mem): mem(mem) {}
         std::tuple<int> mem0() { return std::make_tuple(this->mem); }
         std::tuple<int> omem0() { return std::make_tuple(this->mem); }
-        //-dk:TODO std::tuple<int, int> mem1(int v0) { return std::make_tuple(this->mem, v0); }
-        //-dk:TODO std::tuple<int, int> omem1(int v0) { return std::make_tuple(this->mem, v0); }
-        //-dk:TODO std::tuple<int, int, int> mem2(int v0, int v1) { return std::make_tuple(this->mem, v0, v1); }
-        //-dk:TODO std::tuple<int, int, int> omem2(int v0, int v1) { return std::make_tuple(this->mem, v0, v1); }
+        std::tuple<int, int> mem1(int v0) { return std::make_tuple(this->mem, v0); }
+        std::tuple<int, int> omem1(int v0) { return std::make_tuple(this->mem, v0); }
+        std::tuple<int, int, int> mem2(int v0, int v1) { return std::make_tuple(this->mem, v0, v1); }
+        std::tuple<int, int, int> omem2(int v0, int v1) { return std::make_tuple(this->mem, v0, v1); }
 
         bool operator== (foo const& other) const { return this->mem == other.mem; }
-        //-dk:TODO bool operator!= (foo const& other) const { return !(*this == other); }
     };
 
     struct ref_test0 {
@@ -121,12 +115,17 @@ namespace {
 static KT::testcase const tests[] = {
     KT::expect_success("prepare", [](KT::context& c)->bool{
             int value{0};
+            foo f(0);
             return KT::assert_false(c, "ref_test0", ref_test0()(0, 1, 2, 3)())
                 && KT::assert_true(c, "ref_test0", ref_test0()(value, 1, 2, 3)())
                 && KT::assert_false(c, "ref_test1", ref_test1()(0, 1, 2, 3)())
                 && KT::assert_true(c, "ref_test1", ref_test1()(0, value, 2, 3)())
                 && KT::assert_false(c, "ref_test2", ref_test2()(0, 1, 2, 3)())
                 && KT::assert_true(c, "ref_test2", ref_test2()(0, 1, value, 3)())
+                && KT::assert_true(c, "f.mem1(10)", std::make_tuple(0, 10) == f.mem1(10))
+                && KT::assert_true(c, "f.omem1(10)", std::make_tuple(0, 10) == f.omem1(10))
+                && KT::assert_true(c, "f.mem2(10, 11)", std::make_tuple(0, 10, 11) == f.mem2(10, 11))
+                && KT::assert_true(c, "f.omem2(10, 11)", std::make_tuple(0, 10, 11) == f.omem2(10, 11))
                 ;
         }),
     KT::expect_success("ref_test", [](KT::context& c)->bool{
@@ -213,6 +212,19 @@ static KT::testcase const tests[] = {
                 && KT::assert_true(c, "equal bind(foo::mem0, f0/f1", NF::bind(&foo::mem0, f0) == NF::bind(&foo::mem0, f1))
                 && KT::assert_false(c, "equal bind(foo::mem0, f0/f2)", NF::bind(&foo::mem0, f0) == NF::bind(&foo::mem0, f2))
                 && KT::assert_false(c, "equal bind(foo::omem0, f0/f1)", NF::bind(&foo::mem0, f0) == NF::bind(&foo::omem0, f1))
+                ; 
+        }),
+    KT::expect_success("bind(foo::mem1, ..)", [](KT::context& c)->bool{
+            foo f0(19);
+            foo f1(19);
+            foo f2(20);
+            return true
+#ifndef KUHLLIB_INTEL
+                && KT::assert_true(c, "bind(foo::mem0, f0, 21)", std::make_tuple(19, 21) == NF::bind(&foo::mem1, f0, 21)())
+                && KT::assert_true(c, "equal bind(foo::mem0, f0/f1", NF::bind(&foo::mem1, f0, 21) == NF::bind(&foo::mem1, f1, 21))
+                && KT::assert_false(c, "equal bind(foo::mem0, f0/f2)", NF::bind(&foo::mem1, f0, 21) == NF::bind(&foo::mem1, f2, 21))
+                && KT::assert_false(c, "equal bind(foo::omem0, f0/f1)", NF::bind(&foo::mem1, f0, 21) == NF::bind(&foo::omem1, f0, 21))
+#endif
                 ; 
         }),
 };

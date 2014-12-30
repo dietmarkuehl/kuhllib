@@ -40,7 +40,6 @@
 #include "nstd/utility/integer_sequence.hpp"
 #include "nstd/utility/move.hpp"
 #include <tuple>
-#include <iostream> //-dk:TODO remove
 
 // ----------------------------------------------------------------------------
 
@@ -87,6 +86,7 @@ namespace nstd
         template <typename Fun, typename... Args>
         auto bind(Fun&&, Args&&...)
             -> nstd::functional::detail::binder<nstd::utility::index_sequence_for<Args...>, Fun, Args...>;
+        //-dk:TODO bind() with strong result_type
     }
 
 }

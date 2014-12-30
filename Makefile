@@ -59,6 +59,10 @@ all:
 	-$(MAKE) COMPILER=gcc CMAKE_CXX_ARG=/opt/gcc-4.9.2/bin/g++
 	-$(MAKE) COMPILER=intel CMAKE_CXX_ARG=/opt/intel/bin/icc
 
+.PHONY: todo
+todo:
+	cd src; grep "dk:TODO" */*/*.{hpp,cpp}
+
 .PHONY: clean
 clean:
 	$(RM) -r $(BUILDDIR)

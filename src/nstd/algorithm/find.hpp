@@ -38,19 +38,18 @@ namespace nstd
             struct find {
                 template <typename T>
                 struct predicate {
-                    T value;
-                    predicate(T value): value(value) {}
+                    T const& value;
+                    predicate(T const& value): value(value) {}
                     template <typename S>
                     auto operator()(S&& value) const -> bool {
-                        return this->value == value;
+                        return value == this->value;
                     }
                 };
             public:
                 template <typename Projection,
                           typename SinglePass, typename EndPoint,
                           typename Value>
-                auto operator()(Projection projection, SinglePass begin, EndPoint end, Value value) const -> SinglePass {
-                    // return nstd::algorithm::find_if(projection, begin, end, predicate<Value>(nstd::utility::move(value)));
+                auto operator()(Projection projection, SinglePass begin, EndPoint end, Value const& value) const -> SinglePass {
                     return nstd::algorithm::find_if(projection, begin, end, predicate<Value>(value));
                 }
             };

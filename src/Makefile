@@ -6,6 +6,10 @@ default:
 all:
 	cd ..; $(MAKE) all
 
+.PHONY: todo
+todo:
+	cd ..; $(MAKE) todo
+
 .PHONY: clean
 clean:
 	cd ..; $(MAKE) clean
