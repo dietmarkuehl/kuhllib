@@ -1,4 +1,4 @@
-// nstd/functional/is_bind_expression.t.cpp                           -*-C++-*-
+// nstd/algorithm/find_if_not.hpp                                     -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,46 +23,35 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/functional/is_bind_expression.hpp"
-#include "nstd/type_traits/integral_constant.hpp"
-#include "kuhl/test.hpp"
+#ifndef INCLUDED_NSTD_ALGORITHM_FIND_IF_NOT
+#define INCLUDED_NSTD_ALGORITHM_FIND_IF_NOT
 
-namespace NF = nstd::functional;
-namespace NT = nstd::type_traits;
-namespace KT = kuhl::test;
+#include "nstd/algorithm/find_if.hpp"
+#include "nstd/functional/not_.hpp"
 
 // ----------------------------------------------------------------------------
 
-namespace {
-    struct foo;
-    struct bar {};
-}
-
 namespace nstd {
-    namespace functional {
-        template <>
-        struct is_bind_expression<bar>
-            : NT::true_type {
-        };
+    namespace algorithm {
+        namespace detail {
+            struct find_if_not {
+                template <typename Readable,
+                          typename SinglePass, typename EndPoint,
+                          typename UnaryPredicate>
+                auto operator()(Readable readable,
+                                SinglePass begin, EndPoint end,
+                                UnaryPredicate predicate) const
+                    -> SinglePass {
+                    return nstd::algorithm::find_if(readable,
+                                                    begin, end,
+                                                    nstd::functional::not_(predicate));
+                }
+            };
+        }
+        constexpr nstd::algorithm::detail::find_if_not find_if_not{};
     }
 }
 
 // ----------------------------------------------------------------------------
 
-static KT::testcase const tests[] = {
-    KT::expect_success("non-bind expression", [](KT::context& c)->bool{
-            constexpr bool value{NF::is_bind_expression<foo>::value};
-            return KT::assert_false(c, "foo", value)
-                ;
-        }),
-    KT::expect_success("specialized bind expression", [](KT::context& c)->bool{
-            constexpr bool value{NF::is_bind_expression<bar>::value};
-            return KT::assert_true(c, "bar", value)
-                ;
-        }),
-};
-
-int main(int ac, char* av[])
-{
-    return KT::run_tests("functional::is_bind_expression", ac, av, ::tests);
-}
+#endif

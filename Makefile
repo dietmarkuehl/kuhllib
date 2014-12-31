@@ -61,7 +61,8 @@ all:
 
 .PHONY: todo
 todo:
-	cd src; grep "dk:TODO" */*/*.{hpp,cpp}
+	@cd src; grep "dk:TODO" */*/*.{hpp,cpp}
+	@cd src; grep "expect_failure" nstd/*/*.{hpp,cpp}
 
 .PHONY: clean
 clean:

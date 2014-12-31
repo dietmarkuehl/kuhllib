@@ -58,10 +58,18 @@ namespace nstd
                                                          nstd::type_traits::result_of_t<Bound(Args...)> >::type {
                 return nstd::functional::tuple_invoke(bound, args);
             }
+            template <typename Bound, typename, bool = 0 != nstd::functional::is_placeholder<Bound>::value>
+            struct bind_get_placeholder_type {
+                using type = void;
+            };
+            template <typename Bound, typename Args>
+            struct bind_get_placeholder_type<Bound, Args, true> {
+                using type = typename std::tuple_element<Bound::value - 1u, Args>::type;
+            };
             template <int Index, typename Bound, typename Args>
             auto bind_get_arg(Bound const&, Args const& args)
                 -> typename nstd::type_traits::enable_if<0 != nstd::functional::is_placeholder<Bound>::value,
-                                                         typename std::tuple_element<Bound::value - 1u, Args>::type>::type {
+                        typename nstd::functional::detail::bind_get_placeholder_type<Bound, Args>::type>::type {
                 return std::get<Bound::value - 1u>(args);
             }
             template <int Index, typename Bound, typename Args>

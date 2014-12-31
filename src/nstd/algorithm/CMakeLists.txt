@@ -32,10 +32,13 @@ foreach(test
 	any_of.t
         distance.t
         find.t
+        find_end.t
         find_if.t
+        find_if_not.t
 	for_each.t
 	mismatch.t
         none_of.t
+        search.t
         )
   add_executable(${test} ${test})
   target_link_libraries(${test} PUBLIC kuhltest)

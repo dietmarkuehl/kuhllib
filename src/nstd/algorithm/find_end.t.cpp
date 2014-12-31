@@ -1,4 +1,4 @@
-// nstd/functional/is_bind_expression.t.cpp                           -*-C++-*-
+// nstd/algorithm/find_end.t.cpp                                      -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,46 +23,22 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/functional/is_bind_expression.hpp"
-#include "nstd/type_traits/integral_constant.hpp"
+#include "nstd/algorithm/find_end.hpp"
 #include "kuhl/test.hpp"
 
-namespace NF = nstd::functional;
-namespace NT = nstd::type_traits;
+namespace NA = nstd::algorithm;
 namespace KT = kuhl::test;
 
 // ----------------------------------------------------------------------------
 
-namespace {
-    struct foo;
-    struct bar {};
-}
-
-namespace nstd {
-    namespace functional {
-        template <>
-        struct is_bind_expression<bar>
-            : NT::true_type {
-        };
-    }
-}
-
-// ----------------------------------------------------------------------------
-
 static KT::testcase const tests[] = {
-    KT::expect_success("non-bind expression", [](KT::context& c)->bool{
-            constexpr bool value{NF::is_bind_expression<foo>::value};
-            return KT::assert_false(c, "foo", value)
-                ;
-        }),
-    KT::expect_success("specialized bind expression", [](KT::context& c)->bool{
-            constexpr bool value{NF::is_bind_expression<bar>::value};
-            return KT::assert_true(c, "bar", value)
-                ;
+    KT::expect_failure("placeholder", [](KT::context& c)->bool{
+            //-dk:TODO create actual tests!
+           return true;
         }),
 };
 
 int main(int ac, char* av[])
 {
-    return KT::run_tests("functional::is_bind_expression", ac, av, ::tests);
+    return KT::run_tests("algorithm::find_end", ac, av, ::tests);
 }

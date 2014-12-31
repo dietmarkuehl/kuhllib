@@ -26,12 +26,14 @@
 #include "nstd/functional/bind.hpp"
 #include "nstd/functional/placeholders.hpp"
 #include "nstd/functional/reference_wrapper.hpp"
+#include "nstd/projection/model_value.hpp"
 #include "nstd/type_traits/integral_constant.hpp"
 #include "kuhl/test.hpp"
 #include <tuple>
 
 namespace NF = nstd::functional;
 namespace NFP = NF::placeholders;
+namespace NP = nstd::projection;
 namespace NT = nstd::type_traits;
 
 namespace KT = kuhl::test;
@@ -108,6 +110,13 @@ namespace {
         outer(int value): value(value) {}
         auto operator()(int value) -> int { return this->value + value; }
     };
+
+    struct function_object {
+        auto operator()(int  const& v0, NP::model_value<long> const& v1) const
+            -> bool {
+            return true;
+        }
+    };
 }
 
 // ----------------------------------------------------------------------------
@@ -127,6 +136,12 @@ static KT::testcase const tests[] = {
                 && KT::assert_true(c, "f.mem2(10, 11)", std::make_tuple(0, 10, 11) == f.mem2(10, 11))
                 && KT::assert_true(c, "f.omem2(10, 11)", std::make_tuple(0, 10, 11) == f.omem2(10, 11))
                 ;
+        }),
+    KT::expect_success("bind predicate", [](KT::context& c)->bool{
+            namespace NF = nstd::functional;
+            namespace NFP = NF::placeholders;
+            auto fpred(NF::bind(function_object(), NFP::_1, NP::model_value<long>(3l)));
+            return fpred(1);
         }),
     KT::expect_success("ref_test", [](KT::context& c)->bool{
             int value0{17};
