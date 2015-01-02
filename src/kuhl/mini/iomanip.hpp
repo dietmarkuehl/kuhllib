@@ -1,6 +1,6 @@
-// nstd/utility/swap.hpp                                              -*-C++-*-
+// kuhl/mini/iomanip.hpp                                              -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
+//  Copyright (C) 2015 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
 //  Permission is hereby granted, free of charge, to any person          
 //  obtaining a copy of this software and associated documentation       
@@ -23,37 +23,39 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_UTILITY_SWAP
-#define INCLUDED_NSTD_UTILITY_SWAP
-
-#include "nstd/type_traits/is_nothrow_move_assignable.hpp"
-#include "nstd/type_traits/is_nothrow_move_constructible.hpp"
-#include "nstd/utility/move.hpp"
-#include "nstd/cheaders/cstddef.hpp"
+#ifndef INCLUDED_KUHL_MINI_IOMANIP
+#define INCLUDED_KUHL_MINI_IOMANIP
 
 // ----------------------------------------------------------------------------
 
-namespace nstd
-{
-    namespace utility {
-        template <typename T>
-        auto swap(T&, T&) noexcept(nstd::type_traits::is_nothrow_move_assignable<T>::value
-                                   && nstd::type_traits::is_nothrow_move_constructible<T>::value) -> void;
-        template <typename T, ::nstd::size_t N>
-        auto swap(T (&a0)[N], T(&a1)[N]) noexcept(noexcept(swap(a0[0], a1[0]))) -> void;
+namespace kuhl {
+    namespace mini {
+        class ostream;
+
+        struct setter_fill;
+        struct setter_width;
+
+        auto setfill(char) -> setter_fill;
+        auto setw(int) -> setter_width;
+
+        auto operator<< (ostream&, setter_fill const&) -> ostream&;
+        auto operator<< (ostream&, setter_width const&) -> ostream&;
     }
-
 }
 
 // ----------------------------------------------------------------------------
 
-template <typename T>
-auto nstd::utility::swap(T& t0, T& t1) noexcept(nstd::type_traits::is_nothrow_move_assignable<T>::value
-                                                && nstd::type_traits::is_nothrow_move_constructible<T>::value) -> void {
-    T tmp(nstd::utility::move(t0));
-    t0 = nstd::utility::move(t1);
-    t1 = nstd::utility::move(tmp);
-}
+struct kuhl::mini::setter_fill {
+    char fill;
+    explicit setter_fill(char);
+};
+
+// ----------------------------------------------------------------------------
+
+struct kuhl::mini::setter_width {
+    int width;
+    explicit setter_width(int);
+};
 
 // ----------------------------------------------------------------------------
 

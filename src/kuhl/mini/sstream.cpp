@@ -1,6 +1,6 @@
-// nstd/utility/swap.hpp                                              -*-C++-*-
+// kuhl/mini/sstream.cpp                                              -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
+//  Copyright (C) 2015 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
 //  Permission is hereby granted, free of charge, to any person          
 //  obtaining a copy of this software and associated documentation       
@@ -23,38 +23,60 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_UTILITY_SWAP
-#define INCLUDED_NSTD_UTILITY_SWAP
+#include "kuhl/mini/sstream.hpp"
+#include "kuhl/mini/string.hpp"
+#include <stddef.h>
+#include <string.h>
+#include <stdio.h>
 
-#include "nstd/type_traits/is_nothrow_move_assignable.hpp"
-#include "nstd/type_traits/is_nothrow_move_constructible.hpp"
-#include "nstd/utility/move.hpp"
-#include "nstd/cheaders/cstddef.hpp"
+namespace KM = kuhl::mini;
 
 // ----------------------------------------------------------------------------
 
-namespace nstd
-{
-    namespace utility {
-        template <typename T>
-        auto swap(T&, T&) noexcept(nstd::type_traits::is_nothrow_move_assignable<T>::value
-                                   && nstd::type_traits::is_nothrow_move_constructible<T>::value) -> void;
-        template <typename T, ::nstd::size_t N>
-        auto swap(T (&a0)[N], T(&a1)[N]) noexcept(noexcept(swap(a0[0], a1[0]))) -> void;
+auto KM::stringbuf::overflow(int c)
+    -> int {
+    if (c != -1) {
+        size_t size(this->pptr() - this->pbase() + 1u);
+        size_t newsize(size < 16u? 16u: size * 2u);
+        char* buffer = new char[newsize];
+        if (this->pbase()) {
+            memcpy(buffer, this->pbase(), size);
+            delete[] this->pbase();
+        }
+        this->setp(buffer, buffer + newsize - 1u);
+        this->pbump(size - 1u);
+        *this->pptr() = c;
+        this->pbump(1);
     }
-
+    return c;
 }
 
 // ----------------------------------------------------------------------------
 
-template <typename T>
-auto nstd::utility::swap(T& t0, T& t1) noexcept(nstd::type_traits::is_nothrow_move_assignable<T>::value
-                                                && nstd::type_traits::is_nothrow_move_constructible<T>::value) -> void {
-    T tmp(nstd::utility::move(t0));
-    t0 = nstd::utility::move(t1);
-    t1 = nstd::utility::move(tmp);
+auto KM::stringbuf::str() const
+    -> KM::string {
+    if (this->pptr()) {
+        *this->pptr() = 0;
+        return KM::string(this->pbase());
+    }
+    return KM::string();
 }
 
 // ----------------------------------------------------------------------------
 
-#endif
+KM::ostringstream::ostringstream()
+    : KM::stringbuf()
+    , KM::ios(this)
+    , KM::ostream(this) {
+}
+
+KM::ostringstream::~ostringstream() {
+    delete[] this->pbase();
+}
+
+// ----------------------------------------------------------------------------
+
+auto KM::ostringstream::str() const
+    -> KM::string {
+    return this->KM::stringbuf::str();
+}

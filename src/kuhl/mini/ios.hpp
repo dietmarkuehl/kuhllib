@@ -1,6 +1,6 @@
-// nstd/utility/swap.hpp                                              -*-C++-*-
+// kuhl/mini/ios.hpp                                                  -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
+//  Copyright (C) 2015 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
 //  Permission is hereby granted, free of charge, to any person          
 //  obtaining a copy of this software and associated documentation       
@@ -23,37 +23,51 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_UTILITY_SWAP
-#define INCLUDED_NSTD_UTILITY_SWAP
-
-#include "nstd/type_traits/is_nothrow_move_assignable.hpp"
-#include "nstd/type_traits/is_nothrow_move_constructible.hpp"
-#include "nstd/utility/move.hpp"
-#include "nstd/cheaders/cstddef.hpp"
+#ifndef INCLUDED_KUHL_MINI_IOS
+#define INCLUDED_KUHL_MINI_IOS
 
 // ----------------------------------------------------------------------------
 
-namespace nstd
-{
-    namespace utility {
-        template <typename T>
-        auto swap(T&, T&) noexcept(nstd::type_traits::is_nothrow_move_assignable<T>::value
-                                   && nstd::type_traits::is_nothrow_move_constructible<T>::value) -> void;
-        template <typename T, ::nstd::size_t N>
-        auto swap(T (&a0)[N], T(&a1)[N]) noexcept(noexcept(swap(a0[0], a1[0]))) -> void;
+namespace kuhl {
+    namespace mini {
+        class streambuf;
+        class ios;
     }
-
 }
 
 // ----------------------------------------------------------------------------
 
-template <typename T>
-auto nstd::utility::swap(T& t0, T& t1) noexcept(nstd::type_traits::is_nothrow_move_assignable<T>::value
-                                                && nstd::type_traits::is_nothrow_move_constructible<T>::value) -> void {
-    T tmp(nstd::utility::move(t0));
-    t0 = nstd::utility::move(t1);
-    t1 = nstd::utility::move(tmp);
-}
+class kuhl::mini::ios {
+public:
+    enum fmtflags {
+        left  = 0x01,
+        right = 0x02,
+        dec   = 0x04,
+        oct   = 0x08,
+        hex   = 0x0C,
+        basefield = dec | oct | hex,
+        adjustfield = left | right
+    };
+
+private:
+    kuhl::mini::streambuf* sbuf;
+    int      width_;
+    char     fill_;
+    fmtflags flags_;
+
+protected:
+    auto init(kuhl::mini::streambuf*) -> void;
+public:
+    ios(kuhl::mini::streambuf* sbuf);
+    auto rdbuf() -> kuhl::mini::streambuf* { return this-> sbuf; }
+
+    auto width() const -> int;
+    auto width(int) -> int;
+    auto fill() const -> char;
+    auto fill(char) -> char;
+    auto flags() const -> fmtflags;
+    auto setf(fmtflags, fmtflags) -> fmtflags;
+};
 
 // ----------------------------------------------------------------------------
 

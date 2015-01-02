@@ -1,6 +1,6 @@
-// nstd/utility/swap.hpp                                              -*-C++-*-
+// kuhl/mini/ostream.hpp                                              -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
+//  Copyright (C) 2015 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
 //  Permission is hereby granted, free of charge, to any person          
 //  obtaining a copy of this software and associated documentation       
@@ -23,37 +23,45 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_UTILITY_SWAP
-#define INCLUDED_NSTD_UTILITY_SWAP
+#ifndef INCLUDED_KUHL_MINI_OSTREAM
+#define INCLUDED_KUHL_MINI_OSTREAM
 
-#include "nstd/type_traits/is_nothrow_move_assignable.hpp"
-#include "nstd/type_traits/is_nothrow_move_constructible.hpp"
-#include "nstd/utility/move.hpp"
-#include "nstd/cheaders/cstddef.hpp"
+#include "kuhl/mini/ios.hpp"
 
 // ----------------------------------------------------------------------------
 
-namespace nstd
-{
-    namespace utility {
-        template <typename T>
-        auto swap(T&, T&) noexcept(nstd::type_traits::is_nothrow_move_assignable<T>::value
-                                   && nstd::type_traits::is_nothrow_move_constructible<T>::value) -> void;
-        template <typename T, ::nstd::size_t N>
-        auto swap(T (&a0)[N], T(&a1)[N]) noexcept(noexcept(swap(a0[0], a1[0]))) -> void;
+namespace kuhl {
+    namespace mini {
+        class streambuf;
+        class ostream;
+
+        ostream& right(ostream&);
+        ostream& left(ostream&);
+
+        ostream& operator<< (ostream&, char const*);
     }
-
 }
 
 // ----------------------------------------------------------------------------
 
-template <typename T>
-auto nstd::utility::swap(T& t0, T& t1) noexcept(nstd::type_traits::is_nothrow_move_assignable<T>::value
-                                                && nstd::type_traits::is_nothrow_move_constructible<T>::value) -> void {
-    T tmp(nstd::utility::move(t0));
-    t0 = nstd::utility::move(t1);
-    t1 = nstd::utility::move(tmp);
-}
+class kuhl::mini::ostream
+    : public virtual kuhl::mini::ios {
+public:
+    ostream(kuhl::mini::streambuf* sbuf);
+    ostream(ostream const&) = delete;
+    void operator=(ostream const&) = delete;
+
+    auto operator<< (ostream& (*)(ostream&)) -> ostream&; //-dk:TODO late return type vs. gcc
+    auto operator<< (char) -> ostream&;
+    auto operator<< (int) -> ostream&;
+    auto operator<< (long) -> ostream&;
+    auto operator<< (long long) -> ostream&;
+    auto operator<< (unsigned int) -> ostream&;
+    auto operator<< (unsigned long) -> ostream&;
+    auto operator<< (unsigned long long) -> ostream&;
+
+    auto operator<< (void const volatile*) -> ostream&;
+};
 
 // ----------------------------------------------------------------------------
 

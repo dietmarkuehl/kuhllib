@@ -27,7 +27,7 @@
 #define INCLUDED_NSTD_FUNCTIONAL_PLACEHOLDERS
 
 #include "nstd/type_traits/integral_constant.hpp"
-#include <cstddef>
+#include "nstd/cheaders/cstddef.hpp"
 
 // ----------------------------------------------------------------------------
 
@@ -35,9 +35,9 @@ namespace nstd
 {
     namespace functional {
         namespace detail {
-            template <std::size_t N>
+            template < ::nstd::size_t N>
             struct placeholder
-                : nstd::type_traits::integral_constant<std::size_t, N> {
+                : nstd::type_traits::integral_constant< ::nstd::size_t, N> {
             };
         }
         namespace placeholders {
@@ -52,8 +52,8 @@ namespace nstd
             constexpr nstd::functional::detail::placeholder<9> _9{};
         }
         template <typename T> struct is_placeholder;
-        template <std::size_t N> struct is_placeholder<nstd::functional::detail::placeholder<N>>;
-        template <std::size_t N> struct is_placeholder<nstd::functional::detail::placeholder<N> const>;
+        template < ::nstd::size_t N> struct is_placeholder<nstd::functional::detail::placeholder<N>>;
+        template < ::nstd::size_t N> struct is_placeholder<nstd::functional::detail::placeholder<N> const>;
     }
 
 }
@@ -65,12 +65,12 @@ struct nstd::functional::is_placeholder
     : nstd::type_traits::integral_constant<int, 0> {
 };
 
-template <std::size_t N>
+template < ::nstd::size_t N>
 struct nstd::functional::is_placeholder<nstd::functional::detail::placeholder<N>>
     : nstd::type_traits::integral_constant<int, N> {
 };
 
-template <std::size_t N>
+template < ::nstd::size_t N>
 struct nstd::functional::is_placeholder<nstd::functional::detail::placeholder<N> const>
     : nstd::type_traits::integral_constant<int, N> {
 };

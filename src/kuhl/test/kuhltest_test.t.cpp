@@ -25,8 +25,10 @@
 
 #include "kuhl/test/kuhltest_test.hpp"
 #include "kuhl/test/assertions.hpp"
-#include <sstream>
-#include <iostream>
+#include "kuhl/mini/sstream.hpp"
+#include "kuhl/mini/string.hpp"
+
+namespace KM = kuhl::mini;
 
 // ----------------------------------------------------------------------------
 // Testing the tests - doing it the easy way and using the tests...
@@ -40,7 +42,7 @@ static kuhl::test::testcase const tests[] = {
     KT::expect_success("test success", []()->bool{
             KT::testcase test(KT::expect_success("test name",
                                                  []{ return true; }));
-            std::ostringstream out;
+            KM::ostringstream out;
             bool rc(test.run(out, 17, "global name"));
             return rc == true
                 && out.str() == " 17: global name                   test name"
@@ -49,7 +51,7 @@ static kuhl::test::testcase const tests[] = {
     KT::expect_success("test failure", []()->bool{
             KT::testcase test(KT::expect_success("test name",
                                                  []{ return false; }));
-            std::ostringstream out;
+            KM::ostringstream out;
             bool rc(test.run(out, 17, "global name"));
 
             return rc == false
@@ -59,7 +61,7 @@ static kuhl::test::testcase const tests[] = {
     KT::expect_success("test unexpected exception", []()->bool{
             KT::testcase test(KT::expect_success("test name",
                                                  []()->bool{ throw int(); }));
-            std::ostringstream out;
+            KM::ostringstream out;
             bool rc(test.run(out, 17, "global name"));
 
             return rc == false
@@ -69,7 +71,7 @@ static kuhl::test::testcase const tests[] = {
     KT::expect_success("test unexpected success", []()->bool{
             KT::testcase test(KT::expect_failure("test name",
                                                  []{ return true; }));
-            std::ostringstream out;
+            KM::ostringstream out;
             bool rc(test.run(out, 17, "global name"));
 
             return rc == true
@@ -79,7 +81,7 @@ static kuhl::test::testcase const tests[] = {
     KT::expect_success("test expected failure", []()->bool{
             KT::testcase test(KT::expect_failure("test name",
                                                  []{ return false; }));
-            std::ostringstream out;
+            KM::ostringstream out;
             bool rc(test.run(out, 17, "global name"));
 
             return rc == false
@@ -89,7 +91,7 @@ static kuhl::test::testcase const tests[] = {
     KT::expect_success("test exception instead of failure", []()->bool{
             KT::testcase test(KT::expect_failure("test name",
                                                  []()->bool{ throw int(); }));
-            std::ostringstream out;
+            KM::ostringstream out;
             bool rc(test.run(out, 17, "global name"));
 
             return rc == false
@@ -102,7 +104,7 @@ static kuhl::test::testcase const tests[] = {
                                                         []()->bool{
                                                             throw int();
                                                         }));
-            std::ostringstream out;
+            KM::ostringstream out;
             bool rc(test.run(out, 17, "global name"));
 
             return rc == true
@@ -114,7 +116,7 @@ static kuhl::test::testcase const tests[] = {
                                                         []()->bool{
                                                             throw bool();
                                                         }));
-            std::ostringstream out;
+            KM::ostringstream out;
             bool rc(test.run(out, 17, "global name"));
 
             return rc == false
@@ -124,7 +126,7 @@ static kuhl::test::testcase const tests[] = {
     KT::expect_success("test success instead of exception", []()->bool{
             KT::testcase test(KT::expect_exception<int>("test name",
                                                         []{ return true; }));
-            std::ostringstream out;
+            KM::ostringstream out;
             bool rc(test.run(out, 17, "global name"));
 
             return rc == false
@@ -135,7 +137,7 @@ static kuhl::test::testcase const tests[] = {
     KT::expect_success("test failure instead of exception", []()->bool{
             KT::testcase test(KT::expect_exception<int>("test name",
                                                         []{ return false; }));
-            std::ostringstream out;
+            KM::ostringstream out;
             bool rc(test.run(out, 17, "global name"));
 
             return rc == false
@@ -147,7 +149,7 @@ static kuhl::test::testcase const tests[] = {
                                                  [](KT::context&){
                                                      return true;
                                                  }));
-            std::ostringstream out;
+            KM::ostringstream out;
             bool rc(test.run(out, 17, "global name"));
 
             return rc == true
@@ -159,7 +161,7 @@ static kuhl::test::testcase const tests[] = {
                                                  [](KT::context&){
                                                      return false;
                                                  }));
-            std::ostringstream out;
+            KM::ostringstream out;
             bool rc(test.run(out, 17, "global name"));
 
             return rc == false
@@ -171,7 +173,7 @@ static kuhl::test::testcase const tests[] = {
                                                  [](KT::context&)->bool{
                                                      throw int();
                                                  }));
-            std::ostringstream out;
+            KM::ostringstream out;
             bool rc(test.run(out, 17, "global name"));
 
             return rc == false
@@ -183,7 +185,7 @@ static kuhl::test::testcase const tests[] = {
                                                  [](KT::context&){
                                                      return true;
                                                  }));
-            std::ostringstream out;
+            KM::ostringstream out;
             bool rc(test.run(out, 17, "global name"));
 
             return rc == true
@@ -195,7 +197,7 @@ static kuhl::test::testcase const tests[] = {
                                                  [](KT::context&){
                                                      return false;
                                                  }));
-            std::ostringstream out;
+            KM::ostringstream out;
             bool rc(test.run(out, 17, "global name"));
 
             return assert_false(c, "result", rc)
@@ -208,7 +210,7 @@ static kuhl::test::testcase const tests[] = {
                                                  [](KT::context&)->bool{
                                                      throw int();
                                                  }));
-            std::ostringstream out;
+            KM::ostringstream out;
             bool rc(test.run(out, 17, "global name"));
 
             return rc == false
@@ -221,7 +223,7 @@ static kuhl::test::testcase const tests[] = {
                                                         [](KT::context&)->bool{
                                                             throw int();
                                                         }));
-            std::ostringstream out;
+            KM::ostringstream out;
             bool rc(test.run(out, 17, "global name"));
 
             return assert_true(c, "result", rc)
@@ -234,7 +236,7 @@ static kuhl::test::testcase const tests[] = {
                                                         [](KT::context&)->bool{
                                                             throw bool();
                                                         }));
-            std::ostringstream out;
+            KM::ostringstream out;
             bool rc(test.run(out, 17, "global name"));
 
             return rc == false
@@ -246,7 +248,7 @@ static kuhl::test::testcase const tests[] = {
                                                         [](KT::context&){
                                                             return true;
                                                         }));
-            std::ostringstream out;
+            KM::ostringstream out;
             bool rc(test.run(out, 17, "global name"));
 
             return rc == false
@@ -259,7 +261,7 @@ static kuhl::test::testcase const tests[] = {
                                                         [](KT::context&){
                                                             return false;
                                                         }));
-            std::ostringstream out;
+            KM::ostringstream out;
             bool rc(test.run(out, 17, "global name"));
 
             return rc == false

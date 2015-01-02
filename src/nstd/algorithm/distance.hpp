@@ -27,7 +27,6 @@
 #define INCLUDED_NSTD_ALGORITHM_DISTANCE
 
 #include "nstd/cursor/single_pass.hpp"
-#include <cstddef>
 
 // ----------------------------------------------------------------------------
 

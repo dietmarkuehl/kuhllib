@@ -28,6 +28,7 @@
 
 #include "nstd/cursor/single_pass.hpp"
 #include "nstd/utility/pair.hpp"
+#include "nstd/utility/move.hpp"
 
 // ----------------------------------------------------------------------------
 
@@ -59,7 +60,7 @@ auto nstd::algorithm::detail::for_each::operator()(Readable readable,
     for (; !NC::at_same_pos(cur, end); NC::step(cur)) {
         fun(readable(NC::key(cur)));
     }
-    return nstd::utility::make_pair(cur, std::move(fun));
+    return nstd::utility::make_pair(cur, ::nstd::utility::move(fun));
 }
 
 // ----------------------------------------------------------------------------

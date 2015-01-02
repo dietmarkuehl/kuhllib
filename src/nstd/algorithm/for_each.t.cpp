@@ -32,8 +32,7 @@
 #include "nstd/utility/equality_comparable.hpp"
 #include "kuhl/test.hpp"
 #include <vector>
-#include <cstddef>
-#include <iostream>
+#include "nstd/cheaders/cstddef.hpp"
 
 namespace NA = nstd::algorithm;
 namespace NC = nstd::cursor;
@@ -55,7 +54,7 @@ namespace
             this->values.push_back(value.get_value());
         }
 
-        template <typename T, std::size_t Size>
+        template <typename T, ::nstd::size_t Size>
         auto check_values(T (&array)[Size]) -> bool {
             auto result = NA::mismatch(NP::identity, values.begin(), values.end(),
                                        NP::model_readable<NU::equality_comparable>(),
@@ -76,7 +75,7 @@ namespace
             this->values.push_back(value.get_value());
         }
 
-        template <typename T, std::size_t Size>
+        template <typename T, ::nstd::size_t Size>
         auto check_values(T (&array)[Size]) -> bool {
             auto result = NA::mismatch(NP::identity, values.begin(), values.end(),
                                        NP::model_readable<NU::equality_comparable>(),

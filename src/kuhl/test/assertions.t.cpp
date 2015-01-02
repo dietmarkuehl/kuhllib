@@ -25,9 +25,10 @@
 
 #include "kuhl/test/assertions.hpp"
 #include "kuhl/test.hpp"
-#include <string>
+#include "kuhl/mini/string.hpp"
 
 namespace KT = kuhl::test;
+namespace KM = kuhl::mini;
 
 // ----------------------------------------------------------------------------
 
@@ -51,14 +52,14 @@ static KT::testcase const tests[] = {
             KT::context d;
             return assert_false(c, "assertion failed", KT::assert_static_true<foo>(d, "failed assertion"))
                 && assert_true(c, "message", !d.empty())
-                && assert_equal(c, "failed assertion message", d.c_str(), std::string("no value: failed assertion"));
+                && assert_equal(c, "failed assertion message", d.c_str(), KM::string("no value: failed assertion"));
                 ;
         }),
     KT::expect_success("failed static assertion for true: wrong value", [](KT::context& c)->bool{
             KT::context d;
             return assert_false(c, "assertion failed", KT::assert_static_true<test_false_type>(d, "failed assertion"))
                 && assert_true(c, "message", !d.empty())
-                && assert_equal(c, "failed assertion message", d.c_str(), std::string("wrong value: failed assertion"));
+                && assert_equal(c, "failed assertion message", d.c_str(), KM::string("wrong value: failed assertion"));
                 ;
         }),
     KT::expect_success("successful static assertion for false: true and no message", [](KT::context& c)->bool{
@@ -71,14 +72,14 @@ static KT::testcase const tests[] = {
             KT::context d;
             return assert_false(c, "assertion failed", KT::assert_static_false<foo>(d, "failed assertion"))
                 && assert_true(c, "message", !d.empty())
-                && assert_equal(c, "failed assertion message", d.c_str(), std::string("no value: failed assertion"));
+                && assert_equal(c, "failed assertion message", d.c_str(), KM::string("no value: failed assertion"));
                 ;
         }),
     KT::expect_success("failed static assertion for false: wrong value", [](KT::context& c)->bool{
             KT::context d;
             return assert_false(c, "assertion failed", KT::assert_static_false<test_true_type>(d, "failed assertion"))
                 && assert_true(c, "message", !d.empty())
-                && assert_equal(c, "failed assertion message", d.c_str(), std::string("wrong value: failed assertion"));
+                && assert_equal(c, "failed assertion message", d.c_str(), KM::string("wrong value: failed assertion"));
                 ;
         }),
     KT::expect_success("successful assertion for false: true and no message", [](KT::context& c)->bool{
@@ -91,7 +92,7 @@ static KT::testcase const tests[] = {
             KT::context d;
             return assert_false(c, "assertion failed", assert_true(d, "failed assertion", false))
                 && assert_false(c, "the message is non-empty", d.empty())
-                && assert_equal(c, "assertion message", d.c_str(), std::string("failed assertion"));
+                && assert_equal(c, "assertion message", d.c_str(), KM::string("failed assertion"));
                 ;
         }),
     KT::expect_success("successful assertion for true: true", [](KT::context& c)->bool{
@@ -116,7 +117,7 @@ static KT::testcase const tests[] = {
             KT::context d;
             return assert_false(c, "assertion failed", assert_false(d, "failed assertion", true))
                 && assert_false(c, "the message is non-empty", d.empty())
-                && assert_equal(c, "assertion message", d.c_str(), std::string("failed assertion"));
+                && assert_equal(c, "assertion message", d.c_str(), KM::string("failed assertion"));
                 ;
         }),
     KT::expect_success("successful assertion for false: true", [](KT::context& c)->bool{
@@ -134,13 +135,13 @@ static KT::testcase const tests[] = {
     KT::expect_success("successful equal: true and no message", [](KT::context& c)->bool{
             KT::context d;
             return assert_equal(d, 3, 3)
-                && assert_equal(c, "no message", d.c_str(), std::string())
+                && assert_equal(c, "no message", d.c_str(), KM::string())
                 ;
         }),
     KT::expect_success("failed equal: false and a message", [](KT::context& c)->bool{
             KT::context d;
             return !assert_equal(d, 2, 3)
-                && assert_equal(c, "failed assertion", d.c_str(), std::string("2 != 3"))
+                && assert_equal(c, "failed assertion", d.c_str(), KM::string("2 != 3"))
                 ;
         }),
     KT::expect_success("successful type assertion: true and no message", [](KT::context& c)->bool{
@@ -153,7 +154,7 @@ static KT::testcase const tests[] = {
             KT::context d;
             return assert_true(c, "assertion failed", !KT::assert_type<int&, int>(d, "type check"))
                 && assert_false(c, "there is a message", d.empty())
-                && assert_equal(c, "message", d.c_str(), std::string("type check"))
+                && assert_equal(c, "message", d.c_str(), KM::string("type check"))
                 ;
         }),
     KT::expect_success("nested type exists", [](KT::context& c) -> bool {
@@ -162,7 +163,7 @@ static KT::testcase const tests[] = {
                 && assert_true(c, KT::assert_no_nested_type<foo>(d, "foo"))
                 && assert_false(c, KT::assert_no_nested_type<bar>(d, "bar"))
                 && assert_false(c, "there is a message", d.empty())
-                && assert_equal(c, "message", d.c_str(), std::string("bar"))
+                && assert_equal(c, "message", d.c_str(), KM::string("bar"))
                 ;
 
         }),

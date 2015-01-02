@@ -27,9 +27,12 @@
 #define INCLUDED_KUHLTEST_TEST
 
 #include "kuhl/test/context.hpp"
-#include <iostream>
-#include <iomanip>
-#include <cstdlib>
+#include "kuhl/mini/ostream.hpp"
+#include "kuhl/mini/iomanip.hpp"
+#include "kuhl/mini/distance.hpp"
+#include "kuhl/mini/iostream.hpp"
+#include <stddef.h>
+#include <stdlib.h>
 
 // ----------------------------------------------------------------------------
 
@@ -58,7 +61,7 @@ namespace kuhl
 
         int run_tests(char const*, int, char*[],
                       kuhl::test::testcase const*, kuhl::test::testcase const*);
-        template <std::size_t NoTests>
+        template <size_t NoTests>
         int run_tests(char const*, int, char*[], 
                       kuhl::test::testcase const (&tests)[NoTests]);
 
@@ -75,21 +78,21 @@ private:
     char const* d_name;
     bool (*d_no_context)();
     bool (*d_context)(kuhl::test::context&);
-    bool (testcase::*d_run_test)(std::ostream&, kuhl::test::context&) const;
+    bool (testcase::*d_run_test)(kuhl::mini::ostream&, kuhl::test::context&) const;
 
-    bool expect_success_with_context(std::ostream&      ,
+    bool expect_success_with_context(kuhl::mini::ostream&      ,
                                      kuhl::test::context&) const;
-    bool expect_success_without_context(std::ostream&      ,
+    bool expect_success_without_context(kuhl::mini::ostream&      ,
                                         kuhl::test::context&) const;
-    bool expect_failure_with_context(std::ostream&      ,
+    bool expect_failure_with_context(kuhl::mini::ostream&      ,
                                      kuhl::test::context&) const;
-    bool expect_failure_without_context(std::ostream&      ,
+    bool expect_failure_without_context(kuhl::mini::ostream&      ,
                                         kuhl::test::context&) const;
     template <typename Exception>
-    bool expect_exception_with_context(std::ostream&      ,
+    bool expect_exception_with_context(kuhl::mini::ostream&      ,
                                        kuhl::test::context&) const;
     template <typename Exception>
-    bool expect_exception_without_context(std::ostream&      ,
+    bool expect_exception_without_context(kuhl::mini::ostream&      ,
                                           kuhl::test::context&) const;
 
 public:
@@ -100,7 +103,7 @@ public:
     template <typename Exception>
     testcase(Exception*, char const*, bool (*)(kuhl::test::context&));
 
-    bool run(std::ostream&, std::size_t, char const*) const;
+    bool run(kuhl::mini::ostream&, size_t, char const*) const;
 };
 
 // ----------------------------------------------------------------------------
@@ -153,7 +156,7 @@ kuhl::test::testcase::testcase(Exception*, char const* name,
 
 inline
 bool
-kuhl::test::testcase::expect_success_with_context(std::ostream&       out,
+kuhl::test::testcase::expect_success_with_context(kuhl::mini::ostream&       out,
                                                  kuhl::test::context& context) const
 {
     try {
@@ -172,7 +175,7 @@ kuhl::test::testcase::expect_success_with_context(std::ostream&       out,
 
 inline
 bool
-kuhl::test::testcase::expect_failure_with_context(std::ostream&       out,
+kuhl::test::testcase::expect_failure_with_context(kuhl::mini::ostream&       out,
                                                  kuhl::test::context& context) const
 {
     try {
@@ -188,8 +191,8 @@ kuhl::test::testcase::expect_failure_with_context(std::ostream&       out,
 
 inline
 bool
-kuhl::test::testcase::expect_success_without_context(std::ostream&       out,
-                                                    kuhl::test::context& ) const
+kuhl::test::testcase::expect_success_without_context(kuhl::mini::ostream& out,
+                                                     kuhl::test::context& ) const
 {
     try {
         bool result(this->d_no_context());
@@ -204,7 +207,7 @@ kuhl::test::testcase::expect_success_without_context(std::ostream&       out,
 
 inline
 bool
-kuhl::test::testcase::expect_failure_without_context(std::ostream&       out,
+kuhl::test::testcase::expect_failure_without_context(kuhl::mini::ostream&       out,
                                                     kuhl::test::context& ) const
 {
     try {
@@ -222,7 +225,7 @@ template <typename Exception>
 inline
 bool
 kuhl::test::testcase::expect_exception_with_context(
-                                             std::ostream&       out,
+                                             kuhl::mini::ostream&       out,
                                              kuhl::test::context& context) const
 {
     try {
@@ -246,7 +249,7 @@ template <typename Exception>
 inline
 bool
 kuhl::test::testcase::expect_exception_without_context(
-                                                    std::ostream&       out,
+                                                    kuhl::mini::ostream&       out,
                                                     kuhl::test::context& ) const
 {
     try {
@@ -270,13 +273,13 @@ kuhl::test::testcase::expect_exception_without_context(
 
 inline
 bool
-kuhl::test::testcase::run(std::ostream& out,
-                         std::size_t index,
+kuhl::test::testcase::run(kuhl::mini::ostream& out,
+                         size_t index,
                          char const* name) const
 {
-    out << std::right << std::setfill(' ') << std::setw(3) << index << ": "
-        << std::left  << std::setw(30) << name
-        << std::setw(40) << this->d_name;
+    out << kuhl::mini::right << kuhl::mini::setfill(' ') << kuhl::mini::setw(3) << index << ": "
+        << kuhl::mini::left  << kuhl::mini::setw(30) << name
+        << kuhl::mini::setw(40) << this->d_name;
     kuhl::test::context context;
     return (this->*(this->d_run_test))(out, context);
 }
@@ -335,29 +338,29 @@ kuhl::test::run_tests(char const* name, int ac, char *av[],
                      kuhl::test::testcase const* begin,
                      kuhl::test::testcase const* end)
 {
-    std::ptrdiff_t success(0);
+    ptrdiff_t success(0);
     int count(0);
     if (ac == 1) {
         count = end - begin;
         for (kuhl::test::testcase const* it(begin); it != end; ++it) {
-            it->run(std::cout, it - begin + 1, name) && ++success;
+            it->run(kuhl::mini::cout, it - begin + 1, name) && ++success;
         }
     }
     else {
         for (int i(1); i != ac; ++i) {
             int idx(atoi(av[i]));
-            if (0 < idx && idx <= std::distance(begin, end)) {
+            if (0 < idx && idx <= kuhl::mini::distance(begin, end)) {
                 ++count;
-                (begin + idx - 1)->run(std::cout, idx, name) && ++success;
+                (begin + idx - 1)->run(kuhl::mini::cout, idx, name) && ++success;
             }
         }
     }
-    std::cout << name << ": "
-              << success << "/" << count << " succeeded\n";
+    kuhl::mini::cout << name << ": "
+                     << success << "/" << count << " succeeded\n";
     return success == (end - begin)? EXIT_SUCCESS: EXIT_FAILURE;
 }
 
-template <std::size_t NoTests>
+template <size_t NoTests>
 int
 kuhl::test::run_tests(char const* name, int ac, char* av[],
                      kuhl::test::testcase const (&tests)[NoTests])

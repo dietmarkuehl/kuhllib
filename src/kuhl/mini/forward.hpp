@@ -1,6 +1,6 @@
-// nstd/utility/swap.hpp                                              -*-C++-*-
+// kuhl/mini/forward.hpp                                              -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
+//  Copyright (C) 2015 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
 //  Permission is hereby granted, free of charge, to any person          
 //  obtaining a copy of this software and associated documentation       
@@ -23,36 +23,31 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_UTILITY_SWAP
-#define INCLUDED_NSTD_UTILITY_SWAP
-
-#include "nstd/type_traits/is_nothrow_move_assignable.hpp"
-#include "nstd/type_traits/is_nothrow_move_constructible.hpp"
-#include "nstd/utility/move.hpp"
-#include "nstd/cheaders/cstddef.hpp"
+#ifndef INCLUDED_KUHL_MINI_FORWARD
+#define INCLUDED_KUHL_MINI_FORWARD
 
 // ----------------------------------------------------------------------------
 
-namespace nstd
-{
-    namespace utility {
+namespace kuhl {
+    namespace mini {
         template <typename T>
-        auto swap(T&, T&) noexcept(nstd::type_traits::is_nothrow_move_assignable<T>::value
-                                   && nstd::type_traits::is_nothrow_move_constructible<T>::value) -> void;
-        template <typename T, ::nstd::size_t N>
-        auto swap(T (&a0)[N], T(&a1)[N]) noexcept(noexcept(swap(a0[0], a1[0]))) -> void;
+        struct forward_remove_reference { using type = T; };
+        template <typename T>
+        struct forward_remove_reference<T&> { using type = T; };
+        template <typename T>
+        struct forward_remove_reference<T&&> { using type = T; };
+        template <typename T>
+        using forward_remove_reference_t = typename forward_remove_reference<T>::type;
+
+        template <typename T>
+        auto constexpr forward(forward_remove_reference_t<T>& value) noexcept(true) -> T&& {
+            return static_cast<T&&>(value);
+        }
+        template <typename T>
+        auto constexpr forward(forward_remove_reference_t<T>&& value) noexcept(true) -> T&& {
+            return static_cast<T&&>(value);
+        }
     }
-
-}
-
-// ----------------------------------------------------------------------------
-
-template <typename T>
-auto nstd::utility::swap(T& t0, T& t1) noexcept(nstd::type_traits::is_nothrow_move_assignable<T>::value
-                                                && nstd::type_traits::is_nothrow_move_constructible<T>::value) -> void {
-    T tmp(nstd::utility::move(t0));
-    t0 = nstd::utility::move(t1);
-    t1 = nstd::utility::move(tmp);
 }
 
 // ----------------------------------------------------------------------------

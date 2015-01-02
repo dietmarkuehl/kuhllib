@@ -24,9 +24,10 @@
 // ----------------------------------------------------------------------------
 
 #include "kuhl/test.hpp"
-#include <string>
+#include "kuhl/mini/string.hpp"
 
 namespace KT = kuhl::test;
+namespace KM = kuhl::mini;
 
 // ----------------------------------------------------------------------------
 
@@ -34,20 +35,20 @@ static KT::testcase const tests[] = {
     KT::expect_success("default constructed context is empty", [](KT::context& c)->bool{
             KT::context d;
             return d.empty()
-                && assert_equal(c, d.c_str(), std::string());
+                && assert_equal(c, d.c_str(), KM::string());
         }),
     KT::expect_success("context with a message", [](KT::context& c)->bool{
             KT::context d;
-            std::string message1("message1");
-            std::string message2("message2");
+            KM::string message1("message1");
+            KM::string message2("message2");
             d << message1 << message2;
             return !d.empty()
                 && assert_equal(c, d.c_str(), message1 + message2);
         }),
     KT::expect_success("reset context removes prior message", [](KT::context& c)->bool{
             KT::context d;
-            std::string message1("hello, world");
-            std::string message2("goodbye");
+            KM::string message1("hello, world");
+            KM::string message2("goodbye");
             d << message1;
             d.reset();
             d << message2;

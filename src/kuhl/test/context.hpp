@@ -26,7 +26,8 @@
 #ifndef INCLUDED_KUHL_TEST_CONTEXT
 #define INCLUDED_KUHL_TEST_CONTEXT
 
-#include <ostream>
+#include "kuhl/mini/streambuf.hpp"
+#include "kuhl/mini/ostream.hpp"
 
 // ----------------------------------------------------------------------------
 
@@ -42,7 +43,7 @@ namespace kuhl
 // ----------------------------------------------------------------------------
 
 class kuhl::test::context_sbuf
-    : public std::streambuf
+    : public kuhl::mini::streambuf
 {
     char buffer[256];
 public:
@@ -56,7 +57,7 @@ public:
 
 class kuhl::test::context
     : private virtual kuhl::test::context_sbuf
-    , public std::ostream
+    , public kuhl::mini::ostream
 {
 public:
     context();

@@ -1,6 +1,6 @@
-// nstd/utility/swap.hpp                                              -*-C++-*-
+// kuhl/mini/streambuf.cpp                                            -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
+//  Copyright (C) 2015 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
 //  Permission is hereby granted, free of charge, to any person          
 //  obtaining a copy of this software and associated documentation       
@@ -23,38 +23,48 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_UTILITY_SWAP
-#define INCLUDED_NSTD_UTILITY_SWAP
+#include "kuhl/mini/streambuf.hpp"
 
-#include "nstd/type_traits/is_nothrow_move_assignable.hpp"
-#include "nstd/type_traits/is_nothrow_move_constructible.hpp"
-#include "nstd/utility/move.hpp"
-#include "nstd/cheaders/cstddef.hpp"
+namespace KM = kuhl::mini;
 
 // ----------------------------------------------------------------------------
 
-namespace nstd
-{
-    namespace utility {
-        template <typename T>
-        auto swap(T&, T&) noexcept(nstd::type_traits::is_nothrow_move_assignable<T>::value
-                                   && nstd::type_traits::is_nothrow_move_constructible<T>::value) -> void;
-        template <typename T, ::nstd::size_t N>
-        auto swap(T (&a0)[N], T(&a1)[N]) noexcept(noexcept(swap(a0[0], a1[0]))) -> void;
+KM::streambuf::streambuf()
+    : pbase_()
+    , pptr_()
+    , epptr_() {
+}
+
+// ----------------------------------------------------------------------------
+
+auto KM::streambuf::overflow(int c) -> int {
+    return -1;
+}
+
+// ----------------------------------------------------------------------------
+
+auto KM::streambuf::setp(char* base, char* end)
+    -> void {
+    this->pbase_ = base;
+    this->pptr_  = base;
+    this->epptr_ = end;
+}
+
+auto KM::streambuf::pbump(ptrdiff_t offset)
+    -> void {
+    this->pptr_ += offset;
+}
+
+// ----------------------------------------------------------------------------
+
+auto KM::streambuf::sputc(int value)
+    -> int {
+    if (this->pptr_ != this->epptr_) {
+        *this->pptr_ = value;
+        ++this->pptr_;
+        return value;
     }
-
+    else {
+        return this->overflow(value);
+    }
 }
-
-// ----------------------------------------------------------------------------
-
-template <typename T>
-auto nstd::utility::swap(T& t0, T& t1) noexcept(nstd::type_traits::is_nothrow_move_assignable<T>::value
-                                                && nstd::type_traits::is_nothrow_move_constructible<T>::value) -> void {
-    T tmp(nstd::utility::move(t0));
-    t0 = nstd::utility::move(t1);
-    t1 = nstd::utility::move(tmp);
-}
-
-// ----------------------------------------------------------------------------
-
-#endif

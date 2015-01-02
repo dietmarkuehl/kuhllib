@@ -26,7 +26,7 @@
 #ifndef INCLUDED_NSTD_TYPE_TRAITS_REMOVE_EXTENT
 #define INCLUDED_NSTD_TYPE_TRAITS_REMOVE_EXTENT
 
-#include <cstddef>
+#include "nstd/cheaders/cstddef.hpp"
 
 // ----------------------------------------------------------------------------
 
@@ -34,7 +34,7 @@ namespace nstd
 {
     namespace type_traits {
         template <typename> struct remove_extent;
-        template <typename T, ::std::size_t Size> struct remove_extent<T[Size]>;
+        template <typename T, ::nstd::size_t Size> struct remove_extent<T[Size]>;
         template <typename T> struct remove_extent<T[]>;
         template <typename T>
         using remove_extent_t = typename ::nstd::type_traits::remove_extent<T>::type;
@@ -48,7 +48,7 @@ struct nstd::type_traits::remove_extent {
     using type = T;
 };
 
-template <typename T, ::std::size_t Size>
+template <typename T, ::nstd::size_t Size>
 struct nstd::type_traits::remove_extent<T[Size]> {
     using type = T;
 };

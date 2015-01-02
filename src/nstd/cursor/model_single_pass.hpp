@@ -28,7 +28,7 @@
 
 #include "nstd/cursor/category.hpp"
 #include "nstd/cursor/model_key.hpp"
-#include <cstddef>
+#include "nstd/cheaders/cstddef.hpp"
 
 // ----------------------------------------------------------------------------
 // The model_single_pass class template is providing a single-pass cursor for
@@ -54,9 +54,9 @@ namespace nstd
         auto cursor_at_same_pos(model_single_pass<T> const&     cursor,
                                 model_single_pass_end<T> const& end) -> bool;
 
-        template <typename T, std::size_t Size>
+        template <typename T, ::nstd::size_t Size>
         auto single_pass_begin(T (&array)[Size]) -> model_single_pass<T>;
-        template <typename T, std::size_t Size>
+        template <typename T, ::nstd::size_t Size>
         auto single_pass_end(T (&array)[Size]) -> model_single_pass_end<T>;
     }
 }
@@ -115,13 +115,13 @@ auto nstd::cursor::cursor_at_same_pos(model_single_pass<T> const&     cursor,
 
 // ----------------------------------------------------------------------------
 
-template <typename T, std::size_t Size>
+template <typename T, ::nstd::size_t Size>
 auto nstd::cursor::single_pass_begin(T (&array)[Size]) -> nstd::cursor::model_single_pass<T>
 {
     return nstd::cursor::model_single_pass<T>{array};
 }
 
-template <typename T, std::size_t Size>
+template <typename T, ::nstd::size_t Size>
 auto nstd::cursor::single_pass_end(T (&array)[Size]) -> nstd::cursor::model_single_pass_end<T>
 {
     return nstd::cursor::model_single_pass_end<T>{array + Size};

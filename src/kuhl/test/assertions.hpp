@@ -27,8 +27,10 @@
 #define INCLUDED_KUHL_TEST_ASSERTIONS
 
 #include "kuhl/test/context.hpp"
-#include <utility>
-#include <cstring>
+#include "kuhl/mini/forward.hpp"
+#include <string.h>
+
+namespace KM = kuhl::mini;
 
 // ----------------------------------------------------------------------------
 
@@ -117,7 +119,7 @@ auto kuhl::test::assert_static_false(context& c, char const* message) -> bool {
 template <typename A0, typename A1>
 auto kuhl::test::assert_equal(kuhl::test::context& context, char const* message, A0&& a0, A1&& a1) -> bool {
     if (!(a0 == a1)) {
-        context<< message << (std::strlen(message)? ": ": "") << a0 << " != " << a1;
+        context<< message << (strlen(message)? ": ": "") << a0 << " != " << a1;
         return false;
     }
     return true;
@@ -125,7 +127,7 @@ auto kuhl::test::assert_equal(kuhl::test::context& context, char const* message,
 
 template <typename A0, typename A1>
 auto kuhl::test::assert_equal(kuhl::test::context& context, A0&& a0, A1&& a1) -> bool {
-    return assert_equal(context, "", std::forward<A0>(a0), std::forward<A1>(a1));
+    return assert_equal(context, "", KM::forward<A0>(a0), KM::forward<A1>(a1));
 }
 
 // ----------------------------------------------------------------------------

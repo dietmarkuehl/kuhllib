@@ -41,10 +41,10 @@ static kuhl::test::testcase const tests[] = {
                 && nstd::cursor::size(carray)  == 2u
                 && nstd::cursor::size(varray)  == 3u
                 && nstd::cursor::size(cvarray) == 4u
-                && NT::is_same<std::size_t, decltype(nstd::cursor::size(array))>::value
-                && NT::is_same<std::size_t, decltype(nstd::cursor::size(carray))>::value
-                && NT::is_same<std::size_t, decltype(nstd::cursor::size(varray))>::value
-                && NT::is_same<std::size_t, decltype(nstd::cursor::size(cvarray))>::value
+                && NT::is_same< ::nstd::size_t, decltype(nstd::cursor::size(array))>::value
+                && NT::is_same< ::nstd::size_t, decltype(nstd::cursor::size(carray))>::value
+                && NT::is_same< ::nstd::size_t, decltype(nstd::cursor::size(varray))>::value
+                && NT::is_same< ::nstd::size_t, decltype(nstd::cursor::size(cvarray))>::value
                 ;
         }),
     kuhl::test::expect_success("begin(array)", []()->bool{

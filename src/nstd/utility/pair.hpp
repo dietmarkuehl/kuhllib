@@ -29,7 +29,10 @@
 #include "nstd/utility/forward.hpp"
 #include "nstd/utility/move.hpp"
 #include "nstd/utility/swap.hpp"
+#if 0
+//-dk:TODO ostream vs. EDG
 #include <ostream>
+#endif
 
 // ----------------------------------------------------------------------------
 
@@ -57,9 +60,12 @@ namespace nstd
         auto constexpr make_pair(T0&& a0, T1&& a1)
             -> nstd::utility::pair<T0, T1>;
 
+#if 0
+//-dk:TODO ostream vs. EDG
         template <typename cT, typename Traits, typename T0, typename T1>
         auto operator<< (std::basic_ostream<cT, Traits>&, nstd::utility::pair<T0, T1> const&)
             -> std::basic_ostream<cT, Traits>&;
+#endif
     }
 
 }

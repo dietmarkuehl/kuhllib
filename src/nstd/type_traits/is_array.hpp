@@ -27,7 +27,7 @@
 #define INCLUDED_NSTD_TYPE_TRAITS_IS_ARRAY
 
 #include "nstd/type_traits/integral_constant.hpp"
-#include <cstddef>
+#include "nstd/cheaders/cstddef.hpp"
 
 // ----------------------------------------------------------------------------
 
@@ -35,7 +35,7 @@ namespace nstd
 {
     namespace type_traits {
         template <typename> struct is_array;
-        template <typename T, ::std::size_t Size> struct is_array<T[Size]>;
+        template <typename T, ::nstd::size_t Size> struct is_array<T[Size]>;
         template <typename T> struct is_array<T[]>;
     }
 }
@@ -47,7 +47,7 @@ struct nstd::type_traits::is_array
     : ::nstd::type_traits::false_type {
 };
 
-template <typename T, ::std::size_t Size>
+template <typename T, ::nstd::size_t Size>
 struct nstd::type_traits::is_array<T[Size]>
     : ::nstd::type_traits::true_type {
 };

@@ -58,6 +58,6 @@ foreach(test
         result_of.t 
         )
   add_executable(${test} ${test})
-  target_link_libraries(${test} PUBLIC kuhltest)
+  target_link_libraries(${test} PUBLIC kuhltest kuhlmini)
   add_test(NAME ${test} COMMAND $<TARGET_FILE:${test}>)
 endforeach(test)

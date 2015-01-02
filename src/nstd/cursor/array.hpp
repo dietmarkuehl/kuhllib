@@ -26,7 +26,7 @@
 #ifndef INCLUDED_NSTD_CURSOR_ARRAY
 #define INCLUDED_NSTD_CURSOR_ARRAY
 
-#include <cstddef>
+#include "nstd/cheaders/cstddef.hpp"
 
 // ----------------------------------------------------------------------------
 
@@ -35,18 +35,18 @@ namespace nstd
     namespace cursor
     {
         // Returns: a cursor to the start of a built-in array.
-        template <typename T, std::size_t Size>
+        template <typename T, ::nstd::size_t Size>
         auto constexpr begin(T (&array)[Size]) -> T* {
             return array;
         }
         // Returns: a cursor to the end of a built-in array.
-        template <typename T, std::size_t Size>
+        template <typename T, ::nstd::size_t Size>
         auto constexpr end(T (&array)[Size]) -> T* {
             return array + Size;
         }
         // Returns: the size of a built-in array.
-        template <typename T, std::size_t Size>
-        auto constexpr size(T (&)[Size]) -> std::size_t {
+        template <typename T, ::nstd::size_t Size>
+        auto constexpr size(T (&)[Size]) -> ::nstd::size_t {
             return Size;
         }
     }

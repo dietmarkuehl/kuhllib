@@ -26,9 +26,13 @@
 cmake_minimum_required(VERSION 2.8.2)
 project(nstd)
 
+add_subdirectory(cheaders)
 add_subdirectory(algorithm)
 add_subdirectory(cursor)
 add_subdirectory(functional)
+# add_subdirectory(iostream)
+# add_subdirectory(limits)
 add_subdirectory(projection)
+# add_subdirectory(string)
 add_subdirectory(type_traits)
 add_subdirectory(utility)

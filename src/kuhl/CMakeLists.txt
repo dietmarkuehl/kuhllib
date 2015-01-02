@@ -26,4 +26,5 @@
 cmake_minimum_required(VERSION 2.8.2)
 project(kuhl)
 
+add_subdirectory(mini)
 add_subdirectory(test)

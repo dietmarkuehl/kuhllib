@@ -56,6 +56,7 @@ test:
 all:
 	-$(MAKE)
 	-$(MAKE) COMPILER=clang CMAKE_CXX_ARG=/opt/llvm-current/bin/clang++
+	-$(MAKE) COMPILER=edg CMAKE_CXX_ARG=/opt/edg/bin/ecc
 	-$(MAKE) COMPILER=gcc CMAKE_CXX_ARG=/opt/gcc-4.9.2/bin/g++
 	-$(MAKE) COMPILER=intel CMAKE_CXX_ARG=/opt/intel/bin/icc
 
@@ -73,6 +74,7 @@ clean:
 clean-all:
 	$(MAKE) clean
 	$(MAKE) COMPILER=clang clean
+	$(MAKE) COMPILER=edg clean
 	$(MAKE) COMPILER=gcc clean
 	$(MAKE) COMPILER=intel clean
 

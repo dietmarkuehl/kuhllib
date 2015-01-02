@@ -25,10 +25,12 @@
 
 #include "kuhl/test/context.hpp"
 
+namespace KM = kuhl::mini;
+
 // ----------------------------------------------------------------------------
 
 kuhl::test::context_sbuf::context_sbuf()
-    : std::streambuf() {
+    : KM::streambuf() {
     this->reset();
 }
 
@@ -49,8 +51,8 @@ auto kuhl::test::context_sbuf::c_str() const -> char const* {
 
 kuhl::test::context::context()
     : kuhl::test::context_sbuf()
-    , std::ios(this)
-    , std::ostream(this) {
+    , KM::ios(this)
+    , KM::ostream(this) {
 }
 
 kuhl::test::context::~context() {

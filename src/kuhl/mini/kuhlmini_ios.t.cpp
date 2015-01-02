@@ -1,6 +1,6 @@
-// nstd/utility/swap.hpp                                              -*-C++-*-
+// kuhl/mini/kuhlmini_ios.t.cpp                                       -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
+//  Copyright (C) 2015 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
 //  Permission is hereby granted, free of charge, to any person          
 //  obtaining a copy of this software and associated documentation       
@@ -23,38 +23,56 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_UTILITY_SWAP
-#define INCLUDED_NSTD_UTILITY_SWAP
+#include "kuhl/mini/ios.hpp"
+#include "kuhl/mini/streambuf.hpp"
+#include <stdlib.h>
 
-#include "nstd/type_traits/is_nothrow_move_assignable.hpp"
-#include "nstd/type_traits/is_nothrow_move_constructible.hpp"
-#include "nstd/utility/move.hpp"
-#include "nstd/cheaders/cstddef.hpp"
+namespace KM = kuhl::mini;
 
 // ----------------------------------------------------------------------------
 
-namespace nstd
+namespace {
+    class testios
+        : public KM::ios {
+    public:
+        testios(KM::streambuf* sbuf)
+            : KM::ios(0) {
+            if (this->rdbuf() == 0) {
+                this->init(sbuf);
+            }
+        }
+    };
+}
+
+// ----------------------------------------------------------------------------
+
+static auto test()
+    -> bool {
+    KM::streambuf sbuf;
+    KM::ios       ios0(0);
+    KM::ios       ios(&sbuf);
+    testios       tios(&sbuf);
+    return ios0.rdbuf() == 0
+        && ios.rdbuf()  == &sbuf
+        && tios.rdbuf() == &sbuf
+        && ios.width()  == 0
+        && ios.width(17) == 0
+        && ios.width() == 17
+        && ios.fill() == ' '
+        && ios.fill('@') == ' '
+        && ios.fill() == '@'
+        && ios.flags() == KM::ios::dec
+        && ios.setf(KM::ios::left, KM::ios::adjustfield) == KM::ios::dec
+        && ios.flags() == (KM::ios::dec | KM::ios::left)
+        && ios.setf(KM::ios::right, KM::ios::adjustfield) == (KM::ios::dec | KM::ios::left)
+        && ios.flags() == (KM::ios::dec | KM::ios::right)
+        ;
+}
+
+// ----------------------------------------------------------------------------
+
+auto main()
+    -> int
 {
-    namespace utility {
-        template <typename T>
-        auto swap(T&, T&) noexcept(nstd::type_traits::is_nothrow_move_assignable<T>::value
-                                   && nstd::type_traits::is_nothrow_move_constructible<T>::value) -> void;
-        template <typename T, ::nstd::size_t N>
-        auto swap(T (&a0)[N], T(&a1)[N]) noexcept(noexcept(swap(a0[0], a1[0]))) -> void;
-    }
-
+    return test()? EXIT_SUCCESS: EXIT_FAILURE;
 }
-
-// ----------------------------------------------------------------------------
-
-template <typename T>
-auto nstd::utility::swap(T& t0, T& t1) noexcept(nstd::type_traits::is_nothrow_move_assignable<T>::value
-                                                && nstd::type_traits::is_nothrow_move_constructible<T>::value) -> void {
-    T tmp(nstd::utility::move(t0));
-    t0 = nstd::utility::move(t1);
-    t1 = nstd::utility::move(tmp);
-}
-
-// ----------------------------------------------------------------------------
-
-#endif

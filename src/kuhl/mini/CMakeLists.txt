@@ -24,18 +24,31 @@
 #  ----------------------------------------------------------------------------
 
 cmake_minimum_required(VERSION 2.8.2)
-project(nstd_utility)
+project(kuhl_test)
+
+add_library(kuhlmini STATIC
+	streambuf.cpp
+	ios.cpp
+	ostream.cpp
+	iostream.cpp
+	iomanip.cpp
+	string.cpp
+	sstream.cpp
+	)
 
 enable_testing()
 foreach(test
-	equality_comparable.t
-	forward.t
-	integer_sequence.t
-	move.t
-	pair.t
-	swap.t
+        kuhlmini_distance.t
+        kuhlmini_forward.t
+        kuhlmini_streambuf.t
+	kuhlmini_ios.t
+        kuhlmini_ostream.t
+	kuhlmini_iostream.t
+	kuhlmini_iomanip.t
+        kuhlmini_string.t
+        kuhlmini_sstream.t
         )
   add_executable(${test} ${test})
-  target_link_libraries(${test} PUBLIC kuhltest kuhlmini)
+  target_link_libraries(${test} PUBLIC kuhlmini)
   add_test(NAME ${test} COMMAND $<TARGET_FILE:${test}>)
 endforeach(test)

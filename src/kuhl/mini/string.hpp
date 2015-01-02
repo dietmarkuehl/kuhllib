@@ -1,6 +1,6 @@
-// nstd/utility/swap.hpp                                              -*-C++-*-
+// kuhl/mini/string.hpp                                               -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
+//  Copyright (C) 2015 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
 //  Permission is hereby granted, free of charge, to any person          
 //  obtaining a copy of this software and associated documentation       
@@ -23,37 +23,46 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_UTILITY_SWAP
-#define INCLUDED_NSTD_UTILITY_SWAP
+#ifndef INCLUDED_KUHL_MINI_STRING
+#define INCLUDED_KUHL_MINI_STRING
 
-#include "nstd/type_traits/is_nothrow_move_assignable.hpp"
-#include "nstd/type_traits/is_nothrow_move_constructible.hpp"
-#include "nstd/utility/move.hpp"
-#include "nstd/cheaders/cstddef.hpp"
+#include "kuhl/mini/ostream.hpp"
 
 // ----------------------------------------------------------------------------
 
-namespace nstd
-{
-    namespace utility {
-        template <typename T>
-        auto swap(T&, T&) noexcept(nstd::type_traits::is_nothrow_move_assignable<T>::value
-                                   && nstd::type_traits::is_nothrow_move_constructible<T>::value) -> void;
-        template <typename T, ::nstd::size_t N>
-        auto swap(T (&a0)[N], T(&a1)[N]) noexcept(noexcept(swap(a0[0], a1[0]))) -> void;
+namespace kuhl {
+    namespace mini {
+        class ostream;
+        class string;
+
+        auto operator+ (string const&, string const&) -> string;
+
+        auto operator== (string const&, string const&) -> bool;
+        auto operator!= (string const&, string const&) -> bool;
+        auto operator== (char const*, string const&) -> bool;
+        auto operator!= (char const*, string const&) -> bool;
+        auto operator== (string const&, char const*) -> bool;
+        auto operator!= (string const&, char const*) -> bool;
+        
+        auto operator<< (ostream&, string const&) -> ostream&;
     }
-
 }
 
 // ----------------------------------------------------------------------------
 
-template <typename T>
-auto nstd::utility::swap(T& t0, T& t1) noexcept(nstd::type_traits::is_nothrow_move_assignable<T>::value
-                                                && nstd::type_traits::is_nothrow_move_constructible<T>::value) -> void {
-    T tmp(nstd::utility::move(t0));
-    t0 = nstd::utility::move(t1);
-    t1 = nstd::utility::move(tmp);
-}
+class kuhl::mini::string {
+    char* value;
+public:
+    string();
+    explicit string(char const*);
+    string(string const&);
+    ~string();
+    void operator= (string const&) = delete;
+
+    auto operator+=(string const&) -> string&;
+
+    auto c_str() const -> char const*;
+};
 
 // ----------------------------------------------------------------------------
 
