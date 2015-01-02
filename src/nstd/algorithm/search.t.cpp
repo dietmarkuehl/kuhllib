@@ -51,6 +51,13 @@ namespace {
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
+    KT::expect_success("prepare", [](KT::context& c)->bool{
+            predicate pred;
+            return KT::assert_true(c, "equal", pred(NP::model_value<int>(17), NP::model_value<long>(17)))
+                && KT::assert_false(c, "not equal", pred(NP::model_value<int>(17), NP::model_value<long>(42)))
+                ;
+        }),
+#ifndef KUHLLIB_INTEL
     KT::expect_success("empty second range yields first of first range", [](KT::context& c)->bool{
             int  array[] = { 1, 2, 3, 4, 5, 6, 7, 8, 9,  1, 2, 3, 4, 5, 6, 7, 8, 9 };
             long other[] = { 1l };
@@ -158,6 +165,7 @@ static KT::testcase const tests[] = {
                                                    NC::single_pass_end(array)))
                  ;
         }),
+#endif
 };
 
 int main(int ac, char* av[])

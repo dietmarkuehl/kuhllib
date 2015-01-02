@@ -123,6 +123,7 @@ namespace {
 
 static KT::testcase const tests[] = {
     KT::expect_success("prepare", [](KT::context& c)->bool{
+            function_object fo;
             int value{0};
             foo f(0);
             return KT::assert_false(c, "ref_test0", ref_test0()(0, 1, 2, 3)())
@@ -135,14 +136,18 @@ static KT::testcase const tests[] = {
                 && KT::assert_true(c, "f.omem1(10)", std::make_tuple(0, 10) == f.omem1(10))
                 && KT::assert_true(c, "f.mem2(10, 11)", std::make_tuple(0, 10, 11) == f.mem2(10, 11))
                 && KT::assert_true(c, "f.omem2(10, 11)", std::make_tuple(0, 10, 11) == f.omem2(10, 11))
+                && KT::assert_true(c, "function_object match", fo(17, NP::model_value<long>(17)))
+                //&& KT::assert_false(c, "function_object mismatch", fo(17, NP::model_value<long>(42)))
                 ;
         }),
+#ifndef KUHLLIB_INTEL
     KT::expect_success("bind predicate", [](KT::context& c)->bool{
             namespace NF = nstd::functional;
             namespace NFP = NF::placeholders;
             auto fpred(NF::bind(function_object(), NFP::_1, NP::model_value<long>(3l)));
             return fpred(1);
         }),
+#endif
     KT::expect_success("ref_test", [](KT::context& c)->bool{
             int value0{17};
             int value1{18};
