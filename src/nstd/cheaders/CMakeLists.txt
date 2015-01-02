@@ -24,17 +24,13 @@
 #  ----------------------------------------------------------------------------
 
 cmake_minimum_required(VERSION 2.8.2)
-project(nstd)
+project(nstd_cheaders)
 
-add_subdirectory(cheaders)
-add_subdirectory(algorithm)
-add_subdirectory(container)
-add_subdirectory(memory)
-add_subdirectory(cursor)
-add_subdirectory(functional)
-# add_subdirectory(iostream)
-add_subdirectory(limits)
-add_subdirectory(projection)
-# add_subdirectory(string)
-add_subdirectory(type_traits)
-add_subdirectory(utility)
+enable_testing()
+foreach(test
+	cstddef.t
+        )
+  add_executable(${test} ${test})
+  target_link_libraries(${test} PUBLIC kuhltest kuhlmini)
+  add_test(NAME ${test} COMMAND $<TARGET_FILE:${test}>)
+endforeach(test)

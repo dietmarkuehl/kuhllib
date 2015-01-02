@@ -30,7 +30,8 @@
 #include "nstd/type_traits/enable_if.hpp"
 #include "nstd/utility/forward.hpp"
 #include "nstd/utility/pair.hpp"
-#include <limits>
+#include "nstd/limits/numeric_limits.hpp"
+#include "nstd/cheaders/cstddef.hpp"
 
 // ----------------------------------------------------------------------------
 // To implement a single_pass cursor C provide the following operations:
@@ -55,7 +56,7 @@ namespace nstd
                     cursor_step(cursor);
                 }
                 template <typename T>
-                auto operator()(T& cursor, std::size_t n) const -> void {
+                auto operator()(T& cursor, ::nstd::size_t n) const -> void {
                     for (; 0u < n; --n) {
                         this->operator()(cursor);
                     }
@@ -66,7 +67,7 @@ namespace nstd
             auto cursor_key(T&& cursor) -> decltype(*cursor) {
                 return *cursor;
             }
-            template <typename T, typename = nstd::type_traits::enable_if_t<std::numeric_limits<T>::is_integer>>
+            template <typename T, typename = nstd::type_traits::enable_if_t< nstd::numeric_limits<T>::is_integer>>
             auto cursor_key(T cursor) -> T {
                 return cursor;
             }
@@ -101,7 +102,7 @@ namespace nstd
             struct difference_type_delegate {
                 template <typename T>
                 static auto size(T const&) -> typename T::difference_type;
-                static auto size(...) -> std::size_t;
+                static auto size(...) -> ::nstd::size_t;
             };
 
             template <typename T>

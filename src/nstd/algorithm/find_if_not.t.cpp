@@ -27,7 +27,6 @@
 #include "nstd/cursor/model_single_pass.hpp"
 #include "nstd/projection/model_readable.hpp"
 #include "kuhl/test.hpp"
-#include <iostream>
 
 namespace NA = nstd::algorithm;
 namespace NC = nstd::cursor;

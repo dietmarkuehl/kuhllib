@@ -30,9 +30,9 @@
 #include "nstd/projection/identity.hpp"
 #include "nstd/projection/model_readable.hpp"
 #include "nstd/utility/equality_comparable.hpp"
-#include "kuhl/test.hpp"
-#include <vector>
+#include "nstd/container/vector.hpp"
 #include "nstd/cheaders/cstddef.hpp"
+#include "kuhl/test.hpp"
 
 namespace NA = nstd::algorithm;
 namespace NC = nstd::cursor;
@@ -45,7 +45,7 @@ namespace KT = kuhl::test;
 namespace
 {
     struct movable {
-        std::vector<int> values;
+        ::nstd::vector<int> values;
 
         movable() = default;
         movable(movable&&) = default;
@@ -62,12 +62,11 @@ namespace
             return NC::at_same_pos(result.first, values.end())
                 && NC::at_same_pos(result.second, NC::single_pass_end(array))
                 ;
-            return false;
         }
         bool empty() const { return this->values.empty(); }
     };
     struct copyable {
-        std::vector<int> values;
+        ::nstd::vector<int> values;
 
         copyable() = default;
         copyable(copyable const&) = default;
@@ -83,7 +82,6 @@ namespace
             return NC::at_same_pos(result.first, values.end())
                 && NC::at_same_pos(result.second, NC::single_pass_end(array))
                 ;
-            return false;
         }
     };
 }
