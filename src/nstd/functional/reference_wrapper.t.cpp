@@ -175,6 +175,7 @@ static KT::testcase const tests[] = {
                 && KT::assert_true(c, "ref(o0) != ref(o1)", NF::ref(o0) != NF::ref(o1))
                 ;
         }),
+    //-dk:TODO test is_reference_wrapper
 };
 
 int main(int ac, char* av[])

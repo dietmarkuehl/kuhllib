@@ -34,6 +34,7 @@ foreach(test
 	move.t
 	pair.t
 	swap.t
+	tuple.t
         )
   add_executable(${test} ${test})
   target_link_libraries(${test} PUBLIC kuhltest kuhlmini)

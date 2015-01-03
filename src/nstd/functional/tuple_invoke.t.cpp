@@ -26,7 +26,7 @@
 #include "nstd/functional/tuple_invoke.hpp"
 #include "nstd/utility/forward.hpp"
 #include "nstd/type_traits/decay.hpp"
-#include <tuple>
+#include "nstd/utility/tuple.hpp"
 #include "kuhl/test.hpp"
 
 namespace NF = nstd::functional;
@@ -39,8 +39,8 @@ namespace KT = kuhl::test;
 namespace {
     struct foo {
         template <typename... T>
-        std::tuple<NT::decay_t<T>...> operator()(T&&... args) {
-            return std::make_tuple(NU::forward<T>(args)...);
+        NU::tuple<NT::decay_t<T>...> operator()(T&&... args) {
+            return NU::make_tuple(NU::forward<T>(args)...);
         }
     };
 }
@@ -49,18 +49,18 @@ namespace {
 
 static KT::testcase const tests[] = {
     KT::expect_success("invoke with no argument", [](KT::context& c)->bool{
-            return KT::assert_type<std::tuple<>, decltype(NF::tuple_invoke(foo(), std::make_tuple()))>(c, "type")
-                && KT::assert_true(c, "value", std::tuple<>() == NF::tuple_invoke(foo(), std::make_tuple()))
+            return KT::assert_type<NU::tuple<>, decltype(NF::tuple_invoke(foo(), NU::make_tuple()))>(c, "type")
+                && KT::assert_true(c, "value", NU::tuple<>() == NF::tuple_invoke(foo(), NU::make_tuple()))
                 ;
         }),
     KT::expect_success("invoke with one argument", [](KT::context& c)->bool{
-            return KT::assert_type<std::tuple<int>, decltype(NF::tuple_invoke(foo(), std::make_tuple(17)))>(c, "type")
-                && KT::assert_true(c, "value", std::tuple<int>(17) == NF::tuple_invoke(foo(), std::make_tuple(17)))
+            return KT::assert_type<NU::tuple<int>, decltype(NF::tuple_invoke(foo(), NU::make_tuple(17)))>(c, "type")
+                && KT::assert_true(c, "value", NU::tuple<int>(17) == NF::tuple_invoke(foo(), NU::make_tuple(17)))
                 ;
         }),
     KT::expect_success("invoke with two arguments", [](KT::context& c)->bool{
-            return KT::assert_type<std::tuple<int, char>, decltype(NF::tuple_invoke(foo(), std::make_tuple(17, 'c')))>(c, "type")
-                && KT::assert_true(c, "value", std::tuple<int, char>(17, 'c') == NF::tuple_invoke(foo(), std::make_tuple(17, 'c')))
+            return KT::assert_type<NU::tuple<int, char>, decltype(NF::tuple_invoke(foo(), NU::make_tuple(17, 'c')))>(c, "type")
+                && KT::assert_true(c, "value", NU::tuple<int, char>(17, 'c') == NF::tuple_invoke(foo(), NU::make_tuple(17, 'c')))
                 ;
         }),
 };

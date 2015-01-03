@@ -27,8 +27,9 @@
 #define INCLUDED_NSTD_FUNCTIONAL_REFERENCE_WRAPPER
 
 #include "nstd/functional/invoke.hpp"
-#include "nstd/type_traits/result_of.hpp"
 #include "nstd/utility/forward.hpp"
+#include "nstd/type_traits/result_of.hpp"
+#include "nstd/type_traits/integral_constant.hpp"
 
 // ----------------------------------------------------------------------------
 
@@ -36,6 +37,8 @@ namespace nstd
 {
     namespace functional {
         template <typename> class reference_wrapper;
+        template <typename> struct is_reference_wrapper;
+        template <typename T> struct is_reference_wrapper<reference_wrapper<T> >;
 
         template <typename T>
         auto ref(T&) noexcept(true) -> nstd::functional::reference_wrapper<T>;
@@ -77,6 +80,17 @@ public:
     // extension
     auto operator==(nstd::functional::reference_wrapper<T> other) const noexcept(true) -> bool;
     auto operator!=(nstd::functional::reference_wrapper<T> other) const noexcept(true) -> bool;
+};
+
+// ----------------------------------------------------------------------------
+
+template <typename>
+struct nstd::functional::is_reference_wrapper
+    : nstd::type_traits::false_type {
+};
+template <typename T>
+struct nstd::functional::is_reference_wrapper<nstd::functional::reference_wrapper<T> >
+    : nstd::type_traits::true_type {
 };
 
 // ----------------------------------------------------------------------------

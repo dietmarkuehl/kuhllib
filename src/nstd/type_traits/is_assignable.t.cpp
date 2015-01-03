@@ -50,7 +50,6 @@ namespace
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
-#if 1
     KT::expect_success("void", [](KT::context& c)->bool{
             return KT::assert_false(c, "is_assignable<void, void>", NT::is_assignable<void, void>::value)
                 &&  KT::assert_false(c, "is_assignable<void,                void>",
@@ -87,7 +86,6 @@ static KT::testcase const tests[] = {
                                      NT::is_assignable<void const volatile, void const volatile>::value)
                 ;
         }),
-#endif
     KT::expect_success("nullptr", [](KT::context& c)->bool{
             return KT::assert_false(c, "is_assignable<decltype(nullptr),                decltype(nullptr)>",
                                     NT::is_assignable<decltype(nullptr),                decltype(nullptr)>::value)
@@ -381,5 +379,5 @@ static KT::testcase const tests[] = {
 
 int main(int ac, char* av[])
 {
-    return KT::run_tests("TODO", ac, av, ::tests);
+    return KT::run_tests("type_traits::is_assignable", ac, av, ::tests);
 }

@@ -39,7 +39,7 @@
 #include "nstd/utility/forward.hpp"
 #include "nstd/utility/integer_sequence.hpp"
 #include "nstd/utility/move.hpp"
-#include <tuple>
+#include "nstd/utility/tuple.hpp"
 
 // ----------------------------------------------------------------------------
 
@@ -53,7 +53,7 @@ namespace nstd
                 return bound.get();
             }
             template <int, typename Bound, typename... Args>
-            auto bind_get_arg(Bound& bound, std::tuple<Args...> const& args)
+            auto bind_get_arg(Bound& bound, nstd::utility::tuple<Args...> const& args)
                 -> typename nstd::type_traits::enable_if<nstd::functional::is_bind_expression<Bound>::value,
                                                          nstd::type_traits::result_of_t<Bound(Args...)> >::type {
                 return nstd::functional::tuple_invoke(bound, args);
@@ -64,13 +64,13 @@ namespace nstd
             };
             template <typename Bound, typename Args>
             struct bind_get_placeholder_type<Bound, Args, true> {
-                using type = typename std::tuple_element<Bound::value - 1u, Args>::type;
+                using type = typename nstd::utility::tuple_element<Bound::value - 1u, Args>::type;
             };
             template <int Index, typename Bound, typename Args>
             auto bind_get_arg(Bound const&, Args const& args)
                 -> typename nstd::type_traits::enable_if<0 != nstd::functional::is_placeholder<Bound>::value,
                         typename nstd::functional::detail::bind_get_placeholder_type<Bound, Args>::type>::type {
-                return std::get<Bound::value - 1u>(args);
+                return nstd::utility::get<Bound::value - 1u>(args);
             }
             template <int Index, typename Bound, typename Args>
             auto bind_get_arg(Bound& bound, Args const& args)
@@ -82,7 +82,7 @@ namespace nstd
 
             template <typename Indices, typename Fun, typename... Bound>
             struct binder;
-            template <std::size_t... Indices, typename Fun, typename... Bound>
+            template <nstd::size_t... Indices, typename Fun, typename... Bound>
             struct binder<nstd::utility::index_sequence<Indices...>, Fun, Bound...>;
         }
 
@@ -101,19 +101,19 @@ namespace nstd
 
 // ----------------------------------------------------------------------------
 
-template <std::size_t... Indices, typename Fun, typename... Bound>
+template <nstd::size_t... Indices, typename Fun, typename... Bound>
 struct nstd::functional::detail::binder<nstd::utility::index_sequence<Indices...>, Fun, Bound...>
 {
 private:
     nstd::type_traits::decay_t<Fun> fun;
-    std::tuple<Bound...>            bound;
+    nstd::utility::tuple<Bound...>            bound;
 
     template <typename Args>
     auto invoke(Args&& args)
         -> decltype(nstd::functional::invoke(this->fun,
-                                             nstd::functional::detail::bind_get_arg<Indices>(std::get<Indices>(this->bound), args)...)) {
+                                             nstd::functional::detail::bind_get_arg<Indices>(nstd::utility::get<Indices>(this->bound), args)...)) {
         return nstd::functional::invoke(this->fun,
-                                        nstd::functional::detail::bind_get_arg<Indices>(std::get<Indices>(this->bound), args)...);
+                                        nstd::functional::detail::bind_get_arg<Indices>(nstd::utility::get<Indices>(this->bound), args)...);
     }
 public:
     template <typename F>
@@ -124,8 +124,8 @@ public:
 
     template <typename... Args>
     auto operator()(Args&&... args)
-        -> decltype(this->invoke(std::tuple<Args...>(nstd::utility::forward<Args>(args)...))) {
-        return this->invoke(std::tuple<Args...>(nstd::utility::forward<Args>(args)...));
+        -> decltype(this->invoke(nstd::utility::tuple<Args...>(nstd::utility::forward<Args>(args)...))) {
+        return this->invoke(nstd::utility::tuple<Args...>(nstd::utility::forward<Args>(args)...));
     }
     auto operator== (binder const& other) const -> bool {
         return this->fun == other.fun && this->bound == other.bound;
