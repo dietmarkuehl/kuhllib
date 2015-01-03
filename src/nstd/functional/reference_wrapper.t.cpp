@@ -25,11 +25,12 @@
 
 #include "nstd/functional/reference_wrapper.hpp"
 #include "nstd/type_traits/integral_constant.hpp"
-#include <tuple>
+#include "nstd/utility/tuple.hpp"
 #include "kuhl/test.hpp"
 
 namespace NF = nstd::functional;
 namespace NT = nstd::type_traits;
+namespace NU = nstd::utility;
 namespace KT = kuhl::test;
 
 // ----------------------------------------------------------------------------
@@ -42,8 +43,8 @@ namespace
         int value;
         bar(int value): value(value) {}
         template <typename... Args>
-        auto operator()(Args&&... args) -> std::tuple<int, Args...> {
-            return std::make_tuple(this->value, args...);
+        auto operator()(Args&&... args) -> NU::tuple<int, Args...> {
+            return NU::make_tuple(this->value, args...);
         }
     };
 
@@ -126,12 +127,12 @@ static KT::testcase const tests[] = {
             bar                              object(17);
             NF::reference_wrapper<bar> const ref(object);
             return KT::assert_equal(c, "object state", 17, object.value)
-                && KT::assert_type<std::tuple<int>, decltype(ref())>(c, "ref() type")
-                && KT::assert_true(c, "ref() value", std::make_tuple(17) == ref())
-                && KT::assert_type<std::tuple<int, bool>, decltype(ref(true))>(c, "ref(true) type")
-                && KT::assert_true(c, "ref(true) value", std::make_tuple(17, true) == ref(true))
-                && KT::assert_type<std::tuple<int, bool, char>, decltype(ref(true, 'c'))>(c, "ref(true, 'c') type")
-                && KT::assert_true(c, "ref(true, 'c') value", std::make_tuple(17, true, 'c') == ref(true, 'c'))
+                && KT::assert_type<NU::tuple<int>, decltype(ref())>(c, "ref() type")
+                && KT::assert_true(c, "ref() value", NU::make_tuple(17) == ref())
+                && KT::assert_type<NU::tuple<int, bool>, decltype(ref(true))>(c, "ref(true) type")
+                && KT::assert_true(c, "ref(true) value", NU::make_tuple(17, true) == ref(true))
+                && KT::assert_type<NU::tuple<int, bool, char>, decltype(ref(true, 'c'))>(c, "ref(true, 'c') type")
+                && KT::assert_true(c, "ref(true, 'c') value", NU::make_tuple(17, true, 'c') == ref(true, 'c'))
                 ;
         }),
     KT::expect_success("ref() call", [](KT::context& c)->bool{

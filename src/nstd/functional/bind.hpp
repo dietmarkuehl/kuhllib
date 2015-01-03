@@ -93,7 +93,7 @@ namespace nstd
 
         template <typename Fun, typename... Args>
         auto bind(Fun&&, Args&&...)
-            -> nstd::functional::detail::binder<nstd::utility::index_sequence_for<Args...>, Fun, Args...>;
+            -> nstd::functional::detail::binder<nstd::utility::make_index_sequence<sizeof...(Args)>, Fun, Args...>;
         //-dk:TODO bind() with strong result_type
     }
 
@@ -139,9 +139,9 @@ public:
 
 template <typename Fun, typename... Args>
 auto nstd::functional::bind(Fun&& fun, Args&&... args)
-            -> nstd::functional::detail::binder<nstd::utility::index_sequence_for<Args...>, Fun, Args...>
+    -> nstd::functional::detail::binder<nstd::utility::make_index_sequence<sizeof...(Args)>, Fun, Args...>
 {
-    using type = nstd::functional::detail::binder<nstd::utility::index_sequence_for<Args...>, Fun, Args...>;
+    using type = nstd::functional::detail::binder<nstd::utility::make_index_sequence<sizeof...(Args)>, Fun, Args...>;
     return type(nstd::utility::forward<Fun>(fun), nstd::utility::forward<Args>(args)...);
 }
 

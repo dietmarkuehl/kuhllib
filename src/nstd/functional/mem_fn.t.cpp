@@ -25,8 +25,8 @@
 
 #include "nstd/functional/mem_fn.hpp"
 #include "nstd/utility/move.hpp"
+#include "nstd/utility/tuple.hpp"
 #include "kuhl/test.hpp"
-#include <tuple>
 
 namespace NF = nstd::functional;
 namespace NU = nstd::utility;
@@ -39,18 +39,18 @@ namespace {
         int mem;
         int omem;
         foo(int mem): mem(mem) {}
-        std::tuple<int> mem0() { return std::make_tuple(this->mem); }
-        std::tuple<int> cmem0() const { return std::make_tuple(this->mem); }
-        std::tuple<int> vmem0() volatile { return std::make_tuple(this->mem); }
-        std::tuple<int> cvmem0() const volatile { return std::make_tuple(this->mem); }
-        std::tuple<int> omem0() { return std::make_tuple(this->mem); }
-        std::tuple<int, int> mem1(int v0) { return std::make_tuple(this->mem, v0); }
-        std::tuple<int, int> cmem1(int v0) const { return std::make_tuple(this->mem, v0); }
-        std::tuple<int, int> vmem1(int v0) volatile { return std::make_tuple(this->mem, v0); }
-        std::tuple<int, int> cvmem1(int v0) const volatile { return std::make_tuple(this->mem, v0); }
-        std::tuple<int, int> omem1(int v0) { return std::make_tuple(this->mem, v0); }
-        std::tuple<int, int, int> mem2(int v0, int v1) { return std::make_tuple(this->mem, v0, v1); }
-        std::tuple<int, int, int> omem2(int v0, int v1) { return std::make_tuple(this->mem, v0, v1); }
+        NU::tuple<int> mem0() { return NU::make_tuple(this->mem); }
+        NU::tuple<int> cmem0() const { return NU::make_tuple(this->mem); }
+        NU::tuple<int> vmem0() volatile { return NU::make_tuple(this->mem); }
+        NU::tuple<int> cvmem0() const volatile { return NU::make_tuple(this->mem); }
+        NU::tuple<int> omem0() { return NU::make_tuple(this->mem); }
+        NU::tuple<int, int> mem1(int v0) { return NU::make_tuple(this->mem, v0); }
+        NU::tuple<int, int> cmem1(int v0) const { return NU::make_tuple(this->mem, v0); }
+        NU::tuple<int, int> vmem1(int v0) volatile { return NU::make_tuple(this->mem, v0); }
+        NU::tuple<int, int> cvmem1(int v0) const volatile { return NU::make_tuple(this->mem, v0); }
+        NU::tuple<int, int> omem1(int v0) { return NU::make_tuple(this->mem, v0); }
+        NU::tuple<int, int, int> mem2(int v0, int v1) { return NU::make_tuple(this->mem, v0, v1); }
+        NU::tuple<int, int, int> omem2(int v0, int v1) { return NU::make_tuple(this->mem, v0, v1); }
     };
 
     template <typename T>
@@ -67,12 +67,12 @@ namespace {
 static KT::testcase const tests[] = {
     KT::expect_success("prepare", [](KT::context& c)->bool{
             foo f(18);
-            return KT::assert_true(c, "cmem0", std::make_tuple(18) == f.cmem0())
-                && KT::assert_true(c, "vmem0", std::make_tuple(18) == f.vmem0())
-                && KT::assert_true(c, "cvmem0", std::make_tuple(18) == f.cvmem0())
-                && KT::assert_true(c, "cmem1", std::make_tuple(18, 42) == f.cmem1(42))
-                && KT::assert_true(c, "vmem1", std::make_tuple(18, 42) == f.vmem1(42))
-                && KT::assert_true(c, "cvmem1", std::make_tuple(18, 42) == f.cvmem1(42))
+            return KT::assert_true(c, "cmem0", NU::make_tuple(18) == f.cmem0())
+                && KT::assert_true(c, "vmem0", NU::make_tuple(18) == f.vmem0())
+                && KT::assert_true(c, "cvmem0", NU::make_tuple(18) == f.cvmem0())
+                && KT::assert_true(c, "cmem1", NU::make_tuple(18, 42) == f.cmem1(42))
+                && KT::assert_true(c, "vmem1", NU::make_tuple(18, 42) == f.vmem1(42))
+                && KT::assert_true(c, "cvmem1", NU::make_tuple(18, 42) == f.cvmem1(42))
                 ;
         }),
     KT::expect_success("mem_fn(mem)", [](KT::context& c)->bool{
@@ -90,8 +90,8 @@ static KT::testcase const tests[] = {
         }),
     KT::expect_success("mem_fn(mem0)", [](KT::context& c)->bool{
             foo f(18);
-            return KT::assert_type<std::tuple<int>, decltype(NF::mem_fn(&foo::mem0)(f))>(c, "type")
-                && KT::assert_type<std::tuple<int>, decltype(NF::mem_fn(&foo::mem0))::result_type>(c, "result_type")
+            return KT::assert_type<NU::tuple<int>, decltype(NF::mem_fn(&foo::mem0)(f))>(c, "type")
+                && KT::assert_type<NU::tuple<int>, decltype(NF::mem_fn(&foo::mem0))::result_type>(c, "result_type")
                 && KT::assert_type<foo*,
                                    decltype(NF::mem_fn(&foo::mem0))::argument_type>(c, "foo::mem0 argument_type")
                 && KT::assert_type<foo const*,
@@ -100,17 +100,17 @@ static KT::testcase const tests[] = {
                                    decltype(NF::mem_fn(&foo::vmem0))::argument_type>(c, "foo::vmem0 argument_type")
                 && KT::assert_type<foo const volatile*,
                                    decltype(NF::mem_fn(&foo::cvmem0))::argument_type>(c, "foo::cvmem0 argument_type")
-                && KT::assert_true(c, "call(f)", std::make_tuple(18) == NF::mem_fn(&foo::mem0)(f))
-                && KT::assert_true(c, "call(&f)", std::make_tuple(18) == NF::mem_fn(&foo::mem0)(&f))
-                && KT::assert_true(c, "call(smart)", std::make_tuple(18) == NF::mem_fn(&foo::mem0)(smart<foo>(18)))
+                && KT::assert_true(c, "call(f)", NU::make_tuple(18) == NF::mem_fn(&foo::mem0)(f))
+                && KT::assert_true(c, "call(&f)", NU::make_tuple(18) == NF::mem_fn(&foo::mem0)(&f))
+                && KT::assert_true(c, "call(smart)", NU::make_tuple(18) == NF::mem_fn(&foo::mem0)(smart<foo>(18)))
                 && KT::assert_true(c, "equal", NF::mem_fn(&foo::mem0) == NF::mem_fn(&foo::mem0))
                 && KT::assert_false(c, "not equal", NF::mem_fn(&foo::mem0) == NF::mem_fn(&foo::omem0))
                 ;
         }),
     KT::expect_success("mem_fn(mem1)", [](KT::context& c)->bool{
             foo f(18);
-            return KT::assert_type<std::tuple<int, int>, decltype(NF::mem_fn(&foo::mem1)(f, 43))>(c, "type")
-                && KT::assert_type<std::tuple<int, int>, decltype(NF::mem_fn(&foo::mem1))::result_type>(c, "result_type")
+            return KT::assert_type<NU::tuple<int, int>, decltype(NF::mem_fn(&foo::mem1)(f, 43))>(c, "type")
+                && KT::assert_type<NU::tuple<int, int>, decltype(NF::mem_fn(&foo::mem1))::result_type>(c, "result_type")
                 && KT::assert_type<foo*,
                                    decltype(NF::mem_fn(&foo::mem1))::first_argument_type>(c, "foo::mem1 first_argument_type")
                 && KT::assert_type<int,
@@ -127,20 +127,20 @@ static KT::testcase const tests[] = {
                                    decltype(NF::mem_fn(&foo::cvmem1))::first_argument_type>(c, "foo::cvmem1 first_argument_type")
                 && KT::assert_type<int,
                                    decltype(NF::mem_fn(&foo::cvmem1))::second_argument_type>(c, "foo::cvmem1 second_argument_type")
-                && KT::assert_true(c, "call(f)", std::make_tuple(18, 43) == NF::mem_fn(&foo::mem1)(f, 43))
-                && KT::assert_true(c, "call(&f)", std::make_tuple(18, 43) == NF::mem_fn(&foo::mem1)(&f, 43))
-                && KT::assert_true(c, "call(smart)", std::make_tuple(18, 43) == NF::mem_fn(&foo::mem1)(smart<foo>(18), 43))
+                && KT::assert_true(c, "call(f)", NU::make_tuple(18, 43) == NF::mem_fn(&foo::mem1)(f, 43))
+                && KT::assert_true(c, "call(&f)", NU::make_tuple(18, 43) == NF::mem_fn(&foo::mem1)(&f, 43))
+                && KT::assert_true(c, "call(smart)", NU::make_tuple(18, 43) == NF::mem_fn(&foo::mem1)(smart<foo>(18), 43))
                 && KT::assert_true(c, "equal", NF::mem_fn(&foo::mem1) == NF::mem_fn(&foo::mem1))
                 && KT::assert_false(c, "not equal", NF::mem_fn(&foo::mem1) == NF::mem_fn(&foo::omem1))
                 ;
         }),
     KT::expect_success("mem_fn(mem2)", [](KT::context& c)->bool{
             foo f(18);
-            return KT::assert_type<std::tuple<int, int, int>, decltype(NF::mem_fn(&foo::mem2)(f, 43, 11))>(c, "type")
-                && KT::assert_type<std::tuple<int, int, int>, decltype(NF::mem_fn(&foo::mem2))::result_type>(c, "result_type")
-                && KT::assert_true(c, "call(f)", std::make_tuple(18, 43, 11) == NF::mem_fn(&foo::mem2)(f, 43, 11))
-                && KT::assert_true(c, "call(&f)", std::make_tuple(18, 43, 11) == NF::mem_fn(&foo::mem2)(&f, 43, 11))
-                && KT::assert_true(c, "call(smart)", std::make_tuple(18, 43, 11) == NF::mem_fn(&foo::mem2)(smart<foo>(18), 43, 11))
+            return KT::assert_type<NU::tuple<int, int, int>, decltype(NF::mem_fn(&foo::mem2)(f, 43, 11))>(c, "type")
+                && KT::assert_type<NU::tuple<int, int, int>, decltype(NF::mem_fn(&foo::mem2))::result_type>(c, "result_type")
+                && KT::assert_true(c, "call(f)", NU::make_tuple(18, 43, 11) == NF::mem_fn(&foo::mem2)(f, 43, 11))
+                && KT::assert_true(c, "call(&f)", NU::make_tuple(18, 43, 11) == NF::mem_fn(&foo::mem2)(&f, 43, 11))
+                && KT::assert_true(c, "call(smart)", NU::make_tuple(18, 43, 11) == NF::mem_fn(&foo::mem2)(smart<foo>(18), 43, 11))
                 && KT::assert_true(c, "equal", NF::mem_fn(&foo::mem2) == NF::mem_fn(&foo::mem2))
                 && KT::assert_false(c, "not equal", NF::mem_fn(&foo::mem2) == NF::mem_fn(&foo::omem2))
                 ;

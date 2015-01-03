@@ -179,6 +179,7 @@ public:
 
 template <nstd::size_t I, typename T>
 struct nstd::utility::detail::tuple_field {
+    using type = T;
     T value;
     constexpr tuple_field(): value() {}
     constexpr tuple_field(T const& value): value(value) {}
@@ -225,9 +226,10 @@ struct nstd::utility::detail::tuple<nstd::utility::index_sequence<I...>, T...>
 
 template <typename... T>
 class nstd::utility::tuple
-    : public nstd::utility::detail::tuple<nstd::utility::index_sequence_for<T...>, T...> {
+    : public nstd::utility::detail::tuple<nstd::utility::make_index_sequence<sizeof...(T)>, T...> {
 public:
-    using base = nstd::utility::detail::tuple<nstd::utility::index_sequence_for<T...>, T...>;
+    using sequence = nstd::utility::make_index_sequence<sizeof...(T)>;
+    using base = nstd::utility::detail::tuple<sequence, T...>;
     using base::base;
 
     constexpr tuple();
@@ -271,17 +273,17 @@ constexpr nstd::utility::tuple<T...>::tuple(S&&... values)
 template <typename... T>
     template <typename... S>
 constexpr nstd::utility::tuple<T...>::tuple(nstd::utility::tuple<S...> & other)
-    : base(static_cast<nstd::utility::detail::tuple<nstd::utility::index_sequence_for<T...>, S...>&>(other)) {
+    : base(static_cast<nstd::utility::detail::tuple<sequence, S...>&>(other)) {
 }
 template <typename... T>
     template <typename... S>
 constexpr nstd::utility::tuple<T...>::tuple(nstd::utility::tuple<S...> const& other)
-    : base(static_cast<nstd::utility::detail::tuple<nstd::utility::index_sequence_for<T...>, S...> const&>(other)) {
+    : base(static_cast<nstd::utility::detail::tuple<sequence, S...> const&>(other)) {
 }
 template <typename... T>
     template <typename... S>
 constexpr nstd::utility::tuple<T...>::tuple(nstd::utility::tuple<S...> && other)
-    : base(nstd::utility::move(static_cast<nstd::utility::detail::tuple<nstd::utility::index_sequence_for<T...>, S...>&>(other))) {
+    : base(nstd::utility::move(static_cast<nstd::utility::detail::tuple<sequence, S...>&>(other))) {
 }
 
 // ----------------------------------------------------------------------------

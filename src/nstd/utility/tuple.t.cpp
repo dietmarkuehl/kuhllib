@@ -59,18 +59,20 @@ static KT::testcase const tests[] = {
                 ;
         }),
 #endif
-#ifndef KUHLLIB_EDG
     KT::expect_success("lvalue ctor", [](KT::context& c)->bool{
             constexpr int  i(17);
             constexpr char d('a');
             constexpr bool b(true);
             constexpr NU::tuple<int, char, bool> t(i, d, b);
-            return KT::assert_equal(c, "tmp<0> value", NU::get<0>(t), i)
-                && KT::assert_equal(c, "tmp<1> value", NU::get<1>(t), d)
-                && KT::assert_equal(c, "tmp<2> value", NU::get<2>(t), b)
+            KT::use(t);
+            return true
+#ifndef KUHLLIB_EDG
+                && KT::assert_equal(c, "t<0> value", NU::get<0u>(t), i)
+                && KT::assert_equal(c, "t<1> value", NU::get<1>(t), d)
+                && KT::assert_equal(c, "t<2> value", NU::get<2>(t), b)
+#endif
                 ;
         }),
-#endif
 #ifndef KUHLLIB_INTEL
     KT::expect_success("rvalue ctor", [](KT::context& c)->bool{
             constexpr NU::tuple<char, bool, int> t0('c', true, 42);

@@ -28,7 +28,6 @@
 #include "nstd/cursor/category.hpp"
 #include "nstd/type_traits/is_same.hpp"
 #include "kuhl/test.hpp"
-#include <iterator>
 
 namespace NC = nstd::cursor;
 namespace NT = nstd::type_traits;
@@ -52,7 +51,8 @@ static kuhl::test::testcase const tests[] = {
             int array[] = { 123 };
             auto end(NC::single_pass_end(array));
             return NT::is_same<NC::model_single_pass_end<int>, decltype(end)>::value
-                && end.get_pointer() == std::end(array)
+                //-dk:TODO && end.get_pointer() == nstd::cursor::end(array)
+                && end.get_pointer() == array + 1
                 ;
         }),
     kuhl::test::expect_success("begin isn't the end", []()->bool{
