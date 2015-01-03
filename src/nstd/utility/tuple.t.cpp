@@ -81,10 +81,14 @@ static KT::testcase const tests[] = {
                 && KT::assert_equal(c, "t<2> value", NU::get<2>(t), b)
                 ;
         }),
-#ifndef KUHLLIB_INTEL
     KT::expect_success("rvalue ctor", [](KT::context& c)->bool{
+#ifndef KUHLLIB_INTEL
             constexpr NU::tuple<char, bool, int> t0('c', true, 42);
             constexpr NU::tuple<int, int, long> t1('c', true, 42);
+#else
+            const NU::tuple<char, bool, int> t0('c', true, 42);
+            const NU::tuple<int, int, long> t1('c', true, 42);
+#endif
             return KT::assert_equal(c, "t0<0> value", NU::get<0>(t0), 'c')
                 && KT::assert_equal(c, "t0<1> value", NU::get<1>(t0), true)
                 && KT::assert_equal(c, "t0<2> value", NU::get<2>(t0), 42)
@@ -93,7 +97,6 @@ static KT::testcase const tests[] = {
                 && KT::assert_equal(c, "t1<2> value", NU::get<2>(t1), 42)
                 ;
         }),
-#endif
     KT::expect_success("copy ctor", [](KT::context& c)->bool{
             NU::tuple<bool, char, long> const t0(true, 'b', 314);
             NU::tuple<bool, char, long> t1(t0);
@@ -132,15 +135,18 @@ static KT::testcase const tests[] = {
                 && KT::assert_equal(c, "t0<2> value", NU::get<2>(t0), 314)
                 ;
         }),
-#ifndef KUHLLIB_INTEL
     KT::expect_success("make_tuple()", [](KT::context& c)->bool{
-            constexpr NU::tuple<bool, char, long> t0(NU::make_tuple(true, 'b', 314));
+#ifndef KUHLLIB_INTEL
+            constexpr
+#else
+            const
+#endif
+            NU::tuple<bool, char, long> t0(NU::make_tuple(true, 'b', 314));
             return KT::assert_equal(c, "t0<0> value", NU::get<0>(t0), true)
                 && KT::assert_equal(c, "t0<1> value", NU::get<1>(t0), 'b')
                 && KT::assert_equal(c, "t0<2> value", NU::get<2>(t0), 314)
                 ;
         }),
-#endif
 };
 
 int main(int ac, char* av[])

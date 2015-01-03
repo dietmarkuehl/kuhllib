@@ -132,6 +132,8 @@ static KT::testcase const tests[] = {
     KT::expect_success("member constructor (template)", [](KT::context& c)->bool{
 #ifndef KUHLLIB_INTEL
             constexpr
+#else
+            const
 #endif
                 NU::pair<int, bool> c0( 17, true );
             NU::pair<foo, bar> p0{ foo(23), bar(24) };
@@ -174,10 +176,14 @@ static KT::testcase const tests[] = {
     KT::expect_success("conversion lvalue constructor", [](KT::context& c)->bool{
 #ifndef KUHLLIB_INTEL
             constexpr
+#else
+            const
 #endif
                 NU::pair<int, bool>  ce0{ 23, true };
 #ifndef KUHLLIB_INTEL
             constexpr
+#else
+            const
 #endif
                 NU::pair<long, bool> ce1{ ce0 };
             NU::pair<copyable, bar>      const p0{ copyable{41}, bar{42} };
@@ -199,6 +205,8 @@ static KT::testcase const tests[] = {
     KT::expect_success("conversion rvalue constructor", [](KT::context& c)->bool{
 #ifndef KUHLLIB_INTEL
             constexpr
+#else
+            const
 #endif
                 NU::pair<long, bool> ce{ NU::pair<int, bool>{ 23, true } };
             NU::pair<movable, bar> p0{ NU::pair<movable, movable>(1, 2) };
