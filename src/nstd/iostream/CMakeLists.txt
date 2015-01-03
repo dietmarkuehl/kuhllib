@@ -27,6 +27,7 @@ cmake_minimum_required(VERSION 2.8.2)
 project(nstd_iostream)
 
 add_library(iostream OBJECT
+	ios_base.cpp
 	iomanip.cpp
 )
 

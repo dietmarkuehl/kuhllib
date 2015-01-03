@@ -36,6 +36,28 @@ static KT::testcase const tests[] = {
             return KT::assert_declared<NS::system_error>(c, "system_error declared")
                 ;
         }),
+    KT::expect_success("system_error oprations", [](KT::context& c)->bool{
+            NS::error_category const* cat{0};
+            NS::error_code*           ec{0};
+            NS::string const*         str{0};
+            NS::system_error const*   error{0};
+            KT::use(cat, ec, str, error);
+            //-dk:TODO system_error derives from runtime_error
+            return KT::assert_type<NS::system_error, decltype(NS::system_error(*ec, *str))>(c, "string ctor")
+                && KT::assert_type<NS::system_error, decltype(NS::system_error(*ec, "err"))>(c, "literal ctor")
+                && KT::assert_type<NS::system_error, decltype(NS::system_error(*ec))>(c, "error_code ctor")
+                && KT::assert_type<NS::system_error,
+                                   decltype(NS::system_error(0, *cat, *str))>(c, "category/string ctor")
+                && KT::assert_type<NS::system_error,
+                                   decltype(NS::system_error(0, *cat, "err"))>(c, "category/literal ctor")
+                && KT::assert_type<NS::system_error,
+                                   decltype(NS::system_error(0, *cat))>(c, "category ctor")
+                && KT::assert_type<NS::error_code const&, decltype(error->code())>(c, "code type")
+                && KT::assert_true(c, "code() doesn't throw", noexcept(error->code()))
+                && KT::assert_type<char const*, decltype(error->what())>(c, "what type")
+                && KT::assert_true(c, "what() doesn't throw", noexcept(error->what()))
+                ;
+        }),
 };
 
 int main(int ac, char* av[])

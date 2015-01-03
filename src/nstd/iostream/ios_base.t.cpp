@@ -134,9 +134,18 @@ static KT::testcase const tests[] = {
     KT::expect_success("class ios_base::failure [ios::failure]", [](KT::context& c)->bool{
             NI::string const* str{0};
             KT::use(str);
+            //-dk:TODO test ctor functionality
             return KT::assert_is_base<NS::system_error, NI::ios_base::failure>(c, "system_error is base of failure")
                 && KT::assert_type<NI::ios_base::failure,
                                    decltype(NI::ios_base::failure(*str))>(c, "construct failure with string")
+                && KT::assert_type<NI::ios_base::failure,
+                                   decltype(NI::ios_base::failure(*str, NI::io_errc::stream))>(c,
+                                                                  "construct failure with string and ErrorCode")
+                && KT::assert_type<NI::ios_base::failure,
+                                   decltype(NI::ios_base::failure("err"))>(c, "construct failure with literal")
+                && KT::assert_type<NI::ios_base::failure,
+                                   decltype(NI::ios_base::failure("err", NI::io_errc::stream))>(c,
+                                                                  "construct failure with literal and ErrorCode")
                 ;
         }),
 };

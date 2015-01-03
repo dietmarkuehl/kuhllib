@@ -124,7 +124,8 @@ public:
 class nstd::ios_base::failure
     : public ::nstd::system_error {
 public:
-    failure(::nstd::string const&, ::nstd::error_code const& = ::nstd::io_errc::stream);
+    explicit failure(::nstd::string const&, ::nstd::error_code const& = ::nstd::io_errc::stream);
+    explicit failure(char const*, ::nstd::error_code const& = ::nstd::io_errc::stream);
 };
 
 // ----------------------------------------------------------------------------

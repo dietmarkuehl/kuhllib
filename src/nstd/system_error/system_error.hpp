@@ -26,6 +26,10 @@
 #ifndef INCLUDED_NSTD_SYSTEM_ERROR_SYSTEM_ERROR
 #define INCLUDED_NSTD_SYSTEM_ERROR_SYSTEM_ERROR
 
+#include "nstd/system_error/error_code.hpp"
+#include "nstd/system_error/error_category.hpp"
+#include "nstd/string/string_fwd.hpp"
+
 // ----------------------------------------------------------------------------
 
 namespace nstd {
@@ -35,6 +39,15 @@ namespace nstd {
 // ----------------------------------------------------------------------------
 
 class nstd::system_error {
+public:
+    system_error(::nstd::error_code, ::nstd::string const&);
+    system_error(::nstd::error_code, char const*);
+    system_error(::nstd::error_code);
+    system_error(int, ::nstd::error_category const&, ::nstd::string const&);
+    system_error(int, ::nstd::error_category const&, char const*);
+    system_error(int, ::nstd::error_category const&);
+    auto code() const noexcept(true) -> ::nstd::error_code const&;
+    auto what() const noexcept(true) -> char const*;
 };
 
 // ----------------------------------------------------------------------------
