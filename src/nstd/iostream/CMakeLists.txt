@@ -26,9 +26,9 @@
 cmake_minimum_required(VERSION 2.8.2)
 project(nstd_iostream)
 
-add_library(iostream OBJECT
+add_library(iostream STATIC
 	ios_base.cpp
-	iomanip.cpp
+	# iomanip.cpp
 )
 
 enable_testing()
@@ -49,6 +49,6 @@ foreach(test
 	# streambuf.t
         )
   add_executable(${test} ${test})
-  target_link_libraries(${test} PUBLIC kuhltest kuhlmini)
+  target_link_libraries(${test} PUBLIC kuhltest kuhlmini iostream system_error)
   add_test(NAME ${test} COMMAND $<TARGET_FILE:${test}>)
 endforeach(test)

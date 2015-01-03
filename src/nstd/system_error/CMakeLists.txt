@@ -26,6 +26,10 @@
 cmake_minimum_required(VERSION 2.8.2)
 project(nstd_system_error)
 
+add_library(system_error STATIC
+	system_error.cpp
+)
+
 enable_testing()
 foreach(test
 	error_category.t

@@ -42,47 +42,52 @@ namespace nstd {
 class nstd::ios_base {
 public:
     class failure;
-    using fmtflags = unsigned long;
-    static constexpr fmtflags left       {0x0001};
-    static constexpr fmtflags right      {0x0002};
-    static constexpr fmtflags internal   {0x0003};
-    static constexpr fmtflags adjustfield{0x0003};
 
-    static constexpr fmtflags dec        {0x0004};
-    static constexpr fmtflags hex        {0x0008};
-    static constexpr fmtflags oct        {0x000C};
-    static constexpr fmtflags basefield  {0x000C};
+    enum fmtflags: unsigned short {
+        left        = 0x0001,
+        right       = 0x0002,
+        internal    = 0x0003,
+        adjustfield = 0x0003,
 
-    static constexpr fmtflags fixed      {0x0010};
-    static constexpr fmtflags scientific {0x0020};
-    static constexpr fmtflags floatfield {0x0030};
+        dec         = 0x0004,
+        hex         = 0x0008,
+        oct         = 0x000C,
+        basefield   = 0x000C,
 
-    static constexpr fmtflags boolalpha  {0x0040};
-    static constexpr fmtflags showbase   {0x0080};
-    static constexpr fmtflags showpoint  {0x0100};
-    static constexpr fmtflags showpos    {0x0200};
-    static constexpr fmtflags skipws     {0x0400};
-    static constexpr fmtflags unitbuf    {0x0800};
-    static constexpr fmtflags uppercase  {0x1000};
+        fixed       = 0x0010,
+        scientific  = 0x0020,
+        floatfield  = 0x0030,
 
-    using iostate = unsigned long;
-    static constexpr iostate goodbit  {0x0000};
-    static constexpr iostate failbit  {0x2000};
-    static constexpr iostate badbit   {0x4000};
-    static constexpr iostate eofbit   {0x8000};
+        boolalpha   = 0x0040,
+        showbase    = 0x0080,
+        showpoint   = 0x0100,
+        showpos     = 0x0200,
+        skipws      = 0x0400,
+        unitbuf     = 0x0800,
+        uppercase   = 0x1000
+    };
 
-    using openmode = unsigned int;
-    static constexpr openmode app{0x01};
-    static constexpr openmode ate{0x02};
-    static constexpr openmode binary{0x04};
-    static constexpr openmode in{0x08};
-    static constexpr openmode out{0x10};
-    static constexpr openmode trunc{0x20};
+    enum iostate: unsigned short {
+        goodbit = 0x0000, 
+        failbit = 0x2000, 
+        badbit  = 0x4000, 
+        eofbit  = 0x8000 
+    };
 
-    using seekdir = int;
-    static constexpr seekdir beg{1};
-    static constexpr seekdir cur{2};
-    static constexpr seekdir end{3};
+    enum openmode: unsigned short {
+        app    = 0x01,
+        ate    = 0x02,
+        binary = 0x04,
+        in     = 0x08,
+        out    = 0x10,
+        trunc  = 0x20
+    };
+
+    enum seekdir {
+        beg,
+        cur,
+        end
+    };
 
     class Init;
 
