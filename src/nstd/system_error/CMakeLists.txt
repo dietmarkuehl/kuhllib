@@ -1,6 +1,6 @@
 #  CMakeLists.txt                                                -*-makefile-*-
 #  ----------------------------------------------------------------------------
-#   Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
+#   Copyright (C) 2015 Dietmar Kuehl http://www.dietmar-kuehl.de         
 #                                                                        
 #   Permission is hereby granted, free of charge, to any person          
 #   obtaining a copy of this software and associated documentation       
@@ -24,18 +24,16 @@
 #  ----------------------------------------------------------------------------
 
 cmake_minimum_required(VERSION 2.8.2)
-project(nstd)
+project(nstd_system_error)
 
-# add_subdirectory(memory)
-# add_subdirectory(string)
-add_subdirectory(system_error)
-add_subdirectory(iostream)
-# add_subdirectory(cheaders)
-# add_subdirectory(algorithm)
-# add_subdirectory(container)
-# add_subdirectory(cursor)
-# add_subdirectory(functional)
-# add_subdirectory(limits)
-# add_subdirectory(projection)
-# add_subdirectory(type_traits)
-# add_subdirectory(utility)
+enable_testing()
+foreach(test
+	error_category.t
+	error_code.t
+	error_condition.t
+	is_error_code_enum.t
+        )
+  add_executable(${test} ${test})
+  target_link_libraries(${test} PUBLIC kuhltest kuhlmini)
+  add_test(NAME ${test} COMMAND $<TARGET_FILE:${test}>)
+endforeach(test)

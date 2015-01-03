@@ -247,6 +247,8 @@ static KT::testcase const tests[] = {
         }),
     KT::expect_success("fpos<T> is declared", [](KT::context& c)->bool{
             return KT::assert_declared<NI::fpos<mbstate_t> >(c, "fpos<mbstate_t>")
+                && KT::assert_type<NI::fpos<NI::mbstate_t>, NI::streampos>(c, "streampos")
+                && KT::assert_type<NI::fpos<NI::mbstate_t>, NI::wstreampos>(c, "wstreampos")
                 ;
         }),
 };

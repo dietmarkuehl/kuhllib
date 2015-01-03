@@ -1,4 +1,4 @@
-// nstd/iostream/fpos_fwd.hpp                                         -*-C++-*-
+// nstd/system_error/error_code.t.cpp                                 -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2015 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,22 +23,22 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_IOSTREAM_FPOS_FWD
-#define INCLUDED_NSTD_IOSTREAM_FPOS_FWD
+#include "nstd/system_error/error_code.hpp"
+#include "kuhl/test.hpp"
 
-struct mbstate_t; //-dk:TODO pull from a suitable location
+namespace NS = ::nstd;
+namespace KT = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
 
-namespace nstd {
-    using ::mbstate_t;
+static KT::testcase const tests[] = {
+    KT::expect_failure("error_code is declared", [](KT::context& c)->bool{
+            return KT::assert_declared<NS::error_code>(c, "error_code")
+                ;
+        }),
+};
 
-    template <typename> class fpos;
-
-    using streampos  = ::nstd::fpos< ::nstd::mbstate_t>;
-    using wstreampos = ::nstd::fpos< ::nstd::mbstate_t>;
+int main(int ac, char* av[])
+{
+    return KT::run_tests("system_error/error_code", ac, av, ::tests);
 }
-
-// ----------------------------------------------------------------------------
-
-#endif

@@ -1,4 +1,4 @@
-// nstd/iostream/fpos_fwd.hpp                                         -*-C++-*-
+// nstd/system_error/is_error_code_enum.hpp                           -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2015 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,21 +23,23 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_IOSTREAM_FPOS_FWD
-#define INCLUDED_NSTD_IOSTREAM_FPOS_FWD
+#ifndef INCLUDED_NSTD_SYSTEM_ERROR_IS_ERROR_CODE_ENUM
+#define INCLUDED_NSTD_SYSTEM_ERROR_IS_ERROR_CODE_ENUM
 
-struct mbstate_t; //-dk:TODO pull from a suitable location
+#include "nstd/type_traits/integral_constant.hpp"
 
 // ----------------------------------------------------------------------------
 
 namespace nstd {
-    using ::mbstate_t;
-
-    template <typename> class fpos;
-
-    using streampos  = ::nstd::fpos< ::nstd::mbstate_t>;
-    using wstreampos = ::nstd::fpos< ::nstd::mbstate_t>;
+    template <typename> struct is_error_code_enum;
 }
+
+// ----------------------------------------------------------------------------
+
+template <typename>
+struct nstd::is_error_code_enum
+    : nstd::type_traits::false_type {
+};
 
 // ----------------------------------------------------------------------------
 

@@ -41,7 +41,7 @@ foreach(test
 	fstream_fwd.t
 	fpos_fwd.t
 	iosfwd.t
-	# ios.t
+	ios.t
 	# ostream_fwd.t
 	# ostream.t
 	# streambuf_fwd.t

@@ -40,6 +40,7 @@ namespace kuhl
         namespace detail {
             template <typename T0, typename T1> struct is_same;
             template <typename T> struct is_same<T, T>;
+            template <typename T0, typename T1> struct is_base;
 
             struct static_bool {
                 template <typename T, typename = decltype(T::value)>
@@ -61,8 +62,6 @@ namespace kuhl
         }
 
         template <typename>
-        auto assert_declared(context&, char const* message) -> bool;
-        template <typename>
         auto assert_static_true(context&, char const* message) -> bool;
         template <typename>
         auto assert_static_false(context&, char const* message) -> bool;
@@ -76,19 +75,16 @@ namespace kuhl
         template <typename A0, typename A1>
         auto assert_equal(kuhl::test::context& context, A0&& a0, A1&& a1) -> bool;
 
+        template <typename>
+        auto assert_declared(context&, char const* message) -> bool;
         template <typename T0, typename T1>
         auto assert_type(kuhl::test::context& context, char const* message) -> bool;
+        template <typename T0, typename T1>
+        auto assert_is_base(kuhl::test::context& context, char const* message) -> bool;
         template <typename T>
         auto assert_no_nested_type(kuhl::test::context& context, char const* message) -> bool;
     }
 
-}
-
-// ----------------------------------------------------------------------------
-
-template <typename>
-auto kuhl::test::assert_declared(context&, char const*) -> bool {
-    return true;
 }
 
 // ----------------------------------------------------------------------------
@@ -141,6 +137,13 @@ auto kuhl::test::assert_equal(kuhl::test::context& context, A0&& a0, A1&& a1) ->
 
 // ----------------------------------------------------------------------------
 
+template <typename>
+auto kuhl::test::assert_declared(context&, char const*) -> bool {
+    return true;
+}
+
+// ----------------------------------------------------------------------------
+
 template <typename T0, typename T1>
 struct kuhl::test::detail::is_same {
     static constexpr bool value{false};
@@ -160,6 +163,25 @@ auto kuhl::test::assert_type(kuhl::test::context& context, char const* message) 
 {
     kuhl::test::detail::is_same<T0, T1>::print(context, message);
     return kuhl::test::detail::is_same<T0, T1>::value;
+}
+
+// ----------------------------------------------------------------------------
+
+template <typename T0, typename T1>
+struct kuhl::test::detail::is_base {
+    static bool test(T0*) { return true; }
+    static bool test(...) { return false; }
+    static bool test() {
+        return kuhl::test::detail::is_base<T0, T1>::test(static_cast<T1*>(0));
+    }
+};
+
+template <typename T0, typename T1>
+auto kuhl::test::assert_is_base(kuhl::test::context& context, char const* message) -> bool {
+    if (!kuhl::test::detail::is_base<T0, T1>::test()) {
+        context << "not a base " << message;
+    }
+    return kuhl::test::detail::is_base<T0, T1>::test();
 }
 
 // ----------------------------------------------------------------------------

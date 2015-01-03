@@ -1,4 +1,4 @@
-// nstd/iostream/fpos_fwd.hpp                                         -*-C++-*-
+// nstd/system_error/error_category.hpp                               -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2015 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,20 +23,13 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_IOSTREAM_FPOS_FWD
-#define INCLUDED_NSTD_IOSTREAM_FPOS_FWD
-
-struct mbstate_t; //-dk:TODO pull from a suitable location
+#ifndef INCLUDED_NSTD_SYSTEM_ERROR_ERROR_CATEGORY
+#define INCLUDED_NSTD_SYSTEM_ERROR_ERROR_CATEGORY
 
 // ----------------------------------------------------------------------------
 
 namespace nstd {
-    using ::mbstate_t;
-
-    template <typename> class fpos;
-
-    using streampos  = ::nstd::fpos< ::nstd::mbstate_t>;
-    using wstreampos = ::nstd::fpos< ::nstd::mbstate_t>;
+    class error_category;
 }
 
 // ----------------------------------------------------------------------------
