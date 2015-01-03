@@ -28,7 +28,8 @@ project(nstd_memory)
 
 enable_testing()
 foreach(test
-	allocator.t
+	allocator_fwd.t
+	# allocator.t
         )
   add_executable(${test} ${test})
   target_link_libraries(${test} PUBLIC kuhltest kuhlmini)

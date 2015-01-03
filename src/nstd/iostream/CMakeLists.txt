@@ -24,17 +24,30 @@
 #  ----------------------------------------------------------------------------
 
 cmake_minimum_required(VERSION 2.8.2)
-project(nstd)
+project(nstd_iostream)
 
-# add_subdirectory(memory)
-# add_subdirectory(string)
-add_subdirectory(iostream)
-# add_subdirectory(cheaders)
-# add_subdirectory(algorithm)
-# add_subdirectory(container)
-# add_subdirectory(cursor)
-# add_subdirectory(functional)
-# add_subdirectory(limits)
-# add_subdirectory(projection)
-# add_subdirectory(type_traits)
-# add_subdirectory(utility)
+add_library(iostream OBJECT
+	iomanip.cpp
+)
+
+enable_testing()
+foreach(test
+	ios_fwd.t
+	streambuf_fwd.t
+	istream_fwd.t
+	ostream_fwd.t
+	iostream_fwd.t
+	sstream_fwd.t
+	fstream_fwd.t
+	fpos_fwd.t
+	iosfwd.t
+	# ios.t
+	# ostream_fwd.t
+	# ostream.t
+	# streambuf_fwd.t
+	# streambuf.t
+        )
+  add_executable(${test} ${test})
+  target_link_libraries(${test} PUBLIC kuhltest kuhlmini)
+  add_test(NAME ${test} COMMAND $<TARGET_FILE:${test}>)
+endforeach(test)

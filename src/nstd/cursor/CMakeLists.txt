@@ -33,6 +33,8 @@ foreach(test
 	model_key.t
 	model_single_pass.t
         single_pass.t 
+	istreambuf_iterator_fwd.t
+	ostreambuf_iterator_fwd.t
         )
   add_executable(${test} ${test})
   target_link_libraries(${test} PUBLIC kuhltest kuhlmini)

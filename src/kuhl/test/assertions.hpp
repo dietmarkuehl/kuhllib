@@ -61,6 +61,8 @@ namespace kuhl
         }
 
         template <typename>
+        auto assert_declared(context&, char const* message) -> bool;
+        template <typename>
         auto assert_static_true(context&, char const* message) -> bool;
         template <typename>
         auto assert_static_false(context&, char const* message) -> bool;
@@ -80,6 +82,13 @@ namespace kuhl
         auto assert_no_nested_type(kuhl::test::context& context, char const* message) -> bool;
     }
 
+}
+
+// ----------------------------------------------------------------------------
+
+template <typename>
+auto kuhl::test::assert_declared(context&, char const*) -> bool {
+    return true;
 }
 
 // ----------------------------------------------------------------------------
