@@ -28,6 +28,9 @@ project(nstd_type_traits)
 
 enable_testing()
 foreach(test
+	add_const.t
+	add_volatile.t
+	add_cv.t
         add_rvalue_reference.t 
         add_lvalue_reference.t 
         choose_type.t 

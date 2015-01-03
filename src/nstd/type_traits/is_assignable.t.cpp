@@ -24,14 +24,9 @@
 // ----------------------------------------------------------------------------
 
 #include "nstd/type_traits/is_assignable.hpp"
-#include <type_traits>
 #include "kuhl/test.hpp"
 
-#if 1
 namespace NT = nstd::type_traits;
-#else
-namespace NT = std;
-#endif
 namespace KT = kuhl::test;
 
 // ----------------------------------------------------------------------------
