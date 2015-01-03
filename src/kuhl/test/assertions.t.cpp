@@ -37,6 +37,10 @@ namespace {
     struct bar { using type = int; };
     struct test_true_type { static constexpr bool value = true; };
     struct test_false_type { static constexpr bool value = false; };
+
+    struct base {};
+    struct derived: base {};
+    struct other;
 }
 
 // ----------------------------------------------------------------------------
@@ -166,6 +170,30 @@ static KT::testcase const tests[] = {
                 && assert_equal(c, "message", d.c_str(), KM::string("bar"))
                 ;
 
+        }),
+    KT::expect_success("check for self-derived", [](KT::context& c)-> bool {
+            KT::context d;
+            return assert_true(c, "base of itself", KT::assert_is_base<base, base>(d, "base is base"))
+                && assert_true(c, "no message", d.empty())
+                ;
+        }),
+    KT::expect_success("check for actual derived", [](KT::context& c)-> bool {
+            KT::context d;
+            return assert_true(c, "base of derived", KT::assert_is_base<base, derived>(d, "base of derived"))
+                && assert_true(c, "no message", d.empty())
+                ;
+        }),
+    KT::expect_success("check for reverse", [](KT::context& c)-> bool {
+            KT::context d;
+            return assert_false(c, "derived of base", KT::assert_is_base<derived, base>(d, "wrong way"))
+                && assert_false(c, "there is a message", d.empty())
+                ;
+        }),
+    KT::expect_success("base and unrelated", [](KT::context& c)-> bool {
+            KT::context d;
+            return assert_false(c, "base of other", KT::assert_is_base<base, other>(d, "unrelated"))
+                && assert_false(c, "there is a message", d.empty())
+                ;
         }),
 };
 

@@ -24,9 +24,11 @@
 // ----------------------------------------------------------------------------
 
 #include "nstd/iostream/ios.hpp"
+#include "nstd/limits/numeric_limits.hpp"
 #include "kuhl/test.hpp"
 
 namespace NI = ::nstd;
+namespace NL = ::nstd;
 namespace NS = ::nstd;
 namespace KT = kuhl::test;
 
@@ -35,7 +37,7 @@ namespace KT = kuhl::test;
 static KT::testcase const tests[] = {
     KT::expect_success("declared types", [](KT::context& c)->bool{
             return KT::assert_declared<NI::streamoff>(c, "streamoff")
-                && KT::assert_declared<NI::streampos>(c, "streampos")
+                && KT::assert_declared<NI::streamsize>(c, "streamsize")
                 && KT::assert_declared<NI::ios_base>(c, "ios_base")
                 && KT::assert_type<NI::basic_ios<char, NS::char_traits<char> >,
                                    NI::basic_ios<char> >(c, "basic_ios<char>")
@@ -93,6 +95,17 @@ static KT::testcase const tests[] = {
                                    noexcept(NI::make_error_condition(NI::io_errc::stream)))
                 && KT::assert_type<NS::error_category const&(), decltype(NI::iostream_category)>(c, "iostream_category")
                 && KT::assert_true(c, "iostream_category() noexcept", noexcept(NI::iostream_category()))
+                ;
+        }),
+    KT::expect_success("types [stream.types]", [](KT::context& c)->bool{
+            return KT::assert_true(c, "streamoff: integer", NL::numeric_limits<NI::streamoff>::is_integer)
+                && KT::assert_true(c, "streamoff: signed", NL::numeric_limits<NI::streamoff>::is_signed)
+                && KT::assert_true(c, "streamsize: integer", NL::numeric_limits<NI::streamsize>::is_integer)
+                && KT::assert_true(c, "streamsize: signed", NL::numeric_limits<NI::streamsize>::is_signed)
+                ;
+        }),
+    KT::expect_success("class ios_base [ios.base]", [](KT::context& c)->bool{
+            return KT::assert_declared<NI::ios_base::failure>(c, "ios_base::failure")
                 ;
         }),
     KT::expect_success("concrete object", [](KT::context& c)->bool{

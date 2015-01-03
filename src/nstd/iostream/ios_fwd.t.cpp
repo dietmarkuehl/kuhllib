@@ -52,8 +52,6 @@ static KT::testcase const tests[] = {
                 && KT::assert_type<NI::basic_ios<char32_t>,
                                    NI::basic_ios<char32_t, NS::char_traits<char32_t> > >(c, "char32_t default")
                 ;
-
-           return false;
         }),
     KT::expect_success("type alias", [](KT::context& c)->bool{
             return KT::assert_type<NI::basic_ios<char>, NI::ios>(c, "char alias")

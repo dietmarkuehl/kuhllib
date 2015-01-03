@@ -169,10 +169,10 @@ auto kuhl::test::assert_type(kuhl::test::context& context, char const* message) 
 
 template <typename T0, typename T1>
 struct kuhl::test::detail::is_base {
-    static bool test(T0*) { return true; }
-    static bool test(...) { return false; }
+    static bool test_intern(T0*) { return true; }
+    static bool test_intern(...) { return false; }
     static bool test() {
-        return kuhl::test::detail::is_base<T0, T1>::test(static_cast<T1*>(0));
+        return kuhl::test::detail::is_base<T0, T1>::test_intern(static_cast<T1*>(0));
     }
 };
 

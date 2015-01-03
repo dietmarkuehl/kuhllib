@@ -1,4 +1,4 @@
-// nstd/system_error/error_code.hpp                                   -*-C++-*-
+// nstd/iostream/io_types.hpp                                         -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2015 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,42 +23,34 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_SYSTEM_ERROR_ERROR_CODE
-#define INCLUDED_NSTD_SYSTEM_ERROR_ERROR_CODE
+#ifndef INCLUDED_NSTD_IOSTREAM_IO_TYPES
+#define INCLUDED_NSTD_IOSTREAM_IO_TYPES
 
-#include "nstd/system_error/error_category.hpp"
-#include "nstd/system_error/error_condition.hpp"
 #include "nstd/system_error/is_error_code_enum.hpp"
-#include "nstd/string/string_fwd.hpp"
-#include "nstd/type_traits/enable_if.hpp"
+#include "nstd/system_error/error_category.hpp"
+#include "nstd/system_error/error_code.hpp"
+#include "nstd/system_error/error_condition.hpp"
+#include "nstd/type_traits/integral_constant.hpp"
 
 // ----------------------------------------------------------------------------
 
 namespace nstd {
-    class error_code;
+    using streamoff  = signed long long;
+    using streamsize = signed long long;
+
+    enum class io_errc { stream = 1 };
+    auto make_error_code(::nstd::io_errc) noexcept(true) -> ::nstd::error_code;
+    auto make_error_condition(::nstd::io_errc) noexcept(true) -> ::nstd::error_condition;
+    auto iostream_category() noexcept(true) -> ::nstd::error_category const&;
+
+    template <> struct is_error_code_enum< ::nstd::io_errc>;
 }
 
 // ----------------------------------------------------------------------------
 
-class nstd::error_code {
-public:
-    error_code() noexcept(true);
-    error_code(int, ::nstd::error_category const&) noexcept(true);
-    template <typename ErrorCode,
-              typename = ::nstd::type_traits::enable_if_t< ::nstd::is_error_code_enum<ErrorCode>::value> >
-    error_code(ErrorCode) noexcept(true);
-
-    auto assign(int, ::nstd::error_category const&) noexcept(true) -> void;
-    template <typename ErrorCode,
-              typename = ::nstd::type_traits::enable_if_t< ::nstd::is_error_code_enum<ErrorCode>::value> >
-    auto operator= (ErrorCode) noexcept(true) -> error_code&;
-    auto clear() noexcept(true) -> void;
-
-    auto value() const noexcept(true) -> int;
-    auto category() const noexcept(true) -> ::nstd::error_category const&;
-    auto default_error_condition() const noexcept(true) -> ::nstd::error_condition;
-    auto message() const -> ::nstd::string;
-    explicit operator bool() const noexcept(true);
+template <>
+struct nstd::is_error_code_enum< ::nstd::io_errc>
+    : ::nstd::type_traits::true_type {
 };
 
 // ----------------------------------------------------------------------------

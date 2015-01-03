@@ -29,8 +29,8 @@ project(nstd_string)
 enable_testing()
 foreach(test
 	char_traits_fwd.t
+	string_fwd.t
 	# char_traits.t
-	# string_fwd.t
 	# string.t
         )
   add_executable(${test} ${test})

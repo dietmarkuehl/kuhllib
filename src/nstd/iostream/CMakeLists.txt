@@ -32,6 +32,7 @@ add_library(iostream OBJECT
 
 enable_testing()
 foreach(test
+	io_types.t
 	ios_fwd.t
 	streambuf_fwd.t
 	istream_fwd.t
@@ -41,10 +42,9 @@ foreach(test
 	fstream_fwd.t
 	fpos_fwd.t
 	iosfwd.t
+	ios_base.t
 	ios.t
-	# ostream_fwd.t
 	# ostream.t
-	# streambuf_fwd.t
 	# streambuf.t
         )
   add_executable(${test} ${test})

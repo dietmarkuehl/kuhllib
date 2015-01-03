@@ -32,6 +32,7 @@ foreach(test
 	error_code.t
 	error_condition.t
 	is_error_code_enum.t
+	system_error.t
         )
   add_executable(${test} ${test})
   target_link_libraries(${test} PUBLIC kuhltest kuhlmini)

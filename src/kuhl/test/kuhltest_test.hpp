@@ -65,8 +65,8 @@ namespace kuhl
         int run_tests(char const*, int, char*[], 
                       kuhl::test::testcase const (&tests)[NoTests]);
 
-        template <typename T>
-        void use(T const&);
+        template <typename... T>
+        void use(T const&...);
     }
 }
 
@@ -370,8 +370,8 @@ kuhl::test::run_tests(char const* name, int ac, char* av[],
 
 // ----------------------------------------------------------------------------
 
-template <typename T>
-void kuhl::test::use(T const&)
+template <typename... T>
+void kuhl::test::use(T const&...)
 {
 }
 

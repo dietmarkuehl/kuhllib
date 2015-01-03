@@ -28,17 +28,12 @@
 
 #include "nstd/iostream/ios_fwd.hpp"
 #include "nstd/iostream/streambuf_fwd.hpp"
-#include "nstd/system_error/is_error_code_enum.hpp"
-#include "nstd/system_error/error_category.hpp"
-#include "nstd/system_error/error_code.hpp"
-#include "nstd/system_error/error_condition.hpp"
-#include "nstd/type_traits/integral_constant.hpp"
+#include "nstd/iostream/ios_base.hpp"
+#include "nstd/iostream/io_types.hpp"
 
 // ----------------------------------------------------------------------------
 
 namespace nstd {
-    enum streamoff {};
-    enum streampos {};
     class ios_base;
 
     ::nstd::ios_base& boolalpha(::nstd::ios_base&);
@@ -68,13 +63,6 @@ namespace nstd {
     ::nstd::ios_base& scientific(::nstd::ios_base&);
     ::nstd::ios_base& hexfloat(::nstd::ios_base&);
     ::nstd::ios_base& defaultfloat(::nstd::ios_base&);
-
-    enum class io_errc { stream = 1 };
-    auto make_error_code(::nstd::io_errc) noexcept(true) -> ::nstd::error_code;
-    auto make_error_condition(::nstd::io_errc) noexcept(true) -> ::nstd::error_condition;
-    auto iostream_category() noexcept(true) -> ::nstd::error_category const&;
-
-    template <> struct is_error_code_enum< ::nstd::io_errc>;
 }
 
 // ----------------------------------------------------------------------------
@@ -95,13 +83,6 @@ public:
 template <typename cT, typename Traits>
 nstd::basic_ios<cT, Traits>::basic_ios(nstd::basic_streambuf<cT, Traits>*) {
 }
-
-// ----------------------------------------------------------------------------
-
-template <>
-struct nstd::is_error_code_enum< ::nstd::io_errc>
-    : ::nstd::type_traits::true_type {
-};
 
 // ----------------------------------------------------------------------------
 

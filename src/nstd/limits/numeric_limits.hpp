@@ -31,7 +31,7 @@
 namespace nstd {
     namespace limits {
         namespace detail {
-            template <typename T, T, T> class integer_limits;
+            template <typename T, bool, T, T> class integer_limits;
             template <typename> class float_limits;
         }
     }
@@ -75,7 +75,7 @@ namespace nstd {
 
 // ----------------------------------------------------------------------------
 
-template <typename T, T Min, T Max>
+template <typename T, bool Signed, T Min, T Max>
 class nstd::limits::detail::integer_limits {
 public:
     static constexpr bool is_specialized{true};
@@ -88,7 +88,7 @@ public:
     static constexpr int digits10{0};
     static constexpr int max_digits10{0};
 
-    static constexpr bool is_signed{false};
+    static constexpr bool is_signed{Signed};
     static constexpr bool is_integer{true};
     static constexpr bool is_exact{false};
 
@@ -163,70 +163,69 @@ public:
 
 template <>
 class nstd::numeric_limits<bool>
-    : public ::nstd::limits::detail::integer_limits<bool, false, true> {
+    : public ::nstd::limits::detail::integer_limits<bool, false, false, true> {
 };
 
 template <>
 class nstd::numeric_limits<char>
-    : public ::nstd::limits::detail::integer_limits<char, -128, 127> {
+    : public ::nstd::limits::detail::integer_limits<char, true, -128, 127> {
 };
 template <>
 class nstd::numeric_limits<char16_t>
-    : public ::nstd::limits::detail::integer_limits<char16_t, 0, 65535> {
+    : public ::nstd::limits::detail::integer_limits<char16_t, false, 0, 65535> {
 };
 template <>
 class nstd::numeric_limits<char32_t>
-    : public ::nstd::limits::detail::integer_limits<char32_t, 0, 4294967295> {
+    : public ::nstd::limits::detail::integer_limits<char32_t, false, 0, 4294967295> {
 };
 template <>
 class nstd::numeric_limits<wchar_t>
-    : public ::nstd::limits::detail::integer_limits<wchar_t, 0, 65535> {
+    : public ::nstd::limits::detail::integer_limits<wchar_t, false, 0, 65535> {
 };
 template <>
 class nstd::numeric_limits<signed char>
-    : public ::nstd::limits::detail::integer_limits<signed char, -128, 127> {
+    : public ::nstd::limits::detail::integer_limits<signed char, true, -128, 127> {
 };
 template <>
 class nstd::numeric_limits<unsigned char>
-    : public ::nstd::limits::detail::integer_limits<unsigned char, 0, 255> {
+    : public ::nstd::limits::detail::integer_limits<unsigned char, false, 0, 255> {
 };
 
 template <>
 class nstd::numeric_limits<signed short>
-    : public ::nstd::limits::detail::integer_limits<signed short, -32768, 32767> {
+    : public ::nstd::limits::detail::integer_limits<signed short, true, -32768, 32767> {
 };
 template <>
 class nstd::numeric_limits<unsigned short>
-    : public ::nstd::limits::detail::integer_limits<unsigned short, 0, 65535> {
+    : public ::nstd::limits::detail::integer_limits<unsigned short, false, 0, 65535> {
 };
 
 template <>
 class nstd::numeric_limits<signed int>
-    : public ::nstd::limits::detail::integer_limits<signed int, -2147483648, 2147483647> {
+    : public ::nstd::limits::detail::integer_limits<signed int, true, -2147483648, 2147483647> {
 };
 template <>
 class nstd::numeric_limits<unsigned int>
-    : public ::nstd::limits::detail::integer_limits<unsigned int, 0, 4294967295> {
+    : public ::nstd::limits::detail::integer_limits<unsigned int, false, 0, 4294967295> {
 };
 
 template <>
 class nstd::numeric_limits<signed long>
-    : public ::nstd::limits::detail::integer_limits<signed long, -2147483648, 2147483647> {
+    : public ::nstd::limits::detail::integer_limits<signed long, true, -2147483648, 2147483647> {
 };
 template <>
 class nstd::numeric_limits<unsigned long>
-    : public ::nstd::limits::detail::integer_limits<unsigned long, 0, 4294967295> {
+    : public ::nstd::limits::detail::integer_limits<unsigned long, false, 0, 4294967295> {
 };
 
 template <>
 class nstd::numeric_limits<signed long long> //-dk:TODO
-    : public ::nstd::limits::detail::integer_limits<signed long long, 0, 0> {
+    : public ::nstd::limits::detail::integer_limits<signed long long, true, 0, 0> {
 };
 template <>
 class nstd::numeric_limits<unsigned long long> //-dk:TODO 
-    : public ::nstd::limits::detail::integer_limits<unsigned long long, 0, 0> {
+    : public ::nstd::limits::detail::integer_limits<unsigned long long, false, 0, 0> {
 };
-
 
 // ----------------------------------------------------------------------------
 

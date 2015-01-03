@@ -1,6 +1,6 @@
-// nstd/system_error/error_code.hpp                                   -*-C++-*-
+// nstd/string/string_fwd.t.cpp                                       -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2015 Dietmar Kuehl http://www.dietmar-kuehl.de         
+//  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
 //  Permission is hereby granted, free of charge, to any person          
 //  obtaining a copy of this software and associated documentation       
@@ -23,44 +23,28 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_SYSTEM_ERROR_ERROR_CODE
-#define INCLUDED_NSTD_SYSTEM_ERROR_ERROR_CODE
-
-#include "nstd/system_error/error_category.hpp"
-#include "nstd/system_error/error_condition.hpp"
-#include "nstd/system_error/is_error_code_enum.hpp"
 #include "nstd/string/string_fwd.hpp"
-#include "nstd/type_traits/enable_if.hpp"
+#include "kuhl/test.hpp"
+
+namespace NS = ::nstd;
+namespace KT = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
 
-namespace nstd {
-    class error_code;
-}
-
-// ----------------------------------------------------------------------------
-
-class nstd::error_code {
-public:
-    error_code() noexcept(true);
-    error_code(int, ::nstd::error_category const&) noexcept(true);
-    template <typename ErrorCode,
-              typename = ::nstd::type_traits::enable_if_t< ::nstd::is_error_code_enum<ErrorCode>::value> >
-    error_code(ErrorCode) noexcept(true);
-
-    auto assign(int, ::nstd::error_category const&) noexcept(true) -> void;
-    template <typename ErrorCode,
-              typename = ::nstd::type_traits::enable_if_t< ::nstd::is_error_code_enum<ErrorCode>::value> >
-    auto operator= (ErrorCode) noexcept(true) -> error_code&;
-    auto clear() noexcept(true) -> void;
-
-    auto value() const noexcept(true) -> int;
-    auto category() const noexcept(true) -> ::nstd::error_category const&;
-    auto default_error_condition() const noexcept(true) -> ::nstd::error_condition;
-    auto message() const -> ::nstd::string;
-    explicit operator bool() const noexcept(true);
+static KT::testcase const tests[] = {
+    KT::expect_failure("string is declared", [](KT::context& c)->bool{
+            return KT::assert_declared<NS::string>(c, "string is declared")
+                && KT::assert_type<NS::basic_string<char, NS::char_traits<char> >,
+                                   NS::basic_string<char> >(c, "basic_string<char> default")
+                && KT::assert_type<NS::basic_string<wchar_t, NS::char_traits<wchar_t> >,
+                                   NS::basic_string<wchar_t> >(c, "basic_string<wchar_t> default")
+                && KT::assert_type<NS::basic_string<char>, NS::string>(c, "string")
+                && KT::assert_type<NS::basic_string<wchar_t>, NS::wstring>(c, "wstring")
+                ;
+        }),
 };
 
-// ----------------------------------------------------------------------------
-
-#endif
+int main(int ac, char* av[])
+{
+    return KT::run_tests("string/string_fwd", ac, av, ::tests);
+}
