@@ -32,13 +32,19 @@ namespace KT = kuhl::test;
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
-#ifndef KUHLLIB_EDG
     KT::expect_success("default ctor", [](KT::context& c)->bool{
             constexpr NU::tuple<> empty;
             KT::use(empty);
-            constexpr NU::tuple<bool, int, char> ct;
+#ifndef KUHLLIB_EDG
+            constexpr
+#else
+            const
+#endif
+                NU::tuple<bool, int, char> ct;
+            KT::use(ct);
             NU::tuple<bool, int, char> t;
-            return KT::assert_type<bool const&, decltype(NU::get<0>(ct))>(c, "ct<0> type")
+            return true
+                && KT::assert_type<bool const&, decltype(NU::get<0>(ct))>(c, "ct<0> type")
                 && KT::assert_type<int const&, decltype(NU::get<1>(ct))>(c, "ct<1> type")
                 && KT::assert_type<char const&, decltype(NU::get<2>(ct))>(c, "ct<2> type")
                 && KT::assert_equal(c, "ct<0> value", NU::get<0>(ct), false)
@@ -58,19 +64,21 @@ static KT::testcase const tests[] = {
                 && KT::assert_equal(c, "tmp<2> value", NU::get<2>(NU::tuple<bool, int, char>()), char())
                 ;
         }),
-#endif
     KT::expect_success("lvalue ctor", [](KT::context& c)->bool{
             constexpr int  i(17);
             constexpr char d('a');
             constexpr bool b(true);
-            constexpr NU::tuple<int, char, bool> t(i, d, b);
+#ifndef KUHLLIB_EDG
+            constexpr
+#else
+            const
+#endif
+                NU::tuple<int, char, bool> t(i, d, b);
             KT::use(t);
             return true
-#ifndef KUHLLIB_EDG
                 && KT::assert_equal(c, "t<0> value", NU::get<0u>(t), i)
                 && KT::assert_equal(c, "t<1> value", NU::get<1>(t), d)
                 && KT::assert_equal(c, "t<2> value", NU::get<2>(t), b)
-#endif
                 ;
         }),
 #ifndef KUHLLIB_INTEL
