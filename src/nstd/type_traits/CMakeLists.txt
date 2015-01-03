@@ -51,6 +51,7 @@ foreach(test
 	is_nothrow_constructible.t
 	is_nothrow_move_assignable.t
 	is_nothrow_move_constructible.t
+        is_pointer.t 
         is_same.t 
         is_void.t 
         remove_const.t 

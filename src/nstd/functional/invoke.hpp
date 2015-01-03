@@ -33,6 +33,7 @@
 #include "nstd/type_traits/enable_if.hpp"
 #include "nstd/type_traits/integral_constant.hpp"
 #include "nstd/type_traits/is_member_function_pointer.hpp"
+#include "nstd/type_traits/is_pointer.hpp"
 #include "nstd/utility/forward.hpp"
 
 // ----------------------------------------------------------------------------
@@ -190,7 +191,9 @@ template <bool Ref, typename Fun, typename Class, typename Object, typename... A
 struct nstd::functional::detail::invoke_member_fun<Ref, Fun Class::*, Object, Args...> {
     static constexpr bool is_function = ::nstd::type_traits::is_member_function_pointer<Fun Class::*>::value;
     using choice_type
-        = typename ::nstd::functional::detail::invoke_member_type<is_function, Ref, Fun Class::*, Object, Args...>::choice_type;
+        = typename ::nstd::functional::detail::invoke_member_type<is_function,
+                                                                  Ref && !nstd::type_traits::is_pointer<Object>::value,
+                                                                  Fun Class::*, Object, Args...>::choice_type;
 };
 
 // ----------------------------------------------------------------------------
