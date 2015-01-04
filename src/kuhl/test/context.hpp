@@ -35,6 +35,7 @@ namespace kuhl
 {
     namespace test {
         class context_sbuf;
+        struct context_pbase;
         class context;
     }
 
@@ -55,8 +56,14 @@ public:
 
 // ----------------------------------------------------------------------------
 
+struct kuhl::test::context_pbase {
+    kuhl::test::context_sbuf pbase_sbuf;
+};
+
+// ----------------------------------------------------------------------------
+
 class kuhl::test::context
-    : private virtual kuhl::test::context_sbuf
+    : private virtual kuhl::test::context_pbase
     , public kuhl::mini::ostream
 {
 public:

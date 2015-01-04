@@ -52,6 +52,7 @@ protected:
     auto virtual overflow(int) -> int;
 public:
     streambuf();
+    virtual ~streambuf();
 
     int sputc(int c);
 };

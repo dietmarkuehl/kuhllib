@@ -281,7 +281,8 @@ kuhl::test::testcase::run(kuhl::mini::ostream& out,
         << kuhl::mini::left  << kuhl::mini::setw(30) << name
         << kuhl::mini::setw(40) << this->d_name;
     kuhl::test::context context;
-    return (this->*(this->d_run_test))(out, context);
+    bool rc = (this->*(this->d_run_test))(out, context);
+    return rc;
 }
 
 // ----------------------------------------------------------------------------

@@ -35,6 +35,9 @@ KM::streambuf::streambuf()
     , epptr_() {
 }
 
+KM::streambuf::~streambuf() {
+}
+
 // ----------------------------------------------------------------------------
 
 auto KM::streambuf::overflow(int c) -> int {

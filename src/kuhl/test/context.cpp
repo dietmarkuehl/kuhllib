@@ -50,22 +50,22 @@ auto kuhl::test::context_sbuf::c_str() const -> char const* {
 // ----------------------------------------------------------------------------
 
 kuhl::test::context::context()
-    : kuhl::test::context_sbuf()
-    , KM::ios(this)
-    , KM::ostream(this) {
+    : kuhl::test::context_pbase()
+    , KM::ios(&this->pbase_sbuf)
+    , KM::ostream(&this->pbase_sbuf) {
 }
 
 kuhl::test::context::~context() {
 }
 
 auto kuhl::test::context::reset() -> void {
-    this->kuhl::test::context_sbuf::reset();
+    this->pbase_sbuf.reset();
 }
 
 auto kuhl::test::context::empty() const -> bool {
-    return this->kuhl::test::context_sbuf::empty();
+    return this->pbase_sbuf.empty();
 }
 
 auto kuhl::test::context::c_str() const -> const char* {
-    return this->kuhl::test::context_sbuf::c_str();
+    return this->pbase_sbuf.c_str();
 }

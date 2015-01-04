@@ -28,6 +28,9 @@ BUILDDIR = build-$(COMPILER)
 ifneq ($(CMAKE_CXX),)
     CMAKE_CXX_ARG = -DCMAKE_CXX_COMPILER=$(CMAKE_CXX)
 endif
+ifneq ($(CMAKE_CC),)
+    CMAKE_CC_ARG = -DCMAKE_CC_COMPILER=$(CMAKE_CC)
+endif
 
 .PHONY: default
 default: check
@@ -35,7 +38,7 @@ default: check
 .PHONY: cmake
 cmake:
 	@mkdir -p $(BUILDDIR)
-	cd $(BUILDDIR); cmake $(CMAKE_CXX_ARG) ../src
+	cd $(BUILDDIR); cmake $(CMAKE_CC_ARG) $(CMAKE_CXX_ARG) ../src
 
 .PHONY: build
 build: cmake
@@ -77,4 +80,5 @@ clean-all:
 	$(MAKE) COMPILER=edg clean
 	$(MAKE) COMPILER=gcc clean
 	$(MAKE) COMPILER=intel clean
+	$(MAKE) COMPILER=ubsan clean
 
