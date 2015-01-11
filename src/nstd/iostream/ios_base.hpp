@@ -135,6 +135,11 @@ public:
 
     class Init;
 
+private:
+    ::nstd::ios_base::fmtflags flags_;
+    ::nstd::streamsize         precision_;
+    ::nstd::streamsize         width_;
+
 protected:
     ios_base();
 

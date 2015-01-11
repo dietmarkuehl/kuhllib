@@ -1,4 +1,4 @@
-// nstd/utility/move.t.cpp                                            -*-C++-*-
+// nstd/string/char_traits.hpp                                        -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,53 +23,13 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/utility/move.hpp"
-#include "nstd/type_traits/declval.hpp"
-#include "kuhl/test.hpp"
+#ifndef INCLUDED_NSTD_STRING_CHAR_TRAITS
+#define INCLUDED_NSTD_STRING_CHAR_TRAITS
 
-namespace NT = nstd::type_traits;
-namespace NU = nstd::utility;
-namespace KT = kuhl::test;
+#include "nstd/string/char_traits_fwd.hpp"
 
 // ----------------------------------------------------------------------------
 
-namespace
-{
-    struct foo {
-        foo() = default;
-        foo(foo const&) = delete;
-        foo(foo&&) = delete;
-    };
-}
-
 // ----------------------------------------------------------------------------
 
-static KT::testcase const tests[] = {
-    KT::expect_success("move() value yields an rvalue reference", [](KT::context& c)->bool{
-            return KT::assert_type<foo&&, decltype(NU::move(NT::declval<foo>()))>(c, "type (declval)")
-                && KT::assert_type<foo&&, decltype(NU::move(foo()))>(c, "type (temporary)")
-                ;
-        }),
-    KT::expect_success("move() const value yields a const rvalue reference", [](KT::context& c)->bool{
-            return KT::assert_type<foo const&&, decltype(NU::move(NT::declval<foo const>()))>(c, "type")
-                ;
-        }),
-    KT::expect_success("move() reference yields a rvalue reference", [](KT::context& c)->bool{
-            foo object{};
-            KT::use(object);
-            return KT::assert_type<foo&&, decltype(NU::move(NT::declval<foo&>()))>(c, "type (declval)")
-                && KT::assert_type<foo&&, decltype(NU::move(object))>(c, "type (object)")
-                ;
-        }),
-    KT::expect_success("move() const reference yields a const rvalue reference", [](KT::context& c)->bool{
-            foo const object{};
-            return KT::assert_type<foo const&&, decltype(NU::move(NT::declval<foo const&>()))>(c, "type (declval)")
-                && KT::assert_type<foo const&&, decltype(NU::move(object))>(c, "type (object)")
-                ;
-        }),
-};
-
-int main(int ac, char* av[])
-{
-    return KT::run_tests("utility::move", ac, av, ::tests);
-}
+#endif

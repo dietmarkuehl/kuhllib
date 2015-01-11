@@ -72,8 +72,74 @@ constexpr NI::ios_base::openmode NI::ios_base::trunc;
 
 // ----------------------------------------------------------------------------
 
-NI::ios_base::ios_base() {
+NI::ios_base::ios_base()
+    : flags_()
+    , precision_()
+    , width_() {
 }
 
 NI::ios_base::~ios_base() {
+}
+
+// ----------------------------------------------------------------------------
+
+auto NI::ios_base::flags() const
+    -> NI::ios_base::fmtflags {
+    return this->flags_;
+}
+
+auto NI::ios_base::flags(NI::ios_base::fmtflags flags)
+    -> NI::ios_base::fmtflags {
+    NI::ios_base::fmtflags rc{this->flags_};
+    this->flags_ = flags;
+    return rc;
+}
+
+auto NI::ios_base::setf(NI::ios_base::fmtflags flags)
+    -> NI::ios_base::fmtflags {
+    NI::ios_base::fmtflags rc{this->flags_};
+    this->flags_ |= flags;
+    return rc;
+}
+
+auto NI::ios_base::setf(NI::ios_base::fmtflags flags, NI::ios_base::fmtflags mask)
+    -> NI::ios_base::fmtflags {
+    NI::ios_base::fmtflags rc{this->flags_};
+    this->flags_ = (this->flags_ & ~mask) | (flags & mask);
+    return rc;
+}
+
+auto NI::ios_base::unsetf(NI::ios_base::fmtflags flags)
+    -> NI::ios_base::fmtflags {
+    NI::ios_base::fmtflags rc{this->flags_};
+    this->flags_ &= ~flags;
+    return rc;
+}
+
+// ----------------------------------------------------------------------------
+
+auto NI::ios_base::precision() const
+    -> NI::streamsize {
+    return this->precision_;
+}
+
+auto NI::ios_base::precision(NI::streamsize precision)
+    -> NI::streamsize {
+    NI::streamsize rc{this->precision_};
+    this->precision_ = precision;
+    return rc;
+}
+
+// ----------------------------------------------------------------------------
+
+auto NI::ios_base::width() const
+    -> NI::streamsize {
+    return this->width_;
+}
+
+auto NI::ios_base::width(NI::streamsize width)
+    -> NI::streamsize {
+    NI::streamsize rc{this->width_};
+    this->width_ = width;
+    return rc;
 }

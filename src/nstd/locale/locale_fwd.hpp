@@ -1,6 +1,6 @@
-// nstd/string/string_fwd.hpp                                         -*-C++-*-
+// nstd/locale/locale_fwd.hpp                                         -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
+//  Copyright (C) 2015 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
 //  Permission is hereby granted, free of charge, to any person          
 //  obtaining a copy of this software and associated documentation       
@@ -23,20 +23,13 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_STRING_STRING_FWD
-#define INCLUDED_NSTD_STRING_STRING_FWD
-
-#include "nstd/string/char_traits_fwd.hpp"
-#include "nstd/memory/allocator_fwd.hpp"
+#ifndef INCLUDED_NSTD_LOCALE_LOCALE_FWD
+#define INCLUDED_NSTD_LOCALE_LOCALE_FWD
 
 // ----------------------------------------------------------------------------
 
-namespace nstd{
-    template <typename cT, typename = ::nstd::char_traits<cT>, typename = ::nstd::allocator<cT> >
-    class basic_string;
-
-    using string = nstd::basic_string<char>;
-    using wstring = nstd::basic_string<wchar_t>;
+namespace nstd {
+    class locale;
 }
 
 // ----------------------------------------------------------------------------

@@ -1,6 +1,6 @@
-// nstd/utility/move.t.cpp                                            -*-C++-*-
+// nstd/utility/bitmask.t.cpp                                         -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
+//  Copyright (C) 2015 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
 //  Permission is hereby granted, free of charge, to any person          
 //  obtaining a copy of this software and associated documentation       
@@ -23,53 +23,49 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/utility/move.hpp"
-#include "nstd/type_traits/declval.hpp"
+#include "nstd/utility/bitmask.hpp"
 #include "kuhl/test.hpp"
 
-namespace NT = nstd::type_traits;
-namespace NU = nstd::utility;
-namespace KT = kuhl::test;
+namespace NU = ::nstd;
+namespace KT = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
 
-namespace
-{
-    struct foo {
-        foo() = default;
-        foo(foo const&) = delete;
-        foo(foo&&) = delete;
+namespace nstd {
+    enum bm: unsigned short {
+        a = 0x1,
+        b = 0x2,
+        c = 0x3
     };
+    template <> struct bitmask<bm> { using type = unsigned short; };
 }
 
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
-    KT::expect_success("move() value yields an rvalue reference", [](KT::context& c)->bool{
-            return KT::assert_type<foo&&, decltype(NU::move(NT::declval<foo>()))>(c, "type (declval)")
-                && KT::assert_type<foo&&, decltype(NU::move(foo()))>(c, "type (temporary)")
+    KT::expect_success("bitmask properties", [](KT::context& c)->bool{
+            return KT::assert_bitmask<NU::bm>(c, "bitmask properties")
                 ;
         }),
-    KT::expect_success("move() const value yields a const rvalue reference", [](KT::context& c)->bool{
-            return KT::assert_type<foo const&&, decltype(NU::move(NT::declval<foo const>()))>(c, "type")
-                ;
-        }),
-    KT::expect_success("move() reference yields a rvalue reference", [](KT::context& c)->bool{
-            foo object{};
-            KT::use(object);
-            return KT::assert_type<foo&&, decltype(NU::move(NT::declval<foo&>()))>(c, "type (declval)")
-                && KT::assert_type<foo&&, decltype(NU::move(object))>(c, "type (object)")
-                ;
-        }),
-    KT::expect_success("move() const reference yields a const rvalue reference", [](KT::context& c)->bool{
-            foo const object{};
-            return KT::assert_type<foo const&&, decltype(NU::move(NT::declval<foo const&>()))>(c, "type (declval)")
-                && KT::assert_type<foo const&&, decltype(NU::move(object))>(c, "type (object)")
+    KT::expect_success("bitmask operation", [](KT::context& c)->bool{
+            ::nstd::bm land{::nstd::bm::a};
+            ::nstd::bm lor{::nstd::bm::a};
+            ::nstd::bm lxor{::nstd::bm::a};
+            land &= ::nstd::bm::c;
+            lor  |= ::nstd::bm::b;
+            lxor ^= ::nstd::bm::c;
+            return KT::assert_equal(c, "a & c == a", ::nstd::bm::a & ::nstd::bm::c, ::nstd::bm::a)
+                && KT::assert_equal(c, "a | b == c", ::nstd::bm::a | ::nstd::bm::b, ::nstd::bm::c)
+                && KT::assert_equal(c, "a ^ c == b", ::nstd::bm::a ^ ::nstd::bm::c, ::nstd::bm::b)
+                && KT::assert_equal(c, "~a & a == bm()", ~::nstd::bm::a & ::nstd::bm::a, ::nstd::bm())
+                && KT::assert_equal(c, "land == a", land, ::nstd::bm::a)
+                && KT::assert_equal(c, "lor  == c", lor,  ::nstd::bm::c)
+                && KT::assert_equal(c, "lxor == b", lxor, ::nstd::bm::b)
                 ;
         }),
 };
 
 int main(int ac, char* av[])
 {
-    return KT::run_tests("utility::move", ac, av, ::tests);
+    return KT::run_tests("utility/bitmask", ac, av, ::tests);
 }

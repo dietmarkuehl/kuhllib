@@ -1,6 +1,6 @@
-// nstd/string/string_fwd.hpp                                         -*-C++-*-
+// nstd/locale/locale.cpp                                             -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
+//  Copyright (C) 2015 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
 //  Permission is hereby granted, free of charge, to any person          
 //  obtaining a copy of this software and associated documentation       
@@ -23,22 +23,59 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_STRING_STRING_FWD
-#define INCLUDED_NSTD_STRING_STRING_FWD
+#include "nstd/locale/locale.hpp"
 
-#include "nstd/string/char_traits_fwd.hpp"
-#include "nstd/memory/allocator_fwd.hpp"
+namespace NL = ::nstd;
 
 // ----------------------------------------------------------------------------
 
-namespace nstd{
-    template <typename cT, typename = ::nstd::char_traits<cT>, typename = ::nstd::allocator<cT> >
-    class basic_string;
+constexpr NL::locale::category NL::locale::none;
+constexpr NL::locale::category NL::locale::collate;
+constexpr NL::locale::category NL::locale::ctype;
+constexpr NL::locale::category NL::locale::monetary;
+constexpr NL::locale::category NL::locale::numeric;
+constexpr NL::locale::category NL::locale::time;
+constexpr NL::locale::category NL::locale::messages;
+constexpr NL::locale::category NL::locale::all;
 
-    using string = nstd::basic_string<char>;
-    using wstring = nstd::basic_string<wchar_t>;
+// ----------------------------------------------------------------------------
+
+NL::locale::facet::facet(NL::size_t) {
+}
+
+NL::locale::facet::~facet() {
 }
 
 // ----------------------------------------------------------------------------
 
-#endif
+NL::locale::id::id() {
+}
+
+// ----------------------------------------------------------------------------
+
+NL::locale::locale() noexcept(true) {
+}
+
+NL::locale::~locale() {
+}
+
+// ----------------------------------------------------------------------------
+
+auto NL::locale::operator== (NL::locale const& other) const
+    -> bool {
+    return true;
+}
+
+auto NL::locale::operator!= (NL::locale const& other) const
+    -> bool {
+    return !this->operator==(other);
+}
+
+// ----------------------------------------------------------------------------
+
+auto NL::locale::classic()
+    -> NL::locale const& {
+    static NL::locale rc; //-dk:TODO use a statically initialized version
+    return rc;
+}
+

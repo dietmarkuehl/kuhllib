@@ -186,6 +186,56 @@ static KT::testcase const tests[] = {
             return KT::assert_declared<NI::ios_base::Init>(c, "ios_base::Init")
                 ;
         }),
+    KT::expect_success("ios_base fmtflags state [fmtflags.state]", [](KT::context& c) -> bool {
+            simple_ios_base ios;
+            return KT::assert_equal(c, "flags() initial value",
+                                    NI::ios_base::fmtflags{},
+                                    ios.flags())
+                && KT::assert_equal(c, "flags(f) result (1)",
+                                    NI::ios_base::fmtflags{},
+                                    ios.flags(NI::ios_base::unitbuf))
+                && KT::assert_equal(c, "flags(f) effect (1)",
+                                    NI::ios_base::unitbuf,
+                                    ios.flags())
+                && KT::assert_equal(c, "flags(f) result (2)",
+                                    NI::ios_base::unitbuf,
+                                    ios.flags(NI::ios_base::fixed))
+                && KT::assert_equal(c, "flags(f) effect (2)",
+                                    NI::ios_base::fixed,
+                                    ios.flags())
+                && KT::assert_equal(c, "setf(f) result (1)",
+                                    NI::ios_base::fixed,
+                                    ios.setf(NI::ios_base::showpos))
+                && KT::assert_equal(c, "setf(f) effect (1)",
+                                    NI::ios_base::fixed | NI::ios_base::showpos,
+                                    ios.flags())
+                && KT::assert_equal(c, "setf(f) result (2)",
+                                    NI::ios_base::fixed | NI::ios_base::showpos,
+                                    ios.setf(NI::ios_base::dec))
+                && KT::assert_equal(c, "setf(f) effect (2)",
+                                    NI::ios_base::fixed | NI::ios_base::showpos | NI::ios_base::dec,
+                                    ios.flags())
+                && KT::assert_equal(c, "setf(f, m) result (1)",
+                                    NI::ios_base::fixed | NI::ios_base::showpos | NI::ios_base::dec,
+                                    ios.setf(NI::ios_base::hex | NI::ios_base::uppercase,
+                                             NI::ios_base::basefield | NI::ios_base::showpos))
+                && KT::assert_equal(c, "setf(f, m) effect (1)",
+                                    NI::ios_base::fixed | NI::ios_base::hex,
+                                    ios.flags())
+                && KT::assert_equal(c, "unsetf(f) result (1)",
+                                    NI::ios_base::fixed | NI::ios_base::hex,
+                                    ios.unsetf(NI::ios_base::fixed | NI::ios_base::uppercase))
+                && KT::assert_equal(c, "setf(f, m) effect (1)",
+                                    NI::ios_base::hex,
+                                    ios.flags())
+                && KT::assert_equal(c, "initial precision", 0, ios.precision())
+                && KT::assert_equal(c, "precision(p) result", 0, ios.precision(8))
+                && KT::assert_equal(c, "precision(p) effect", 8, ios.precision())
+                && KT::assert_equal(c, "initial width", 0, ios.width())
+                && KT::assert_equal(c, "width(w) result", 0, ios.width(8))
+                && KT::assert_equal(c, "width(w) effect", 8, ios.width())
+                ;
+        }),
 };
 
 int main(int ac, char* av[])

@@ -1,6 +1,6 @@
-// nstd/string/string_fwd.hpp                                         -*-C++-*-
+// nstd/locale/locale_fwd.t.cpp                                       -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
+//  Copyright (C) 2015 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
 //  Permission is hereby granted, free of charge, to any person          
 //  obtaining a copy of this software and associated documentation       
@@ -23,22 +23,22 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_STRING_STRING_FWD
-#define INCLUDED_NSTD_STRING_STRING_FWD
+#include "nstd/locale/locale_fwd.hpp"
+#include "kuhl/test.hpp"
 
-#include "nstd/string/char_traits_fwd.hpp"
-#include "nstd/memory/allocator_fwd.hpp"
+namespace NL = ::nstd;
+namespace KT = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
 
-namespace nstd{
-    template <typename cT, typename = ::nstd::char_traits<cT>, typename = ::nstd::allocator<cT> >
-    class basic_string;
+static KT::testcase const tests[] = {
+    KT::expect_success("locale is declared", [](KT::context& c)->bool{
+            return KT::assert_declared<NL::locale>(c, "locale")
+                ;
+        }),
+};
 
-    using string = nstd::basic_string<char>;
-    using wstring = nstd::basic_string<wchar_t>;
+int main(int ac, char* av[])
+{
+    return KT::run_tests("locale/locale_fwd", ac, av, ::tests);
 }
-
-// ----------------------------------------------------------------------------
-
-#endif
