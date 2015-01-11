@@ -145,7 +145,7 @@ static KT::testcase const tests[] = {
     KT::expect_success("failed equal: false and a message", [](KT::context& c)->bool{
             KT::context d;
             return !assert_equal(d, 2, 3)
-                && assert_equal(c, "failed assertion", d.c_str(), KM::string(" 2 == 3 is false"))
+                && assert_equal(c, "failed assertion", d.c_str(), KM::string("2 == 3 is false"))
                 ;
         }),
     KT::expect_success("successful type assertion: true and no message", [](KT::context& c)->bool{

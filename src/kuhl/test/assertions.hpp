@@ -80,6 +80,8 @@ namespace kuhl
         auto assert_equal(kuhl::test::context& context, char const* message, A0&& a0, A1&& a1) -> bool;
         template <typename A0, typename A1>
         auto assert_equal(kuhl::test::context& context, A0&& a0, A1&& a1) -> bool;
+        template <typename A0, typename A1>
+        auto assert_not_equal(kuhl::test::context& context, char const* message, A0&& a0, A1&& a1) -> bool;
 
         template <typename>
         auto assert_declared(context&, char const* message) -> bool;
@@ -138,19 +140,32 @@ auto kuhl::test::assert_static_false(context& c, char const* message) -> bool {
 template <typename A0, typename A1>
 auto kuhl::test::assert_equal(kuhl::test::context& context, char const* message, A0&& a0, A1&& a1) -> bool {
     if (!(a0 == a1)) {
-        context<< message << (strlen(message)? ": ": "") << " " << a0 << " == " << a1 << " is false";
+        context<< message << (strlen(message)? ": ": "") << a0 << " == " << a1 << " is false";
         return false;
     }
     else if (a0 != a1) {
-        context<< message << (strlen(message)? ": ": "") << " " << a0 << " != " << a1 << " is true";
+        context<< message << (strlen(message)? ": ": "") << a0 << " != " << a1 << " is true";
         return false;
-}
+    }
     return true;
 }
 
 template <typename A0, typename A1>
 auto kuhl::test::assert_equal(kuhl::test::context& context, A0&& a0, A1&& a1) -> bool {
     return assert_equal(context, "", KM::forward<A0>(a0), KM::forward<A1>(a1));
+}
+
+template <typename A0, typename A1>
+auto kuhl::test::assert_not_equal(kuhl::test::context& context, char const* message, A0&& a0, A1&& a1) -> bool {
+    if (a0 == a1) {
+        context<< message << (strlen(message)? ": ": "") << a0 << " == " << a1 << " is true";
+        return false;
+    }
+    else if (!(a0 != a1)) {
+        context<< message << (strlen(message)? ": ": "") << a0 << " != " << a1 << " is false";
+        return false;
+    }
+    return true;
 }
 
 // ----------------------------------------------------------------------------

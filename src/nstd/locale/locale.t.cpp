@@ -52,6 +52,12 @@ namespace {
     Stream& operator<< (Stream& out, named_locale const& locale) {
         return out << locale.name;
     }
+
+    struct empty_facet
+        : NL::locale::facet {
+        static NL::locale::id id;
+    };
+    NL::locale::id empty_facet::id;
 }
 
 // ----------------------------------------------------------------------------
@@ -100,11 +106,19 @@ static KT::testcase const tests[] = {
                 ;
         }),
     KT::expect_success("locale structors [locale.cons]", [](KT::context& c)->bool{
-            NL::locale        def;
             NL::locale const& classic{NL::locale::classic()};
+            NL::locale        def;
+            NL::locale        facet(def, new empty_facet);
+            NL::locale        copy(facet);
             return KT::assert_equal(c, "default locale equal classic()",
                                     named_locale(def, "default"),
                                     named_locale(classic, "classic"))
+                && KT::assert_not_equal(c, "facet ctor creates something new",
+                                    named_locale(def, "default"),
+                                    named_locale(facet, "facet"))
+                && KT::assert_equal(c, "copy equal to source",
+                                    named_locale(facet, "facet"),
+                                    named_locale(copy, "copy"))
                 ;
         }),
 

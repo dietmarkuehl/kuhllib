@@ -40,10 +40,20 @@ constexpr NL::locale::category NL::locale::all;
 
 // ----------------------------------------------------------------------------
 
-NL::locale::facet::facet(NL::size_t) {
+NL::locale::facet::facet(NL::size_t count)
+    : count(count) {
 }
 
 NL::locale::facet::~facet() {
+}
+
+auto NL::locale::facet::increment()
+    -> void {
+    ++this->count;
+}
+auto NL::locale::facet::decrement()
+    -> bool {
+    return !--this->count;
 }
 
 // ----------------------------------------------------------------------------
@@ -53,22 +63,58 @@ NL::locale::id::id() {
 
 // ----------------------------------------------------------------------------
 
-NL::locale::locale() noexcept(true) {
+struct NL::locale::rep {
+    mutable NL::size_t count_;
+    constexpr rep(): count_(1u) {}
+    rep(rep const&) = delete;
+    auto operator= (rep const&) -> void = delete;
+};
+
+struct NL::locale::instance {
+    static constexpr rep classic_rep{};
+    static const NL::locale classic_locale;
+};
+
+// ----------------------------------------------------------------------------
+
+NL::locale::locale(NL::locale::rep const* rep) noexcept(true)
+    : rep_(rep) {
+    ++this->rep_->count_;
+}
+NL::locale::locale() noexcept(true)
+    : rep_(&NL::locale::instance::classic_rep) {
+    ++this->rep_->count_;
+}
+NL::locale::locale(NL::locale const& other) noexcept(true)
+    : rep_(other.rep_) {
+    ++this->rep_->count_;
+}
+NL::locale::locale(NL::locale const&, NL::locale::facet*, NL::locale::id const*)
+    : rep_(new rep{}) {
 }
 
 NL::locale::~locale() {
+    if (0u == --this->rep_->count_) {
+        delete this->rep_;
+    }
 }
+
+// ----------------------------------------------------------------------------
+
+constexpr NL::locale::rep NL::locale::instance::classic_rep;
+const NL::locale NL::locale::instance::classic_locale(&NL::locale::instance::classic_rep);
 
 // ----------------------------------------------------------------------------
 
 auto NL::locale::operator== (NL::locale const& other) const
     -> bool {
-    return true;
+    return this->rep_ == other.rep_;
 }
 
 auto NL::locale::operator!= (NL::locale const& other) const
     -> bool {
-    return !this->operator==(other);
+    // return !this->operator==(other);
+    return this->rep_ != other.rep_;
 }
 
 // ----------------------------------------------------------------------------

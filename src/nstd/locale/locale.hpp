@@ -47,6 +47,15 @@ public:
     class id;
     using category = int;
 
+private:
+    struct rep;
+    struct instance;
+    friend struct instance;
+    rep const* rep_;
+    locale(rep const*) noexcept(true);
+    locale(locale const&, facet*, id const*);
+
+public:
     static constexpr category none     = 0x0000;
     static constexpr category collate  = 0x0001;
     static constexpr category ctype    = 0x0002;
@@ -88,11 +97,15 @@ public:
 // ----------------------------------------------------------------------------
 
 class nstd::locale::facet {
+    ::nstd::size_t count;
 public:
     explicit facet(::nstd::size_t = 0);
     facet(facet const&) = delete;
     auto operator= (facet const&) -> void = delete;
     virtual ~facet();
+
+    void increment();
+    bool decrement();
 };
 
 // ----------------------------------------------------------------------------
@@ -103,6 +116,13 @@ public:
     id(id const&) = delete;
     auto operator= (id const&) -> void = delete;
 };
+
+// ----------------------------------------------------------------------------
+
+template <typename Facet>
+::nstd::locale::locale(::nstd::locale const& other, Facet* facet)
+    : nstd::locale(other, facet, &Facet::id) {
+}
 
 // ----------------------------------------------------------------------------
 
