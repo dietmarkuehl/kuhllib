@@ -39,6 +39,39 @@ NI::ios_base::failure::failure(char const* message, ::nstd::error_code const& ec
 
 // ----------------------------------------------------------------------------
 
+constexpr NI::ios_base::fmtflags NI::ios_base::left;
+constexpr NI::ios_base::fmtflags NI::ios_base::right;
+constexpr NI::ios_base::fmtflags NI::ios_base::internal;
+constexpr NI::ios_base::fmtflags NI::ios_base::adjustfield;
+constexpr NI::ios_base::fmtflags NI::ios_base::dec;
+constexpr NI::ios_base::fmtflags NI::ios_base::hex;
+constexpr NI::ios_base::fmtflags NI::ios_base::oct;
+constexpr NI::ios_base::fmtflags NI::ios_base::basefield;
+constexpr NI::ios_base::fmtflags NI::ios_base::fixed;
+constexpr NI::ios_base::fmtflags NI::ios_base::scientific;
+constexpr NI::ios_base::fmtflags NI::ios_base::floatfield;
+constexpr NI::ios_base::fmtflags NI::ios_base::boolalpha;
+constexpr NI::ios_base::fmtflags NI::ios_base::showbase;
+constexpr NI::ios_base::fmtflags NI::ios_base::showpoint;
+constexpr NI::ios_base::fmtflags NI::ios_base::showpos;
+constexpr NI::ios_base::fmtflags NI::ios_base::skipws;
+constexpr NI::ios_base::fmtflags NI::ios_base::unitbuf;
+constexpr NI::ios_base::fmtflags NI::ios_base::uppercase;
+
+constexpr NI::ios_base::iostate NI::ios_base::goodbit;
+constexpr NI::ios_base::iostate NI::ios_base::failbit;
+constexpr NI::ios_base::iostate NI::ios_base::badbit;
+constexpr NI::ios_base::iostate NI::ios_base::eofbit;
+
+constexpr NI::ios_base::openmode NI::ios_base::app;
+constexpr NI::ios_base::openmode NI::ios_base::ate;
+constexpr NI::ios_base::openmode NI::ios_base::binary;
+constexpr NI::ios_base::openmode NI::ios_base::in;
+constexpr NI::ios_base::openmode NI::ios_base::out;
+constexpr NI::ios_base::openmode NI::ios_base::trunc;
+
+// ----------------------------------------------------------------------------
+
 NI::ios_base::ios_base() {
 }
 

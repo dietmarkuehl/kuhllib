@@ -61,6 +61,12 @@ namespace kuhl
             };
         }
 
+        template <typename... T>
+        void use(T const&...);
+
+        template <typename T>
+        auto declval() -> T&&;
+
         template <typename>
         auto assert_static_true(context&, char const* message) -> bool;
         template <typename>
@@ -83,8 +89,16 @@ namespace kuhl
         auto assert_is_base(kuhl::test::context& context, char const* message) -> bool;
         template <typename T>
         auto assert_no_nested_type(kuhl::test::context& context, char const* message) -> bool;
+        template <typename T>
+        auto assert_bitmask(kuhl::test::context& context, char const* message) -> bool;
     }
+}
 
+// ----------------------------------------------------------------------------
+
+template <typename... T>
+void kuhl::test::use(T const&...)
+{
 }
 
 // ----------------------------------------------------------------------------
@@ -194,6 +208,33 @@ auto kuhl::test::assert_no_nested_type(kuhl::test::context& context, char const*
         return false;
     }
     return true;
+}
+
+// ----------------------------------------------------------------------------
+
+template <typename T>
+auto kuhl::test::assert_bitmask(kuhl::test::context& context, char const* message) -> bool {
+    namespace KT = kuhl::test;
+    constexpr T a0{};
+    constexpr T a1{};
+    T a2{};
+    constexpr T bitmask_and{a0 & a1};
+    constexpr T bitmask_or{a0 & a1};
+    constexpr T bitmask_xor{a0 & a1};
+    constexpr T bitmask_invert{~a0};
+    T bitmask_land{a2 &= a1};
+    T bitmask_lor{a2 |= a1};
+    T bitmask_lxor{a2 ^= a1};
+    KT::use(a0, a1, a2);
+    KT::use(bitmask_and, bitmask_or, bitmask_xor);
+    KT::use(bitmask_invert);
+    KT::use(bitmask_land, bitmask_lor, bitmask_lxor);
+    bool result(KT::assert_type<T, decltype(~KT::declval<T>())>(context, "invert ")
+                );
+    if (!result) {
+        context << message;
+    }
+    return result;
 }
 
 // ----------------------------------------------------------------------------

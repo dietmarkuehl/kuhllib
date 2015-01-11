@@ -28,6 +28,7 @@ project(nstd_utility)
 
 enable_testing()
 foreach(test
+	bitmask.t
 	equality_comparable.t
 	forward.t
 	integer_sequence.t
