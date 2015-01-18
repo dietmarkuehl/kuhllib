@@ -107,18 +107,34 @@ static KT::testcase const tests[] = {
         }),
     KT::expect_success("locale structors [locale.cons]", [](KT::context& c)->bool{
             NL::locale const& classic{NL::locale::classic()};
-            NL::locale        def;
-            NL::locale        facet(def, new empty_facet);
+            NL::locale        def0;
+            NL::locale        facet(def0, new empty_facet);
             NL::locale        copy(facet);
+            NL::locale        def1(NL::locale::global(facet));
+            NL::locale        def2;
+            NL::locale        def3(NL::locale::global(classic));
+            NL::locale        def4;
             return KT::assert_equal(c, "default locale equal classic()",
-                                    named_locale(def, "default"),
+                                    named_locale(def0, "def0"),
                                     named_locale(classic, "classic"))
                 && KT::assert_not_equal(c, "facet ctor creates something new",
-                                    named_locale(def, "default"),
+                                    named_locale(def0, "def0"),
                                     named_locale(facet, "facet"))
                 && KT::assert_equal(c, "copy equal to source",
                                     named_locale(facet, "facet"),
                                     named_locale(copy, "copy"))
+                && KT::assert_equal(c, "result of global() starts with classic",
+                                    named_locale(def1, "def1"),
+                                    named_locale(classic, "classic"))
+                && KT::assert_equal(c, "new default gets used",
+                                    named_locale(facet, "facet"),
+                                    named_locale(def2, "def2"))
+                && KT::assert_equal(c, "next result of global",
+                                    named_locale(facet, "facet"),
+                                    named_locale(def3, "def3"))
+                && KT::assert_equal(c, "... and corresponding default",
+                                    named_locale(classic, "classic"),
+                                    named_locale(def4, "def4"))
                 ;
         }),
 

@@ -24,8 +24,10 @@
 // ----------------------------------------------------------------------------
 
 #include "nstd/locale/locale.hpp"
+#include "nstd/atomics/atomic.hpp"
 
 namespace NL = ::nstd;
+namespace NA = ::nstd;
 
 // ----------------------------------------------------------------------------
 
@@ -64,16 +66,28 @@ NL::locale::id::id() {
 // ----------------------------------------------------------------------------
 
 struct NL::locale::rep {
-    mutable NL::size_t count_;
+    mutable NA::atomic<NL::size_t> count_;
     constexpr rep(): count_(1u) {}
     rep(rep const&) = delete;
     auto operator= (rep const&) -> void = delete;
 };
 
-struct NL::locale::instance {
-    static constexpr rep classic_rep{};
-    static const NL::locale classic_locale;
+struct NL::locale::global_rep {
+    mutable NA::atomic<NL::locale::rep const*> rep;
+    constexpr global_rep(NL::locale::rep const* rep): rep(rep) {}
 };
+
+struct NL::locale::instance {
+    static constexpr rep                    classic_rep{};
+    static constexpr NL::locale::global_rep global{&classic_rep};
+    static const NL::locale                 classic_locale;
+};
+
+// ----------------------------------------------------------------------------
+
+constexpr NL::locale::rep        NL::locale::instance::classic_rep;
+constexpr NL::locale::global_rep NL::locale::instance::global;
+const NL::locale NL::locale::instance::classic_locale{&NL::locale::instance::classic_rep};
 
 // ----------------------------------------------------------------------------
 
@@ -82,7 +96,7 @@ NL::locale::locale(NL::locale::rep const* rep) noexcept(true)
     ++this->rep_->count_;
 }
 NL::locale::locale() noexcept(true)
-    : rep_(&NL::locale::instance::classic_rep) {
+    : rep_(NL::locale::instance::global.rep.load()) {
     ++this->rep_->count_;
 }
 NL::locale::locale(NL::locale const& other) noexcept(true)
@@ -101,11 +115,6 @@ NL::locale::~locale() {
 
 // ----------------------------------------------------------------------------
 
-constexpr NL::locale::rep NL::locale::instance::classic_rep;
-const NL::locale NL::locale::instance::classic_locale(&NL::locale::instance::classic_rep);
-
-// ----------------------------------------------------------------------------
-
 auto NL::locale::operator== (NL::locale const& other) const
     -> bool {
     return this->rep_ == other.rep_;
@@ -118,6 +127,12 @@ auto NL::locale::operator!= (NL::locale const& other) const
 }
 
 // ----------------------------------------------------------------------------
+
+auto NL::locale::global(NL::locale const& loc)
+    -> NL::locale {
+    NL::locale::rep const* rc{NL::locale::instance::global.rep.exchange(loc.rep_)};
+    return NL::locale(rc);
+}
 
 auto NL::locale::classic()
     -> NL::locale const& {

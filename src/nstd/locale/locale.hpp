@@ -49,10 +49,12 @@ public:
 
 private:
     struct rep;
+    struct global_rep;
+    friend global_rep;
     struct instance;
     friend struct instance;
     rep const* rep_;
-    locale(rep const*) noexcept(true);
+    explicit locale(rep const*) noexcept(true);
     locale(locale const&, facet*, id const*);
 
 public:
