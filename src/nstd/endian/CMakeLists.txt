@@ -24,12 +24,15 @@
 #  ----------------------------------------------------------------------------
 
 cmake_minimum_required(VERSION 2.8.2)
-project(nstd)
+project(nstd_endian)
 
-# add_subdirectory(algorithm)
-# add_subdirectory(cursor)
-add_subdirectory(endian)
-# add_subdirectory(functional)
-# add_subdirectory(projection)
-# add_subdirectory(type_traits)
-# add_subdirectory(utility)
+enable_testing()
+foreach(test
+	type.t
+	literals.t
+        big_to_native.t 
+        )
+  add_executable(${test} ${test})
+  target_link_libraries(${test} PUBLIC kuhltest)
+  add_test(NAME ${test} COMMAND $<TARGET_FILE:${test}>)
+endforeach(test)
