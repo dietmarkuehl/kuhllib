@@ -286,6 +286,22 @@ static KT::testcase const tests[] = {
                 && KT::assert_true(c, "0 it", array0 + 8 == NE::big_to_native<64_ef>(array0, array0 + 8).second)
                 ;
         }),
+    KT::expect_success("sequence", [](KT::context& c)->bool {
+            using namespace NE::literals;
+            unsigned char const array[] = {
+                0x12,
+                0x12, 0x34,
+                0x12, 0x34, 0x56, 0x78,
+                0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xef
+            };
+            uint8_t u8;
+            uint16_t u16;
+            uint32_t u32;
+            uint64_t u64;
+            return KT::assert_type<unsigned char const*,
+                decltype(NE::big_to_native<8_eu, 16_eu, 32_eu, 64_eu>(array, array + sizeof(array), u8, u16, u32, u64))>(c, "type")
+                         ;
+        }),
 #if 0
     KT::expect_failure("placeholder", [](KT::context& c)->bool{
            return false;

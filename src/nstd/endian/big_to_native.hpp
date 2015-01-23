@@ -45,10 +45,10 @@ namespace nstd {
         template < ::nstd::endian::type T, typename InIt>
         auto big_to_native(InIt, InIt)
             -> std::pair<::nstd::endian::type_map_t<T>, InIt>;
+        template < ::nstd::endian::type... T, typename InIt>
+        auto big_to_native(InIt, InIt, ::nstd::endian::type_map_t<T>&...)
+            -> InIt;
     }
-    template < ::nstd::endian::type... T, typename InIt>
-    auto big_to_native(InIt, InIt, ::nstd::endian::type_map_t<T>&...)
-        -> InIt;
 }
 
 // ----------------------------------------------------------------------------
