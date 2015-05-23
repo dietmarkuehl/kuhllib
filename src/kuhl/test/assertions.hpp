@@ -66,6 +66,10 @@ namespace kuhl
         auto assert_true(kuhl::test::context&, bool value) -> bool;
         auto assert_false(kuhl::test::context&, char const* message, bool value) -> bool;
         auto assert_false(kuhl::test::context&, bool value) -> bool;
+        template <bool>
+        auto assert_constexpr_true(context&, char const* message) -> bool;
+        template <bool>
+        auto assert_constexpr_false(context&, char const* message) -> bool;
 
         template <typename A0, typename A1>
         auto assert_equal(kuhl::test::context& context, char const* message, A0&& a0, A1&& a1) -> bool;
@@ -110,6 +114,21 @@ auto kuhl::test::assert_static_false(context& c, char const* message) -> bool {
     else {
         return true;
     }
+}
+
+// ----------------------------------------------------------------------------
+
+template <bool Value>
+auto kuhl::test::assert_constexpr_true(context& c, char const* message) -> bool {
+    if (!Value) {
+        c << "wrong value: " << message;
+    }
+    return Value;
+}
+
+template <bool Value>
+auto kuhl::test::assert_constexpr_false(context& c, char const* message) -> bool {
+    return kuhl::test::assert_constexpr_true<!Value>(c, message);
 }
 
 // ----------------------------------------------------------------------------
