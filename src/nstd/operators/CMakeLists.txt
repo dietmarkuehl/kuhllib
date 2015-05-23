@@ -29,6 +29,7 @@ project(nstd_operators)
 enable_testing()
 foreach(test
 	equality.t
+	relational.t
         )
   add_executable(${test} ${test})
   target_link_libraries(${test} PUBLIC kuhltest)

@@ -35,7 +35,7 @@
 // operator. The result of `operator!=()` is simply the negation of equality
 // copmarision of the arguments. The implementation correctly propages whether
 // the operator is `noexcept` and/or `constexpr`. To have the inequality
-// operator be generated a components needs to derive publicly from
+// operator be generated a class needs to derive publicly from
 // `nstd::operators::equality::tag`.
 
 namespace nstd {
@@ -52,6 +52,8 @@ namespace nstd {
                 noexcept(noexcept(bool(value0 == value1)))
                 -> bool;
         }
+
+        using equality_tag = ::nstd::operators::equality::tag;
     }
 }
 
@@ -63,6 +65,7 @@ constexpr auto nstd::operators::equality::operator!= (T0&& value0, T1&& value1)
     -> bool {
     return !bool(value0 == value1);
 }
+
 // ----------------------------------------------------------------------------
 
 #endif

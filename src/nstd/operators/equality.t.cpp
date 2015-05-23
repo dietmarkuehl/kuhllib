@@ -56,7 +56,7 @@ namespace {
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
-    KT::expect_success("constexpr equality operators are created from compare()",
+    KT::expect_success("constexpr inequality is created from operator==()",
                        [](KT::context& c)->bool{
             constexpr ::comparable c0(0), c1(1);
             return KT::assert_type<bool, decltype(c0 != c1)>(c, "operator!= return type")
@@ -70,9 +70,6 @@ static KT::testcase const tests[] = {
             return KT::assert_true(c, "op!= on incomprable returns true", ic != ic)
                 ;
     }),
-    KT::expect_failure("placeholder", [](KT::context& c)->bool{
-           return false;
-        }),
 };
 
 int main(int ac, char* av[])
