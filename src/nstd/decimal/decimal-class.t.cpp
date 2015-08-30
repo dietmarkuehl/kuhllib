@@ -24,8 +24,9 @@
 // ----------------------------------------------------------------------------
 
 #include "decimal-class.hpp"
-#include "erltest_test.hpp"
-#include <iostream>
+#include "kuhl/test.hpp"
+
+namespace KT = kuhl::test;
 
 // ----------------------------------------------------------------------------
 
@@ -37,7 +38,7 @@ namespace {
         // - verify that a default constructed object can be a constexpr
         // - verify that a default constructed object is a specific positive zero
         kuhllib::decimal<Bits> du;
-        erl::test::use(du);
+        KT::use(du);
 
         constexpr kuhllib::decimal<Bits> d0{};
         return d0.negative() == false
@@ -75,14 +76,14 @@ namespace {
 
 // ----------------------------------------------------------------------------
 
-static erl::test::testcase const tests[] = {
-    erl::test::expect_success("default ctor", []()->bool{
+static KT::testcase const tests[] = {
+    KT::expect_success("default ctor", []()->bool{
             return test_default<32>()
                 && test_default<64>()
                 && test_default<128>()
                 ;
         }),
-    erl::test::expect_success("BID ctor", []()->bool{
+    KT::expect_success("BID ctor", []()->bool{
             using namespace kuhllib;
             constexpr kuhllib::decimal<32>  d32 (kuhllib::decimal<32>::bid,  0x318004D2u);
             constexpr kuhllib::decimal<64>  d64 (kuhllib::decimal<64>::bid,  0x31800000000004D2ull);
@@ -99,10 +100,10 @@ static erl::test::testcase const tests[] = {
                 //-dk:TODO && verify_parts(make_bid<128>(0xB03D00000000000000000000000004D2_u128), true, 1234_u128, -2)
                 ;
         }),
-    erl::test::expect_failure("placeholder", []()->bool{ return false; }),
+    KT::expect_failure("placeholder", []()->bool{ return false; }),
 };
 
 int main(int ac, char* av[])
 {
-    return erl::test::run_tests("decimal class template", ac, av, ::tests);
+    return KT::run_tests("decimal class template", ac, av, ::tests);
 }

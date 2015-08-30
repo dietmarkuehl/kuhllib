@@ -24,13 +24,15 @@
 // ----------------------------------------------------------------------------
 
 #include "decimal-all.hpp"
-#include "erltest_test.hpp"
 #include <sstream>
+#include "kuhl/test.hpp"
+
+namespace KT = kuhl::test;
 
 // ----------------------------------------------------------------------------
 
-static erl::test::testcase const tests[] = {
-    erl::test::expect_success("basic construction", []()->bool{
+static KT::testcase const tests[] = {
+    KT::expect_success("basic construction", []()->bool{
             constexpr kuhllib::decimal<64> d1(false, 1, 0);
             constexpr kuhllib::decimal<64> d2(true, 1, 0);
             return d1.negative() == false
@@ -40,12 +42,12 @@ static erl::test::testcase const tests[] = {
                 && d2.significand() == 1
                 && d2.exponent() == 0;
         }),
-    erl::test::expect_success("basic output", []()->bool{
+    KT::expect_success("basic output", []()->bool{
             std::ostringstream out;
             out << kuhllib::decimal<64>(true, 12, 1);
             return out.str() == "-120";
         }),
-    erl::test::expect_success("decimal<64> literal", []()->bool{
+    KT::expect_success("decimal<64> literal", []()->bool{
             using namespace kuhllib;
             constexpr decimal<64> value(-12E+0_DD);
             return value== kuhllib::decimal<64>(true, 12, 0);
@@ -54,5 +56,5 @@ static erl::test::testcase const tests[] = {
 
 int main(int ac, char* av[])
 {
-    return erl::test::run_tests("decimal", ac, av, ::tests);
+    return KT::run_tests("decimal", ac, av, ::tests);
 }

@@ -20,6 +20,7 @@ foreach(test
         uint_t.t 
         )
   add_executable(${test} ${test})
-  target_link_libraries(${test} decimal)
-  add_test(${test} ${test})
+  target_link_libraries(${test} PUBLIC decimal)
+  target_link_libraries(${test} PUBLIC kuhltest)
+  add_test(NAME ${test} COMMAND $<TARGET_FILE:${test}>)
 endforeach(test)

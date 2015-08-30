@@ -24,9 +24,11 @@
 // ----------------------------------------------------------------------------
 
 #include "decimal-literals.hpp"
-#include "erltest_test.hpp"
+#include "kuhl/test.hpp"
 #include <type_traits>
 #include <utility>
+
+namespace KT = kuhl::test;
 
 // ----------------------------------------------------------------------------
 
@@ -54,8 +56,8 @@ verify(Actual, bool, typename Actual::rep_type, int)
 
 // ----------------------------------------------------------------------------
 
-static erl::test::testcase const tests[] = {
-    erl::test::expect_success("basic literals", []()->bool{
+static KT::testcase const tests[] = {
+    KT::expect_success("basic literals", []()->bool{
             using namespace kuhllib::literals;
             return verify<kuhllib::decimal<32>>(123_DF, false, 123, 0)
                 && verify<kuhllib::decimal<64>>(123_DD, false, 123, 0)
@@ -65,7 +67,7 @@ static erl::test::testcase const tests[] = {
                 //-dk:TODO && verify<kuhllib::decimal<128>>(-123_DL, true, 123, 0)
                 ;
         }),
-    erl::test::expect_success("fractional digit literals", []()->bool{
+    KT::expect_success("fractional digit literals", []()->bool{
             using namespace kuhllib::literals;
             return verify<kuhllib::decimal<32>>(123.45_DF, false, 12345, -2)
                 && verify<kuhllib::decimal<64>>(123.45_DD, false, 12345, -2)
@@ -75,10 +77,10 @@ static erl::test::testcase const tests[] = {
                 //-dk:TODO && verify<kuhllib::decimal<128>>(-123.45_DL, true, 12345, -2)
                 ;
         }),
-    erl::test::expect_failure("placeholder", []()->bool{ return false; }),
+    KT::expect_failure("placeholder", []()->bool{ return false; }),
 };
 
 int main(int ac, char* av[])
 {
-    return erl::test::run_tests("decimal literals", ac, av, ::tests);
+    return KT::run_tests("decimal literals", ac, av, ::tests);
 }

@@ -25,11 +25,13 @@
 
 #include "decimal_num_put.hpp"
 #include "decimal-literals.hpp"
-#include "erltest_test.hpp"
 #include <iterator>
 #include <string>
 #include <sstream>
 #include <iostream>
+#include "kuhl/test.hpp"
+
+namespace KT = kuhl::test;
 
 // ----------------------------------------------------------------------------
 
@@ -49,8 +51,8 @@ test(std::string const& expect, kuhllib::decimal<Bits> const& value)
 
 // ----------------------------------------------------------------------------
 
-static erl::test::testcase const tests[] = {
-    erl::test::expect_success("simple output", []()->bool{
+static KT::testcase const tests[] = {
+    KT::expect_success("simple output", []()->bool{
             using namespace kuhllib;
             return test("123", 123_DD)
                 && test("-123", -123_DD)
@@ -63,5 +65,5 @@ static erl::test::testcase const tests[] = {
 
 int main(int ac, char* av[])
 {
-    return erl::test::run_tests("TODO", ac, av, ::tests);
+    return KT::run_tests("TODO", ac, av, ::tests);
 }

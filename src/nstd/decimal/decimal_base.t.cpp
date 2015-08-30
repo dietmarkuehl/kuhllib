@@ -24,16 +24,18 @@
 // ----------------------------------------------------------------------------
 
 #include "decimal_base.hpp"
-#include "erltest_test.hpp"
+#include "kuhl/test.hpp"
+
+namespace KT = kuhl::test;
 
 // ----------------------------------------------------------------------------
 
-static erl::test::testcase const tests[] = {
-    erl::test::expect_success("is empty", []()->bool{
+static KT::testcase const tests[] = {
+    KT::expect_success("is empty", []()->bool{
             struct one: kuhllib::decimal_base { char c; };
             return 1u == sizeof(one);
         }),
-    erl::test::expect_success("contains classification", []()->bool{
+    KT::expect_success("contains classification", []()->bool{
             constexpr kuhllib::decimal_base::classification sn = kuhllib::decimal_base::signaling_nan;
             constexpr kuhllib::decimal_base::classification qn = kuhllib::decimal_base::quiet_nan;
             constexpr kuhllib::decimal_base::classification ni = kuhllib::decimal_base::negative_infinity;
@@ -47,19 +49,19 @@ static erl::test::testcase const tests[] = {
                 && nz != pi
                 && pn != pz;
         }),
-    erl::test::expect_success("contains bid_t", []()->bool{
+    KT::expect_success("contains bid_t", []()->bool{
             constexpr kuhllib::decimal_base::bid_t b = kuhllib::decimal_base::bid;
             return kuhllib::decimal_base::bid_t() == b;
         }),
-    erl::test::expect_success("contains dpd_t", []()->bool{
+    KT::expect_success("contains dpd_t", []()->bool{
             constexpr kuhllib::decimal_base::dpd_t d = kuhllib::decimal_base::dpd;
             return kuhllib::decimal_base::dpd_t() == d;
         }),
-    erl::test::expect_success("contains inf_t", []()->bool{
+    KT::expect_success("contains inf_t", []()->bool{
             constexpr kuhllib::decimal_base::inf_t i = kuhllib::decimal_base::inf;
             return kuhllib::decimal_base::inf_t() == i;
         }),
-    erl::test::expect_success("contains nan_t", []()->bool{
+    KT::expect_success("contains nan_t", []()->bool{
             constexpr kuhllib::decimal_base::nan_t n = kuhllib::decimal_base::nan;
             return kuhllib::decimal_base::nan_t() == n;
         }),
@@ -67,5 +69,5 @@ static erl::test::testcase const tests[] = {
 
 int main(int ac, char* av[])
 {
-    return erl::test::run_tests("decimal_base", ac, av, ::tests);
+    return KT::run_tests("decimal_base", ac, av, ::tests);
 }

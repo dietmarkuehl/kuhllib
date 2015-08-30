@@ -24,14 +24,16 @@
 // ----------------------------------------------------------------------------
 
 #include "decimal_config.hpp"
-#include "erltest_test.hpp"
 #include <iostream>
 #include <iomanip>
+#include "kuhl/test.hpp"
+
+namespace KT = kuhl::test;
 
 // ----------------------------------------------------------------------------
 
-static erl::test::testcase const tests[] = {
-    erl::test::expect_success("decimal_config<32> basics", []()->bool{
+static KT::testcase const tests[] = {
+    KT::expect_success("decimal_config<32> basics", []()->bool{
             return kuhllib::decimal_config<32>::k    ==  32
                 && kuhllib::decimal_config<32>::w    ==   6
                 && kuhllib::decimal_config<32>::t    ==  20
@@ -41,7 +43,7 @@ static erl::test::testcase const tests[] = {
                 && kuhllib::decimal_config<32>::bias == 101
                 ;
         }),
-    erl::test::expect_success("decimal_config<64> basics", []()->bool{
+    KT::expect_success("decimal_config<64> basics", []()->bool{
                 ;
             return kuhllib::decimal_config<64>::k    ==   64
                 && kuhllib::decimal_config<64>::w    ==    8
@@ -52,7 +54,7 @@ static erl::test::testcase const tests[] = {
                 && kuhllib::decimal_config<64>::bias ==  398
                 ;
         }),
-    erl::test::expect_success("decimal_config<128> basics", []()->bool{
+    KT::expect_success("decimal_config<128> basics", []()->bool{
             return kuhllib::decimal_config<128>::k    ==   128
                 && kuhllib::decimal_config<128>::w    ==    12
                 && kuhllib::decimal_config<128>::t    ==   110
@@ -66,5 +68,5 @@ static erl::test::testcase const tests[] = {
 
 int main(int ac, char* av[])
 {
-    return erl::test::run_tests("decimal_config<N>", ac, av, ::tests);
+    return KT::run_tests("decimal_config<N>", ac, av, ::tests);
 }
