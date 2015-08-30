@@ -86,12 +86,14 @@ template <>
 struct kuhllib::decimal_config<32>
     : kuhllib::decimal_config_base<std::uint32_t, 32>
 {
+    static constexpr rep_type max_significand = 9999999u;
 };
 
 template <>
 struct kuhllib::decimal_config<64>
     : kuhllib::decimal_config_base<std::uint64_t, 64>
 {
+    static constexpr rep_type max_significand = 9999999999999999ull;
 };
 
 template <>

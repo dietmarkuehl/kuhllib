@@ -48,14 +48,16 @@ namespace kuhllib
         template <int Bits>
         constexpr decimal<Bits> parse_exponent(typename decimal_config<Bits>::rep_type significand,
                                                bool negative,
-                                               int  exponent) {
-            return decimal<Bits>(false, significand, negative? -exponent: exponent);
+                                               int  exponent,
+                                               int  quantum) {
+            return decimal<Bits>(false, significand, quantum + (negative? -exponent: exponent));
         }
         template <int Bits, char Digit, char...C>
         constexpr decimal<Bits> parse_exponent(typename decimal_config<Bits>::rep_type significand,
                                                bool negative,
-                                               int  exponent) {
-            return parse_exponent<Bits, C...>(significand, negative, exponent * 10 + Digit - '0');
+                                               int  exponent,
+                                               int  quantum) {
+            return parse_exponent<Bits, C...>(significand, negative, exponent * 10 + Digit - '0', quantum);
         }
 
         template <int Bits>
@@ -67,8 +69,8 @@ namespace kuhllib
         constexpr decimal<Bits> parse_exponent(typename decimal_config<Bits>::rep_type significand,
                                                int exponent) {
             return Digit == '-' || Digit == '+'
-                ? parse_exponent<Bits, C...>(significand, Digit == '-', exponent)
-                : parse_exponent<Bits, C...>(significand, false, exponent * 10 + Digit - '0');
+                ? parse_exponent<Bits, C...>(significand, Digit == '-', 0, exponent)
+                : parse_exponent<Bits, C...>(significand, false,  Digit - '0', exponent);
         }
 
         template <int Bits>
@@ -77,9 +79,24 @@ namespace kuhllib
         }
         template <int Bits, char Digit, char... C>
         constexpr decimal<Bits> parse_fractional(typename decimal_config<Bits>::rep_type significand, int exponent) {
-            return Digit == 'E'
-                ? parse_exponent<Bits, C...>(significand, exponent) //-dk:TODO that's not quite right...
+            return (Digit == 'E' || Digit == 'e')
+                ? parse_exponent<Bits, C...>(significand, exponent)
                 : parse_fractional<Bits, C...>(significand * 10u + Digit - '0', exponent - 1);
+        }
+
+        template <int Bits>
+        constexpr decimal<Bits> parse_rounding_decimal(typename decimal_config<Bits>::rep_type significand, int exponent) {
+            return decimal<Bits>(false, significand, exponent);
+        }
+        template <int Bits, char Digit, char... C>
+        constexpr decimal<Bits> parse_rounding_decimal(typename decimal_config<Bits>::rep_type significand, int exponent) {
+            return (Digit == 'E' || Digit == 'e')
+                ? parse_exponent<Bits, C...>(significand, exponent)
+                : (Digit == '.'
+                   ? parse_fractional<Bits, C...>(significand, exponent) //-dk:TODO use special rounding version
+                   : parse_rounding_decimal<Bits, C...>(significand, exponent + 1)
+                   )
+                ;
         }
 
         template <int Bits>
@@ -88,11 +105,18 @@ namespace kuhllib
         }
         template <int Bits, char Digit, char... C>
         constexpr decimal<Bits> parse_decimal(typename decimal_config<Bits>::rep_type significand) {
-            return Digit == 'E'
+            return (Digit == 'E' || Digit == 'e')
                 ? parse_exponent<Bits, C...>(significand, 0)
                 : (Digit == '.'
                    ? parse_fractional<Bits, C...>(significand, 0)
-                   : parse_decimal<Bits, C...>(significand * 10u + Digit - '0'));
+                   : (significand * 10u < decimal_config<Bits>::max_significand
+                      ? parse_decimal<Bits, C...>(significand * 10u + Digit - '0')
+                      : (significand == decimal_config<Bits>::max_significand && (5 <= Digit - '0')
+                         ? parse_rounding_decimal<Bits, Digit, C...>((decimal_config<Bits>::max_significand + 1u)/10u, 1)
+                         : parse_rounding_decimal<Bits, Digit, C...>(significand + (5 <= Digit - '0'), 0)
+                         )
+                      )
+                   );
         }
 
         template <int Bits, char... C>
