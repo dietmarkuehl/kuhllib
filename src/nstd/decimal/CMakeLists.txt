@@ -16,7 +16,6 @@ foreach(test
         decimal_config.t 
         decimal-literals.t 
         decimal_num_put.t 
-        erltest_test.t 
         uint_t.t 
         )
   add_executable(${test} ${test})
