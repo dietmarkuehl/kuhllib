@@ -29,6 +29,10 @@
 #include "decimal.hpp"
 
 // ----------------------------------------------------------------------------
+// This file defines user-defined decimal literals. The standard
+// names of these literals would omit the leading underscore but
+// doing so for names in non-standard namespaces causes some compilers
+// to emit warnings.
 
 namespace kuhllib
 {

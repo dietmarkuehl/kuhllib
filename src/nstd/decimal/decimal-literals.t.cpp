@@ -145,40 +145,40 @@ static KT::testcase const tests[] = {
             using namespace kuhllib::literals;
             return verify<kuhllib::decimal<32>>(1234567E0_DF, false, 1234567, 0)
                 && verify<kuhllib::decimal<64>>(1234567890123456E0_DD, false, 1234567890123456, 0)
-                //-dk:TODO && verify<kuhllib::decimal<64>>(1234567890123456789012345678901234E0_DL, false, 1234567890123456789012345678901234, 0)
+                //-dk:TODO && verify<kuhllib::decimal<128>>(1234567890123456789012345678901234E0_DL, false, 1234567890123456789012345678901234, 0)
                 && verify<kuhllib::decimal<32>>(-1234567E0_DF, true, 1234567, 0)
                 && verify<kuhllib::decimal<64>>(-1234567890123456E0_DD, true, 1234567890123456, 0)
-                //-dk:TODO && verify<kuhllib::decimal<64>>(-1234567890123456789012345678901234E0_DL, true, 1234567890123456789012345678901234, 0)
+                //-dk:TODO && verify<kuhllib::decimal<128>>(-1234567890123456789012345678901234E0_DL, true, 1234567890123456789012345678901234, 0)
                 ;
         }),
     KT::expect_success("exceded number of digits", []()->bool{
             using namespace kuhllib::literals;
             return verify<kuhllib::decimal<32>>(1234567000E0_DF, false, 1234567, 3)
                 && verify<kuhllib::decimal<64>>(1234567890123456000E0_DD, false, 1234567890123456, 3)
-                //-dk:TODO && verify<kuhllib::decimal<64>>(1234567890123456789012345678901234000E0_DL, false, 1234567890123456789012345678901234, 3)
+                //-dk:TODO && verify<kuhllib::decimal<128>>(1234567890123456789012345678901234000E0_DL, false, 1234567890123456789012345678901234, 3)
                 && verify<kuhllib::decimal<32>>(-1234567000E0_DF, true, 1234567, 3)
                 && verify<kuhllib::decimal<64>>(-1234567890123456000E0_DD, true, 1234567890123456, 3)
-                //-dk:TODO && verify<kuhllib::decimal<64>>(-1234567890123456789012345678901234000E0_DL, true, 1234567890123456789012345678901234, 3)
+                //-dk:TODO && verify<kuhllib::decimal<128>>(-1234567890123456789012345678901234000E0_DL, true, 1234567890123456789012345678901234, 3)
                 ;
         }),
     KT::expect_success("exceded number of digits (round down)", []()->bool{
             using namespace kuhllib::literals;
             return verify<kuhllib::decimal<32>>(1234567499E0_DF, false, 1234567, 3)
                 && verify<kuhllib::decimal<64>>(1234567890123456499E0_DD, false, 1234567890123456, 3)
-                //-dk:TODO && verify<kuhllib::decimal<64>>(1234567890123456789012345678901234499E0_DL, false, 1234567890123456789012345678901234, 3)
+                //-dk:TODO && verify<kuhllib::decimal<128>>(1234567890123456789012345678901234499E0_DL, false, 1234567890123456789012345678901234, 3)
                 && verify<kuhllib::decimal<32>>(-1234567499E0_DF, true, 1234567, 3)
                 && verify<kuhllib::decimal<64>>(-1234567890123456499E0_DD, true, 1234567890123456, 3)
-                //-dk:TODO && verify<kuhllib::decimal<64>>(-1234567890123456789012345678901234499E0_DL, true, 1234567890123456789012345678901234, 3)
+                //-dk:TODO && verify<kuhllib::decimal<128>>(-1234567890123456789012345678901234499E0_DL, true, 1234567890123456789012345678901234, 3)
                 ;
         }),
     KT::expect_success("exceded number of digits (round up)", []()->bool{
             using namespace kuhllib::literals;
             return verify<kuhllib::decimal<32>>(1234567500E0_DF, false, 1234568, 3)
                 && verify<kuhllib::decimal<64>>(1234567890123456500E0_DD, false, 1234567890123457, 3)
-                //-dk:TODO && verify<kuhllib::decimal<64>>(1234567890123456789012345678901234500E0_DL, false, 1234567890123456789012345678901235, 3)
+                //-dk:TODO && verify<kuhllib::decimal<128>>(1234567890123456789012345678901234500E0_DL, false, 1234567890123456789012345678901235, 3)
                 && verify<kuhllib::decimal<32>>(-1234567500E0_DF, true, 1234568, 3)
                 && verify<kuhllib::decimal<64>>(-1234567890123456500E0_DD, true, 1234567890123457, 3)
-                //-dk:TODO && verify<kuhllib::decimal<64>>(-1234567890123456789012345678901234500E0_DL, true, 1234567890123456789012345678901235, 3)
+                //-dk:TODO && verify<kuhllib::decimal<128>>(-1234567890123456789012345678901234500E0_DL, true, 1234567890123456789012345678901235, 3)
                 ;
         }),
     KT::expect_success("exceded number of at upper bound", []()->bool{
