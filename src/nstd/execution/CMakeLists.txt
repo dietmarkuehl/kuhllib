@@ -1,6 +1,6 @@
 #  CMakeLists.txt                                                -*-makefile-*-
 #  ----------------------------------------------------------------------------
-#   Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
+#   Copyright (C) 2017 Dietmar Kuehl http://www.dietmar-kuehl.de         
 #                                                                        
 #   Permission is hereby granted, free of charge, to any person          
 #   obtaining a copy of this software and associated documentation       
