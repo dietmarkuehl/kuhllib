@@ -67,12 +67,13 @@ external source or writing bytes to an external destination would
 allow only a single pass. When `c` is an object of type `C` satisfying
 the `SinglePassCursor` it can can be in three different states:
 
- 1. When `c` is at the sentinel, i.e., the sequence was exhausted, it is _invalid_.
+ 1. When `c` is at the sentinel, i.e., the sequence was exhausted, it is _not dereferenceable_.
  2. Otherwise `c` can be in a _valid_ state. How a valid cursor is produced is up to the implementer of the cursor. No constraints are imposed on how a valid cursor is created except that a copy of valid cursor shall be valid, too.
  3. If `c` is a copy of a valid cursor `d` and `d` gets incremented, `c` (as well as any other copies)  gets into _indeterminate_ state.
 
 Algorithms expect that arguments are **not** in indeterminate state,
-i.e., all cursor arguments shall be either valid or invalid. Note, that
+i.e., all cursor arguments shall be either valid or _not derferenceable_ (i.e.,
+they shall not be _indeterminate_. Note, that
 these are the same constraints as those imposed by `InputIterators`.
 
 An object `c` of a `SinglePassCursor` type `C` interoperates with
@@ -91,8 +92,8 @@ Expression | Return Type | Semantics | Assertion
 `*c++` | *key-type* | combined access and advance | same as `{ auto r = *c; ++c; return r; }`
 `c == s` | `bool` | determine if the cursor is at the sentinel|
 `s == c` | `bool` | determine if the cursor is at the sentinel| same as `c == s`
-`c != s` | `bool` | determine if the cursor is not at the sentinel| same as `!(c ==s)`
-`s != c` | `bool` | determine if the cursor is not at the sentinel| same as `!(c ==s)`
+`c != s` | `bool` | determine if the cursor is not at the sentinel| same as `!(c == s)`
+`s != c` | `bool` | determine if the cursor is not at the sentinel| same as `!(c == s)`
 
 There are a few things to note:
 
@@ -108,15 +109,45 @@ There are a few things to note:
     *key-type* is used with a [projection](../projection/README.md)
     providing access to the corresponding data.
  4. When a cursor is advanced other objects have to be considered
-    invalidated for `SinglePassCursors`:
-    1. All copies of a cursor are invalided when one of the cursors
-        (the original or any of the copies) is advanced.
-    2. All values of *key-type* are invalidated when the cursor the
-        value was obtained from is advanced or gets invalidated.
+    indeterminate for `SinglePassCursors`:
+    1. When one of the cursors (the original or any of the copies) is advanced
+        all other copies of a cursor may become indeterminate
+    2. All values of *key-type* become interdetrminate when the cursor the
+        value was obtained from is advanced may get indeterminate.
+
+Values of *key-type* or cursors may not become indeterminate when
+a cursors gets advenced. However, generic algorithms requiring only
+`SinglePassCursor`s have to assume that these value do become
+indeterminate and may not use these for any purpose.
 
 ### Multi Pass Cursor
 
--dk:TODO
+Multi pass cursors are used when sequences need to be traversed
+multiple times or when it is necessary to remember locations with
+the sequence. Additionally, objects obtained via a multi pass cursor
+don't get indeterminate when advancing the corresponding cursor.
+
+A class or pointer type `C` satisfies the requirements of
+`MultiPassCursor` if
+
+* it satisfies the requirements for `SinglePassCursor`
+* the expressions in the table below are valid and have the indicate semantics
+* objects of type `C` offer the multi-pass guarantee specified below
+
+Two dereferenceable cursors `a` and `b` offer the multi-pass guarantee if:
+
+- `a == b` implies `++a == ++b` and
+- `C` is a pointer type or the expression `(void)++C(a), *a` is equivalent to the expression `*a`
+
+In the table below `c1` and `c2` are two cursors of type `C`:
+
+Expression | Return Type | Semantics | Assertion
+--- | --- | --- | ---
+`c1 == c2` | `bool` | determine if the two cursors are at the same position|
+`c1 != c2` | `bool` | determine if the two cursors are not at the same position| same as `!(c1 == c2)`
+
+The added requirement for comparisons is that cursors have to be comparable
+between them  possibly in addition to being comparable with a sentinel.
 
 ### Bidirectional Cursor
 
