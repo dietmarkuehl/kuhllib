@@ -24,25 +24,13 @@
 #  ----------------------------------------------------------------------------
 
 cmake_minimum_required(VERSION 2.8.2)
-project(kuhllib)
-
-include_directories(${CMAKE_SOURCE_DIR})
-
-if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-else()
-    add_definitions(-std=c++14)
-endif()
-
-if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror -DKUHLLIB_CLANG")
-elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4 /DKUHLLIB_MSVC")
-elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror -DKUHLLIB_GCC")
-elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w2 -Werror -DKUHLLIB_INTEL")
-endif()
+project(nstd_algorithm)
 
 enable_testing()
-add_subdirectory(kuhl)
-add_subdirectory(nstd)
+foreach(test
+	is_execution_policy.t
+        )
+  add_executable(${test} ${test})
+  target_link_libraries(${test} PUBLIC kuhltest)
+  add_test(NAME ${test} COMMAND $<TARGET_FILE:${test}>)
+endforeach(test)
