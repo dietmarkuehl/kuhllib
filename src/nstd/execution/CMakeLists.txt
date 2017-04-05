@@ -29,6 +29,7 @@ project(nstd_algorithm)
 enable_testing()
 foreach(test
 	is_execution_policy.t
+	sequenced_policy.t
         )
   add_executable(${test} ${test})
   target_link_libraries(${test} PUBLIC kuhltest)

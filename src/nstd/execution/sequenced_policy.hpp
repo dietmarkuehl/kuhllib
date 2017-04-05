@@ -1,4 +1,4 @@
-// nstd/execution/is_execution_policy.t.cpp                           -*-C++-*-
+// nstd/execution/sequenced_policy.h                                  -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2017 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,44 +23,27 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
+#ifndef INCLUDED_NSTD_EXECUTION_SEQUENCED_POLICY
+#define INCLUDED_NSTD_EXECUTION_SEQUENCED_POLICY
+
 #include "nstd/execution/is_execution_policy.hpp"
 #include "nstd/type_traits/integral_constant.hpp"
-#include "kuhl/test.hpp"
-
-namespace KT = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
-
-namespace {
-    struct test_policy {
-    };
-}
 
 namespace nstd {
+    namespace execution {
+        class sequenced_policy {
+        };
+        constexpr sequenced_policy seq{};
+    }
+
     template <>
-    struct is_execution_policy<test_policy>
-        : ::nstd::type_traits::true_type {
+    struct is_execution_policy<::nstd::execution::sequenced_policy>
+        : public ::nstd::type_traits::true_type {
     };
 }
 
 // ----------------------------------------------------------------------------
 
-static KT::testcase const tests[] = {
-    KT::expect_success("int is not an execution policy",
-                       [](KT::context& c)->bool{
-           return KT::assert_constexpr_false<nstd::is_execution_policy<int>::value>(c, "is_execution_policy<int>::value")
-               && KT::assert_constexpr_false<nstd::is_execution_policy<int>::value>(c, "is_execution_policy_v<int>")
-                   ;
-        }),
-    KT::expect_success("is_execution_policy can be specialized",
-                       [](KT::context& c)->bool{
-           return KT::assert_constexpr_true<nstd::is_execution_policy<test_policy>::value>(c, "is_execution_policy<test_policy>::value")
-               && KT::assert_constexpr_true<nstd::is_execution_policy<test_policy>::value>(c, "is_execution_policy_v<test_policy>")
-                   ;
-        }),
-};
-
-int main(int ac, char* av[])
-{
-    return KT::run_tests("execution::is_execution-policy", ac, av, ::tests);
-}
+#endif
