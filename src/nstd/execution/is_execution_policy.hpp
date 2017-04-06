@@ -27,13 +27,15 @@
 #define INCLUDED_NSTD_EXECUTION_IS_EXECUTION_POLICY
 
 #include "nstd/type_traits/integral_constant.hpp"
+#include "nstd/type_traits/decay.hpp"
 
 // ----------------------------------------------------------------------------
 
 namespace nstd {
     template <typename> struct is_execution_policy;
     template <typename T>
-    constexpr bool is_execution_policy_v = ::nstd::is_execution_policy<T>::value;
+    constexpr bool is_execution_policy_v
+        = ::nstd::is_execution_policy<::nstd::type_traits::decay_t<T>>::value;
 }
 
 // ----------------------------------------------------------------------------

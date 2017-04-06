@@ -41,6 +41,13 @@ namespace nstd {
         bidirectional_iterator<T*> bidirectional_begin(T (&)[Size]);
         template <typename T, int Size>
         bidirectional_iterator<T*> bidirectional_end(T (&)[Size]);
+
+        template <typename Range>
+        auto bidirectional_begin(Range&& range)
+            -> bidirectional_iterator<decltype(range.begin())>;
+        template <typename Range>
+        auto bidirectional_end(Range&& range)
+            -> bidirectional_iterator<decltype(range.end())>;
     }
 }
 
@@ -93,6 +100,20 @@ template <typename T, int Size>
 nstd::iterator::bidirectional_iterator<T*>
 nstd::iterator::bidirectional_end(T (&array)[Size]) {
     return nstd::iterator::bidirectional_iterator<T*>(array + Size);
+}
+
+// ----------------------------------------------------------------------------
+
+template <typename Range>
+auto nstd::iterator::bidirectional_begin(Range&& range)
+    -> nstd::iterator::bidirectional_iterator<decltype(range.begin())> {
+    return nstd::iterator::bidirectional_iterator<decltype(range.begin())>(range.begin());
+}
+
+template <typename Range>
+auto nstd::iterator::bidirectional_end(Range&& range)
+    -> nstd::iterator::bidirectional_iterator<decltype(range.end())> {
+    return nstd::iterator::bidirectional_iterator<decltype(range.end())>(range.end());
 }
 
 // ----------------------------------------------------------------------------

@@ -27,6 +27,8 @@
 #include "nstd/algorithm/mismatch.hpp"
 #include "nstd/cursor/single_pass.hpp"
 #include "nstd/cursor/model_single_pass.hpp"
+#include "nstd/iterator/forward_iterator.hpp"
+#include "nstd/iterator/bidirectional_iterator.hpp"
 #include "nstd/projection/identity.hpp"
 #include "nstd/projection/model_readable.hpp"
 #include "nstd/utility/equality_comparable.hpp"
@@ -37,6 +39,8 @@
 
 namespace NA = nstd::algorithm;
 namespace NC = nstd::cursor;
+namespace NE = nstd::execution;
+namespace NI = nstd::iterator;
 namespace NP = nstd::projection;
 namespace NU = nstd::utility;
 namespace KT = kuhl::test;
@@ -127,6 +131,83 @@ static KT::testcase const tests[] = {
                                    NA::for_each(NP::model_readable<>(),
                                                 NC::single_pass_begin(array), NC::single_pass_end(array),
                                                 copyable()).second.check_values(array))
+                ;
+        }),
+    KT::expect_success("for_each() with forward iterator", [](KT::context& c)->bool{
+            std::vector<int> source({ 1, 2, 3, 4, 5 });
+            std::vector<int> target;
+            NA::for_each(NI::forward_begin(source), NI::forward_end(source),
+                         [&](int value){ target.push_back(value); });
+            return KT::assert_true(c, "registered all calls",
+                                   source.end() == 
+                                       NA::mismatch(NP::identity, source.begin(), source.end(),
+                                                    NP::identity, target.begin(), target.end()).first)
+                ;
+        }),
+    KT::expect_success("for_each(seq, ) with forward iterator", [](KT::context& c)->bool{
+            std::vector<int> source({ 1, 2, 3, 4, 5 });
+            std::vector<int> target;
+            NA::for_each(NE::seq, NI::forward_begin(source), NI::forward_end(source),
+                         [&](int value){ target.push_back(value); });
+            return KT::assert_true(c, "registered all calls",
+                                   source.end() == 
+                                       NA::mismatch(NP::identity, source.begin(), source.end(),
+                                                    NP::identity, target.begin(), target.end()).first)
+                ;
+        }),
+    KT::expect_success("for_each(seq, ) with bidirectional iterator", [](KT::context& c)->bool{
+            std::vector<int> source({ 1, 2, 3, 4, 5 });
+            std::vector<int> target;
+            NA::for_each(NE::seq, NI::bidirectional_begin(source), NI::bidirectional_end(source),
+                         [&](int value){ target.push_back(value); });
+            return KT::assert_true(c, "registered all calls",
+                                   source.end() == 
+                                       NA::mismatch(NP::identity, source.begin(), source.end(),
+                                                    NP::identity, target.begin(), target.end()).first)
+                ;
+        }),
+    KT::expect_success("for_each(seq, ) with random access iterator", [](KT::context& c)->bool{
+            std::vector<int> source({ 1, 2, 3, 4, 5 });
+            std::vector<int> target;
+            NA::for_each(NE::seq, source.begin(), source.end(),
+                         [&](int value){ target.push_back(value); });
+            return KT::assert_true(c, "registered all calls",
+                                   source.end() == 
+                                       NA::mismatch(NP::identity, source.begin(), source.end(),
+                                                    NP::identity, target.begin(), target.end()).first)
+                ;
+        }),
+    KT::expect_success("for_each(par, ) with forward iterator", [](KT::context& c)->bool{
+            std::vector<int> source({ 1, 2, 3, 4, 5 });
+            std::vector<int> target;
+            NA::for_each(NE::par, NI::forward_begin(source), NI::forward_end(source),
+                         [&](int value){ target.push_back(value); });
+            return KT::assert_true(c, "registered all calls",
+                                   source.end() == 
+                                       NA::mismatch(NP::identity, source.begin(), source.end(),
+                                                    NP::identity, target.begin(), target.end()).first)
+                ;
+        }),
+    KT::expect_success("for_each(par, ) with bidirectional iterator", [](KT::context& c)->bool{
+            std::vector<int> source({ 1, 2, 3, 4, 5 });
+            std::vector<int> target;
+            NA::for_each(NE::par, NI::bidirectional_begin(source), NI::bidirectional_end(source),
+                         [&](int value){ target.push_back(value); });
+            return KT::assert_true(c, "registered all calls",
+                                   source.end() == 
+                                       NA::mismatch(NP::identity, source.begin(), source.end(),
+                                                    NP::identity, target.begin(), target.end()).first)
+                ;
+        }),
+    KT::expect_success("for_each(par, ) with random access iterator", [](KT::context& c)->bool{
+            std::vector<int> source({ 1, 2, 3, 4, 5 });
+            std::vector<int> target;
+            NA::for_each(NE::par, source.begin(), source.end(),
+                         [&](int value){ target.push_back(value); });
+            return KT::assert_true(c, "registered all calls",
+                                   source.end() == 
+                                       NA::mismatch(NP::identity, source.begin(), source.end(),
+                                                    NP::identity, target.begin(), target.end()).first)
                 ;
         }),
 };
