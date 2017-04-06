@@ -36,12 +36,24 @@ namespace nstd {
         class sequenced_policy {
         };
         constexpr sequenced_policy seq{};
+
+        template <typename MultiPass, typename EndPoint, typename Callable>
+        void execute(::nstd::execution::sequenced_policy const&,
+                     MultiPass begin, EndPoint end, Callable fun);
     }
 
     template <>
     struct is_execution_policy<::nstd::execution::sequenced_policy>
         : public ::nstd::type_traits::true_type {
     };
+}
+
+// ----------------------------------------------------------------------------
+
+template <typename MultiPass, typename EndPoint, typename Callable>
+void nstd::execution::execute(::nstd::execution::sequenced_policy const&,
+                              MultiPass cur, EndPoint end, Callable fun) {
+    fun(cur, end);
 }
 
 // ----------------------------------------------------------------------------

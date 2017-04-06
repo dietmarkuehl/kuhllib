@@ -39,6 +39,13 @@ namespace nstd {
         forward_iterator<T*> forward_begin(T (&)[Size]);
         template <typename T, int Size>
         forward_iterator<T*> forward_end(T (&)[Size]);
+
+        template <typename Range>
+        auto forward_begin(Range&& range)
+            -> forward_iterator<decltype(range.begin())>;
+        template <typename Range>
+        auto forward_end(Range&& range)
+            -> forward_iterator<decltype(range.end())>;
     }
 }
 
@@ -89,6 +96,20 @@ template <typename T, int Size>
 nstd::iterator::forward_iterator<T*>
 nstd::iterator::forward_end(T (&array)[Size]) {
     return nstd::iterator::forward_iterator<T*>(array + Size);
+}
+
+// ----------------------------------------------------------------------------
+
+template <typename Range>
+auto nstd::iterator::forward_begin(Range&& range)
+    -> nstd::iterator::forward_iterator<decltype(range.begin())> {
+    return nstd::iterator::forward_iterator<decltype(range.begin())>(range.begin());
+}
+
+template <typename Range>
+auto nstd::iterator::forward_end(Range&& range)
+    -> nstd::iterator::forward_iterator<decltype(range.end())> {
+    return nstd::iterator::forward_iterator<decltype(range.end())>(range.end());
 }
 
 // ----------------------------------------------------------------------------

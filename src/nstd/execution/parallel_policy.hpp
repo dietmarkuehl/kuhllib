@@ -36,12 +36,25 @@ namespace nstd {
         class parallel_policy {
         };
         constexpr parallel_policy par{};
+
+        template <typename MultiPass, typename EndPoint, typename Callable>
+        void execute(::nstd::execution::parallel_policy const&,
+                     MultiPass begin, EndPoint end, Callable fun);
     }
 
     template <>
     struct is_execution_policy<::nstd::execution::parallel_policy>
         : public ::nstd::type_traits::true_type {
     };
+}
+
+// ----------------------------------------------------------------------------
+
+template <typename MultiPass, typename EndPoint, typename Callable>
+void nstd::execution::execute(::nstd::execution::parallel_policy const&,
+                              MultiPass cur, EndPoint end, Callable fun) {
+    //-dk:TODO schedule portions of the sequence to be processed
+    fun(cur, end);
 }
 
 // ----------------------------------------------------------------------------
