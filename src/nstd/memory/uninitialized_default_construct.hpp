@@ -56,7 +56,7 @@ template <typename ForwardIterator, typename EndPoint>
 auto nstd::memory::detail::uninitialized_default_construct::operator()(ForwardIterator it,
                                                                        EndPoint        end) const
     -> void {
-    using type = typename ::nstd::iterator_traits<ForwardIterator>::value_type;
+    using type = typename ::nstd::iterator::iterator_traits<ForwardIterator>::value_type;
     for (; it != end; ++it) {
         new(static_cast<void*>(::nstd::memory::addressof(*it))) type;
     }

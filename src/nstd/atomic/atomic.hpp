@@ -1,4 +1,4 @@
-// nstd/iterator/iterator_traits.hpp                                  -*-C++-*-
+// nstd/atomic/atomic.hpp                                             -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2017 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,17 +23,17 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_ITERATOR_ITERATOR_TRAITS
-#define INCLUDED_NSTD_ITERATOR_ITERATOR_TRAITS
+#ifndef INCLUDED_NSTD_ATOMIC_ATOMIC
+#define INCLUDED_NSTD_ATOMIC_ATOMIC
 
-#include <iterator>
+#include <atomic>
 
 // ----------------------------------------------------------------------------
 
 namespace nstd {
-    namespace iterator {
-        //-dk:TODO use own version of iterator_traits
-        using ::std::iterator_traits;
+    namespace atomic {
+        //-dk:TODO use own atomic?
+        using ::std::atomic;
     }
 }
 
