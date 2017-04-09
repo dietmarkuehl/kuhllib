@@ -24,16 +24,11 @@
 #  ----------------------------------------------------------------------------
 
 cmake_minimum_required(VERSION 2.8.2)
-project(nstd_execution)
+project(nstd_thread)
 
 enable_testing()
 foreach(test
-	thread_pool.t
-	execution.t
-	is_execution_policy.t
-	parallel_policy.t
-	parallel_unsequenced_policy.t
-	sequenced_policy.t
+	unlock_guard.t
         )
   add_executable(${test} ${test})
   target_link_libraries(${test} PUBLIC kuhltest)

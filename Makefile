@@ -41,6 +41,10 @@ cmake:
 build: cmake
 	cd $(BUILDDIR); $(MAKE)
 
+.PHONY: depend
+depend: cmake
+	cd $(BUILDDIR); $(MAKE) depend
+
 .PHONY: verbose
 verbose: cmake
 	cd $(BUILDDIR); $(MAKE) VERBOSE=1

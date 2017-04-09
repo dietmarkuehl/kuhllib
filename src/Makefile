@@ -2,6 +2,10 @@
 default:
 	cd ..; $(MAKE)
 
+.PHONY: depend
+depend:
+	cd ..; $(MAKE) depend
+
 .PHONY: all
 all:
 	cd ..; $(MAKE) all
