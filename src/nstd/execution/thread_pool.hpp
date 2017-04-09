@@ -26,6 +26,7 @@
 #ifndef INCLUDED_NSTD_THREAD_THREAD_POOL
 #define INCLUDED_NSTD_THREAD_THREAD_POOL
 
+#include <algorithm>
 #include "nstd/algorithm/for_each.hpp"
 #include "nstd/functional/function.hpp"
 #include "nstd/container/deque.hpp"
@@ -133,8 +134,10 @@ private:
     using queue    = ::nstd::container::deque<task>;
     using guard    = ::nstd::thread::unique_lock<::nstd::thread::mutex>;
 
-    ::nstd::execution::thread_pool& d_pool;
-    queue                           d_tasks;
+    ::nstd::execution::thread_pool&     d_pool;
+    queue                               d_tasks;
+    ::nstd::thread::condition_variable  d_done;
+    unsigned                            d_running = 0u;
 
     thread_pool_executor(thread_pool_executor&) = delete;
     void operator=(thread_pool_executor&) = delete;
@@ -159,7 +162,10 @@ public:
         : d_pool(pool) {
     }
     ~thread_pool_executor() {
-        //-dk:TODO wait until all processing is completed
+        guard kerberos(this->d_pool.d_mutex);
+        while (0u != this->d_running) {
+            this->d_done.wait(kerberos);
+        }
     }
 
     // job control
@@ -180,12 +186,16 @@ public:
     void cancel_all() {
         guard kerberos(this->d_pool.d_mutex);
         this->d_tasks.clear();
-        //-dk:TODO remove tasks from the thread pool
+        this->d_pool.d_queue.erase(::std::find(this->d_pool.d_queue.begin(),
+                                               this->d_pool.d_queue.end(),
+                                               this),
+                                   this->d_pool.d_queue.end());
     }
 
     // job access
-    bool empty() const { return this->d_tasks.empty(); }
-    task get_task() {
+    bool     empty(guard&) const { return this->d_tasks.empty(); }
+    unsigned size(guard&) const  { return this->d_tasks.size(); }
+    task get_task(guard&) {
         task job(::nstd::utility::move(this->d_tasks.front()));
         this->d_tasks.pop_front();
         return job;
@@ -193,51 +203,50 @@ public:
 
     // contribute to the processing instead of waiting
     bool process_one() {
-        task job;
-        {
-            guard kerberos(this->d_pool.d_mutex);
-            if (this->d_tasks.empty()) {
-                return false;
-            }
-            job = this->get_task();
+        guard kerberos(this->d_pool.d_mutex);
+        return process_one_locked(kerberos);
+    }
+    bool process_one_locked(guard& kerberos) {
+        if (this->d_tasks.empty()) {
+            return false;
         }
-        job(*this);
-        return true;
+        task job(this->get_task(kerberos));
+        ++this->d_running;
+        {
+            ::nstd::thread::unlock_guard<guard> release(kerberos);
+            job(*this);
+        }
+        if (0u == --this->d_running && this->d_tasks.empty()) {
+            this->d_done.notify_all();
+        }
+        return 0u != this->d_tasks.size();
     }
     void process() {
-        while (process_one()) {
+        guard kerberos(this->d_pool.d_mutex);
+        while (process_one_locked(kerberos)) {
         }
     }
 };
 
 // ----------------------------------------------------------------------------
 
-void nstd::execution::thread_pool::donate() { // donate the current thread to the pool
-    task job;
-    executor* e = nullptr;
-    while (true) {
-        {
-            guard kerberos(this->d_mutex);
+void nstd::execution::thread_pool::donate() {
+    guard kerberos(this->d_mutex);
+    while (!this->d_stopped) {
+        if (this->d_queue.empty()) {
             this->d_condition.wait(kerberos,
                                    [this]{ return this->d_stopped
-                                               || !this->d_queue.empty(); });
+                                           || !this->d_queue.empty(); });
             if (this->d_stopped) {
                 break;
             }
-            while (!this->d_queue.empty() && this->d_queue.front()->empty()) {
-                this->d_queue.pop_front();
-            }
-            if (this->d_queue.empty()) {
-                continue;
-            }
-            e = this->d_queue.front();
-            this->d_queue.pop_front();
-            job = e->get_task();
-            if (!e->empty()) {
-                this->d_queue.push_back(e);
-            }
         }
-        job(*e);
+        executor* e = this->d_queue.front();
+        this->d_queue.pop_front();
+        if (1u < e->size(kerberos)) {
+            this->d_queue.push_back(e);
+        }
+        e->process_one_locked(kerberos);
     }
 }
 
