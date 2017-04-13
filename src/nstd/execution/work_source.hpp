@@ -39,7 +39,7 @@ namespace nstd {
 
 // ----------------------------------------------------------------------------
 
-class ::nstd::execution::work_source
+class nstd::execution::work_source
 {
 public:
     using unique_lock = ::nstd::thread::unique_lock<::nstd::thread::mutex>;

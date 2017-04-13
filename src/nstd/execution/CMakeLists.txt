@@ -26,7 +26,7 @@
 cmake_minimum_required(VERSION 2.8.2)
 project(nstd_execution)
 
-add_library(nstd STATIC
+add_library(nstd-execution STATIC
 	parallel_policy.cpp
 	thread_pool.cpp
 	thread_pool_executor.cpp

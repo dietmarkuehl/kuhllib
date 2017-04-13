@@ -85,7 +85,7 @@ private:
     }
     template <typename Job>
     auto make_task(Job&& job) -> ::nstd::type_traits::enable_if_t<
-        !nstd::execution::has_thread_pool_executor_arg_v<Job>, task> {
+        !nstd::execution::has_thread_pool_executor_arg<Job>::value, task> {
         return task([job = ::nstd::utility::forward<Job>(job)](::nstd::execution::thread_pool_executor&) {
                 job();
             });

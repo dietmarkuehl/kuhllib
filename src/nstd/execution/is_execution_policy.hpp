@@ -33,6 +33,10 @@
 
 namespace nstd {
     template <typename> struct is_execution_policy;
+    template <typename T> struct is_execution_policy<T&>;
+    template <typename T> struct is_execution_policy<T const&>;
+    template <typename T> struct is_execution_policy<T volatile&>;
+    template <typename T, int Size> struct is_execution_policy<T[Size]>;
     template <typename T>
     constexpr bool is_execution_policy_v
         = ::nstd::is_execution_policy<::nstd::type_traits::decay_t<T>>::value;
@@ -42,8 +46,27 @@ namespace nstd {
 
 template <typename>
 struct nstd::is_execution_policy
-    : public ::nstd::type_traits::false_type
+    : ::nstd::type_traits::false_type
 {
+};
+
+// ----------------------------------------------------------------------------
+
+template <typename T>
+struct nstd::is_execution_policy<T&>
+    : ::nstd::is_execution_policy<T> {
+};
+template <typename T>
+struct nstd::is_execution_policy<T const&>
+    : ::nstd::is_execution_policy<T> {
+};
+template <typename T>
+struct nstd::is_execution_policy<T volatile&>
+    : ::nstd::is_execution_policy<T> {
+};
+template <typename T, int Size>
+struct nstd::is_execution_policy<T[Size]>
+    : ::nstd::is_execution_policy<T> {
 };
 
 // ----------------------------------------------------------------------------

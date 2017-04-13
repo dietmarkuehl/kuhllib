@@ -44,20 +44,20 @@ namespace nstd {
                 constexpr for_each() noexcept(true) {}
                 template <typename Readable, typename SinglePass, typename EndPoint, typename Callable>
                 auto operator()(Readable, SinglePass, EndPoint, Callable) const
-                    -> nstd::type_traits::enable_if_t<!nstd::is_execution_policy_v<Readable>,
+                    -> nstd::type_traits::enable_if_t<!nstd::is_execution_policy<Readable>::value,
                                                       nstd::utility::pair<SinglePass, Callable>>;
                 template <typename ForwardIterator, typename EndPoint, typename Callable>
                 auto operator()(ForwardIterator, EndPoint, Callable) const
-                    -> nstd::type_traits::enable_if_t<!nstd::is_execution_policy_v<ForwardIterator>,
+                    -> nstd::type_traits::enable_if_t<!nstd::is_execution_policy<ForwardIterator>::value,
                                                       nstd::utility::pair<ForwardIterator, Callable>>;
 
                 template <typename ExecutionPolicy, typename Readable, typename MultiPass, typename EndPoint, typename Callable>
                 auto operator()(ExecutionPolicy&&, Readable, MultiPass, EndPoint, Callable) const
-                    -> nstd::type_traits::enable_if_t<nstd::is_execution_policy_v<ExecutionPolicy>>;
+                    -> nstd::type_traits::enable_if_t<nstd::is_execution_policy<ExecutionPolicy>::value>;
 
                 template <typename ExecutionPolicy, typename ForwardIterator, typename EndPoint, typename Callable>
                 auto operator()(ExecutionPolicy&&, ForwardIterator, EndPoint, Callable) const
-                    -> nstd::type_traits::enable_if_t<nstd::is_execution_policy_v<ExecutionPolicy>>;
+                    -> nstd::type_traits::enable_if_t<nstd::is_execution_policy<ExecutionPolicy>::value>;
             };
         }
         constexpr nstd::algorithm::detail::for_each for_each{};
@@ -71,7 +71,7 @@ template <typename Readable, typename SinglePass, typename EndPoint, typename Ca
 auto nstd::algorithm::detail::for_each::operator()(Readable readable,
                                                    SinglePass cur, EndPoint end,
                                                    Callable fun) const
-    -> nstd::type_traits::enable_if_t<!nstd::is_execution_policy_v<Readable>,
+    -> nstd::type_traits::enable_if_t<!nstd::is_execution_policy<Readable>::value,
                                       nstd::utility::pair<SinglePass, Callable>>
 {
     // The actual implementation of for_each()
@@ -86,7 +86,7 @@ template <typename ForwardIterator, typename EndPoint, typename Callable>
 auto nstd::algorithm::detail::for_each::operator()(ForwardIterator begin,
                                                    EndPoint        end,
                                                    Callable        fun) const
-    -> nstd::type_traits::enable_if_t<!nstd::is_execution_policy_v<ForwardIterator>,
+    -> nstd::type_traits::enable_if_t<!nstd::is_execution_policy<ForwardIterator>::value,
                                       nstd::utility::pair<ForwardIterator, Callable>> {
     // Got an iterator => forward to projection/cursor version with identity projection
     return (*this)(nstd::projection::identity, begin, end, nstd::utility::move(fun));
@@ -100,7 +100,7 @@ auto nstd::algorithm::detail::for_each::operator()(ExecutionPolicy&& ep,
                                                    MultiPass         begin,
                                                    EndPoint          end,
                                                    Callable          fun) const
-    -> nstd::type_traits::enable_if_t<nstd::is_execution_policy_v<ExecutionPolicy>> {
+    -> nstd::type_traits::enable_if_t<nstd::is_execution_policy<ExecutionPolicy>::value> {
     try {
         execute(ep, begin, end, [readable, fun = std::move(fun)](auto&& begin, auto&& end) {
                 ::nstd::algorithm::for_each(readable, begin, end, fun);
@@ -116,7 +116,7 @@ auto nstd::algorithm::detail::for_each::operator()(ExecutionPolicy&& ep,
                                                    ForwardIterator   begin,
                                                    EndPoint          end,
                                                    Callable          fun) const
-    -> nstd::type_traits::enable_if_t<nstd::is_execution_policy_v<ExecutionPolicy>> {
+    -> nstd::type_traits::enable_if_t<nstd::is_execution_policy<ExecutionPolicy>::value> {
     (*this)(nstd::utility::forward<ExecutionPolicy>(ep),
            nstd::projection::identity, begin, end, nstd::utility::move(fun));
 }

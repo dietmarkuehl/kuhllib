@@ -38,3 +38,6 @@ add_subdirectory(operators)
 add_subdirectory(thread)
 add_subdirectory(type_traits)
 add_subdirectory(utility)
+
+add_library(nstd STATIC nstd-dummy)
+target_link_libraries(nstd nstd-execution)
