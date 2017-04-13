@@ -32,7 +32,7 @@ namespace NE = ::nstd::execution;
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
-    KT::expect_failure("placeholder", [](KT::context& c)->bool{
+    KT::expect_success("breathing test", [](KT::context& c)->bool{
             NE::thread_pool          pool;
             NE::thread_pool_executor executor(pool);
 
@@ -41,11 +41,18 @@ static KT::testcase const tests[] = {
             executor.add([](NE::thread_pool_executor&){});
             executor.add_front([](NE::thread_pool_executor&){});
             executor.process();
-            return false;
+            return true;
         }),
-    KT::expect_failure("placeholder", [](KT::context& c)->bool{
-           return false;
+    KT::expect_success("breathing test", [](KT::context& c)->bool{
+            NE::thread_pool_executor executor;
+
+            executor.add([](){});
+            executor.add([](NE::thread_pool_executor&){});
+            executor.add_front([](NE::thread_pool_executor&){});
+            executor.process();
+            return true;
         }),
+    //-dk:TODO more thorough tests...
 };
 
 int main(int ac, char* av[])

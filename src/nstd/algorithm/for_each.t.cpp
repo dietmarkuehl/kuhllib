@@ -32,6 +32,7 @@
 #include "nstd/projection/identity.hpp"
 #include "nstd/projection/model_readable.hpp"
 #include "nstd/utility/equality_comparable.hpp"
+#include "nstd/thread/mutex.hpp"
 #include "kuhl/test.hpp"
 #include <vector>
 #include <cstddef>
@@ -200,10 +201,17 @@ static KT::testcase const tests[] = {
                 ;
         }),
     KT::expect_success("for_each(par, ) with random access iterator", [](KT::context& c)->bool{
-            std::vector<int> source({ 1, 2, 3, 4, 5 });
+            std::vector<int> source;
+            for (int i(0); i != 2000000; ++i) {
+                source.push_back(i);
+            }
             std::vector<int> target;
-            NA::for_each(NE::par, source.begin(), source.end(),
-                         [&](int value){ target.push_back(value); });
+            ::nstd::thread::mutex mutex;
+            NA::for_each(NE::par(1), source.begin(), source.end(),
+                         [&](int value){
+                             ::nstd::thread::lock_guard<::nstd::thread::mutex> kerberos(mutex);
+                             target.push_back(value);
+                         });
             return KT::assert_true(c, "registered all calls",
                                    source.end() == 
                                        NA::mismatch(NP::identity, source.begin(), source.end(),

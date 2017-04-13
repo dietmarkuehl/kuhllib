@@ -55,11 +55,11 @@ struct nstd::iterator::detail::test_random_access {
     using decay_type = ::nstd::type_traits::decay_t<Iterator>;
 
     template <typename I>
-    static char (&test(I*, typename ::nstd::iterator::traits<I>::iterator_category*))[1];
+    static char (&test(I*, typename ::nstd::iterator::traits<I>::iterator_category**))[1];
     template <typename I>
     static char (&test(I*, ...))[2];
     static constexpr bool value = 1u == sizeof(test(static_cast<decay_type*>(nullptr),
-                                                    static_cast<::nstd::iterator::random_access_iterator_tag*>(nullptr)));
+                                                    static_cast<::nstd::iterator::random_access_iterator_tag**>(nullptr)));
 };
 
 // ----------------------------------------------------------------------------

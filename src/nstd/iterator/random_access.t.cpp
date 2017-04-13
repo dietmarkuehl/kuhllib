@@ -24,6 +24,8 @@
 // ----------------------------------------------------------------------------
 
 #include "nstd/iterator/random_access.hpp"
+#include "nstd/container/list.hpp"
+#include "nstd/container/vector.hpp"
 #include "kuhl/test.hpp"
 
 namespace KT = ::kuhl::test;
@@ -54,6 +56,32 @@ static KT::testcase const tests[] = {
                                    NI::is_random_access<int volatile*>::value)
                 && KT::assert_true(c, "int const volatile*",
                                    NI::is_random_access<int const volatile*>::value)
+                ;
+        }),
+    KT::expect_success("is_random_access<vector<int>::iterator...>", [](KT::context& c)->bool{
+            using iterator = ::nstd::container::vector<int>::iterator;
+
+            return KT::assert_true(c, "iterator",
+                                   NI::is_random_access<iterator>::value)
+                && KT::assert_true(c, "iterator const",
+                                   NI::is_random_access<iterator const>::value)
+                && KT::assert_true(c, "iterator volatile",
+                                   NI::is_random_access<iterator volatile>::value)
+                && KT::assert_true(c, "iterator const volatile",
+                                   NI::is_random_access<iterator const volatile>::value)
+                ;
+        }),
+    KT::expect_success("is_random_access<list<int>::iterator...>", [](KT::context& c)->bool{
+            using iterator = ::nstd::container::list<int>::iterator;
+
+            return KT::assert_false(c, "iterator",
+                                    NI::is_random_access<iterator>::value)
+                && KT::assert_false(c, "iterator const",
+                                    NI::is_random_access<iterator const>::value)
+                && KT::assert_false(c, "iterator volatile",
+                                    NI::is_random_access<iterator volatile>::value)
+                && KT::assert_false(c, "iterator const volatile",
+                                    NI::is_random_access<iterator const volatile>::value)
                 ;
         }),
     //KT::expect_failure("placeholder", [](KT::context& c)->bool{

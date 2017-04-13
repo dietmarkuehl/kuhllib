@@ -34,6 +34,8 @@ namespace nstd {
     namespace iterator {
         //-dk:TODO use own version of iterator_traits
         using ::std::iterator_traits;
+        template <typename Iterator>
+        using traits = ::std::iterator_traits<Iterator>;
     }
 }
 

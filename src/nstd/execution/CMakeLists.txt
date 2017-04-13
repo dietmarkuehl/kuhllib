@@ -26,6 +26,10 @@
 cmake_minimum_required(VERSION 2.8.2)
 project(nstd_execution)
 
+add_library(nstd STATIC
+	parallel_policy.cpp
+	thread_pool.cpp
+	)
 enable_testing()
 foreach(test
 	thread_pool.t
@@ -36,6 +40,6 @@ foreach(test
 	sequenced_policy.t
         )
   add_executable(${test} ${test})
-  target_link_libraries(${test} PUBLIC kuhltest)
+  target_link_libraries(${test} PUBLIC nstd kuhltest)
   add_test(NAME ${test} COMMAND $<TARGET_FILE:${test}>)
 endforeach(test)

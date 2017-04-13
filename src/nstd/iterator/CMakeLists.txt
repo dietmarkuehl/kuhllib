@@ -30,6 +30,7 @@ enable_testing()
 foreach(test
 	bidirectional_iterator.t
 	forward_iterator.t
+	random_access.t
         )
   add_executable(${test} ${test})
   target_link_libraries(${test} PUBLIC kuhltest)

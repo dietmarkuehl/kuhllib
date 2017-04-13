@@ -27,19 +27,31 @@
 #define INCLUDED_NSTD_EXECUTION_PARALLEL_POLICY
 
 #include "nstd/execution/is_execution_policy.hpp"
+#include "nstd/algorithm/distance.hpp"
+#include "nstd/execution/thread_pool.hpp"
+#include "nstd/iterator/random_access.hpp"
 #include "nstd/type_traits/integral_constant.hpp"
+#include "nstd/type_traits/enable_if.hpp"
+#include <iostream>
 
 // ----------------------------------------------------------------------------
 
 namespace nstd {
     namespace execution {
-        class parallel_policy {
+        struct parallel_policy {
+            unsigned size;
+            parallel_policy operator()(unsigned s) const;
         };
-        constexpr parallel_policy par{};
+        constexpr parallel_policy par{16u};
 
         template <typename MultiPass, typename EndPoint, typename Callable>
-        void execute(::nstd::execution::parallel_policy const&,
+        ::nstd::type_traits::enable_if_t<!::nstd::iterator::is_random_access_v<EndPoint>>
+        execute(::nstd::execution::parallel_policy const&,
                      MultiPass begin, EndPoint end, Callable fun);
+        template <typename MultiPass, typename EndPoint, typename Callable>
+        ::nstd::type_traits::enable_if_t<::nstd::iterator::is_random_access_v<EndPoint>>
+        execute(::nstd::execution::parallel_policy const&,
+                MultiPass begin, EndPoint end, Callable fun);
     }
 
     template <>
@@ -51,10 +63,38 @@ namespace nstd {
 // ----------------------------------------------------------------------------
 
 template <typename MultiPass, typename EndPoint, typename Callable>
-void nstd::execution::execute(::nstd::execution::parallel_policy const&,
-                              MultiPass cur, EndPoint end, Callable fun) {
-    //-dk:TODO schedule portions of the sequence to be processed
+::nstd::type_traits::enable_if_t<!::nstd::iterator::is_random_access_v<EndPoint>>
+nstd::execution::execute(::nstd::execution::parallel_policy const&,
+                         MultiPass cur, EndPoint end, Callable fun) {
+    //-dk:TODO support parallel version for non-random access
     fun(cur, end);
+}
+
+// ----------------------------------------------------------------------------
+
+template <typename MultiPass, typename EndPoint, typename Callable>
+::nstd::type_traits::enable_if_t<::nstd::iterator::is_random_access_v<EndPoint>>
+nstd::execution::execute(::nstd::execution::parallel_policy const& policy,
+                         MultiPass cur, EndPoint end, Callable fun) {
+    ::nstd::execution::thread_pool_executor executor; //-dk:TODO use the argument?
+    for (auto size(::nstd::algorithm::distance(cur, end));
+         policy.size <= size; size -= policy.size) {
+        auto tmp(cur + policy.size);
+        executor.add([=](){ fun(cur, tmp); });
+        cur = tmp;
+    }
+    if (cur != end) {
+        executor.add([=](){ fun(cur, end); });
+    }
+    executor.process();
+}
+
+// ----------------------------------------------------------------------------
+
+inline
+::nstd::execution::parallel_policy
+nstd::execution::parallel_policy::operator()(unsigned s) const {
+    return ::nstd::execution::parallel_policy{s};
 }
 
 // ----------------------------------------------------------------------------
