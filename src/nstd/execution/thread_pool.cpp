@@ -24,7 +24,9 @@
 // ----------------------------------------------------------------------------
 
 #include "nstd/execution/thread_pool.hpp"
+#include "nstd/algorithm/max.hpp"
 
+namespace NA = ::nstd::algorithm;
 namespace NE = ::nstd::execution;
 
 // ----------------------------------------------------------------------------
@@ -39,7 +41,7 @@ NE::thread_pool::default_pool() {
 
 NE::thread_pool::thread_pool(unsigned count)
     : d_stopped(false) {
-    this->start(count);
+    this->start(NA::max(count, 1u));
 }
 
 NE::thread_pool::~thread_pool() {
@@ -61,6 +63,7 @@ NE::thread_pool::start(unsigned count) {
     while (this->d_threads.size() != count) {
         this->d_threads.emplace_back(&NE::thread_pool::donate, this);
     }
+    assert(!this->d_threads.empty());
 }
 
 void NE::thread_pool::stop() {
@@ -90,9 +93,13 @@ nstd::execution::thread_pool::donate() {
 
 // ----------------------------------------------------------------------------
 
-void NE::thread_pool::add_work(NE::work_source* source, unique_lock& kerberos) {
+bool NE::thread_pool::add_work(NE::work_source* source, unique_lock& kerberos) {
+    if (this->d_stopped) {
+        return false;
+    }
     this->d_queue.push_back(source);
     this->d_condition.notify_one();
+    return true;
 }
 
 // ----------------------------------------------------------------------------

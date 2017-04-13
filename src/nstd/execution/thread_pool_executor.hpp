@@ -93,8 +93,9 @@ private:
 
     void do_process_one(unique_lock& kerberos) override;
     void register_work(unique_lock& kerberos) {
-        ++this->d_running; // tasks registered with the pool are considered running
-        this->d_pool.add_work(this, kerberos);
+        if (this->d_pool.add_work(this, kerberos)) {
+            ++this->d_running; // tasks registered with the pool are considered running
+        }
     }
 
 public:

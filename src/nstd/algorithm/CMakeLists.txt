@@ -36,11 +36,12 @@ foreach(test
         find_if.t
         find_if_not.t
 	for_each.t
+	max.t
 	mismatch.t
         none_of.t
         search.t
         )
   add_executable(${test} ${test})
-  target_link_libraries(${test} PUBLIC kuhltest)
+  target_link_libraries(${test} PUBLIC nstd kuhltest)
   add_test(NAME ${test} COMMAND $<TARGET_FILE:${test}>)
 endforeach(test)

@@ -84,7 +84,7 @@ public:
     void start(unsigned count);
     void stop();
     void donate();
-    void add_work(work_source* source, unique_lock& kerberos);
+    bool add_work(work_source* source, unique_lock& kerberos);
 
     unique_lock get_lock() { return unique_lock(this->d_mutex); }
 };

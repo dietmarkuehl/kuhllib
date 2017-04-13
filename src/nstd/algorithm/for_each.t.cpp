@@ -35,6 +35,7 @@
 #include "nstd/thread/mutex.hpp"
 #include "kuhl/test.hpp"
 #include <vector>
+#include <algorithm>
 #include <cstddef>
 #include <iostream>
 
@@ -202,7 +203,7 @@ static KT::testcase const tests[] = {
         }),
     KT::expect_success("for_each(par, ) with random access iterator", [](KT::context& c)->bool{
             std::vector<int> source;
-            for (int i(0); i != 2000000; ++i) {
+            for (int i(0); i != 20000; ++i) {
                 source.push_back(i);
             }
             std::vector<int> target;
@@ -212,7 +213,9 @@ static KT::testcase const tests[] = {
                              ::nstd::thread::lock_guard<::nstd::thread::mutex> kerberos(mutex);
                              target.push_back(value);
                          });
-            return KT::assert_true(c, "registered all calls",
+            std::sort(target.begin(), target.end());
+            return KT::assert_equal(c, "same number of elements", source.size(), target.size())
+                && KT::assert_true(c, "registered all calls",
                                    source.end() == 
                                        NA::mismatch(NP::identity, source.begin(), source.end(),
                                                     NP::identity, target.begin(), target.end()).first)
