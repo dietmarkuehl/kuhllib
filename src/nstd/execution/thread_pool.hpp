@@ -26,6 +26,7 @@
 #ifndef INCLUDED_NSTD_THREAD_THREAD_POOL
 #define INCLUDED_NSTD_THREAD_THREAD_POOL
 
+#include "nstd/execution/work_source.hpp"
 #include <algorithm>
 // #include "nstd/algorithm/for_each.hpp"
 #include "nstd/functional/function.hpp"
@@ -48,61 +49,27 @@
 
 namespace nstd {
     namespace execution {
-        class work_source;
         class thread_pool;
-        class thread_pool_executor;
-
-        template <typename Fun> struct test_thread_pool_executor_arg;
-        template <typename Fun> struct has_thread_pool_executor_arg;
-        template <typename Fun>
-        constexpr bool has_thread_pool_executor_arg_v
-            = ::nstd::execution::has_thread_pool_executor_arg<Fun>::value;
     }
 }
 
 // ----------------------------------------------------------------------------
 
-class ::nstd::execution::work_source {
-public:
-    using unique_lock = ::nstd::thread::unique_lock<::nstd::thread::mutex>;
-
-    virtual ::std::size_t size(unique_lock& kerberos) const = 0;
-    virtual void          process_one(unique_lock& kerberos) = 0;
-};
-
-// ----------------------------------------------------------------------------
-
-template <typename Fun>
-struct nstd::execution::test_thread_pool_executor_arg {
-    template <typename F>
-    static char (&test(F* f, decltype((*f)(::nstd::type_traits::declval<::nstd::execution::thread_pool_executor&>()))*))[1];
-    template <typename F>
-    static char (&test(F* f, ...))[2];
-};
-
-template <typename Fun>
-struct nstd::execution::has_thread_pool_executor_arg
-    : ::nstd::type_traits::integral_constant<bool,
-        1u == sizeof(::nstd::execution::test_thread_pool_executor_arg<Fun>::test(static_cast<Fun*>(0), 0))> {
-};
-
-// ----------------------------------------------------------------------------
-
 class nstd::execution::thread_pool {
 public:
-    using executor = ::nstd::execution::thread_pool_executor;
-    using unique_lock    = ::nstd::thread::unique_lock<::nstd::thread::mutex>;
-
-    friend class ::nstd::execution::thread_pool_executor;
+    using mutex              = ::nstd::thread::mutex;
+    using thread             = ::nstd::thread::thread;
+    using condition_variable = ::nstd::thread::condition_variable;
+    using unique_lock        = ::nstd::thread::unique_lock<mutex>;
+    using work_source        = ::nstd::execution::work_source;
 
 private:
-    using thread = ::nstd::thread::thread;
 
-    ::nstd::thread::mutex               d_mutex;
-    ::nstd::thread::condition_variable  d_condition;
+    mutex                                  d_mutex;
+    condition_variable                     d_condition;
     ::nstd::container::deque<work_source*> d_queue;
-    ::nstd::container::vector<thread>   d_threads;
-    bool                                d_stopped;
+    ::nstd::container::vector<thread>      d_threads;
+    bool                                   d_stopped = true;
 
 public:
     static ::nstd::execution::thread_pool& default_pool();
@@ -117,125 +84,9 @@ public:
     void start(unsigned count);
     void stop();
     void donate();
-    void add_work(::nstd::execution::work_source* source, unique_lock& kerberos);
+    void add_work(work_source* source, unique_lock& kerberos);
 
-    inline void lock()   { this->d_mutex.lock(); }
-    inline void unlock() { this->d_mutex.unlock(); }
-};
-
-// ----------------------------------------------------------------------------
-
-class nstd::execution::thread_pool_executor
-    : public ::nstd::execution::work_source {
-private:
-    using unique_lock = ::nstd::thread::unique_lock<::nstd::thread::mutex>;
-
-    using executor = ::nstd::execution::thread_pool_executor;
-    using task     = ::nstd::functional::function<void(executor&)>;
-    using queue    = ::nstd::container::deque<task>;
-
-    ::nstd::execution::thread_pool&     d_pool;
-    queue                               d_tasks;
-    ::nstd::thread::condition_variable  d_done;
-    unsigned                            d_running = 0u;
-
-    thread_pool_executor(thread_pool_executor&) = delete;
-    void operator=(thread_pool_executor&) = delete;
-
-    template <typename Job>
-    auto make_task(Job&& job) -> ::nstd::type_traits::enable_if_t<
-        nstd::execution::has_thread_pool_executor_arg_v<Job>, task> {
-        return task(::nstd::utility::forward<Job>(job));
-    }
-    template <typename Job>
-    auto make_task(Job&& job) -> ::nstd::type_traits::enable_if_t<
-        !nstd::execution::has_thread_pool_executor_arg_v<Job>, task> {
-        return task([job = ::nstd::utility::forward<Job>(job)](::nstd::execution::thread_pool_executor&) {
-                job();
-            });
-    }
-
-    void process_one(unique_lock& kerberos) override {
-        this->process_one_locked(kerberos);
-    }
-
-public:
-    // Use the specified thread_pool.
-    explicit thread_pool_executor(::nstd::execution::thread_pool& pool
-                                  = ::nstd::execution::thread_pool::default_pool())
-        : d_pool(pool) {
-    }
-    ~thread_pool_executor() {
-        unique_lock kerberos(this->d_pool.d_mutex);
-        while (0u != this->d_running) {
-            this->d_done.wait(kerberos);
-            //-dk:TODO signal condition variable
-        }
-    }
-
-    // job control
-    template <typename Job> void add(Job&& job) {
-        unique_lock kerberos(this->d_pool.d_mutex);
-        this->d_tasks.push_back(this->make_task(::nstd::utility::forward<Job>(job)));
-        if (this->d_tasks.size() == 1u) {
-            this->d_pool.d_queue.push_back(this);
-            //-dk:TODO signal condition variable
-        }
-    }
-    template <typename Job> void add_front(Job&& job) {
-        unique_lock kerberos(this->d_pool.d_mutex);
-        this->d_tasks.push_front(this->make_task(::nstd::utility::forward<Job>(job)));
-        if (this->d_tasks.size() == 1u) {
-            this->d_pool.d_queue.push_back(this);
-        }
-    }
-    void cancel_all() {
-        unique_lock kerberos(this->d_pool.d_mutex);
-        this->d_tasks.clear();
-        this->d_pool.d_queue.erase(::std::find(this->d_pool.d_queue.begin(),
-                                               this->d_pool.d_queue.end(),
-                                               this),
-                                   this->d_pool.d_queue.end());
-    }
-
-    // job access
-    bool     empty(unique_lock&) const { return this->d_tasks.empty(); }
-    ::std::size_t size(unique_lock& kerberos) const override {
-        return this->d_tasks.size();
-    }
-    task get_task(unique_lock&) {
-        task job(::nstd::utility::move(this->d_tasks.front()));
-        this->d_tasks.pop_front();
-        return job;
-    }
-
-    // contribute to the processing instead of waiting
-    bool process_one() {
-        unique_lock kerberos(this->d_pool.d_mutex);
-        if (this->empty(kerberos)) {
-            return false;
-        }
-        process_one_locked(kerberos);
-        return !this->empty(kerberos);
-    }
-    void process_one_locked(unique_lock& kerberos) {
-        assert(!this->empty(kerberos));
-        task job(this->get_task(kerberos));
-        ++this->d_running;
-        {
-            ::nstd::thread::unlock_guard<unique_lock> release(kerberos);
-            job(*this);
-        }
-        if (0u == --this->d_running && this->d_tasks.empty()) {
-            this->d_done.notify_all();
-        }
-    }
-    void process() {
-        unique_lock kerberos(this->d_pool.d_mutex);
-        while (!this->empty(kerberos)) {
-            process_one_locked(kerberos);
-        }
-    }
+    unique_lock get_lock() { return unique_lock(this->d_mutex); }
 };
 
 // ----------------------------------------------------------------------------

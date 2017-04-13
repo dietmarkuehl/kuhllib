@@ -28,7 +28,7 @@
 
 #include "nstd/execution/is_execution_policy.hpp"
 #include "nstd/algorithm/distance.hpp"
-#include "nstd/execution/thread_pool.hpp"
+#include "nstd/execution/thread_pool_executor.hpp"
 #include "nstd/iterator/random_access.hpp"
 #include "nstd/type_traits/integral_constant.hpp"
 #include "nstd/type_traits/enable_if.hpp"

@@ -29,10 +29,13 @@ project(nstd_execution)
 add_library(nstd STATIC
 	parallel_policy.cpp
 	thread_pool.cpp
+	thread_pool_executor.cpp
 	)
 enable_testing()
 foreach(test
+	work_source.t
 	thread_pool.t
+	thread_pool_executor.t
 	execution.t
 	is_execution_policy.t
 	parallel_policy.t

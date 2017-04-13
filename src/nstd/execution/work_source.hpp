@@ -27,6 +27,7 @@
 #define INCLUDED_NSTD_EXECUTION_WORK_SOURCE
 
 #include "nstd/thread/mutex.hpp"
+#include <cstddef> //-dk:TODO replace
 
 // ----------------------------------------------------------------------------
 
@@ -43,17 +44,24 @@ class ::nstd::execution::work_source
 public:
     using unique_lock = ::nstd::thread::unique_lock<::nstd::thread::mutex>;
 
+protected:
+    virtual void          do_process_one(unique_lock& kerberos) = 0;
+
+public:
     work_source()                      = default;
     work_source(work_source const&)    = delete;
     void operator=(work_source const&) = delete;
     virtual ~work_source() = default;
 
-    ::std::size_t size(unique_lock& kerberos) const  { return this->do_size(kerberos); }
-    void          process_one(unique_lock& kerberos) { this->do_process_one(kerberos); }
-
-    virtual ::std::size_t do_size(unique_lock& kerberos) const = 0;
-    virtual void          do_process_one(unique_lock& kerberos) = 0;
+    void process_one(unique_lock& kerberos);
 };
+
+// ----------------------------------------------------------------------------
+
+inline void 
+nstd::execution::work_source::process_one(unique_lock& kerberos) {
+    this->do_process_one(kerberos);
+}
 
 // ----------------------------------------------------------------------------
 

@@ -39,9 +39,6 @@ namespace {
         using NE::work_source::unique_lock;
         bool d_called = false;
         
-        ::std::size_t do_size(unique_lock&) const override {
-            return 17u;;
-        }
         void do_process_one(unique_lock&) override {
             this->d_called = true;
         }
@@ -59,7 +56,6 @@ static KT::testcase const tests[] = {
             NE::work_source::unique_lock kerberos(mutex);
 
             return KT::assert_false(c, "initial state", ws.d_called)
-                && KT::assert_equal(c, "size() member", 17u, aws.size(kerberos))
                 && (aws.process_one(kerberos)
                     , KT::assert_true(c, "override was called", ws.d_called))
                 ;
