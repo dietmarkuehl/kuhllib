@@ -1,4 +1,4 @@
-// nstd/execution/parallel_policy.hpp                                 -*-C++-*-
+// nstd/execution/openmp_policy.hpp                                   -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2017 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,11 +23,10 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_EXECUTION_PARALLEL_POLICY
-#define INCLUDED_NSTD_EXECUTION_PARALLEL_POLICY
+#ifndef INCLUDED_NSTD_EXECUTION_OPENMP_POLICY
+#define INCLUDED_NSTD_EXECUTION_OPENMP_POLICY
 
 #include "nstd/execution/is_execution_policy.hpp"
-#include "nstd/algorithm/distance.hpp"
 #include "nstd/execution/thread_pool_executor.hpp"
 #include "nstd/iterator/random_access.hpp"
 #include "nstd/type_traits/integral_constant.hpp"
@@ -38,24 +37,17 @@
 
 namespace nstd {
     namespace execution {
-        struct parallel_policy {
-            unsigned size;
-            parallel_policy operator()(unsigned s) const;
+        struct openmp_policy {
         };
-        constexpr parallel_policy par{65536u};
+        constexpr openmp_policy omp;
 
         template <typename MultiPass, typename EndPoint, typename Callable>
-        ::nstd::type_traits::enable_if_t<!::nstd::iterator::is_random_access<EndPoint>::value>
-        execute(::nstd::execution::parallel_policy const&,
+        void execute(::nstd::execution::openmp_policy const&,
                      MultiPass begin, EndPoint end, Callable fun);
-        template <typename MultiPass, typename EndPoint, typename Callable>
-        ::nstd::type_traits::enable_if_t<::nstd::iterator::is_random_access<EndPoint>::value>
-        execute(::nstd::execution::parallel_policy const&,
-                MultiPass begin, EndPoint end, Callable fun);
     }
 
     template <>
-    struct is_execution_policy<::nstd::execution::parallel_policy>
+    struct is_execution_policy<::nstd::execution::openmp_policy>
         : public ::nstd::type_traits::true_type {
     };
 }
@@ -63,38 +55,13 @@ namespace nstd {
 // ----------------------------------------------------------------------------
 
 template <typename MultiPass, typename EndPoint, typename Callable>
-::nstd::type_traits::enable_if_t<!::nstd::iterator::is_random_access<EndPoint>::value>
-nstd::execution::execute(::nstd::execution::parallel_policy const&,
-                         MultiPass cur, EndPoint end, Callable fun) {
-    //-dk:TODO support parallel version for non-random access
-    fun(cur, end);
-}
-
-// ----------------------------------------------------------------------------
-
-template <typename MultiPass, typename EndPoint, typename Callable>
-::nstd::type_traits::enable_if_t<::nstd::iterator::is_random_access<EndPoint>::value>
-nstd::execution::execute(::nstd::execution::parallel_policy const& policy,
-                         MultiPass cur, EndPoint end, Callable fun) {
-    ::nstd::execution::thread_pool_executor executor; //-dk:TODO use the argument?
-    for (auto size(::nstd::algorithm::distance(cur, end));
-         policy.size <= size; size -= policy.size) {
-        auto tmp(cur + policy.size);
-        executor.add([=](){ fun(cur, tmp); });
-        cur = tmp;
+void
+nstd::execution::execute(::nstd::execution::openmp_policy const&,
+                         MultiPass begin, EndPoint end, Callable fun) {
+    #pragma omp parallel for
+    for (auto cur = begin; cur < end; ++cur) {
+        fun(*cur);
     }
-    if (cur != end) {
-        executor.add([=](){ fun(cur, end); });
-    }
-    executor.process();
-}
-
-// ----------------------------------------------------------------------------
-
-inline
-::nstd::execution::parallel_policy
-nstd::execution::parallel_policy::operator()(unsigned s) const {
-    return ::nstd::execution::parallel_policy{s};
 }
 
 // ----------------------------------------------------------------------------

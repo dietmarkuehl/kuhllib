@@ -33,6 +33,7 @@ add_library(nstd-execution STATIC
 	)
 enable_testing()
 foreach(test
+	openmp_policy.t
 	work_source.t
 	thread_pool.t
 	thread_pool_executor.t

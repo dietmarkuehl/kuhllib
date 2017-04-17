@@ -1,4 +1,4 @@
-// nstd/execution/parallel_policy.t.cpp                               -*-C++-*-
+// nstd/execution/openmp_policy.t.cpp                                 -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2017 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,7 +23,7 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/execution/parallel_policy.hpp"
+#include "nstd/execution/openmp_policy.hpp"
 #include "nstd/execution/is_execution_policy.hpp"
 #include "kuhl/test.hpp"
 
@@ -32,22 +32,22 @@ namespace KT = ::kuhl::test;
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
-    KT::expect_success("parallel_policy is an execution policy",
+    KT::expect_success("openmp_policy is an execution policy",
                        [](KT::context& c)->bool{
-        return KT::assert_constexpr_true<nstd::is_execution_policy<nstd::execution::parallel_policy>::value>(
-                  c, "is_execution_policy<parallel_policy>::value")
-            && KT::assert_constexpr_true<nstd::is_execution_policy_v<nstd::execution::parallel_policy>>(
-                  c, "is_execution_policy_v<parallel_policy>")
+        return KT::assert_constexpr_true<nstd::is_execution_policy<nstd::execution::openmp_policy>::value>(
+                  c, "is_execution_policy<openmp_policy>::value")
+            && KT::assert_constexpr_true<nstd::is_execution_policy_v<nstd::execution::openmp_policy>>(
+                  c, "is_execution_policy_v<openmp_policy>")
             ;
                        }),
-    KT::expect_success("par is an object of type parallel_policy",
+    KT::expect_success("omp is an object of type openmp_policy",
                        [](KT::context& c)->bool{
-        return KT::assert_type<nstd::execution::parallel_policy>(c, nstd::execution::par, "par")
+        return KT::assert_type<nstd::execution::openmp_policy>(c, nstd::execution::omp, "omp")
             ;
                        }),
 };
 
 int main(int ac, char* av[])
 {
-    return KT::run_tests("nstd:execution::parallel_policy", ac, av, ::tests);
+    return KT::run_tests("nstd:execution::openmp_policy", ac, av, ::tests);
 }
