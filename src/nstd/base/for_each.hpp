@@ -1,4 +1,4 @@
-// nstd/execution/sequenced_policy.h                                  -*-C++-*-
+// nstd/base/for_each.hpp                                             -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2017 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,38 +23,38 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_EXECUTION_SEQUENCED_POLICY
-#define INCLUDED_NSTD_EXECUTION_SEQUENCED_POLICY
-
-#include "nstd/execution/is_execution_policy.hpp"
-#include "nstd/base/for_each.hpp"
-#include "nstd/type_traits/integral_constant.hpp"
+#ifndef INCLUDED_NSTD_BASE_FOR_EACH
+#define INCLUDED_NSTD_BASE_FOR_EACH
 
 // ----------------------------------------------------------------------------
 
 namespace nstd {
-    namespace execution {
-        class sequenced_policy {
-        };
-        constexpr sequenced_policy seq{};
-
-        template <typename MultiPass, typename EndPoint, typename Callable>
-        void execute(::nstd::execution::sequenced_policy const&,
-                     MultiPass begin, EndPoint end, Callable fun);
+    namespace base {
+        template <typename Readable, typename InCursor, typename EndPoint, typename Fun>
+        auto for_each(Readable read, InCursor it, EndPoint end, Fun&& fun)
+            -> void;
+        template <typename InCursor, typename EndPoint, typename Fun>
+        auto for_each(InCursor it, EndPoint end, Fun&& fun)
+            -> void;
     }
-
-    template <>
-    struct is_execution_policy<::nstd::execution::sequenced_policy>
-        : public ::nstd::type_traits::true_type {
-    };
 }
 
 // ----------------------------------------------------------------------------
 
-template <typename MultiPass, typename EndPoint, typename Callable>
-void nstd::execution::execute(::nstd::execution::sequenced_policy const&,
-                              MultiPass begin, EndPoint end, Callable fun) {
-    ::nstd::base::for_each(begin, end, fun);
+template <typename Readable, typename InCursor, typename EndPoint, typename Fun>
+auto nstd::base::for_each(Readable read, InCursor it, EndPoint end, Fun&& fun)
+    -> void {
+    for (; it != end; ++it) {
+        fun(read(*it));
+    }
+}
+
+template <typename InCursor, typename EndPoint, typename Fun>
+auto nstd::base::for_each(InCursor it, EndPoint end, Fun&& fun)
+    -> void {
+    for (; it != end; ++it) {
+        fun(*it);
+    }
 }
 
 // ----------------------------------------------------------------------------

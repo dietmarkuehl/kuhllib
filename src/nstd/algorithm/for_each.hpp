@@ -102,8 +102,8 @@ auto nstd::algorithm::detail::for_each::operator()(ExecutionPolicy&& ep,
                                                    Callable          fun) const
     -> nstd::type_traits::enable_if_t<nstd::is_execution_policy<ExecutionPolicy>::value> {
     try {
-        execute(ep, begin, end, [readable, fun = std::move(fun)](auto&& begin, auto&& end) {
-                ::nstd::algorithm::for_each(readable, begin, end, fun);
+        execute(ep, begin, end, [readable, fun = std::move(fun)](auto&& value) {
+                fun(readable(value)); //-dk:TODO forward?
             });
     }
     catch (...) {

@@ -27,6 +27,7 @@
 #define INCLUDED_NSTD_EXECUTION_PARALLEL_POLICY
 
 #include "nstd/execution/is_execution_policy.hpp"
+#include "nstd/base/for_each.hpp"
 #include "nstd/algorithm/distance.hpp"
 #include "nstd/execution/thread_pool_executor.hpp"
 #include "nstd/iterator/random_access.hpp"
@@ -67,7 +68,7 @@ template <typename MultiPass, typename EndPoint, typename Callable>
 nstd::execution::execute(::nstd::execution::parallel_policy const&,
                          MultiPass cur, EndPoint end, Callable fun) {
     //-dk:TODO support parallel version for non-random access
-    fun(cur, end);
+    ::nstd::base::for_each(cur, end, fun);
 }
 
 // ----------------------------------------------------------------------------
@@ -80,11 +81,11 @@ nstd::execution::execute(::nstd::execution::parallel_policy const& policy,
     for (auto size(::nstd::algorithm::distance(cur, end));
          policy.size <= size; size -= policy.size) {
         auto tmp(cur + policy.size);
-        executor.add([=](){ fun(cur, tmp); });
+        executor.add([=](){ ::nstd::base::for_each(cur, tmp, fun); });
         cur = tmp;
     }
     if (cur != end) {
-        executor.add([=](){ fun(cur, end); });
+        executor.add([=](){ ::nstd::base::for_each(cur, end, fun); });
     }
     executor.process();
 }

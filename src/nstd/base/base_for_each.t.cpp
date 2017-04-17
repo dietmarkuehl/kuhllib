@@ -1,4 +1,4 @@
-// nstd/execution/sequenced_policy.h                                  -*-C++-*-
+// nstd/base/for_each.t.cpp                                           -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2017 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,40 +23,67 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_EXECUTION_SEQUENCED_POLICY
-#define INCLUDED_NSTD_EXECUTION_SEQUENCED_POLICY
-
-#include "nstd/execution/is_execution_policy.hpp"
 #include "nstd/base/for_each.hpp"
-#include "nstd/type_traits/integral_constant.hpp"
+#include <stdexcept> //-dk:TODO replace by own exceptions
+#include "kuhl/test.hpp"
+
+namespace NB = nstd::base;
+namespace KT = kuhl::test;
 
 // ----------------------------------------------------------------------------
 
-namespace nstd {
-    namespace execution {
-        class sequenced_policy {
-        };
-        constexpr sequenced_policy seq{};
-
-        template <typename MultiPass, typename EndPoint, typename Callable>
-        void execute(::nstd::execution::sequenced_policy const&,
-                     MultiPass begin, EndPoint end, Callable fun);
-    }
-
-    template <>
-    struct is_execution_policy<::nstd::execution::sequenced_policy>
-        : public ::nstd::type_traits::true_type {
+namespace
+{
+    template <typename T, int Size>
+    struct rep {
+        T   args[Size];
+        int count = 0;
+    };
+    
+    template <typename T, int Size>
+    struct fun {
+        rep<T, Size>* r;
+        void operator()(T&& arg) {
+            if (r->count == Size) {
+                throw ::std::runtime_error("too many calls");
+            }
+            r->args[r->count] = arg;
+            ++r->count;
+        }
     };
 }
 
 // ----------------------------------------------------------------------------
 
-template <typename MultiPass, typename EndPoint, typename Callable>
-void nstd::execution::execute(::nstd::execution::sequenced_policy const&,
-                              MultiPass begin, EndPoint end, Callable fun) {
-    ::nstd::base::for_each(begin, end, fun);
-}
+static KT::testcase const tests[] = {
+    KT::expect_success("for_each() on an empty sequence",
+                       [](KT::context& c)->bool{
+            int         array[] = { 0 };
+            rep<int, 1> r;
+            NB::for_each([](auto&& value){ return value; }, array, array,
+                         fun<int, 1>{&r});
+            return KT::assert_equal(c, "there are no function calls", 0, r.count)
+                ;
+        }),
+    KT::expect_success("for_each() function calls each element",
+                       [](KT::context& c)->bool{
+            int         array[] = { 1, 2, 3, 4, 5 };
+            rep<int, 5> r;
+            NB::for_each([](auto&& value){ return value; }, array, array + 5,
+                         fun<int, 5>{&r});
+            return KT::assert_equal(c, "registered all calls", 5, r.count)
+                &&  KT::assert_equal(c, "1st value", 1, r.args[0])
+                &&  KT::assert_equal(c, "2nd value", 2, r.args[1])
+                &&  KT::assert_equal(c, "3rd value", 3, r.args[2])
+                &&  KT::assert_equal(c, "4th value", 4, r.args[3])
+                &&  KT::assert_equal(c, "5th value", 5, r.args[4])
+                ;
+        }),
+};
 
 // ----------------------------------------------------------------------------
 
-#endif
+int main(int ac, char* av[])
+{
+    return KT::run_tests("base::for_each", ac, av, ::tests);
+}
