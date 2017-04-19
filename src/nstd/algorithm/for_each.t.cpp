@@ -221,6 +221,48 @@ static KT::testcase const tests[] = {
                                                     NP::identity, target.begin(), target.end()).first)
                 ;
         }),
+    KT::expect_success("for_each(omp, ) with random access iterator", [](KT::context& c)->bool{
+            std::vector<int> source;
+            for (int i(0); i != 20000; ++i) {
+                source.push_back(i);
+            }
+            std::vector<int> target;
+            ::nstd::thread::mutex mutex;
+            NA::for_each(NE::omp, source.begin(), source.end(),
+                         [&](int value){
+                             ::nstd::thread::lock_guard<::nstd::thread::mutex> kerberos(mutex);
+                             target.push_back(value);
+                         });
+            std::sort(target.begin(), target.end());
+            return KT::assert_equal(c, "same number of elements", source.size(), target.size())
+                && KT::assert_true(c, "registered all calls",
+                                   source.end() == 
+                                       NA::mismatch(NP::identity, source.begin(), source.end(),
+                                                    NP::identity, target.begin(), target.end()).first)
+                ;
+        }),
+#if 1
+    KT::expect_success("for_each(tbb, ) with random access iterator", [](KT::context& c)->bool{
+            std::vector<int> source;
+            for (int i(0); i != 20000; ++i) {
+                source.push_back(i);
+            }
+            std::vector<int> target;
+            ::nstd::thread::mutex mutex;
+            NA::for_each(NE::tbb, source.begin(), source.end(),
+                         [&](int value){
+                             ::nstd::thread::lock_guard<::nstd::thread::mutex> kerberos(mutex);
+                             target.push_back(value);
+                         });
+            std::sort(target.begin(), target.end());
+            return KT::assert_equal(c, "same number of elements", source.size(), target.size())
+                && KT::assert_true(c, "registered all calls",
+                                   source.end() == 
+                                       NA::mismatch(NP::identity, source.begin(), source.end(),
+                                                    NP::identity, target.begin(), target.end()).first)
+                ;
+        }),
+#endif
 };
 
 int main(int ac, char* av[])

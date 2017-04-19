@@ -32,12 +32,7 @@ add_library(kuhltest STATIC
 	)
 
 enable_testing()
-foreach(test
-        assertions.t
-        context.t
-        kuhltest_test.t
-        )
-  add_executable(${test} ${test})
-  target_link_libraries(${test} PUBLIC kuhltest)
-  add_test(NAME ${test} COMMAND $<TARGET_FILE:${test}>)
-endforeach(test)
+runtests(assertions.t
+	context.t
+	kuhltest_test.t
+	)

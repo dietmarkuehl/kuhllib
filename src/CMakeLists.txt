@@ -33,16 +33,41 @@ else()
     add_definitions(-std=c++14)
 endif()
 
+SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
+SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE) 
+SET(CMAKE_INSTALL_RPATH "/opt/intel/lib:/opt/intel/compilers_and_libraries_2017.2.163/mac/tbb/lib")
+SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror -DKUHLLIB_CLANG")
+    include_directories(AFTER STSTEM "/opt/llvm-4.0.0/include")
+    link_directories("/opt/llvm-4.0.0/lib")
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4 /DKUHLLIB_MSVC")
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp -Wall -Werror -DKUHLLIB_GCC")
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w2 -Werror -DKUHLLIB_INTEL")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w2 -Werror -fopenmp -DKUHLLIB_INTEL")
 endif()
 
+function(runtests)
+    foreach(test ${ARGN})
+      add_executable(${test} ${test})
+      target_link_libraries(${test} PUBLIC kuhltest nstd-execution tbb)
+      add_test(NAME ${test} COMMAND $<TARGET_FILE:${test}>)
+      if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
+        add_custom_command(TARGET ${test} 
+          POST_BUILD COMMAND 
+          ${CMAKE_INSTALL_NAME_TOOL} -change "@rpath/libiomp5.dylib" "/opt/intel/lib/libiomp5.dylib"
+          $<TARGET_FILE:${test}>)
+        add_custom_command(TARGET ${test} 
+          POST_BUILD COMMAND 
+          ${CMAKE_INSTALL_NAME_TOOL} -change "@rpath/libtbb.dylib" "/opt/intel/compilers_and_libraries_2017.2.163/mac/tbb/lib/libtbb.dylib"
+          $<TARGET_FILE:${test}>)
+        endif()
+    endforeach(test)
+endfunction(runtests)
 enable_testing()
+
 add_subdirectory(kuhl)
 add_subdirectory(nstd)

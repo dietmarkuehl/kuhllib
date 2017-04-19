@@ -31,8 +31,8 @@ add_library(nstd-execution STATIC
 	thread_pool.cpp
 	thread_pool_executor.cpp
 	)
-enable_testing()
-foreach(test
+runtests(
+	tbb_policy.t
 	openmp_policy.t
 	work_source.t
 	thread_pool.t
@@ -43,7 +43,3 @@ foreach(test
 	parallel_unsequenced_policy.t
 	sequenced_policy.t
         )
-  add_executable(${test} ${test})
-  target_link_libraries(${test} PUBLIC nstd kuhltest)
-  add_test(NAME ${test} COMMAND $<TARGET_FILE:${test}>)
-endforeach(test)

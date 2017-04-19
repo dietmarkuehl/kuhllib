@@ -29,6 +29,7 @@
 // ----------------------------------------------------------------------------
 
 #include "nstd/execution/is_execution_policy.hpp"
+#include "nstd/execution/tbb_policy.hpp"
 #include "nstd/execution/openmp_policy.hpp"
 #include "nstd/execution/parallel_policy.hpp"
 #include "nstd/execution/parallel_unsequenced_policy.hpp"

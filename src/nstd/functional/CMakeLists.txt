@@ -26,8 +26,7 @@
 cmake_minimum_required(VERSION 2.8.2)
 project(nstd_algorithm)
 
-enable_testing()
-foreach(test
+runtests(
 	bind.t
 	equal_to.t
 	invoke.t
@@ -39,7 +38,3 @@ foreach(test
 	reference_wrapper.t
 	tuple_invoke.t
         )
-  add_executable(${test} ${test})
-  target_link_libraries(${test} PUBLIC kuhltest)
-  add_test(NAME ${test} COMMAND $<TARGET_FILE:${test}>)
-endforeach(test)

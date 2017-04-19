@@ -27,11 +27,7 @@
 #define INCLUDED_NSTD_EXECUTION_OPENMP_POLICY
 
 #include "nstd/execution/is_execution_policy.hpp"
-#include "nstd/execution/thread_pool_executor.hpp"
-#include "nstd/iterator/random_access.hpp"
 #include "nstd/type_traits/integral_constant.hpp"
-#include "nstd/type_traits/enable_if.hpp"
-#include <iostream>
 
 // ----------------------------------------------------------------------------
 
@@ -42,8 +38,8 @@ namespace nstd {
         constexpr openmp_policy omp;
 
         template <typename MultiPass, typename EndPoint, typename Callable>
-        void execute(::nstd::execution::openmp_policy const&,
-                     MultiPass begin, EndPoint end, Callable fun);
+        void map(::nstd::execution::openmp_policy const&,
+                 MultiPass begin, EndPoint end, Callable fun);
     }
 
     template <>
@@ -56,8 +52,8 @@ namespace nstd {
 
 template <typename MultiPass, typename EndPoint, typename Callable>
 void
-nstd::execution::execute(::nstd::execution::openmp_policy const&,
-                         MultiPass begin, EndPoint end, Callable fun) {
+nstd::execution::map(::nstd::execution::openmp_policy const&,
+                     MultiPass begin, EndPoint end, Callable fun) {
     #pragma omp parallel for
     for (auto cur = begin; cur < end; ++cur) {
         fun(*cur);

@@ -27,10 +27,6 @@ cmake_minimum_required(VERSION 2.8.2)
 project(nstd_base)
 
 enable_testing()
-foreach(test
+runtests(
 	base_for_each.t
         )
-  add_executable(${test} ${test})
-  target_link_libraries(${test} PUBLIC nstd kuhltest)
-  add_test(NAME ${test} COMMAND $<TARGET_FILE:${test}>)
-endforeach(test)

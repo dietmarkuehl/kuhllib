@@ -26,15 +26,10 @@
 cmake_minimum_required(VERSION 2.8.2)
 project(nstd_cursor)
 
-enable_testing()
-foreach(test
+runtests(
         array.t 
         category.t 
 	model_key.t
 	model_single_pass.t
         single_pass.t 
         )
-  add_executable(${test} ${test})
-  target_link_libraries(${test} PUBLIC kuhltest)
-  add_test(NAME ${test} COMMAND $<TARGET_FILE:${test}>)
-endforeach(test)

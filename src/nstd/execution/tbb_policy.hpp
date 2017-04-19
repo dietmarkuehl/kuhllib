@@ -1,4 +1,4 @@
-// nstd/execution/sequenced_policy.h                                  -*-C++-*-
+// nstd/execution/tbb_policy.hpp                                      -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2017 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,28 +23,32 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_EXECUTION_SEQUENCED_POLICY
-#define INCLUDED_NSTD_EXECUTION_SEQUENCED_POLICY
+#ifndef INCLUDED_NSTD_EXECUTION_TBB_POLICY
+#define INCLUDED_NSTD_EXECUTION_TBB_POLICY
+
+// ----------------------------------------------------------------------------
 
 #include "nstd/execution/is_execution_policy.hpp"
-#include "nstd/base/for_each.hpp"
 #include "nstd/type_traits/integral_constant.hpp"
+#include "nstd/base/for_each.hpp"
+#include "nstd/algorithm/distance.hpp"
+#include "tbb/parallel_for.h"
 
 // ----------------------------------------------------------------------------
 
 namespace nstd {
     namespace execution {
-        class sequenced_policy {
+        struct tbb_policy {
         };
-        constexpr sequenced_policy seq{};
+        constexpr tbb_policy tbb;
 
         template <typename MultiPass, typename EndPoint, typename Callable>
-        void map(::nstd::execution::sequenced_policy const&,
+        void map(::nstd::execution::tbb_policy const&,
                  MultiPass begin, EndPoint end, Callable fun);
     }
 
     template <>
-    struct is_execution_policy<::nstd::execution::sequenced_policy>
+    struct is_execution_policy<::nstd::execution::tbb_policy>
         : public ::nstd::type_traits::true_type {
     };
 }
@@ -52,9 +56,14 @@ namespace nstd {
 // ----------------------------------------------------------------------------
 
 template <typename MultiPass, typename EndPoint, typename Callable>
-void nstd::execution::map(::nstd::execution::sequenced_policy const&,
-                          MultiPass begin, EndPoint end, Callable fun) {
-    ::nstd::base::for_each(begin, end, fun);
+void
+nstd::execution::map(::nstd::execution::tbb_policy const&,
+                     MultiPass begin, EndPoint end, Callable fun) {
+    auto size(::nstd::algorithm::distance(begin, end));
+    ::tbb::parallel_for(::tbb::blocked_range<int>(0, size),
+                        [&](::tbb::blocked_range<int> r){
+                            ::nstd::base::for_each(begin + r.begin(), begin + r.end(), fun);
+                        });
 }
 
 // ----------------------------------------------------------------------------

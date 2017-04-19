@@ -26,8 +26,8 @@
 cmake_minimum_required(VERSION 2.8.2)
 project(nstd_algorithm)
 
-enable_testing()
-foreach(test
+runtests(
+	partition.t
 	all_of.t
 	any_of.t
         distance.t
@@ -41,7 +41,3 @@ foreach(test
         none_of.t
         search.t
         )
-  add_executable(${test} ${test})
-  target_link_libraries(${test} PUBLIC nstd kuhltest)
-  add_test(NAME ${test} COMMAND $<TARGET_FILE:${test}>)
-endforeach(test)

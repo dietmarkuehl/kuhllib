@@ -26,8 +26,7 @@
 cmake_minimum_required(VERSION 2.8.2)
 project(nstd_utility)
 
-enable_testing()
-foreach(test
+runtests(
 	equality_comparable.t
 	forward.t
 	integer_sequence.t
@@ -35,7 +34,3 @@ foreach(test
 	pair.t
 	swap.t
         )
-  add_executable(${test} ${test})
-  target_link_libraries(${test} PUBLIC kuhltest)
-  add_test(NAME ${test} COMMAND $<TARGET_FILE:${test}>)
-endforeach(test)

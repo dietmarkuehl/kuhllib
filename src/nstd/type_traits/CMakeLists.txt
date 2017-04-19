@@ -26,8 +26,7 @@
 cmake_minimum_required(VERSION 2.8.2)
 project(nstd_type_traits)
 
-enable_testing()
-foreach(test
+runtests(
         add_rvalue_reference.t 
         add_lvalue_reference.t 
         choose_type.t 
@@ -57,7 +56,3 @@ foreach(test
         remove_cv.t 
         result_of.t 
         )
-  add_executable(${test} ${test})
-  target_link_libraries(${test} PUBLIC kuhltest)
-  add_test(NAME ${test} COMMAND $<TARGET_FILE:${test}>)
-endforeach(test)

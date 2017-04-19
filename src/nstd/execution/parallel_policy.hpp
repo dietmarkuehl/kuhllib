@@ -47,12 +47,12 @@ namespace nstd {
 
         template <typename MultiPass, typename EndPoint, typename Callable>
         ::nstd::type_traits::enable_if_t<!::nstd::iterator::is_random_access<EndPoint>::value>
-        execute(::nstd::execution::parallel_policy const&,
-                     MultiPass begin, EndPoint end, Callable fun);
+        map(::nstd::execution::parallel_policy const&,
+            MultiPass begin, EndPoint end, Callable fun);
         template <typename MultiPass, typename EndPoint, typename Callable>
         ::nstd::type_traits::enable_if_t<::nstd::iterator::is_random_access<EndPoint>::value>
-        execute(::nstd::execution::parallel_policy const&,
-                MultiPass begin, EndPoint end, Callable fun);
+        map(::nstd::execution::parallel_policy const&,
+            MultiPass begin, EndPoint end, Callable fun);
     }
 
     template <>
@@ -65,8 +65,8 @@ namespace nstd {
 
 template <typename MultiPass, typename EndPoint, typename Callable>
 ::nstd::type_traits::enable_if_t<!::nstd::iterator::is_random_access<EndPoint>::value>
-nstd::execution::execute(::nstd::execution::parallel_policy const&,
-                         MultiPass cur, EndPoint end, Callable fun) {
+nstd::execution::map(::nstd::execution::parallel_policy const&,
+                     MultiPass cur, EndPoint end, Callable fun) {
     //-dk:TODO support parallel version for non-random access
     ::nstd::base::for_each(cur, end, fun);
 }
@@ -75,8 +75,8 @@ nstd::execution::execute(::nstd::execution::parallel_policy const&,
 
 template <typename MultiPass, typename EndPoint, typename Callable>
 ::nstd::type_traits::enable_if_t<::nstd::iterator::is_random_access<EndPoint>::value>
-nstd::execution::execute(::nstd::execution::parallel_policy const& policy,
-                         MultiPass cur, EndPoint end, Callable fun) {
+nstd::execution::map(::nstd::execution::parallel_policy const& policy,
+                     MultiPass cur, EndPoint end, Callable fun) {
     ::nstd::execution::thread_pool_executor executor; //-dk:TODO use the argument?
     for (auto size(::nstd::algorithm::distance(cur, end));
          policy.size <= size; size -= policy.size) {

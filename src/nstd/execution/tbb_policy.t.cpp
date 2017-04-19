@@ -1,4 +1,4 @@
-// nstd/execution/sequenced_policy.h                                  -*-C++-*-
+// nstd/execution/tbb_policy.t.cpp                                    -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2017 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,40 +23,31 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_EXECUTION_SEQUENCED_POLICY
-#define INCLUDED_NSTD_EXECUTION_SEQUENCED_POLICY
-
+#include "nstd/execution/tbb_policy.hpp"
 #include "nstd/execution/is_execution_policy.hpp"
-#include "nstd/base/for_each.hpp"
-#include "nstd/type_traits/integral_constant.hpp"
+#include "kuhl/test.hpp"
+
+namespace KT = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
 
-namespace nstd {
-    namespace execution {
-        class sequenced_policy {
-        };
-        constexpr sequenced_policy seq{};
+static KT::testcase const tests[] = {
+    KT::expect_success("tbb_policy is an execution policy",
+                       [](KT::context& c)->bool{
+        return KT::assert_constexpr_true<nstd::is_execution_policy<nstd::execution::tbb_policy>::value>(
+                  c, "is_execution_policy<tbb_policy>::value")
+            && KT::assert_constexpr_true<nstd::is_execution_policy_v<nstd::execution::tbb_policy>>(
+                  c, "is_execution_policy_v<tbb_policy>")
+            ;
+                       }),
+    KT::expect_success("tbb is an object of type tbb_policy",
+                       [](KT::context& c)->bool{
+        return KT::assert_type<nstd::execution::tbb_policy>(c, nstd::execution::tbb, "tbb")
+            ;
+                       }),
+};
 
-        template <typename MultiPass, typename EndPoint, typename Callable>
-        void map(::nstd::execution::sequenced_policy const&,
-                 MultiPass begin, EndPoint end, Callable fun);
-    }
-
-    template <>
-    struct is_execution_policy<::nstd::execution::sequenced_policy>
-        : public ::nstd::type_traits::true_type {
-    };
+int main(int ac, char* av[])
+{
+    return KT::run_tests("nstd:execution::tbb_policy", ac, av, ::tests);
 }
-
-// ----------------------------------------------------------------------------
-
-template <typename MultiPass, typename EndPoint, typename Callable>
-void nstd::execution::map(::nstd::execution::sequenced_policy const&,
-                          MultiPass begin, EndPoint end, Callable fun) {
-    ::nstd::base::for_each(begin, end, fun);
-}
-
-// ----------------------------------------------------------------------------
-
-#endif

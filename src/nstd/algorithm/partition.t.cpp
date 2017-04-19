@@ -1,4 +1,4 @@
-// nstd/execution/sequenced_policy.h                                  -*-C++-*-
+// nstd/algorithm/partition.t.cpp                                     -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2017 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,40 +23,33 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_EXECUTION_SEQUENCED_POLICY
-#define INCLUDED_NSTD_EXECUTION_SEQUENCED_POLICY
+#include "nstd/algorithm/partition.hpp"
+#include "nstd/iterator/forward_iterator.hpp"
+#include "kuhl/test.hpp"
 
-#include "nstd/execution/is_execution_policy.hpp"
-#include "nstd/base/for_each.hpp"
-#include "nstd/type_traits/integral_constant.hpp"
+namespace NA = ::nstd::algorithm;
+namespace NI = ::nstd::iterator;
+namespace KT = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
 
-namespace nstd {
-    namespace execution {
-        class sequenced_policy {
-        };
-        constexpr sequenced_policy seq{};
+static KT::testcase const tests[] = {
+    KT::expect_success("partition() of empty forward sequence",
+                       [](KT::context& c)->bool{
+           int array[] = { 0 };
+           return KT::assert_true(c, "returns begin",
+                                  NI::forward_begin(array)
+                                      == NA::partition(NI::forward_begin(array),
+                                                       NI::forward_begin(array),
+                                                       [](auto value){ return value % 2; }))
+               ;
+        }),
+    KT::expect_failure("placeholder", [](KT::context& c)->bool{
+           return false;
+        }),
+};
 
-        template <typename MultiPass, typename EndPoint, typename Callable>
-        void map(::nstd::execution::sequenced_policy const&,
-                 MultiPass begin, EndPoint end, Callable fun);
-    }
-
-    template <>
-    struct is_execution_policy<::nstd::execution::sequenced_policy>
-        : public ::nstd::type_traits::true_type {
-    };
+int main(int ac, char* av[])
+{
+    return KT::run_tests("algorithm::partition()", ac, av, ::tests);
 }
-
-// ----------------------------------------------------------------------------
-
-template <typename MultiPass, typename EndPoint, typename Callable>
-void nstd::execution::map(::nstd::execution::sequenced_policy const&,
-                          MultiPass begin, EndPoint end, Callable fun) {
-    ::nstd::base::for_each(begin, end, fun);
-}
-
-// ----------------------------------------------------------------------------
-
-#endif
