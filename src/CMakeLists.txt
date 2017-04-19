@@ -34,7 +34,7 @@ else()
 endif()
 
 SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
-SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE) 
+SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
 SET(CMAKE_INSTALL_RPATH "/opt/intel/lib:/opt/intel/compilers_and_libraries_2017.2.163/mac/tbb/lib")
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
@@ -55,13 +55,18 @@ function(runtests)
       add_executable(${test} ${test})
       target_link_libraries(${test} PUBLIC kuhltest nstd-execution tbb)
       add_test(NAME ${test} COMMAND $<TARGET_FILE:${test}>)
-      if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
-        add_custom_command(TARGET ${test} 
-          POST_BUILD COMMAND 
+      if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+        add_custom_command(TARGET ${test}
+          POST_BUILD COMMAND
+          ${CMAKE_INSTALL_NAME_TOOL} -change "@rpath/libtbb.dylib" "/opt/gcc-6.3.0/lib/libtbb.dylib"
+          $<TARGET_FILE:${test}>)
+      elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
+        add_custom_command(TARGET ${test}
+          POST_BUILD COMMAND
           ${CMAKE_INSTALL_NAME_TOOL} -change "@rpath/libiomp5.dylib" "/opt/intel/lib/libiomp5.dylib"
           $<TARGET_FILE:${test}>)
-        add_custom_command(TARGET ${test} 
-          POST_BUILD COMMAND 
+        add_custom_command(TARGET ${test}
+          POST_BUILD COMMAND
           ${CMAKE_INSTALL_NAME_TOOL} -change "@rpath/libtbb.dylib" "/opt/intel/compilers_and_libraries_2017.2.163/mac/tbb/lib/libtbb.dylib"
           $<TARGET_FILE:${test}>)
         endif()
