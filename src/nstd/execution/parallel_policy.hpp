@@ -78,7 +78,8 @@ template <typename MultiPass, typename EndPoint, typename Callable>
 nstd::execution::map(::nstd::execution::parallel_policy const& policy,
                      MultiPass cur, EndPoint end, Callable fun) {
     ::nstd::execution::thread_pool_executor executor; //-dk:TODO use the argument?
-    for (auto size(::nstd::algorithm::distance(cur, end));
+    auto size(policy.size);
+    for (size = ::nstd::algorithm::distance(cur, end);
          policy.size <= size; size -= policy.size) {
         auto tmp(cur + policy.size);
         executor.add([=](){ ::nstd::base::for_each(cur, tmp, fun); });

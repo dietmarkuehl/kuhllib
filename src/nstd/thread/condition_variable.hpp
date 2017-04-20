@@ -34,7 +34,7 @@ namespace nstd {
     namespace thread {
         using ::std::condition_variable;
         using ::std::condition_variable_any;
-        using ::std::notify_all_at_thread_exit;
+        //-dk:TODO using ::std::notify_all_at_thread_exit;
         using ::std::cv_status;
     }
 }
