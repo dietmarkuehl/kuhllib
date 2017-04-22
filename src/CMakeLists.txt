@@ -61,15 +61,17 @@ function(runtests)
             $<TARGET_FILE:${test}>)
         endif()
       elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
-        add_custom_command(TARGET ${test}
-          POST_BUILD COMMAND
-          ${CMAKE_INSTALL_NAME_TOOL} -change "@rpath/libiomp5.dylib" "/opt/intel/lib/libiomp5.dylib"
-          $<TARGET_FILE:${test}>)
-        add_custom_command(TARGET ${test}
-          POST_BUILD COMMAND
-          ${CMAKE_INSTALL_NAME_TOOL} -change "@rpath/libtbb.dylib" "/opt/intel/compilers_and_libraries_2017.2.163/mac/tbb/lib/libtbb.dylib"
-          $<TARGET_FILE:${test}>)
+        if (APPLE)
+          add_custom_command(TARGET ${test}
+            POST_BUILD COMMAND
+            ${CMAKE_INSTALL_NAME_TOOL} -change "@rpath/libiomp5.dylib" "/opt/intel/lib/libiomp5.dylib"
+            $<TARGET_FILE:${test}>)
+          add_custom_command(TARGET ${test}
+            POST_BUILD COMMAND
+            ${CMAKE_INSTALL_NAME_TOOL} -change "@rpath/libtbb.dylib" "/opt/intel/compilers_and_libraries_2017.2.163/mac/tbb/lib/libtbb.dylib"
+            $<TARGET_FILE:${test}>)
         endif()
+      endif()
     endforeach(test)
 endfunction(runtests)
 enable_testing()
