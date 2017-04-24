@@ -66,6 +66,11 @@ namespace nstd {
                     FwdIt it, EndPoint end, Init init, Reduce op)
             -> ::nstd::type_traits::enable_if_t<::nstd::iterator::is_random_access<EndPoint>::value,
                                                 decltype(op(*it, *it))>;
+
+        template <typename RndIt, typename EndPoint, typename Compare>
+        auto sort(::nstd::execution::parallel_policy const&,
+                    RndIt it, EndPoint end, Compare compare)
+            -> void;
     }
 
     template <>
@@ -136,11 +141,13 @@ auto ::nstd::execution::reduce(::nstd::execution::parallel_policy const& policy,
             chunk_size = size / chunks;
             chunks += bool(size / chunk_size);
         }
+        std::cout << "size=" << size << " chunk_size=" << chunk_size << " "
+                  << "chunks=" << chunks << " no_threads=" << no_threads << "\n";
         range.resize(chunks, init);
 
         for (typename std::vector<result_type>::size_type i(0); i != range.size() - 1u; ++i) {
-            executor.add([&result = range[i], it, end = it + chunk_size, init, op]() {
-                    result = reduce(::nstd::execution::seq, it, end, init, op);
+            executor.add([&result = range[i], it, chunk_size, init, op]() {
+                    result = reduce(::nstd::execution::seq, it, it + chunk_size, init, op);
                 });
             it += chunk_size;
         }
@@ -160,6 +167,14 @@ nstd::execution::parallel_policy::operator()(unsigned s) const {
     return ::nstd::execution::parallel_policy{s};
 }
 
+// ----------------------------------------------------------------------------
+
+template <typename RndIt, typename EndPoint, typename Compare>
+auto nstd::execution::sort(::nstd::execution::parallel_policy const&,
+                           RndIt it, EndPoint end, Compare compare)
+    -> void {
+    ::nstd::execution::sort(::nstd::execution::seq, it, end, compare);
+}
 // ----------------------------------------------------------------------------
 
 #endif

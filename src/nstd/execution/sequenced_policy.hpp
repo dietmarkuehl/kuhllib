@@ -29,6 +29,7 @@
 #include "nstd/execution/is_execution_policy.hpp"
 #include "nstd/base/for_each.hpp"
 #include "nstd/type_traits/integral_constant.hpp"
+#include <algorithm>
 
 // ----------------------------------------------------------------------------
 
@@ -47,6 +48,11 @@ namespace nstd {
         auto reduce(::nstd::execution::sequenced_policy const&,
                     FwdIt it, EndPoint end, Init init, Reduce op)
             -> decltype(op(*it, *it));
+
+        template <typename RndIt, typename EndPoint, typename Compare>
+        auto sort(::nstd::execution::sequenced_policy const&,
+                    RndIt it, EndPoint end, Compare compare)
+            -> void;
     }
 
     template <>
@@ -74,6 +80,16 @@ auto nstd::execution::reduce(::nstd::execution::sequenced_policy const&,
         value = op(value, *it);
     }
     return value;
+}
+
+// ----------------------------------------------------------------------------
+
+template <typename RndIt, typename EndPoint, typename Compare>
+auto nstd::execution::sort(::nstd::execution::sequenced_policy const&,
+                           RndIt it, EndPoint end, Compare compare)
+    -> void {
+    //-dk:TODO do something more fancy
+    ::std::sort(it, end, compare);
 }
 
 // ----------------------------------------------------------------------------
