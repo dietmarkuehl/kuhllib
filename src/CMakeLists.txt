@@ -34,7 +34,7 @@ else()
 endif()
 
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror -DKUHLLIB_CLANG")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror -stdlib=libc++ -DKUHLLIB_CLANG")
     include_directories(AFTER STSTEM "/opt/llvm-4.0.0/include")
     link_directories("/opt/llvm-4.0.0/lib")
     set(CMAKE_EXE_LINKER_FLAGS "-lc++ -lc++abi -lpthread -Wl,-rpath,/opt/llvm-4.4.0/lib/")
