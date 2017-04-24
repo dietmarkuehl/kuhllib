@@ -1,4 +1,4 @@
-// nstd/execution/parallel_unsequenced_policy.hpp                     -*-C++-*-
+// nstd/functional/plus.hpp                                           -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2017 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,41 +23,40 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_EXECUTION_PARALLEL_UNSEQUENCED_POLICY
-#define INCLUDED_NSTD_EXECUTION_PARALLEL_UNSEQUENCED_POLICY
+#ifndef INCLUDED_NSTD_FUNCTIONAL_PLUS
+#define INCLUDED_NSTD_FUNCTIONAL_PLUS
 
-#include "nstd/execution/is_execution_policy.hpp"
-#include "nstd/execution/parallel_policy.hpp"
-#include "nstd/type_traits/integral_constant.hpp"
+#include "nstd/utility/forward.hpp"
 
 // ----------------------------------------------------------------------------
 
 namespace nstd {
-    namespace execution {
-        class parallel_unsequenced_policy {
-        };
-        constexpr parallel_unsequenced_policy par_unseq{};
-
-        template <typename FwdIt, typename EndPoint, typename Init, typename Reduce>
-        auto reduce(::nstd::execution::parallel_unsequenced_policy const&,
-                    FwdIt it, EndPoint end, Init init, Reduce op)
-            -> decltype(op(*it, *it));
+    namespace functional {
+        template <typename = void> class plus;
+        template <> class plus<void>;
     }
-
-    template <>
-    struct is_execution_policy<::nstd::execution::parallel_unsequenced_policy>
-        : public ::nstd::type_traits::true_type {
-    };
 }
 
 // ----------------------------------------------------------------------------
 
-template <typename FwdIt, typename EndPoint, typename Init, typename Reduce>
-auto ::nstd::execution::reduce(::nstd::execution::parallel_unsequenced_policy const&,
-                               FwdIt it, EndPoint end, Init init, Reduce op)
-    -> decltype(op(*it, *it)) {
-    return reduce(::nstd::execution::par, it, end, init, op);
-}
+template <typename T>
+class nstd::functional::plus {
+public:
+    constexpr T operator()(T const& a0, T const& a1) const {
+        return a0 + a1;
+    }
+};
+
+// ----------------------------------------------------------------------------
+
+template <>
+class nstd::functional::plus<void> {
+public:
+    template <typename T0, typename T1>
+    constexpr auto operator()(T0&& a0, T1&& a1) const {
+        return nstd::utility::forward<T0>(a0) + nstd::utility::forward<T1>(a1);
+    }
+};
 
 // ----------------------------------------------------------------------------
 

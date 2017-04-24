@@ -1,4 +1,4 @@
-// nstd/execution/parallel_unsequenced_policy.hpp                     -*-C++-*-
+// nstd/algorithm/transform.hpp                                       -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2017 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,40 +23,37 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_EXECUTION_PARALLEL_UNSEQUENCED_POLICY
-#define INCLUDED_NSTD_EXECUTION_PARALLEL_UNSEQUENCED_POLICY
-
-#include "nstd/execution/is_execution_policy.hpp"
-#include "nstd/execution/parallel_policy.hpp"
-#include "nstd/type_traits/integral_constant.hpp"
+#ifndef INCLUDED_NSTD_ALGORITHM_TRANSFORM
+#define INCLUDED_NSTD_ALGORITHM_TRANSFORM
 
 // ----------------------------------------------------------------------------
 
 namespace nstd {
-    namespace execution {
-        class parallel_unsequenced_policy {
-        };
-        constexpr parallel_unsequenced_policy par_unseq{};
+    namespace algorithm {
+        namespace detail {
+            struct transform {
+                constexpr transform() noexcept(true) {}
+                template <typename Readable, typename SinglePass, typename EndPoint, typename Callable>
+                auto operator()(Readable, SinglePass, EndPoint, Callable) const
+                    -> nstd::type_traits::enable_if_t<!nstd::is_execution_policy<Readable>::value,
+                                                      nstd::utility::pair<SinglePass, Callable>>;
+                template <typename ForwardIterator, typename EndPoint, typename Callable>
+                auto operator()(ForwardIterator, EndPoint, Callable) const
+                    -> nstd::type_traits::enable_if_t<!nstd::is_execution_policy<ForwardIterator>::value,
+                                                      nstd::utility::pair<ForwardIterator, Callable>>;
 
-        template <typename FwdIt, typename EndPoint, typename Init, typename Reduce>
-        auto reduce(::nstd::execution::parallel_unsequenced_policy const&,
-                    FwdIt it, EndPoint end, Init init, Reduce op)
-            -> decltype(op(*it, *it));
+                template <typename ExecutionPolicy, typename Readable, typename MultiPass, typename EndPoint, typename Callable>
+                auto operator()(ExecutionPolicy&&, Readable, MultiPass, EndPoint, Callable) const
+                    -> nstd::type_traits::enable_if_t<nstd::is_execution_policy<ExecutionPolicy>::value>;
+
+                template <typename ExecutionPolicy, typename ForwardIterator, typename EndPoint, typename Callable>
+                auto operator()(ExecutionPolicy&&, ForwardIterator, EndPoint, Callable) const
+                    -> nstd::type_traits::enable_if_t<nstd::is_execution_policy<ExecutionPolicy>::value>;
+            };
+        }
+        constexpr nstd::algorithm::detail::transform transform{};
     }
 
-    template <>
-    struct is_execution_policy<::nstd::execution::parallel_unsequenced_policy>
-        : public ::nstd::type_traits::true_type {
-    };
-}
-
-// ----------------------------------------------------------------------------
-
-template <typename FwdIt, typename EndPoint, typename Init, typename Reduce>
-auto ::nstd::execution::reduce(::nstd::execution::parallel_unsequenced_policy const&,
-                               FwdIt it, EndPoint end, Init init, Reduce op)
-    -> decltype(op(*it, *it)) {
-    return reduce(::nstd::execution::par, it, end, init, op);
 }
 
 // ----------------------------------------------------------------------------

@@ -27,17 +27,19 @@ cmake_minimum_required(VERSION 2.8.2)
 project(nstd_algorithm)
 
 runtests(
-	partition.t
-	all_of.t
-	any_of.t
-        distance.t
-        find.t
-        find_end.t
-        find_if.t
-        find_if_not.t
-	for_each.t
-	max.t
-	mismatch.t
-        none_of.t
-        search.t
-        )
+    reduce.t
+    transform.t
+    partition.t
+    all_of.t
+    any_of.t
+    distance.t
+    find.t
+    find_end.t
+    find_if.t
+    find_if_not.t
+    for_each.t
+    max.t
+    mismatch.t
+    none_of.t
+    search.t
+    )

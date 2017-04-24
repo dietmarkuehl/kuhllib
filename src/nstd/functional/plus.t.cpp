@@ -1,4 +1,4 @@
-// nstd/execution/parallel_unsequenced_policy.hpp                     -*-C++-*-
+// nstd/functional/plus.t.cpp                                         -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2017 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,42 +23,19 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_EXECUTION_PARALLEL_UNSEQUENCED_POLICY
-#define INCLUDED_NSTD_EXECUTION_PARALLEL_UNSEQUENCED_POLICY
+#include "kuhl/test.hpp"
 
-#include "nstd/execution/is_execution_policy.hpp"
-#include "nstd/execution/parallel_policy.hpp"
-#include "nstd/type_traits/integral_constant.hpp"
+namespace KT = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
 
-namespace nstd {
-    namespace execution {
-        class parallel_unsequenced_policy {
-        };
-        constexpr parallel_unsequenced_policy par_unseq{};
+static KT::testcase const tests[] = {
+    KT::expect_failure("placeholder", [](KT::context& c)->bool{
+           return false;
+        }),
+};
 
-        template <typename FwdIt, typename EndPoint, typename Init, typename Reduce>
-        auto reduce(::nstd::execution::parallel_unsequenced_policy const&,
-                    FwdIt it, EndPoint end, Init init, Reduce op)
-            -> decltype(op(*it, *it));
-    }
-
-    template <>
-    struct is_execution_policy<::nstd::execution::parallel_unsequenced_policy>
-        : public ::nstd::type_traits::true_type {
-    };
+int main(int ac, char* av[])
+{
+    return KT::run_tests("TODO", ac, av, ::tests);
 }
-
-// ----------------------------------------------------------------------------
-
-template <typename FwdIt, typename EndPoint, typename Init, typename Reduce>
-auto ::nstd::execution::reduce(::nstd::execution::parallel_unsequenced_policy const&,
-                               FwdIt it, EndPoint end, Init init, Reduce op)
-    -> decltype(op(*it, *it)) {
-    return reduce(::nstd::execution::par, it, end, init, op);
-}
-
-// ----------------------------------------------------------------------------
-
-#endif

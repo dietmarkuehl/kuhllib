@@ -27,6 +27,7 @@
 #define INCLUDED_NSTD_EXECUTION_PARALLEL_POLICY
 
 #include "nstd/execution/is_execution_policy.hpp"
+#include "nstd/execution/sequenced_policy.hpp"
 #include "nstd/base/for_each.hpp"
 #include "nstd/algorithm/distance.hpp"
 #include "nstd/execution/thread_pool_executor.hpp"
@@ -34,6 +35,7 @@
 #include "nstd/type_traits/integral_constant.hpp"
 #include "nstd/type_traits/enable_if.hpp"
 #include <iostream>
+#include <vector>
 
 // ----------------------------------------------------------------------------
 
@@ -53,6 +55,17 @@ namespace nstd {
         ::nstd::type_traits::enable_if_t<::nstd::iterator::is_random_access<EndPoint>::value>
         map(::nstd::execution::parallel_policy const&,
             MultiPass begin, EndPoint end, Callable fun);
+
+        template <typename FwdIt, typename EndPoint, typename Init, typename Reduce>
+        auto reduce(::nstd::execution::parallel_policy const&,
+                    FwdIt it, EndPoint end, Init init, Reduce op)
+            -> ::nstd::type_traits::enable_if_t<!::nstd::iterator::is_random_access<EndPoint>::value,
+                                                decltype(op(*it, *it))>;
+        template <typename FwdIt, typename EndPoint, typename Init, typename Reduce>
+        auto reduce(::nstd::execution::parallel_policy const&,
+                    FwdIt it, EndPoint end, Init init, Reduce op)
+            -> ::nstd::type_traits::enable_if_t<::nstd::iterator::is_random_access<EndPoint>::value,
+                                                decltype(op(*it, *it))>;
     }
 
     template <>
@@ -88,6 +101,45 @@ nstd::execution::map(::nstd::execution::parallel_policy const& policy,
         executor.add([=](){ ::nstd::base::for_each(cur, end, fun); });
     }
     executor.process();
+}
+
+// ----------------------------------------------------------------------------
+
+template <typename FwdIt, typename EndPoint, typename Init, typename Reduce>
+auto ::nstd::execution::reduce(::nstd::execution::parallel_policy const&,
+                               FwdIt it, EndPoint end, Init init, Reduce op)
+    -> ::nstd::type_traits::enable_if_t<!::nstd::iterator::is_random_access<EndPoint>::value,
+                                        decltype(op(*it, *it))> {
+    //-dk:TODO parallel version of reduce with non-random access
+    return reduce(::nstd::execution::seq, it, end, init, op);
+}
+
+template <typename FwdIt, typename EndPoint, typename Init, typename Reduce>
+auto ::nstd::execution::reduce(::nstd::execution::parallel_policy const& policy,
+                               FwdIt it, EndPoint end, Init init, Reduce op)
+    -> ::nstd::type_traits::enable_if_t<::nstd::iterator::is_random_access<EndPoint>::value,
+                                        decltype(op(*it, *it))> {
+    if (it == end) {
+        return init;
+    }
+    using result_type = decltype(op(*it, *it));
+    auto size(end - it);
+    auto chunks(size / policy.size + bool(size % policy.size));
+    std::vector<result_type> range(chunks, init);
+    {
+        ::nstd::execution::thread_pool_executor executor; //-dk:TODO use the argument?
+        for (typename std::vector<result_type>::size_type i(0); i != range.size() - 1u; ++i) {
+            executor.add([&result = range[i], it, end = it + policy.size, init, op]() {
+                    result = reduce(::nstd::execution::seq, it, end, init, op);
+                });
+            it += policy.size;
+        }
+        executor.add([&result = range.back(), it, end, init, op]() {
+                result = reduce(::nstd::execution::seq, it, end, init, op);
+            });
+        executor.process();
+    }
+    return reduce(::nstd::execution::seq, range.begin(), range.end(), init, op);
 }
 
 // ----------------------------------------------------------------------------
