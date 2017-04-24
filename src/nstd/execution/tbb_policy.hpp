@@ -33,6 +33,10 @@
 #include "nstd/base/for_each.hpp"
 #include "nstd/algorithm/distance.hpp"
 #include "tbb/parallel_for.h"
+#include "tbb/parallel_reduce.h"
+#include "tbb/parallel_sort.h"
+#include "tbb/blocked_range.h"
+#include <numeric>
 
 // ----------------------------------------------------------------------------
 
@@ -45,6 +49,16 @@ namespace nstd {
         template <typename MultiPass, typename EndPoint, typename Callable>
         void map(::nstd::execution::tbb_policy const&,
                  MultiPass begin, EndPoint end, Callable fun);
+
+        template <typename FwdIt, typename EndPoint, typename Init, typename Reduce>
+        auto reduce(::nstd::execution::tbb_policy const&,
+                    FwdIt it, EndPoint end, Init init, Reduce op)
+            -> decltype(op(*it, *it));
+
+        template <typename RndIt, typename EndPoint, typename Compare>
+        auto sort(::nstd::execution::tbb_policy const&,
+                    RndIt it, EndPoint end, Compare compare)
+            -> void;
     }
 
     template <>
@@ -64,6 +78,32 @@ nstd::execution::map(::nstd::execution::tbb_policy const&,
                         [&](::tbb::blocked_range<int> r){
                             ::nstd::base::for_each(begin + r.begin(), begin + r.end(), fun);
                         });
+}
+
+// ----------------------------------------------------------------------------
+
+template <typename FwdIt, typename EndPoint, typename Init, typename Reduce>
+auto
+nstd::execution::reduce(::nstd::execution::tbb_policy const&,
+                       FwdIt it, EndPoint end, Init init, Reduce op)
+    -> decltype(op(*it, *it)) {
+    return tbb::parallel_reduce(tbb::blocked_range<int>(0, end - it),
+                                init,
+                                [=](tbb::blocked_range<int> const& range,
+                                    auto const& value) {
+                                    return ::std::accumulate(it + range.begin(),
+                                                           it + range.end(),
+                                                           value, op);
+                                }, op);
+}
+
+// ----------------------------------------------------------------------------
+
+template <typename RndIt, typename EndPoint, typename Compare>
+auto nstd::execution::sort(::nstd::execution::tbb_policy const&,
+                           RndIt it, EndPoint end, Compare compare)
+    -> void {
+    tbb::parallel_sort(it, end, compare);
 }
 
 // ----------------------------------------------------------------------------
