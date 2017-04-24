@@ -34,7 +34,6 @@
 #include "nstd/iterator/random_access.hpp"
 #include "nstd/type_traits/integral_constant.hpp"
 #include "nstd/type_traits/enable_if.hpp"
-#include <iostream>
 #include <vector>
 
 // ----------------------------------------------------------------------------
@@ -141,8 +140,6 @@ auto ::nstd::execution::reduce(::nstd::execution::parallel_policy const& policy,
             chunk_size = size / chunks;
             chunks += bool(size / chunk_size);
         }
-        std::cout << "size=" << size << " chunk_size=" << chunk_size << " "
-                  << "chunks=" << chunks << " no_threads=" << no_threads << "\n";
         range.resize(chunks, init);
 
         for (typename std::vector<result_type>::size_type i(0); i != range.size() - 1u; ++i) {
