@@ -125,15 +125,24 @@ auto ::nstd::execution::reduce(::nstd::execution::parallel_policy const& policy,
     }
     using result_type = decltype(op(*it, *it));
     auto size(end - it);
-    auto chunks(size / policy.size + bool(size % policy.size));
-    std::vector<result_type> range(chunks, init);
+    auto chunk_size(policy.size);
+    auto chunks(size / chunk_size + bool(size % chunk_size));
+    std::vector<result_type> range;
     {
         ::nstd::execution::thread_pool_executor executor; //-dk:TODO use the argument?
+        int no_threads(executor.number_of_threads());
+        if (int(chunks) < no_threads && 1 < size / (no_threads * 4)) {
+            chunks = no_threads * 4;
+            chunk_size = size / chunks;
+            chunks += bool(size / chunk_size);
+        }
+        range.resize(chunks, init);
+
         for (typename std::vector<result_type>::size_type i(0); i != range.size() - 1u; ++i) {
-            executor.add([&result = range[i], it, end = it + policy.size, init, op]() {
+            executor.add([&result = range[i], it, end = it + chunk_size, init, op]() {
                     result = reduce(::nstd::execution::seq, it, end, init, op);
                 });
-            it += policy.size;
+            it += chunk_size;
         }
         executor.add([&result = range.back(), it, end, init, op]() {
                 result = reduce(::nstd::execution::seq, it, end, init, op);

@@ -81,6 +81,10 @@ public:
     thread_pool& operator=(thread_pool&&) = default;
     ~thread_pool();
 
+    int  number_of_threads() {
+        unique_lock kerberos(this->d_mutex);
+        return this->d_threads.size();
+    }
     void start(unsigned count);
     void stop();
     void donate();

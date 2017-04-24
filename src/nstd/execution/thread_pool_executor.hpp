@@ -122,7 +122,8 @@ public:
     void cancel_all();
 
     // job access
-    bool     empty(unique_lock&) const { return this->d_tasks.empty(); }
+    int  number_of_threads() const { return this->d_pool.number_of_threads(); }
+    bool empty(unique_lock&) const { return this->d_tasks.empty(); }
     task get_task(unique_lock&);
 
     // contribute to the processing instead of waiting
