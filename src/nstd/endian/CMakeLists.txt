@@ -26,13 +26,8 @@
 cmake_minimum_required(VERSION 2.8.2)
 project(nstd_endian)
 
-enable_testing()
-foreach(test
+runtests(
 	type.t
 	literals.t
         big_to_native.t 
         )
-  add_executable(${test} ${test})
-  target_link_libraries(${test} PUBLIC kuhltest)
-  add_test(NAME ${test} COMMAND $<TARGET_FILE:${test}>)
-endforeach(test)

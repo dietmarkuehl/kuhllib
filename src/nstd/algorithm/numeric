@@ -1,0 +1,11 @@
+`accumalate` | 2 | `<numeric>` | - | - | -
+`reduce` | 6 | `<numeric>` | - | - | -
+`transform_reduce` | 2 | `<numeric>` | - | - | -
+`inner_product` | 4 | `<numeric>` | - | - | -
+`partial_sum` | 2 | `<numeric>` | - | - | -
+`exclusive_scan` | 4 | `<numeric>` | - | - | -
+`inclusive_scan` | 6 | `<numeric>` | - | - | -
+`transform_exclusive_scan` | 2 | `<numeric>` | - | - | -
+`transform_inclusive_scan` | 3 | `<numeric>` | - | - | -
+`adjacent_difference` | 4 | `<numeric>` | - | - | -
+`iota` | 1 | `<numeric>` | - | - | -

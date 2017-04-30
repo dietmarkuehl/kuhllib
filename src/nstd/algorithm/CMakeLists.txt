@@ -26,21 +26,21 @@
 cmake_minimum_required(VERSION 2.8.2)
 project(nstd_algorithm)
 
-enable_testing()
-foreach(test
-	all_of.t
-	any_of.t
-        distance.t
-        find.t
-        find_end.t
-        find_if.t
-        find_if_not.t
-	for_each.t
-	mismatch.t
-        none_of.t
-        search.t
-        )
-  add_executable(${test} ${test})
-  target_link_libraries(${test} PUBLIC kuhltest)
-  add_test(NAME ${test} COMMAND $<TARGET_FILE:${test}>)
-endforeach(test)
+runtests(
+    sort.t
+    reduce.t
+    transform.t
+    partition.t
+    all_of.t
+    any_of.t
+    distance.t
+    find.t
+    find_end.t
+    find_if.t
+    find_if_not.t
+    for_each.t
+    max.t
+    mismatch.t
+    none_of.t
+    search.t
+    )

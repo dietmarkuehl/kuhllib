@@ -1,0 +1,4 @@
+`uninitialized_copy` | 1 | `<memory>` | - | - | -
+`uninitialized_copy_n` | 1 | `<memory>` | - | - | -
+`uninitialized_fill` | 1 | `<memory>` | - | - | -
+`uninitialized_fill_n` | 1 | `<memory>` | - | - | -
