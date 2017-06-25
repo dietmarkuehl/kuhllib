@@ -27,11 +27,11 @@ cmake_minimum_required(VERSION 2.8.2)
 project(nstd)
 
 # subdirectories are added in least to most dependent order
-add_subdirectory(base)
-add_subdirectory(execution)
 add_subdirectory(algorithm)
+add_subdirectory(base)
 add_subdirectory(cursor)
 add_subdirectory(endian)
+add_subdirectory(execution)
 add_subdirectory(functional)
 add_subdirectory(iterator)
 add_subdirectory(memory)
