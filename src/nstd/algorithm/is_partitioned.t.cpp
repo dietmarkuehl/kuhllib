@@ -23,8 +23,8 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "kuhl/test.hpp"
 #include "nstd/algorithm/is_partitioned.hpp"
+#include "kuhl/test.hpp"
 #include "nstd/cursor/array.hpp"
 
 namespace KT = ::kuhl::test;

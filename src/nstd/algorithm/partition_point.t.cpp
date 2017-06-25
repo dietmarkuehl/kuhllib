@@ -23,19 +23,52 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
+#include "nstd/algorithm/partition_point.hpp"
 #include "kuhl/test.hpp"
+#include "nstd/cursor/array.hpp"
 
 namespace KT = ::kuhl::test;
+namespace KA = ::nstd::algorithm;
+namespace KC = ::nstd::cursor;
 
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
-    KT::expect_failure("placeholder", [](KT::context& c)->bool{
-           return false;
+    KT::expect_success("empty range", [](KT::context& c)->bool {
+            int array[] = { 0 };
+            return KT::assert_equal(c, "begin == partition_point(begin, begin, pred)",
+                                    KC::begin(array),
+                                    KA::partition_point(KC::begin(array), KC::begin(array),
+                                                        [](auto){ return true; }))
+                ;
+        }),
+    KT::expect_success("matching range", [](KT::context& c)->bool {
+            int array[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8 , 9 };
+            return KT::assert_equal(c, "end == partition_point(begin, end, pred)",
+                                    KC::end(array),
+                                    KA::partition_point(KC::begin(array), KC::end(array),
+                                                        [](auto){ return true; }))
+                ;
+        }),
+    KT::expect_success("mismatching range", [](KT::context& c)->bool {
+            int array[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8 , 9 };
+            return KT::assert_equal(c, "begin == partition_point(begin, end, pred)",
+                                    KC::begin(array),
+                                    KA::partition_point(KC::begin(array), KC::end(array),
+                                                        [](auto){ return false; }))
+                ;
+        }),
+    KT::expect_success("partly matching range", [](KT::context& c)->bool {
+            int array[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8 , 9 };
+            return KT::assert_equal(c, "begin + 4 == partition_point(begin, end, v < 4)",
+                                    KC::begin(array) + 4,
+                                    KA::partition_point(KC::begin(array), KC::end(array),
+                                                        [](auto v){ return v < 4; }))
+                ;
         }),
 };
 
 int main(int ac, char* av[])
 {
-    return KT::run_tests("TODO", ac, av, ::tests);
+    return KT::run_tests("partition_point", ac, av, ::tests);
 }
