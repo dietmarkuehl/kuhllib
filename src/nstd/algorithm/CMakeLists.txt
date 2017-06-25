@@ -27,6 +27,8 @@ cmake_minimum_required(VERSION 2.8.2)
 project(nstd_algorithm)
 
 runtests(
+    is_partitioned.t
+    partition_point.t
     sort.t
     reduce.t
     transform.t

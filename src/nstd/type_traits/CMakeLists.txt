@@ -33,6 +33,7 @@ runtests(
         condition.t 
         decay.t 
         declval.t 
+	detected.t
         enable_if.t 
         integral_constant.t 
         is_array.t 

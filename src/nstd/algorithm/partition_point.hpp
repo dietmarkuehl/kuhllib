@@ -1,6 +1,6 @@
-// nstd/type_traits/is_same.hpp                                       -*-C++-*-
+// nstd/algorithm/partition_point.hpp                                 -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
+//  Copyright (C) 2017 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
 //  Permission is hereby granted, free of charge, to any person          
 //  obtaining a copy of this software and associated documentation       
@@ -23,40 +23,23 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_TYPE_TRAITS_IS_SAME
-#define INCLUDED_NSTD_TYPE_TRAITS_IS_SAME
-
-#include "nstd/type_traits/integral_constant.hpp"
+#ifndef INCLUDED_NSTD_ALGORITHM_PARTITION_POINT
+#define INCLUDED_NSTD_ALGORITHM_PARTITION_POINT
 
 // ----------------------------------------------------------------------------
 
-namespace nstd
-{
-    namespace type_traits
-    {
-        template <typename S, typename T> struct is_same;
-        template <typename T> struct is_same<T, T>;
-
-        template <typename S, typename T>
-        constexpr bool is_same_v = ::nstd::type_traits::is_same<S, T>::value;
+namespace nstd {
+    namespace algorithm {
+        template <typename InIt, typename Predicate>
+        InIt partition_point(InIt it, InIt end, Predicate predicate) {
+            //-dk:TODO make partition_point logarithmic for interesting iterator categories
+            while (it != end && predicate(*it)) {
+                ++it;
+            }
+            return it;
+        }
     }
 }
-
-// ----------------------------------------------------------------------------
-
-template <typename S, typename T>
-struct nstd::type_traits::is_same
-    : nstd::type_traits::false_type
-{
-    constexpr is_same() noexcept(true) {}
-};
-
-template <typename T>
-struct nstd::type_traits::is_same<T, T>
-    : nstd::type_traits::true_type
-{
-    constexpr is_same() noexcept(true) {}
-};
 
 // ----------------------------------------------------------------------------
 
