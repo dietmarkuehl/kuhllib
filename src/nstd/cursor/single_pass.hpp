@@ -42,7 +42,6 @@ namespace nstd
 {
     namespace cursor
     {
-
         namespace detail {
             template <typename T>
             auto cursor_step(T& cursor) -> void {

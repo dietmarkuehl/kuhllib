@@ -1,4 +1,4 @@
-// nstd/iterator/bidirectional_iterator.hpp                           -*-C++-*-
+// iterator/multi_pass_iterator.hpp                                   -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2017 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,42 +23,42 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_ITERATOR_BIDIRECTIONAL_ITERATOR
-#define INCLUDED_NSTD_ITERATOR_BIDIRECTIONAL_ITERATOR
+#ifndef INCLUDED_ITERATOR_MULTI_PASS_ITERATOR
+#define INCLUDED_ITERATOR_MULTI_PASS_ITERATOR
 
 // ----------------------------------------------------------------------------
 
-#include "nstd/iterator/bidirectional_iterator_tag.hpp"
+#include "nstd/iterator/multi_pass_iterator_tag.hpp"
 #include "nstd/iterator/iterator_traits.hpp"
 
 // ----------------------------------------------------------------------------
 
 namespace nstd {
     namespace iterator {
-        template <typename BidrectionalIterator> class bidirectional_iterator;
+        template <typename MultiPassIterator> class multi_pass_iterator;
 
         template <typename T, int Size>
-        bidirectional_iterator<T*> bidirectional_begin(T (&)[Size]);
+        multi_pass_iterator<T*> multi_pass_begin(T (&)[Size]);
         template <typename T, int Size>
-        bidirectional_iterator<T*> bidirectional_end(T (&)[Size]);
+        multi_pass_iterator<T*> multi_pass_end(T (&)[Size]);
 
         template <typename Range>
-        auto bidirectional_begin(Range&& range)
-            -> bidirectional_iterator<decltype(range.begin())>;
+        auto multi_pass_begin(Range&& range)
+            -> multi_pass_iterator<decltype(range.begin())>;
         template <typename Range>
-        auto bidirectional_end(Range&& range)
-            -> bidirectional_iterator<decltype(range.end())>;
+        auto multi_pass_end(Range&& range)
+            -> multi_pass_iterator<decltype(range.end())>;
     }
 }
 
 // ----------------------------------------------------------------------------
-// The purpose of `bidirectional_iterator` is to constrain the interface of the
+// The purpose of `multi_pass_iterator` is to constrain the interface of the
 // iterator to match what is actually required for an interface. It is intended
 // as tool for detecting accidental use of operations and for checking that
 // algorithms work with iterators of different capabilities.
 
 template <typename BidrectionalIterator>
-class nstd::iterator::bidirectional_iterator
+class nstd::iterator::multi_pass_iterator
 {
 private:
     BidrectionalIterator d_iterator;
@@ -68,22 +68,20 @@ public:
     using difference_type   = typename ::nstd::iterator::iterator_traits<BidrectionalIterator>::difference_type;
     using pointer           = typename ::nstd::iterator::iterator_traits<BidrectionalIterator>::pointer;
     using reference         = typename ::nstd::iterator::iterator_traits<BidrectionalIterator>::reference;
-    using iterator_category = ::nstd::iterator::bidirectional_iterator_tag;
+    using iterator_category = ::nstd::iterator::multi_pass_iterator_tag;
 
-    bidirectional_iterator(): d_iterator() {}
-    explicit bidirectional_iterator(BidrectionalIterator iterator)
+    multi_pass_iterator(): d_iterator() {}
+    explicit multi_pass_iterator(BidrectionalIterator iterator)
         : d_iterator(iterator) {
     }
-    reference               operator*() const { return *this->d_iterator; }
-    pointer                 operator->() const { return &(*this->d_iterator); }
-    bidirectional_iterator& operator++() { ++this->d_iterator; return *this; }
-    bidirectional_iterator  operator++(int) { return bidirectional_iterator(this->d_iterator++); }
-    bidirectional_iterator& operator--() { --this->d_iterator; return *this; }
-    bidirectional_iterator  operator--(int) { return bidirectional_iterator(this->d_iterator--); }
-    bool                    operator== (bidirectional_iterator const& other) const {
+    reference            operator*() const { return *this->d_iterator; }
+    pointer              operator->() const { return &(*this->d_iterator); }
+    multi_pass_iterator& operator++() { ++this->d_iterator; return *this; }
+    multi_pass_iterator  operator++(int) { return multi_pass_iterator(this->d_iterator++); }
+    bool                 operator== (multi_pass_iterator const& other) const {
         return this->d_iterator == other.d_iterator;
     }
-    bool                    operator!= (bidirectional_iterator const& other) const {
+    bool                 operator!= (multi_pass_iterator const& other) const {
         return this->d_iterator != other.d_iterator;
     }
 };
@@ -91,29 +89,29 @@ public:
 // ----------------------------------------------------------------------------
 
 template <typename T, int Size>
-nstd::iterator::bidirectional_iterator<T*>
-nstd::iterator::bidirectional_begin(T (&array)[Size]) {
-    return nstd::iterator::bidirectional_iterator<T*>(array);
+nstd::iterator::multi_pass_iterator<T*>
+nstd::iterator::multi_pass_begin(T (&array)[Size]) {
+    return nstd::iterator::multi_pass_iterator<T*>(array);
 }
 
 template <typename T, int Size>
-nstd::iterator::bidirectional_iterator<T*>
-nstd::iterator::bidirectional_end(T (&array)[Size]) {
-    return nstd::iterator::bidirectional_iterator<T*>(array + Size);
+nstd::iterator::multi_pass_iterator<T*>
+nstd::iterator::multi_pass_end(T (&array)[Size]) {
+    return nstd::iterator::multi_pass_iterator<T*>(array + Size);
 }
 
 // ----------------------------------------------------------------------------
 
 template <typename Range>
-auto nstd::iterator::bidirectional_begin(Range&& range)
-    -> nstd::iterator::bidirectional_iterator<decltype(range.begin())> {
-    return nstd::iterator::bidirectional_iterator<decltype(range.begin())>(range.begin());
+auto nstd::iterator::multi_pass_begin(Range&& range)
+    -> nstd::iterator::multi_pass_iterator<decltype(range.begin())> {
+    return nstd::iterator::multi_pass_iterator<decltype(range.begin())>(range.begin());
 }
 
 template <typename Range>
-auto nstd::iterator::bidirectional_end(Range&& range)
-    -> nstd::iterator::bidirectional_iterator<decltype(range.end())> {
-    return nstd::iterator::bidirectional_iterator<decltype(range.end())>(range.end());
+auto nstd::iterator::multi_pass_end(Range&& range)
+    -> nstd::iterator::multi_pass_iterator<decltype(range.end())> {
+    return nstd::iterator::multi_pass_iterator<decltype(range.end())>(range.end());
 }
 
 // ----------------------------------------------------------------------------

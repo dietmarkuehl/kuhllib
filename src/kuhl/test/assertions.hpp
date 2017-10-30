@@ -76,6 +76,8 @@ namespace kuhl
         template <typename A0, typename A1>
         auto assert_equal(kuhl::test::context& context, A0&& a0, A1&& a1) -> bool;
 
+        template <typename>
+        auto assert_has_type(kuhl::test::context& context, char const* message) -> bool;
         template <typename T0, typename T1>
         auto assert_type(kuhl::test::context& context, char const* message) -> bool;
         template <typename T0, typename T1>
@@ -150,6 +152,12 @@ auto kuhl::test::assert_equal(kuhl::test::context& context, A0&& a0, A1&& a1) ->
 }
 
 // ----------------------------------------------------------------------------
+
+template <typename>
+auto kuhl::test::assert_has_type(kuhl::test::context& context, char const* message) -> bool
+{
+    return true;
+}
 
 template <typename T0, typename T1>
 struct kuhl::test::detail::is_same {

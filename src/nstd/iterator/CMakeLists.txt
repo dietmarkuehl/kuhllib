@@ -29,5 +29,7 @@ project(nstd_iterator)
 runtests(
 	bidirectional_iterator.t
 	forward_iterator.t
+	multi_pass_iterator.t
+	multi_pass_iterator_tag.t
 	random_access.t
         )

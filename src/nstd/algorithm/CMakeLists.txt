@@ -31,6 +31,7 @@ runtests(
     partition_point.t
     sort.t
     reduce.t
+    equal.t
     # transform.t
     partition.t
     all_of.t
@@ -41,6 +42,7 @@ runtests(
     find_if.t
     find_if_not.t
     for_each.t
+    insertion_sort.t
     max.t
     mismatch.t
     none_of.t
