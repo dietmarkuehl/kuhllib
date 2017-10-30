@@ -26,6 +26,10 @@
 #ifndef INCLUDED_NSTD_ALGORITHM_TRANSFORM
 #define INCLUDED_NSTD_ALGORITHM_TRANSFORM
 
+#include "nstd/type_traits/enable_if.hpp"
+#include "nstd/execution/is_execution_policy.hpp"
+#include "nstd/utility/pair.hpp"
+
 // ----------------------------------------------------------------------------
 
 namespace nstd {

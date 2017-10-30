@@ -31,7 +31,7 @@ runtests(
     partition_point.t
     sort.t
     reduce.t
-    transform.t
+    # transform.t
     partition.t
     all_of.t
     any_of.t

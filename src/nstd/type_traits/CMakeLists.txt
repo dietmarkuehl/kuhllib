@@ -45,6 +45,7 @@ runtests(
 	is_member_object_pointer.t
 	is_member_pointer.t
 	is_move_assignable.t
+	is_move_constructible.t
 	is_nothrow_constructible.t
 	is_nothrow_move_assignable.t
 	is_nothrow_move_constructible.t

@@ -28,6 +28,9 @@
 
 #include "nstd/type_traits/is_nothrow_move_assignable.hpp"
 #include "nstd/type_traits/is_nothrow_move_constructible.hpp"
+#include "nstd/type_traits/is_move_assignable.hpp"
+//#include "nstd/type_traits/is_move_constructible.hpp"
+#include "nstd/type_traits/enable_if.hpp"
 #include "nstd/utility/move.hpp"
 #include <cstddef>
 
@@ -38,7 +41,10 @@ namespace nstd
     namespace utility {
         template <typename T>
         auto swap(T&, T&) noexcept(nstd::type_traits::is_nothrow_move_assignable<T>::value
-                                   && nstd::type_traits::is_nothrow_move_constructible<T>::value) -> void;
+                                   && nstd::type_traits::is_nothrow_move_constructible<T>::value)
+            -> nstd::type_traits::enable_if_t<nstd::type_traits::is_move_assignable_v<T>
+                                              >;
+        
         template <typename T, std::size_t N>
         auto swap(T (&a0)[N], T(&a1)[N]) noexcept(noexcept(swap(a0[0], a1[0]))) -> void;
     }
@@ -49,7 +55,9 @@ namespace nstd
 
 template <typename T>
 auto nstd::utility::swap(T& t0, T& t1) noexcept(nstd::type_traits::is_nothrow_move_assignable<T>::value
-                                                && nstd::type_traits::is_nothrow_move_constructible<T>::value) -> void {
+                                                && nstd::type_traits::is_nothrow_move_constructible<T>::value)
+    -> nstd::type_traits::enable_if_t<nstd::type_traits::is_move_assignable_v<T>
+                                              > {
     T tmp(nstd::utility::move(t0));
     t0 = nstd::utility::move(t1);
     t1 = nstd::utility::move(tmp);

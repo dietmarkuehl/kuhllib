@@ -1,4 +1,4 @@
-// nstd/algorithm/transform.t.cpp                                     -*-C++-*-
+// nstd/type_traits/is_move_constructible.t.cpp                       -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2017 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,34 +23,54 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/algorithm/transform.hpp"
+#include "nstd/type_traits/is_move_constructible.hpp"
 #include "kuhl/test.hpp"
-#include "nstd/cursor/array.hpp"
 
 namespace KT = ::kuhl::test;
-namespace NA = ::nstd::algorithm;
-namespace NC = ::nstd::cursor;
+namespace NT = ::nstd::type_traits;
+
+// ----------------------------------------------------------------------------
+
+namespace
+{
+    struct copyable
+    {
+        copyable(copyable&) = default;
+        copyable(copyable&&) = delete;
+    };
+    struct movable
+    {
+        movable(movable&) = delete;
+        movable(movable&&) = default;
+    };
+    class private_movable
+    {
+        private_movable(private_movable&) = delete;
+        private_movable(private_movable&&) = default;
+    };
+}
 
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
-    KT::expect_success("empty sequence", [](KT::context& c)->bool {
-            int source[] = { 0 };
-            int target[NC::size(source)] = {};
-            auto it = NA::transform(NC::begin(source), NC::begin(source),
-                                    NC::begin(target),
-                                    [](auto v){ return v + 1; });
-            return KT::assert_equal(c, "empty input, empty sequence",
-                                    NC::begin(target), it)
-                && KT::assert_equal(c, "target is unchanged", 0, target[0])
+    KT::expect_success("void isn't move constructible", [](KT::context& c)->bool{
+            constexpr bool value = NT::is_move_constructible<void>::value;
+            constexpr bool value_v = NT::is_move_constructible_v<void>;
+            KT::use(value);
+            KT::use(value_v);
+            return KT::assert_false(c, "void", NT::is_move_constructible<void>::value)
+                && KT::assert_false(c, "void const", NT::is_move_constructible<void const>::value)
+                && KT::assert_false(c, "void volatile", NT::is_move_constructible<void volatile>::value)
+                && KT::assert_false(c, "void const volatile", NT::is_move_constructible<void const volatile>::value)
+                && KT::assert_false(c, "void", NT::is_move_constructible_v<void>)
+                && KT::assert_false(c, "void const", NT::is_move_constructible_v<void const>)
+                && KT::assert_false(c, "void volatile", NT::is_move_constructible_v<void volatile>)
+                && KT::assert_false(c, "void const volatile", NT::is_move_constructible_v<void const volatile>)
                 ;
-        }),
-    KT::expect_failure("placeholder", [](KT::context& c)->bool{
-           return false;
         }),
 };
 
 int main(int ac, char* av[])
 {
-    return KT::run_tests("transform", ac, av, ::tests);
+    return KT::run_tests("is_move_constructible", ac, av, ::tests);
 }

@@ -1,6 +1,6 @@
-// nstd/type_traits/is_move_assignable.hpp                            -*-C++-*-
+// nstd/type_traits/is_move_constructible.hpp                         -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
+//  Copyright (C) 2017 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
 //  Permission is hereby granted, free of charge, to any person          
 //  obtaining a copy of this software and associated documentation       
@@ -23,36 +23,33 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_TYPE_TRAITS_IS_MOVE_ASSIGNABLE
-#define INCLUDED_NSTD_TYPE_TRAITS_IS_MOVE_ASSIGNABLE
+#ifndef INCLUDED_NSTD_TYPE_TRAITS_IS_MOVE_CONSTRUCTIBLE
+#define INCLUDED_NSTD_TYPE_TRAITS_IS_MOVE_CONSTRUCTIBLE
 
-#include "nstd/type_traits/add_lvalue_reference.hpp"
 #include "nstd/type_traits/add_rvalue_reference.hpp"
+#include "nstd/type_traits/is_constructible.hpp"
 #include "nstd/type_traits/integral_constant.hpp"
-#include "nstd/type_traits/is_assignable.hpp"
 
 // ----------------------------------------------------------------------------
 
-namespace nstd
-{
+namespace nstd {
     namespace type_traits {
-        template <typename> struct is_move_assignable;
+        template <typename> struct is_move_constructible;
         template <typename Type>
-        constexpr bool is_move_assignable_v
-            = ::nstd::type_traits::is_move_assignable<Type>::value;
+        constexpr bool is_move_constructible_v
+            = ::nstd::type_traits::is_move_constructible<Type>::value;
     }
-
 }
 
 // ----------------------------------------------------------------------------
 
-template <typename T>
-struct nstd::type_traits::is_move_assignable
+template <typename Type>
+struct nstd::type_traits::is_move_constructible
     : nstd::type_traits::integral_constant<bool,
-        nstd::type_traits::is_assignable<nstd::type_traits::add_lvalue_reference_t<T>,
-                                         nstd::type_traits::add_rvalue_reference_t<T>>::value>
-{
+        nstd::type_traits::is_constructible<Type,
+                                            nstd::type_traits::add_rvalue_reference_t<Type>>::value> {
 };
+
 
 // ----------------------------------------------------------------------------
 

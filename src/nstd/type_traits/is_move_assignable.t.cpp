@@ -60,18 +60,25 @@ static KT::testcase const tests[] = {
                 && KT::assert_false(c, "void const", NT::is_move_assignable<void const>::value)
                 && KT::assert_false(c, "void volatile", NT::is_move_assignable<void volatile>::value)
                 && KT::assert_false(c, "void const volatile", NT::is_move_assignable<void const volatile>::value)
+                && KT::assert_false(c, "void", NT::is_move_assignable_v<void>)
+                && KT::assert_false(c, "void const", NT::is_move_assignable_v<void const>)
+                && KT::assert_false(c, "void volatile", NT::is_move_assignable_v<void volatile>)
+                && KT::assert_false(c, "void const volatile", NT::is_move_assignable_v<void const volatile>)
                 ;
         }),
     KT::expect_success("copyable isn't move assignable", [](KT::context& c)->bool{
             return KT::assert_false(c, "copyable", NT::is_move_assignable<copyable>::value)
+                && KT::assert_false(c, "copyable", NT::is_move_assignable_v<copyable>)
                 ;
         }),
     KT::expect_success("movable is move assignable", [](KT::context& c)->bool{
             return KT::assert_true(c, "movable", NT::is_move_assignable<movable>::value)
+                && KT::assert_true(c, "movable", NT::is_move_assignable_v<movable>)
                 ;
         }),
     KT::expect_success("private_movable isn_t move assignable", [](KT::context& c)->bool{
             return KT::assert_false(c, "private_movable", NT::is_move_assignable<private_movable>::value)
+                && KT::assert_false(c, "private_movable", NT::is_move_assignable_v<private_movable>)
                 ;
         }),
 };
