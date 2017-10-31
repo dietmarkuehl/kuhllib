@@ -25,14 +25,92 @@
 
 #include "nstd/algorithm/equal.hpp"
 #include "kuhl/test.hpp"
+#include <initializer_list>
 
+namespace NA = ::nstd::algorithm;
 namespace KT = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
 
+namespace {
+    struct value {
+        unsigned long long val;
+    };
+    bool operator== (value const& v0, value const& v1) {
+        return v0.val == v1.val;
+    }
+    bool operator!= (value const& v0, value const& v1) {
+        return !(v0 == v1);
+    }
+    value operator""_v (unsigned long long v) {
+        return value{v};
+    }
+}
+
+// ----------------------------------------------------------------------------
+
+template <typename Range1, typename Range2>
+bool test_equal(Range1&& r1, Range2&& r2, bool open, bool closed) {
+    return (r2.size() < r1.size() || open   == NA::equal(r1.begin(), r1.end(), r2.begin()))
+        && closed == NA::equal(r1.begin(), r1.end(), r2.begin(), r2.end())
+        //-dk:TODO add other overloads
+        ;
+}
+
+// ----------------------------------------------------------------------------
+
 static KT::testcase const tests[] = {
+    KT::expect_success("value basics", [](KT::context& c)->bool {
+            return  (1_v == 1_v)
+                && !(1_v == 2_v)
+                && !(1_v != 1_v)
+                &&  (1_v != 2_v)
+                ;
+        }),
+    KT::expect_success("empty ranges", [](KT::context& c)->bool {
+            return test_equal(std::initializer_list<value>{},
+                              std::initializer_list<value>{},
+                              true, true)
+                ;
+        }),
+    KT::expect_success("empty vs. non-mepty range", [](KT::context& c)->bool {
+            return test_equal(std::initializer_list<value>{},
+                              std::initializer_list<value>{ 1_v },
+                              true, false)
+                ;
+        }),
+    KT::expect_success("non-empty equal ranges", [](KT::context& c)->bool {
+            return test_equal(std::initializer_list<value>{ 1_v, 2_v, 3_v, 4_v },
+                              std::initializer_list<value>{ 1_v, 2_v, 3_v, 4_v },
+                              true, true);
+        }),
+    KT::expect_success("first element differs", [](KT::context& c)->bool {
+            return test_equal(std::initializer_list<value>{ 1_v, 2_v, 3_v, 4_v },
+                              std::initializer_list<value>{ 5_v, 2_v, 3_v, 4_v },
+                              false, false);
+        }),
+    KT::expect_success("middle element differs", [](KT::context& c)->bool {
+            return test_equal(std::initializer_list<value>{ 1_v, 2_v, 5_v, 4_v, 5_v },
+                              std::initializer_list<value>{ 1_v, 2_v, 3_v, 4_v, 5_v },
+                              false, false);
+        }),
+    KT::expect_success("last element differs", [](KT::context& c)->bool {
+            return test_equal(std::initializer_list<value>{ 1_v, 2_v, 3_v, 4_v },
+                              std::initializer_list<value>{ 1_v, 2_v, 3_v, 5_v },
+                              false, false);
+        }),
+    KT::expect_success("longer second sequence", [](KT::context& c)->bool {
+            return test_equal(std::initializer_list<value>{ 1_v, 2_v, 3_v, 4_v },
+                              std::initializer_list<value>{ 1_v, 2_v, 3_v, 4_v, 5_v },
+                              true, false);
+        }),
+    KT::expect_success("longer first sequence", [](KT::context& c)->bool {
+            return test_equal(std::initializer_list<value>{ 1_v, 2_v, 3_v, 4_v, 5_v },
+                              std::initializer_list<value>{ 1_v, 2_v, 3_v, 4_v },
+                              true, false);
+        }),
     KT::expect_failure("placeholder", [](KT::context& c)->bool{
-           return false;
+           return true;
         }),
 };
 

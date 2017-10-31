@@ -32,4 +32,5 @@ runtests(
 	multi_pass_iterator.t
 	multi_pass_iterator_tag.t
 	random_access.t
+	unreachable.t
         )
