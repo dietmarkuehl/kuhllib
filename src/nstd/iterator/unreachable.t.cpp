@@ -1,4 +1,4 @@
-// algorithm/equal.hpp                                                -*-C++-*-
+// nstd/iterator/unreachable.t.cpp                                    -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2017 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,43 +23,46 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_ALGORITHM_EQUAL
-#define INCLUDED_ALGORITHM_EQUAL
-
-#include "nstd/algorithm/mismatch.hpp"
 #include "nstd/iterator/unreachable.hpp"
-#include "nstd/projection/identity.hpp"
-#include "nstd/utility/pair.hpp"
+#include "kuhl/test.hpp"
+
+namespace NI = ::nstd::iterator;
+namespace KT = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
 
-namespace nstd {
-    namespace algorithm {
-        template <typename InIt1, typename EP1, typename InIt2>
-        bool equal(InIt1 begin1, EP1 end1, InIt2 begin2);
-        template <typename InIt1, typename EP1, typename InIt2, typename EP2>
-        bool equal(InIt1 begin1, EP1 end1, InIt2 begin2, EP2 end2);
-    }
+namespace {
+    struct foo {
+        constexpr foo() {};
+    };
 }
 
 // ----------------------------------------------------------------------------
 
-template <typename InIt1, typename EP1, typename InIt2>
-bool
-nstd::algorithm::equal(InIt1 begin1, EP1 end1, InIt2 begin2) {
-    return end1
-        == ::nstd::algorithm::mismatch(::nstd::projection::identity, begin1, end1,
-                                       ::nstd::projection::identity, begin2, ::nstd::iterator::unreachable).first;
+static KT::testcase const tests[] = {
+    KT::expect_success("equality comparing anything to unreachable is false",
+                       [](KT::context& c)->bool {
+                           return !(foo() == NI::unreachable)
+                               && !(NI::unreachable == foo())
+                               ;
+                       }),
+    KT::expect_success("unequality comparing anything to unreachable is true",
+                       [](KT::context& c)->bool {
+                           return (foo() != NI::unreachable)
+                               && (NI::unreachable != foo())
+                               ;
+                       }),
+    KT::expect_success("unreachable operations are constexpr",
+                       [](KT::context& c)->bool {
+                           static_assert(!(foo() == NI::unreachable));
+                           static_assert(!(NI::unreachable == foo()));
+                           static_assert(foo() != NI::unreachable);
+                           static_assert(NI::unreachable != foo());
+                           return true;
+                       }),
+};
+
+int main(int ac, char* av[])
+{
+    return KT::run_tests("nstd::iterator::unreachable", ac, av, ::tests);
 }
-
-template <typename InIt1, typename EP1, typename InIt2, typename EP2>
-bool
-nstd::algorithm::equal(InIt1 begin1, EP1 end1, InIt2 begin2, EP2 end2) {
-    return ::nstd::utility::make_pair(end1, end2)
-        == ::nstd::algorithm::mismatch(::nstd::projection::identity, begin1, end1,
-                                       ::nstd::projection::identity, begin2, end2);
-}
-
-// ----------------------------------------------------------------------------
-
-#endif

@@ -1,4 +1,4 @@
-// algorithm/equal.hpp                                                -*-C++-*-
+// nstd/iterator/unreachable.hpp                                      -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2017 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,41 +23,36 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_ALGORITHM_EQUAL
-#define INCLUDED_ALGORITHM_EQUAL
-
-#include "nstd/algorithm/mismatch.hpp"
-#include "nstd/iterator/unreachable.hpp"
-#include "nstd/projection/identity.hpp"
-#include "nstd/utility/pair.hpp"
+#ifndef INCLUDED_NSTD_ITERATOR_UNREACHABLE
+#define INCLUDED_NSTD_ITERATOR_UNREACHABLE
 
 // ----------------------------------------------------------------------------
 
 namespace nstd {
-    namespace algorithm {
-        template <typename InIt1, typename EP1, typename InIt2>
-        bool equal(InIt1 begin1, EP1 end1, InIt2 begin2);
-        template <typename InIt1, typename EP1, typename InIt2, typename EP2>
-        bool equal(InIt1 begin1, EP1 end1, InIt2 begin2, EP2 end2);
+    namespace iterator {
+        namespace detail {
+            struct unreachable {
+                constexpr unreachable() {}
+            };
+            template <typename Iterator>
+            constexpr bool operator== (Iterator&&, ::nstd::iterator::detail::unreachable) {
+                return false;
+            }
+            template <typename Iterator>
+            constexpr bool operator== (::nstd::iterator::detail::unreachable, Iterator&&) {
+                return false;
+            }
+            template <typename Iterator>
+            constexpr bool operator!= (Iterator&&, ::nstd::iterator::detail::unreachable) {
+                return true;
+            }
+            template <typename Iterator>
+            constexpr bool operator!= (::nstd::iterator::detail::unreachable, Iterator&&) {
+                return true;
+            }
+        }
+        constexpr ::nstd::iterator::detail::unreachable unreachable;
     }
-}
-
-// ----------------------------------------------------------------------------
-
-template <typename InIt1, typename EP1, typename InIt2>
-bool
-nstd::algorithm::equal(InIt1 begin1, EP1 end1, InIt2 begin2) {
-    return end1
-        == ::nstd::algorithm::mismatch(::nstd::projection::identity, begin1, end1,
-                                       ::nstd::projection::identity, begin2, ::nstd::iterator::unreachable).first;
-}
-
-template <typename InIt1, typename EP1, typename InIt2, typename EP2>
-bool
-nstd::algorithm::equal(InIt1 begin1, EP1 end1, InIt2 begin2, EP2 end2) {
-    return ::nstd::utility::make_pair(end1, end2)
-        == ::nstd::algorithm::mismatch(::nstd::projection::identity, begin1, end1,
-                                       ::nstd::projection::identity, begin2, end2);
 }
 
 // ----------------------------------------------------------------------------
