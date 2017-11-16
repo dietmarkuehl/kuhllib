@@ -144,6 +144,26 @@ static KT::testcase const tests[] = {
                              NI::multi_pass_end(expect));
                 ;
         }),
+    KT::expect_success("sort decreasing range", [](KT::context& c)->bool{
+            value input[]  = { 9_v, 8_v, 7_v, 6_v, 5_v, 4_v, 3_v, 2_v, 1_v, 0_v };
+            value expect[] = { 0_v, 1_v, 2_v, 3_v, 4_v, 5_v, 6_v, 7_v, 8_v, 9_v };
+            return test_sort(c, NA::insertion_sort,
+                             NI::bidirectional_begin(input),
+                             NI::bidirectional_end(input),
+                             NI::multi_pass_begin(expect),
+                             NI::multi_pass_end(expect));
+                ;
+        }),
+    KT::expect_success("sort increasing range", [](KT::context& c)->bool{
+            value input[]  = { 0_v, 1_v, 2_v, 3_v, 4_v, 5_v, 6_v, 7_v, 8_v, 9_v };
+            value expect[] = { 0_v, 1_v, 2_v, 3_v, 4_v, 5_v, 6_v, 7_v, 8_v, 9_v };
+            return test_sort(c, NA::insertion_sort,
+                             NI::bidirectional_begin(input),
+                             NI::bidirectional_end(input),
+                             NI::multi_pass_begin(expect),
+                             NI::multi_pass_end(expect));
+                ;
+        }),
     KT::expect_failure("placeholder", [](KT::context& c)->bool{
            return true;
         }),
