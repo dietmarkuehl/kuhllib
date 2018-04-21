@@ -94,8 +94,8 @@ namespace cbt {
                    , [&]{
                     if (cbt::is_detected_v<OpPreDecrement, BiDirIt&>
                         && !is_detected_v<OpPostDecrement, BiDirIt&>) {
-                        out << cbt::level::info << " potential implementation: " << name << " operator++(int) { "
-                            << "name tmp(*this); ++*this; return tmp; }\n";
+                        out << cbt::level::info << " potential implementation: " << name << " operator--(int) { "
+                            << name << " tmp(*this); ++*this; return tmp; }\n";
                     }
                     return true;
                 }()
