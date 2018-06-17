@@ -1,2 +1,8 @@
+*.o
+*.t
+*.swp
+mkerr
+olderr
+make.depend
 build-*
 tmp
