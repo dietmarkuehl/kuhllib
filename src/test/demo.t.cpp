@@ -34,29 +34,31 @@ namespace {
     struct DemoIt {
         using value_type        = int;
         using difference_type   = signed int;
-        using iterator_category = std::forward_iterator_tag;
+        using iterator_category = std::bidirectional_iterator_tag;
 
         int* d_it = nullptr;
-        DemoIt() = default;
-        DemoIt(DemoIt const&) = default;
-        DemoIt(DemoIt&&) = default;
-        DemoIt& operator= (DemoIt const&) = default;
 
-        friend bool operator== (DemoIt it0, DemoIt it1) { return it0.d_it == it1.d_it; }
-        friend bool operator!= (DemoIt it0, DemoIt it1) { return it0.d_it != it1.d_it; }
+        friend bool operator== (DemoIt it0, DemoIt it1) {
+            return it0.d_it == it1.d_it; }
+        friend bool operator!= (DemoIt it0, DemoIt it1) {
+            return it0.d_it != it1.d_it; }
 
         int operator*() { return *d_it; }
         DemoIt& operator++() { ++this->d_it; return *(this); }
-        DemoIt  operator++(int) { int* tmp(this->d_it); ++this->d_it; return DemoIt{tmp}; }
+        DemoIt  operator++(int) {
+            int* tmp(this->d_it);
+            ++this->d_it;
+            return DemoIt{tmp};
+        }
+	DemoIt& operator--() { --this->d_it; return *this; }
+        DemoIt operator--(int) { DemoIt tmp(*this); --*this; return tmp; }
     };
 }
-
-// ----------------------------------------------------------------------------
 
 int main()
 {
     int array[] = { 1, 2 };
-    return  cbt::ForwardIterator(std::cout, "DemoIt",
+    return  cbt::BidirectionalIterator(std::cout, "DemoIt",
                                  DemoIt{std::begin(array)}, DemoIt{std::end(array)})
         ? EXIT_SUCCESS: EXIT_FAILURE;
 }
