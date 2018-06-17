@@ -8,6 +8,7 @@ LIBOFILES = $(LIBCXXFILES:%.cpp=%.o)
 
 CXXFILES = \
 	hazptr.t.cpp \
+	hazard_list.t.cpp \
 
 .PHONY: default
 default: $(CXXFILES:%.t.cpp=%.t)
