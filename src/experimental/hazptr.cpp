@@ -27,9 +27,22 @@ NE::hazptr_domain& NE::default_hazptr_domain() noexcept {
 NP::hazptr_holder::hazptr_holder() noexcept {
 }
 
+NP::hazptr_holder::hazptr_holder(hazptr_holder&&) noexcept {
+}
+
 NP::hazptr_holder::~hazptr_holder() {
 }
 
+NP::hazptr_holder&
+NP::hazptr_holder::operator= (hazptr_holder&&) noexcept {
+    return *this;
+}
+
+bool NP::hazptr_holder::empty() const noexcept {
+    return true;
+}
+
+// ----------------------------------------------------------------------------
 
 NP::hazptr_holder NP::make_hazptr() {
     return hazptr_holder();

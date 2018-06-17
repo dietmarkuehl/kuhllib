@@ -88,6 +88,8 @@ public:
 template <typename T, typename D>
 void nstd::experimental::hazptr_obj_base<T, D>::retire(D              reclaim,
                                                        hazptr_domain& domain) {
+    (void)reclaim;
+    (void)domain;
 }
 
 template <typename T, typename D>

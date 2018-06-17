@@ -19,5 +19,8 @@ int main()
     NE::hazptr_domain& domain = NE::default_hazptr_domain();
     (void)domain;
 
+    (new Node())->retire();
+    (new Node())->retire(NE::default_hazptr_domain());
+
     auto holder = NP::make_hazptr();
 }
