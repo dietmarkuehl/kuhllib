@@ -7,34 +7,45 @@
 
 namespace hazard {
 
-template <typename CONTENT>
-class ListNode : nstd::experimental::hazptr_obj_base<ListNode<CONTENT>> {
-  public:
-    std::atomic<ListNode *> d_next;
-    CONTENT                 d_content;
-};
-
     namespace p0566r5 {
         using namespace nstd::p0566r5;
 
+        struct StackedDeleter {
+            hazptr_holder d_protected;
+            template <typename OBJECT>
+            void operator() (OBJECT *p) {
+                delete p;
+                d_protected.reset_protected();
+            }
+        };
+
+        template <typename CONTENT>
+        class ListNode : nstd::experimental::hazptr_obj_base<
+                ListNode<CONTENT>,
+                StackedDeleter
+            >
+        {
+        public:
+            std::atomic<ListNode *> d_next;
+            CONTENT                 d_content;
+        };
+
         template <typename CONTENT>
         struct ProtectedElement {
-            hazptr_holder  d_sourceProtection;
-            CONTENT       *d_source = nullptr;
+            hazptr_holder      d_sourceProtection;
+            ListNode<CONTENT> *d_source = nullptr;
         };
 
         template <typename CONTENT>
         auto listFind(
                 std::atomic<ListNode<CONTENT> *>& head,
-                std::function<bool(CONTENT)> const& pred
+                std::function<bool(CONTENT const&)> const& pred
             ) -> ProtectedElement<CONTENT>
         {
-            using AtomicNodePtr = std::atomic<ListNode<CONTENT> *>;
-
             auto h1 = make_hazptr();
             auto h2 = make_hazptr();
 
-            AtomicNodePtr *current = &head;
+            std::atomic<ListNode<CONTENT> *> *current = &head;
             for (;;) {
                 auto *const node = h1.protect(*current);
                 if (!node)
@@ -43,7 +54,7 @@ class ListNode : nstd::experimental::hazptr_obj_base<ListNode<CONTENT>> {
                     return {std::move(h1), node};
                 
                 current = node;
-                swap(h1, h2);
+                h1.swap(h2);
             }
             return {};
         }
@@ -66,11 +77,7 @@ class ListNode : nstd::experimental::hazptr_obj_base<ListNode<CONTENT>> {
                 auto *const after = hafter.protect(toDelete->d_next);
                 auto tmp = toDelete;
                 if (previous.d_source->d_next.compare_exchange_strong(tmp, after)) {
-                    toDelete->retire(
-                        [h = std::move(hafter)](auto *p) mutable {
-                            delete p;
-                            h.reset_protected();
-                        });
+                    toDelete->retire(StackedDeleter{std::move(hafter)});
                     return;
                 }
             }
