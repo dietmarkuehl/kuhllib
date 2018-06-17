@@ -39,9 +39,9 @@ namespace nstd {
 class nstd::experimental::hazptr_domain {
 public:
     explicit hazptr_domain( std::pmr::polymorphic_allocator<std::byte> poly_alloc = {});
-    hazptr_domain(const hazptr_domain&) = delete;
+    hazptr_domain(hazptr_domain const&) = delete;
     hazptr_domain(hazptr_domain&&) = delete;
-    hazptr_domain& operator=(const hazptr_domain&) = delete;
+    hazptr_domain& operator=(hazptr_domain const&) = delete;
     hazptr_domain& operator=(hazptr_domain&&) = delete;
     ~hazptr_domain();
 
@@ -67,18 +67,18 @@ class nstd::p0566r5::hazptr_holder {
 public:
     hazptr_holder() noexcept;
     hazptr_holder(hazptr_holder&&) noexcept;
-    hazptr_holder(const hazptr_holder&) = delete;
-    hazptr_holder& operator=(const hazptr_holder&) = delete;
+    hazptr_holder(hazptr_holder const&) = delete;
+    hazptr_holder& operator=(hazptr_holder const&) = delete;
     ~hazptr_holder();
     hazptr_holder& operator=(hazptr_holder&&) noexcept;
 
     bool empty() const noexcept;
     template <typename T>
-    T* protect(const std::atomic<T*>& src) noexcept;
+    T* protect(std::atomic<T*> const& src) noexcept;
     template <typename T>
-    bool try_protect(T*& ptr, const std::atomic<T*>& src) noexcept;
+    bool try_protect(T*& ptr, std::atomic<T*> const& src) noexcept;
     template <typename T>
-    void reset_protected(const T* ptr) noexcept;
+    void reset_protected(T const* ptr) noexcept;
     void reset_protected(std::nullptr_t = nullptr) noexcept;
     void swap(hazptr_holder&) noexcept;
 };
@@ -95,6 +95,26 @@ void nstd::experimental::hazptr_obj_base<T, D>::retire(D              reclaim,
 template <typename T, typename D>
 void nstd::experimental::hazptr_obj_base<T, D>::retire(hazptr_domain& domain) {
     return this->retire(D{}, domain);
+}
+
+// ----------------------------------------------------------------------------
+
+template <typename T>
+bool
+nstd::p0566r5::hazptr_holder::try_protect(T*& ptr, std::atomic<T*> const& src) noexcept {
+    ptr = src.load();
+    return true;
+}
+
+template <typename T>
+T*
+nstd::p0566r5::hazptr_holder::protect(std::atomic<T*> const& src) noexcept {
+    return src.load();
+}
+
+template <typename T>
+void
+nstd::p0566r5::hazptr_holder::reset_protected(T const*) noexcept {
 }
 
 // ----------------------------------------------------------------------------

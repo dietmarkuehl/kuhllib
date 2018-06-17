@@ -23,4 +23,17 @@ int main()
     (new Node())->retire(NE::default_hazptr_domain());
 
     auto holder = NP::make_hazptr();
+    bool b = holder.empty();
+    (void)b;
+
+    std::atomic<Node*> an = new Node();
+
+    holder.reset_protected(nullptr);
+    Node* n = holder.protect(an);
+    (void)n;
+
+    auto holder1 = NP::make_hazptr();
+    holder.swap(holder1);
+    b = holder.try_protect(n, an);
+    holder.reset_protected(n);
 }
