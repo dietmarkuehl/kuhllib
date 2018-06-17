@@ -2,6 +2,7 @@
 // ----------------------------------------------------------------------------
 
 #include "hazptr.hpp"
+#include "hazard_list.hpp"
 
 namespace NE = nstd::experimental;
 namespace NP = nstd::p0566r5;
