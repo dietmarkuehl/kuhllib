@@ -5,6 +5,14 @@
 #define INCLUDED_HAZPTR
 
 #include <memory>
+#include <cstddef>
+
+namespace std {
+    namespace pmr {
+        template <typename T>
+        using polymorphic_allocator = std::allocator<T>;
+    }
+}
 
 // ----------------------------------------------------------------------------
 
@@ -20,7 +28,7 @@ namespace nstd {
     namespace p0566r5 {
         class hazptr_holder;
         hazptr_holder make_hazptr();
-        hazptr_holder make_hazptr(hazptr_domain& domain);
+        hazptr_holder make_hazptr(experimental::hazptr_domain& domain);
         void swap(hazptr_holder&, hazptr_holder&) noexcept;
     }
 }
@@ -29,14 +37,14 @@ namespace nstd {
 
 class nstd::experimental::hazptr_domain {
 public:
-    explicit hazptr_domain( std::pmr::polymorphic_allocator<byte> poly_alloc = {});
+    explicit hazptr_domain( std::pmr::polymorphic_allocator<std::byte> poly_alloc = {});
     hazptr_domain(const hazptr_domain&) = delete;
     hazptr_domain(hazptr_domain&&) = delete;
     hazptr_domain& operator=(const hazptr_domain&) = delete;
     hazptr_domain& operator=(hazptr_domain&&) = delete;
     ~hazptr_domain();
 private:
-    std::pmr::polymorphic_allocator<byte> alloc_; // exposition only
+    std::pmr::polymorphic_allocator<std::byte> alloc_; // exposition only
 };
 
 // ----------------------------------------------------------------------------
