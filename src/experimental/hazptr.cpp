@@ -22,6 +22,15 @@ NE::hazptr_domain& NE::default_hazptr_domain() noexcept {
     return rc;
 }
 
+void
+NE::hazptr_cleanup(hazptr_domain& ) {
+}
+
+void
+NE::hazptr_cleanup() {
+    hazptr_cleanup(default_hazptr_domain());
+}
+
 // ----------------------------------------------------------------------------
 
 NP::hazptr_holder::hazptr_holder() noexcept {
@@ -50,6 +59,16 @@ void NP::hazptr_holder::swap(hazptr_holder&) noexcept {
 
 // ----------------------------------------------------------------------------
 
-NP::hazptr_holder NP::make_hazptr() {
+NP::hazptr_holder
+NP::make_hazptr(experimental::hazptr_domain&) {
     return hazptr_holder();
+}
+
+NP::hazptr_holder
+NP::make_hazptr() {
+    return make_hazptr(NE::default_hazptr_domain());
+}
+
+void
+NP::swap(hazptr_holder&, hazptr_holder&) noexcept {
 }
