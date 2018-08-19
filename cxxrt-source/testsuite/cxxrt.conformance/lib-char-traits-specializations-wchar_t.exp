@@ -1,0 +1,87 @@
+#!/usr/local/bin/expect
+# -*-C++-*- cxxrt.conformance/lib-char-traits-specializations-wchar_t.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  struct char_traits<wchar_t>
+# Version: $Id: lib-char-traits-specializations-wchar_t.exp,v 1.1.1.1 2002/06/05 01:02:43 dietmar_kuehl Exp $ 
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <string>
+  #if !defined(STD)
+  #  if !defined(_CXXRT_STD)
+  #    define STD std::
+  using namespace std;
+  #  else
+  #    define STD _CXXRT_STD
+  using STD mbstate_t;
+  using STD size_t;
+  #  endif
+  #endif
+
+  template <class T> inline void test_type() {}
+  template <class T> inline void check_type(T const&) {}
+
+  template <class T> void same_type_help(T const*, T const*) {}
+  template <class T, class S>
+  struct same_type_struct {
+    same_type_struct() { same_type_help(static_cast<T const*>(0), static_cast<S const*>(0)); }
+  };
+  template <class T, class S>
+  struct same_type_struct<T&, S&> {
+    same_type_struct() { same_type_help(static_cast<T const*>(0), static_cast<S const*>(0)); }
+  };
+  template <class T, class S> inline void same_type() { same_type_struct<T, S>(); }
+
+  int main()
+  {
+    same_type<wchar_t, STD char_traits<wchar_t>::char_type>();
+    same_type< STD wint_t, STD char_traits<wchar_t>::int_type>();
+    same_type< STD streamoff, STD char_traits<wchar_t>::off_type>();
+    same_type< STD streampos, STD char_traits<wchar_t>::pos_type>();
+    same_type< STD mbstate_t, STD char_traits<wchar_t>::state_type>();
+
+    check_type<void (*)(wchar_t&, wchar_t const&)>(static_cast<void(*)(wchar_t&, wchar_t const&)>(&STD char_traits<wchar_t>::assign));
+
+    check_type<bool (*)(wchar_t const&, wchar_t const&)>(&STD char_traits<wchar_t>::eq);
+    check_type<bool (*)(wchar_t const&, wchar_t const&)>(&STD char_traits<wchar_t>::lt);
+
+    check_type<int (*)(const wchar_t*, const wchar_t*, size_t)>(&STD char_traits<wchar_t>::compare);
+
+    check_type<size_t (*)(const wchar_t*)>(&STD char_traits<wchar_t>::length);
+    check_type<const wchar_t*(*)(const wchar_t*,
+				 size_t, const wchar_t&)>(&STD char_traits<wchar_t>::find);
+    check_type<wchar_t* (*)(wchar_t*, const wchar_t*, size_t)>(&STD char_traits<wchar_t>::move);
+    check_type<wchar_t* (*)(wchar_t*, const wchar_t*, size_t)>(&STD char_traits<wchar_t>::copy);
+    check_type<wchar_t* (*)(wchar_t*, size_t, wchar_t)>(static_cast<wchar_t*(*)(wchar_t*, size_t, wchar_t)>(&STD char_traits<wchar_t>::assign));
+
+    check_type< STD wint_t (*)(const STD wint_t&)>(&STD char_traits<wchar_t>::not_eof);
+    check_type<wchar_t (*)(const STD wint_t&)>(&STD char_traits<wchar_t>::to_char_type);
+    check_type< STD wint_t (*)(const wchar_t&)>(&STD char_traits<wchar_t>::to_int_type);
+    check_type<bool (*)(const STD wint_t&, const STD wint_t&)>(&STD char_traits<wchar_t>::eq_int_type);
+    check_type< STD wint_t (*)()>(&STD char_traits<wchar_t>::eof);
+
+    return 0;
+  }
+}

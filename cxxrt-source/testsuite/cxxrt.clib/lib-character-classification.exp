@@ -1,0 +1,235 @@
+#!/usr/local/bin/expect
+# -*-C++-*- lib-character-classification.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  Character classification
+# Version: $Id: lib-character-classification.exp,v 1.1.1.1 2002/06/05 01:03:48 dietmar_kuehl Exp $ 
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include "testtools.hpp"
+  #include <cctype>
+  #include <limits>
+  #include <algorithm>
+
+  #if defined(_CRT_STD)
+  #  define CSTD _CRT_STD
+  #else
+  #  if defined(_CXXRT_STD)
+  #    define CSTD _CXXRT_STD
+  #  else
+  #    define CSTD ::std::
+  #  endif
+  #endif
+  #if defined(_CXXRT_STD)
+  #  define STD _CXXRT_STD
+  #else
+  #  define STD ::std::
+  #endif
+
+  int main(int ac, char* av[])
+  {
+    if (ac != 2)
+      {
+        STD cout << "wrong number of arguments\n";
+        return 1;
+      }
+
+    try
+      {
+	switch (av[1][0])
+	  {
+	  case 'a':
+	    {
+	      check_fct_type<int(*)(int)>(CSTD isalnum);
+	      for (int i = -1; i < STD numeric_limits<unsigned char>::max(); ++i)
+		if ((CSTD isalnum(i) != 0) != (CSTD isalpha(i) != 0 || CSTD isdigit(i) != 0))
+		  throw "mismatch between 'isalnum()' and 'isalpha(), isdigit()'";
+	      STD cout << "isalnum() OK\n";
+	    }
+	    break;
+	  case 'b':
+	    {
+	      check_fct_type<int(*)(int)>(CSTD isalpha);
+	      for (int i = -1; i < STD numeric_limits<unsigned char>::max(); ++i)
+		if ((CSTD isalpha(i) != 0) != (CSTD isupper(i) != 0 || CSTD islower(i) != 0))
+		  throw "mismatch between 'isalpha()' and 'islower(), islower()'";
+	      STD cout << "isalpha() OK\n";
+	    }
+	    break;
+	  case 'c':
+	    {
+  #if defined(_CRT_STD)
+	      check_fct_type<int(*)(int)>(CSTD isblank);
+	      for (int i = -1; i < STD numeric_limits<unsigned char>::max(); ++i)
+		if (((CSTD isblank(i) != 0) && !(i == '\t' || i == ' ')) ||
+		    ((CSTD isblank(i) == 0) && (i == '\t' || i == ' ')))
+		  throw "wrong value for 'isblank()'";
+  #endif
+	      STD cout << "isblank() OK\n";
+	    }
+	    break;
+	  case 'd':
+	    {
+	      check_fct_type<int(*)(int)>(CSTD iscntrl);
+	      STD cout << "iscntrl() OK\n";
+	    }
+	    break;
+	  case 'e':
+	    {
+	      char const* digits = "0123456789";
+	      check_fct_type<int(*)(int)>(CSTD isdigit);
+	      for (int i = -1; i < STD numeric_limits<unsigned char>::max(); ++i)
+		if (((CSTD isdigit(i) != 0) && STD find(digits, digits + 10, i) == digits + 10) ||
+		    ((CSTD isdigit(i) == 0) && STD find(digits, digits + 10, i) != digits + 10))
+		  throw "'isdigit()' return wrong value";
+	      STD cout << "isdigit() OK\n";
+	    }
+	    break;
+	  case 'f':
+	    {
+	      check_fct_type<int(*)(int)>(CSTD isgraph);
+	      //-dk:TODO find out what is a "graph"
+	      STD cout << "isgraph() OK\n";
+	    }
+	    break;
+	  case 'g':
+	    {
+	      char const* lowers = "abcdefghijklmnopqrstuvwxyz";
+	      check_fct_type<int(*)(int)>(CSTD islower);
+	      for (int i = -1; i < STD numeric_limits<unsigned char>::max(); ++i)
+		if (((CSTD islower(i) != 0) && STD find(lowers, lowers + 26, i) == lowers + 26) ||
+		    ((CSTD islower(i) == 0) && STD find(lowers, lowers + 26, i) != lowers + 26))
+		  throw "'islower()' return wrong value";
+	      STD cout << "islower() OK\n";
+	    }
+	    break;
+	  case 'h':
+	    {
+	      check_fct_type<int(*)(int)>(CSTD isprint);
+	      //-dk:TODO test for all printing characters.
+	      STD cout << "isprint() OK\n";
+	    }
+	    break;
+	  case 'i':
+	    {
+	      check_fct_type<int(*)(int)>(CSTD ispunct);
+	      for (int i = -1; i < STD numeric_limits<unsigned char>::max(); ++i)
+		if ((CSTD ispunct(i) != 0) && (CSTD isprint(i) == 0 || CSTD isalnum(i) != 0 || CSTD isspace(i) != 0) ||
+		    (CSTD ispunct(i) == 0) && (CSTD isprint(i) != 0 && CSTD isalnum(i) == 0 && CSTD isspace(i) == 0))
+		  throw "'ispunct()' and something else are true for the same character";
+	      STD cout << "ispunct() OK\n";
+	    }
+	    break;
+	  case 'j':
+	    {
+	      char const* spaces = " \f\n\r\t\v";
+	      check_fct_type<int(*)(int)>(CSTD isspace);
+	      for (int i = -1; i < STD numeric_limits<unsigned char>::max(); ++i)
+		if (((CSTD isspace(i) != 0) && STD find(spaces, spaces + 6, i) == spaces + 6) ||
+		    ((CSTD isspace(i) == 0) && STD find(spaces, spaces + 6, i) != spaces + 6))
+		  throw "'isspace()' return wrong value";
+	      STD cout << "isspace() OK\n";
+	    }
+	    break;
+	  case 'k':
+	    {
+	      char const* uppers = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+	      check_fct_type<int(*)(int)>(CSTD isupper);
+	      for (int i = -1; i < STD numeric_limits<unsigned char>::max(); ++i)
+		if (((CSTD isupper(i) != 0) && STD find(uppers, uppers + 26, i) == uppers + 26) ||
+		    ((CSTD isupper(i) == 0) && STD find(uppers, uppers + 26, i) != uppers + 26))
+		  throw "'isupper()' return wrong value";
+	      STD cout << "isupper() OK\n";
+	    }
+	    break;
+	  case 'l':
+	    {
+	      char const* xdigits = "0123456789ABCDEFabcdef";
+	      check_fct_type<int(*)(int)>(CSTD isupper);
+	      for (int i = -1; i < STD numeric_limits<unsigned char>::max(); ++i)
+		if (((CSTD isxdigit(i) != 0) && STD find(xdigits, xdigits + 22, i) == xdigits + 22) ||
+		    ((CSTD isxdigit(i) == 0) && STD find(xdigits, xdigits + 22, i) != xdigits + 22))
+		  throw "'isxdigit()' return wrong value";
+	      STD cout << "isxdigit() OK\n";
+	    }
+	    break;
+	  }
+      }
+    catch (char const* msg)
+      {
+	STD cout << msg << "\n";
+      }
+	
+    return 0;
+  }
+}
+
+simple_test "isalnum()" "a" {
+isalnum() OK
+}
+
+simple_test "isalpha()" "b" {
+isalpha() OK
+}
+
+simple_test "isblank()" "c" {
+isblank() OK
+}
+
+simple_test "iscntrl()" "d" {
+iscntrl() OK
+}
+
+simple_test "isdigit()" "e" {
+isdigit() OK
+}
+
+simple_test "isgraph()" "f" {
+isgraph() OK
+}
+
+simple_test "islower()" "g" {
+islower() OK
+}
+
+simple_test "isprint()" "h" {
+isprint() OK
+}
+
+simple_test "ispunct()" "i" {
+ispunct() OK
+}
+
+simple_test "isspace()" "j" {
+isspace() OK
+}
+
+simple_test "isupper()" "k" {
+isupper() OK
+}
+
+simple_test "isxdigit()" "l" {
+isxdigit() OK
+}

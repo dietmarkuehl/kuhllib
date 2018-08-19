@@ -1,0 +1,98 @@
+#!/usr/local/bin/expect
+# -*-C++-*- loc-22-2-1-3.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  ctype specializations
+# Version: $Id: loc-22-2-1-3.exp,v 1.1.1.1 2002/06/05 01:03:06 dietmar_kuehl Exp $
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <locale>
+  #if !defined(_CXXRT_STD)
+  #  define STD std::
+  #else
+  #  define STD _CXXRT_STD
+  #endif
+
+  template <class T> void check_type(T const&) {}
+
+  class facet: public STD ctype<char>
+  {
+  public:
+    void foo()
+    {
+      check_type< STD ctype_base::mask const *>(table());
+      check_type< STD ctype_base::mask const *>(classic_table());
+
+      char str[] = "aAnN1. ";
+
+      check_type<char>(do_toupper('a'));
+      check_type<char const *>(do_toupper(str, str + sizeof(str)));
+      check_type<char>(do_tolower('a'));
+      check_type<char const *>(do_tolower(str, str + sizeof(str)));
+
+      check_type<char>(do_widen('a'));
+      check_type<char const *>(do_widen(str, str + sizeof(str), str));
+      check_type<char>(do_narrow('a', 'd'));
+      check_type<char const *>(do_narrow(str, str + sizeof(str), 'd', str));
+    }
+  };
+
+  int main(int, char *[])
+  {
+    STD ctype<char> const &ct = STD use_facet< STD ctype<char> >(STD locale::classic());
+
+    check_type< STD locale::facet>(ct);
+    check_type< STD ctype_base>(ct);
+
+    typedef STD ctype<char>::char_type char_type;
+
+    STD ctype_base::mask table[STD ctype<char>::table_size];
+    check_type< STD ctype<char> >(*new STD ctype<char>(table, false, 1));
+
+    check_type<bool>(ct.is(STD ctype_base::space, 'a'));
+
+    char                 str[] = "aAnN1. ";
+    STD ctype_base::mask buf[sizeof(str)];
+    check_type<char const *>(ct.is(str, str + sizeof(str), buf));
+    check_type<char const *>(ct.scan_is(STD ctype_base::space, str, str + sizeof(str)));
+    check_type<char const *>(ct.scan_not(STD ctype_base::space, str, str + sizeof(str)));
+
+    check_type<char>(ct.toupper('a'));
+    check_type<char const *>(ct.toupper(str, str + sizeof(str)));
+    check_type<char>(ct.tolower('a'));
+    check_type<char const *>(ct.tolower(str, str + sizeof(str)));
+
+    check_type<char>(ct.widen('a'));
+    check_type<char const *>(ct.widen(str, str + sizeof(str), str));
+    check_type<char>(ct.narrow('a', 'd'));
+    check_type<char const *>(ct.narrow(str, str + sizeof(str), 'd', str));
+
+    check_type< STD locale::id>(STD ctype<char>::id);
+
+    facet ff;
+    ff.foo();
+    return 0;
+  }
+}

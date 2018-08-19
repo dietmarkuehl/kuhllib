@@ -1,0 +1,201 @@
+#!/usr/local/bin/expect
+# -*-C++-*- io-27-6-2-5-3.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  basic_ostream::operator<<
+# Version: $Id: io-27-6-2-5-3.exp,v 1.2 2006/04/07 07:07:13 dietmar_kuehl Exp $ 
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <ostream>
+  #include <streambuf>
+  #include <iostream>
+  #if !defined(STD)
+  #  if !defined(_CXXRT_STD)
+  #    define STD std::
+  #  else
+  #    define STD _CXXRT_STD
+  #  endif
+  #endif
+
+  bool set(bool& error) { error = true; return error; }
+
+  // ---------------------------------------------------------------------------
+
+  template <class cT>
+    class tstbuf: public STD basic_streambuf<cT>
+    {
+    };
+
+  // ---------------------------------------------------------------------------
+
+  inline STD ios_base& manip1(STD ios_base& obj)
+    { 
+      STD cout << "manip1\n";
+      return obj;
+    }
+
+  template <class cT>
+    inline STD basic_ios<cT>& manip2(STD basic_ios<cT>& obj)
+    { 
+      STD cout << "manip2\n";
+      return obj;
+    }
+
+  template <class cT>
+    inline STD basic_ostream<cT>& manip3(STD basic_ostream<cT>& obj)
+    { 
+      STD cout << "manip3\n";
+      return obj;
+    }
+
+  template <class cT>
+    inline void test_manipulators()
+    {
+      STD basic_ostream<cT> out(new tstbuf<cT>);
+      out << manip1;
+      out << manip2;
+      out << manip3;
+    }
+
+  // ---------------------------------------------------------------------------
+
+  template <class cT>
+    struct init {
+      static cT str[];
+    };
+  template<> char  init<char>::str[] = "0123456789abcdefghijklmnopqrstuvwxyz";
+  template<> wchar_t init<wchar_t>::str[] = L"0123456789abcdefghijklmnopqrstuvwxyz";
+
+  template <class T, int sz> inline int size(T (&)[sz]) { return sz; }
+
+  template <class cT>
+    struct smallbuf: public STD basic_streambuf<cT> {
+      smallbuf(int size): buf(new cT[size]) { this->setp(buf, buf + size); }
+      ~smallbuf() { delete[] buf; }
+      cT* buf;
+    };
+
+  template <class cT>
+    struct inputbuf: public STD basic_streambuf<cT> {
+      inputbuf(): buf(init<cT>::str) { this->setg(buf, buf, buf + size(init<cT>::str)); }
+      cT* buf;
+      int no_read() const { return this->gptr() - this->eback(); }
+    };
+
+  template <class cT>
+    inline char const* test_streambuf()
+    {
+      bool error = false;
+
+      typedef STD char_traits<cT> traits_type;
+
+      tstbuf<cT> tbuf;
+      STD basic_ostream<cT> out(&tbuf);
+
+      out << static_cast< STD basic_streambuf<cT>*>(0);
+      if (out.rdstate() != (STD ios_base::failbit | STD ios_base::badbit) && set(error))
+	STD cout << "wrong flags are set after inserting null streambuf when goodbit is set\n";
+
+      out.setstate(STD ios_base::failbit);
+      out << static_cast< STD basic_streambuf<cT>*>(0);
+      if (out.rdstate() != (STD ios_base::failbit | STD ios_base::badbit) && set(error))
+	STD cout << "wrong flags are set after inserting null streambuf when failbit is set\n";
+
+      out.clear();
+      out << &tbuf;
+      if ((out.rdstate() & (STD ios_base::badbit | STD ios_base::failbit)) == 0 && set(error))
+	STD cout << "wrong flags are set after inserting empty streambuf\n";
+
+      inputbuf<cT> in;
+      
+      out.clear();
+      out << &in;
+      if ((out.rdstate() & (STD ios_base::badbit | STD ios_base::failbit)) == 0 && set(error))
+	STD cout << "wrong flags are set after inserting into non-writable stream\n";
+      if (in.no_read() != 0 && set(error))
+	STD cout << "a character was extracted\n";
+
+      smallbuf<cT> sb(10);
+      STD basic_ostream<cT> sout(&sb);
+      sout << &in;
+      if (sout.rdstate() != STD ios_base::goodbit && set(error))
+	STD cout << "wrong flags are set after successful write\n";
+      if (in.no_read() != 10 && set(error))
+	STD cout << "wrong number of characters read\n";
+
+      for (int i = 0; i < 10; ++i)
+	if (init<cT>::str[i] != sb.buf[i] && set(error))
+	  STD cout << "wrong character was stored\n";
+
+      smallbuf<cT> sb2(50);
+      STD basic_ostream<cT> sout2(&sb2);
+      sout2 << &in;
+      if (sout2.rdstate() != STD ios_base::goodbit && set(error))
+	STD cout << "wrong flags are set after successful write\n";
+
+      return error? "error\n": "OK\n";
+    }
+
+  // ---------------------------------------------------------------------------
+
+  int main(int ac, char *av[])
+  {
+    if (ac != 2)
+      {
+        STD cerr << "wrong number of arguments\n";
+        return 1;
+      }
+
+    switch (av[1][0])
+      {
+      case '0':
+        test_manipulators<char>();
+        STD cout << "===\n";
+        test_manipulators<wchar_t>();
+        break;
+      case '1':
+	STD cout << test_streambuf<char>();
+	STD cout << test_streambuf<wchar_t>();
+        break;
+      }
+
+    return 0;
+  }
+}
+
+simple_test "basic_ostream::operator<< for manipulators" "0" {
+manip1
+manip2
+manip3
+===
+manip1
+manip2
+manip3
+}
+
+simple_test "basic_ostream::operator<< for stream buffer" "1" {
+OK
+OK
+}

@@ -1,0 +1,281 @@
+#!/usr/local/bin/expect
+# -*-C++-*- loc-22-2-1-1-2.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  ctype virtual function
+# Version: $Id: loc-22-2-1-1-2.exp,v 1.1.1.1 2002/06/05 01:02:47 dietmar_kuehl Exp $
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <locale>
+  #include <iostream>
+  #if !defined(_CXXRT_STD)
+  #  define STD std::
+  #else
+  #  define STD _CXXRT_STD
+  #endif
+
+  void result(bool rc)
+  {
+    STD cout << (rc? "test OK": "test failed") << "\n";
+  }
+
+  class facet: public STD ctype<char>
+  {
+  public:
+    static STD ctype_base::mask const *pub_classic() { return classic_table(); }
+  };
+
+  int main(int ac, char *av[])
+  {
+    if (ac != 2)
+      {
+        STD cerr << "wrong number of arguments\n";
+        return 1;
+      }
+
+    STD ctype<wchar_t> const &ct = STD use_facet< STD ctype<wchar_t> >(STD locale::classic());
+
+    switch (av[1][0])
+      {
+      case '0':
+        {
+          result(ct.is(STD ctype_base::space, L' '));
+          result(!ct.is(STD ctype_base::space, L'a'));
+          result(ct.is(STD ctype_base::alpha, L'a'));
+          result(!ct.is(STD ctype_base::alpha, L'1'));
+          result(ct.is(STD ctype_base::digit, L'1'));
+          result(!ct.is(STD ctype_base::digit, L'a'));
+          result(ct.is(STD ctype_base::xdigit, L'a'));
+          result(!ct.is(STD ctype_base::xdigit, L'.'));
+          result(ct.is(STD ctype_base::punct, L'.'));
+          result(!ct.is(STD ctype_base::punct, L'A'));
+          result(ct.is(STD ctype_base::upper, L'A'));
+          result(!ct.is(STD ctype_base::upper, L'a'));
+          result(ct.is(STD ctype_base::lower, L'a'));
+          result(!ct.is(STD ctype_base::lower, L' '));
+
+          wchar_t str[] = L"aAnN1. ";
+          STD ctype_base::mask vec[sizeof(str)];
+
+          result(ct.is(str, str + sizeof(str), vec) == str + sizeof(str));
+          result(vec[0] == facet::pub_classic()['a']);
+          result(vec[1] == facet::pub_classic()['A']);
+          result(vec[2] == facet::pub_classic()['n']);
+          result(vec[3] == facet::pub_classic()['N']);
+          result(vec[4] == facet::pub_classic()['1']);
+          result(vec[5] == facet::pub_classic()['.']);
+          //-dk:TODO result(vec[6] == facet::pub_classic()[' ']);
+        }
+      break;
+      case '1':
+        {
+          wchar_t str[] = L"aAnN1. ";
+          int  size = sizeof(str) / sizeof(wchar_t);
+          
+          result(ct.scan_is(STD ctype_base::upper, str, str + size) == str + 1);
+          result(ct.scan_is(STD ctype_base::lower, str, str + size) == str + 0);
+          result(ct.scan_is(STD ctype_base::alpha, str, str + size) == str + 0);
+          result(ct.scan_is(STD ctype_base::digit, str, str + size) == str + 4);
+          result(ct.scan_is(STD ctype_base::punct, str, str + size) == str + 5);
+          result(ct.scan_is(STD ctype_base::space, str, str + size) == str + 6);
+        }
+      break;
+      case '2':
+        {
+          wchar_t str[] = L"aAnN1. ";
+          int  size = sizeof(str) / sizeof(wchar_t);
+          
+          result(ct.scan_not(STD ctype_base::upper, str, str + size) == str + 0);
+          result(ct.scan_not(STD ctype_base::lower, str, str + size) == str + 1);
+          result(ct.scan_not(STD ctype_base::alpha, str, str + size) == str + 4);
+          result(ct.scan_not(STD ctype_base::digit, str, str + size) == str + 0);
+          result(ct.scan_not(STD ctype_base::punct, str, str + size) == str + 0);
+          result(ct.scan_not(STD ctype_base::space, str, str + size) == str + 0);
+        }
+      break;
+      case '3':
+        {
+          result(ct.toupper(L'a') == L'A');
+          result(ct.toupper(L'A') == L'A');
+          result(ct.toupper(L'1') == L'1');
+
+          wchar_t str[] = L"aA1";
+          result(ct.toupper(str, str + 3) == str + 3);
+
+          result(str[0] == L'A');
+          result(str[1] == L'A');
+          result(str[2] == L'1');
+        }
+      break;
+      case '4':
+        {
+          result(ct.tolower(L'a') == L'a');
+          result(ct.tolower(L'A') == L'a');
+          result(ct.tolower(L'1') == L'1');
+
+          wchar_t str[] = L"aA1";
+          result(ct.tolower(str, str + 3) == str + 3);
+
+          result(str[0] == L'a');
+          result(str[1] == L'a');
+          result(str[2] == L'1');
+        }
+      break;
+      case '5':
+        {
+          result(ct.widen('a') == L'a');
+          result(ct.widen('A') == L'A');
+          result(ct.widen('1') == L'1');
+
+          char str[] = "aAnN1. ";
+          wchar_t to[sizeof(str)];
+          result(ct.widen(str, str + sizeof(str), to) == str + sizeof(str));
+
+          result(to[0] == L'a');
+          result(to[1] == L'A');
+          result(to[2] == L'n');
+          result(to[3] == L'N');
+          result(to[4] == L'1');
+          result(to[5] == L'.');
+          result(to[6] == L' ');
+        }
+      break;
+      case '6':
+        {
+          result(ct.narrow('a', '*') == 'a');
+          result(ct.narrow('A', '*') == 'A');
+          result(ct.narrow('1', '*') == '1');
+          result(ct.narrow(0xffff, '*') == '*');
+
+          wchar_t str[] = L"aAnN1. ";
+          static const int size = sizeof(str) / sizeof(wchar_t);
+          char to[size];
+          result(ct.narrow(str, str + size, '*', to) == str + size);
+
+          result(to[0] == 'a');
+          result(to[1] == 'A');
+          result(to[2] == 'n');
+          result(to[3] == 'N');
+          result(to[4] == '1');
+          result(to[5] == '.');
+          result(to[6] == ' ');
+        }
+      break;
+      }
+    
+    return 0;
+  }
+}
+
+simple_test "ctype do_is()" "0" {
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+}
+
+simple_test "ctype do_scan_is()" "1" {
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+}
+
+simple_test "ctype do_scan_not()" "2" {
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+}
+
+simple_test "ctype do_toupper()" "3" {
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+}
+
+simple_test "ctype do_tolower()" "4" {
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+}
+
+simple_test "ctype do_widen()" "5" {
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+}
+
+simple_test "ctype do_narrow()" "6" {
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+}

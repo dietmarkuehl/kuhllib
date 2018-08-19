@@ -1,0 +1,123 @@
+#!/usr/local/bin/expect
+# -*-C++-*- io-27-4-2.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  Class ios_base
+# Version: $Id: lib-ios-base.exp,v 1.1.1.1 2002/06/05 01:03:37 dietmar_kuehl Exp $ 
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <ios>
+  #if !defined(STD)
+  #  if !defined(_CXXRT_STD)
+  #    define STD std::
+  #  else
+  #    define STD _CXXRT_STD
+  #  endif
+  #endif
+
+  template <class T> void test_type_existance() {}
+  template <class T> void test_type(T&) {}
+
+  int main()
+  {
+    test_type_existance< STD ios_base::failure>();
+
+    test_type_existance< STD ios_base::fmtflags>();
+    test_type< STD ios_base::fmtflags const* const>(&STD ios_base::boolalpha);
+    test_type< STD ios_base::fmtflags const* const>(&STD ios_base::dec);
+    test_type< STD ios_base::fmtflags const* const>(&STD ios_base::fixed);
+    test_type< STD ios_base::fmtflags const* const>(&STD ios_base::hex);
+    test_type< STD ios_base::fmtflags const* const>(&STD ios_base::internal);
+    test_type< STD ios_base::fmtflags const* const>(&STD ios_base::left);
+    test_type< STD ios_base::fmtflags const* const>(&STD ios_base::oct);
+    test_type< STD ios_base::fmtflags const* const>(&STD ios_base::right);
+    test_type< STD ios_base::fmtflags const* const>(&STD ios_base::scientific);
+    test_type< STD ios_base::fmtflags const* const>(&STD ios_base::showbase);
+    test_type< STD ios_base::fmtflags const* const>(&STD ios_base::showpoint);
+    test_type< STD ios_base::fmtflags const* const>(&STD ios_base::showpos);
+    test_type< STD ios_base::fmtflags const* const>(&STD ios_base::skipws);
+    test_type< STD ios_base::fmtflags const* const>(&STD ios_base::unitbuf);
+    test_type< STD ios_base::fmtflags const* const>(&STD ios_base::uppercase);
+    test_type< STD ios_base::fmtflags const* const>(&STD ios_base::adjustfield);
+    test_type< STD ios_base::fmtflags const* const>(&STD ios_base::basefield);
+    test_type< STD ios_base::fmtflags const* const>(&STD ios_base::floatfield);
+
+    test_type_existance< STD ios_base::iostate>();
+    test_type< STD ios_base::iostate const* const>(&STD ios_base::badbit);
+    test_type< STD ios_base::iostate const* const>(&STD ios_base::eofbit);
+    test_type< STD ios_base::iostate const* const>(&STD ios_base::failbit);
+    test_type< STD ios_base::iostate const* const>(&STD ios_base::goodbit);
+
+    test_type_existance< STD ios_base::openmode>();
+    test_type< STD ios_base::openmode const* const>(&STD ios_base::app);
+    test_type< STD ios_base::openmode const* const>(&STD ios_base::ate);
+    test_type< STD ios_base::openmode const* const>(&STD ios_base::binary);
+    test_type< STD ios_base::openmode const* const>(&STD ios_base::in);
+    test_type< STD ios_base::openmode const* const>(&STD ios_base::out);
+    test_type< STD ios_base::openmode const* const>(&STD ios_base::trunc);
+
+    test_type_existance< STD ios_base::seekdir>();
+    test_type< STD ios_base::seekdir const* const>(&STD ios_base::beg);
+    test_type< STD ios_base::seekdir const* const>(&STD ios_base::cur);
+    test_type< STD ios_base::seekdir const* const>(&STD ios_base::end);
+
+    test_type_existance< STD ios_base::Init>();
+
+    STD ios_base const* cib = 0;
+    STD ios_base*       ib = 0;
+
+    test_type< STD ios_base::fmtflags const>(cib->flags());
+    test_type< STD ios_base::fmtflags const>(ib->flags(STD ios_base::fmtflags()));
+    test_type< STD ios_base::fmtflags const>(ib->setf(STD ios_base::fmtflags()));
+    test_type< STD ios_base::fmtflags const>(ib->setf(STD ios_base::fmtflags(), STD ios_base::fmtflags()));
+    ib->unsetf(STD ios_base::fmtflags());
+
+    test_type< STD streamsize const>(cib->precision());
+    test_type< STD streamsize const>(ib->precision(STD streamsize()));
+    test_type< STD streamsize const>(cib->width());
+    test_type< STD streamsize const>(ib->width(STD streamsize()));
+
+    test_type< STD locale const>(ib->imbue(STD locale()));
+    test_type< STD locale const>(cib->getloc());
+
+    int idx = STD ios_base::xalloc();
+    test_type<long>(ib->iword(idx));
+    test_type<void*>(ib->pword(idx));
+
+    test_type_existance< STD ios_base::event>();
+    test_type< STD ios_base::event const>(STD ios_base::erase_event);
+    test_type< STD ios_base::event const>(STD ios_base::imbue_event);
+    test_type< STD ios_base::event const>(STD ios_base::copyfmt_event);
+
+    test_type_existance< STD ios_base::event_callback>();
+    STD ios_base::event_callback cb = 0;
+    test_type<void (*)(STD ios_base::event, STD ios_base&, int)>(cb);
+    ib->register_callback(cb, int(9));
+
+    test_type<bool const>(ib->sync_with_stdio(true));
+
+    return 0;
+  }
+}

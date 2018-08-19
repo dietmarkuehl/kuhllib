@@ -1,0 +1,148 @@
+#!/usr/local/bin/expect
+# -*-C++-*- io-27-6-1-4.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  Standard basic_istream manipulators
+# Version: $Id: io-27-6-1-4.exp,v 1.1.1.1 2002/06/05 01:03:26 dietmar_kuehl Exp $ 
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <istream>
+  #include <iostream>
+  #include <streambuf>
+  #if !defined(_CXXRT_STD)
+  #  define STD std::
+  #else
+  #  define STD _CXXRT_STD
+  #endif
+  
+  // ---------------------------------------------------------------------------
+
+  template <class cT>
+    class bufferedbuf: public STD basic_streambuf<cT>
+    {
+    public:
+      bufferedbuf(cT* str, int size) { this->setg(str, str, str + size); }
+    };
+
+  template <class cT>
+    class unbufferedbuf: public STD basic_streambuf<cT>
+    {
+    public:
+      unbufferedbuf(cT* str, int size): cur(str), end(str + size) {}
+
+    private:
+      typename STD char_traits<cT>::int_type underflow()
+        {
+          return cur == end? STD char_traits<cT>::eof(): STD char_traits<cT>::to_int_type(*cur);
+        }
+      typename STD char_traits<cT>::int_type uflow()
+        {
+          return cur == end? STD char_traits<cT>::eof(): STD char_traits<cT>::to_int_type(*cur++);
+        }
+      typename STD char_traits<cT>::int_type pbackfail(typename STD char_traits<cT>::int_type c)
+	{
+	  return *--cur;
+	}
+
+      cT* cur;
+      cT* end;
+
+      unbufferedbuf(unbufferedbuf const&);
+      void operator=(unbufferedbuf const&);
+    };
+
+  // ---------------------------------------------------------------------------
+
+  template <class cT>
+    struct init
+    {
+      static cT  str[];
+      static int size;
+    };
+
+  #if defined(_MSC_VER)
+  template <> char init<char>::str[] = " \t\n\ra \t\n\r";
+  template <> int  init<char>::size  = 9;
+
+  template <> wchar_t init<wchar_t>::str[] = L" \t\n\ra \t\n\r";
+  template <> int     init<wchar_t>::size  = 9;
+  #else
+  template <class T, int sz> inline int str_size(T (&)[sz]) { return sz - 1; }
+
+  template <> char init<char>::str[] = " \t\n\ra \t\n\r";
+  template <> int  init<char>::size  = str_size(str);
+
+  template <> wchar_t init<wchar_t>::str[] = L" \t\n\ra \t\n\r";
+  template <> int     init<wchar_t>::size  = str_size(str);
+  #endif
+
+  // ---------------------------------------------------------------------------
+
+  template <class cT, class sbuf>
+    inline char const* test_ws()
+    {
+      typedef typename STD basic_istream<cT>::int_type int_type;
+      STD basic_istream<cT> in(new sbuf(init<cT>::str, init<cT>::size));
+
+      if (&(in >> STD ws) != &in)
+        return "error in test_ws(): wrong object returned\n";
+      if (in.peek() != int_type(init<cT>::str[4]))
+        return "error in test_ws(): wrong character\n";
+      if (in.rdstate() != STD ios_base::goodbit)
+        return "error in test_ws(): rdstate() != goodbit\n";
+
+      in >> STD ws;
+      if (in.peek() != int_type(init<cT>::str[4]))
+        return "error in test_ws(): wrong character\n";
+      if (in.rdstate() != STD ios_base::goodbit)
+        return "error in test_ws(): rdstate() != goodbit\n";
+
+      in.ignore();
+      in >> STD ws;
+      if (in.rdstate() != STD ios_base::eofbit)
+        return "error in test_ws(): rdstate() != eofbit\n";
+
+      return "OK\n";
+    }
+
+  // ---------------------------------------------------------------------------
+
+  int main()
+  {
+    STD cout << test_ws<char, bufferedbuf<char> >();
+    STD cout << test_ws<char, unbufferedbuf<char> >();
+    STD cout << test_ws<wchar_t, bufferedbuf<wchar_t> >();
+    STD cout << test_ws<wchar_t, unbufferedbuf<wchar_t> >();
+
+    return 0;
+  }
+}
+
+simple_test "manipulator ws" "" {
+OK
+OK
+OK
+OK
+}

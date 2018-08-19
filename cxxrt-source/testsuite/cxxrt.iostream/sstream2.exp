@@ -1,0 +1,110 @@
+#!/usr/local/bin/expect
+# -*-C++-*- sstream2.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:   
+# Version: $Id: sstream2.exp,v 1.1.1.1 2002/06/05 01:02:40 dietmar_kuehl Exp $
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <sstream>
+  #include <iostream>
+  #include <algorithm>
+  #include <iterator>
+
+  #if !defined(_CXXRT_STD_NAME)
+  #  define _CXXRT_STD_NAME std;
+  #endif
+  using namespace _CXXRT_STD_NAME;
+
+  int main(int ac, char *av[])
+  {
+    typedef char_traits<char> traits;
+    basic_stringbuf<char> sbuf("hello world");
+    char buffer[64];
+      
+    if (ac < 2)
+      return -1;
+
+    switch (av[1][0])
+      {
+      case '1':
+        {
+          cout << "->";
+          for (int c = sbuf.sgetc(); c != traits::eof(); c = sbuf.snextc())
+            cout << char(c);
+          cout << "<-\n";
+        }
+      break;
+      case '2':
+        {
+          cout << "->";
+          for (int c = sbuf.sgetc(); c != traits::eof(); c = sbuf.sgetc())
+            {
+              cout << char(c);
+              sbuf.sbumpc();
+            }
+          cout << "<-\n";
+        }
+      break;
+      case '3':
+        {
+          buffer[sbuf.sgetn(buffer, 64)] = 0;
+          cout << "->" << buffer << "<-\n";
+        }
+      
+      break;
+      case '4':
+        {
+          for (int c = sbuf.sgetn(buffer, 3); c > 0; c = sbuf.sgetn(buffer, 3))
+            {
+              buffer[c] = 0;
+              cout << "->" << buffer << "<-\n";
+            }
+        }
+      break;
+      default:
+        break;
+      }
+    return 0;
+  }
+}
+
+simple_test "snextc()" "1" {
+->hello world<-
+}
+
+simple_test "sgetc() + sbumpc()" "2" {
+->hello world<-
+}
+simple_test "sgetn()" "3" {
+->hello world<-
+}
+
+simple_test "multiple sgetn()" "4" {
+->hel<-
+->lo <-
+->wor<-
+->ld<-
+}

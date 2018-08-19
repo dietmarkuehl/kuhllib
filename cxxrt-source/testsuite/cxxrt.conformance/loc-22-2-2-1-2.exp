@@ -1,0 +1,1037 @@
+#!/usr/local/bin/expect
+# -*-C++-*- loc-22-2-2-1-2.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  num_get virtual functions (-dk:TODO complete the tests)
+# Version: $Id: loc-22-2-2-1-2.exp,v 1.1.1.1 2002/06/05 01:03:20 dietmar_kuehl Exp $
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <locale>
+  #include <sstream>
+  #include <iostream>
+  #include <iterator>
+
+  #if !defined(_CXXRT_STD)
+  #  define STD std::
+  #else
+  #  define STD _CXXRT_STD
+  #endif
+
+  void printflags(STD ios_base::iostate flags)
+  {
+    if (flags == STD ios_base::goodbit)
+      STD cout << "(good)";
+    else
+      {
+        STD cout << "(";
+        if ((flags & STD ios_base::failbit) != 0)
+          STD cout << "fail";
+        if ((flags & STD ios_base::eofbit) != 0)
+          STD cout << ((flags & STD ios_base::failbit) != 0? " ": "") << "eof";
+        if ((flags & STD ios_base::badbit) != 0)
+          STD cout << ((flags & (STD ios_base::eofbit | STD ios_base::failbit)) != 0? " ": "") << "bad";
+        STD cout << ")";
+      }
+  }
+
+  void result(bool rc)
+  {
+    STD cout << (rc? "test OK": "test failed") << "\n";
+  }
+
+  template <class cT, class Val>
+  void
+  test(STD ios_base &b, char const *str, Val val)
+  {
+    STD ctype<cT> const& ct = STD use_facet< STD ctype<cT> >(b.getloc());
+    cT  buf[1024];
+    cT* it = buf;
+    for (char const *tmp = str; *tmp != 0; ++tmp, ++it)
+      *it = ct.widen(*tmp);
+    *it = cT();
+
+    typedef STD num_get<cT, STD istreambuf_iterator<cT> > num_get;
+    num_get const& ng = STD use_facet<num_get>(b.getloc());
+    STD basic_istringstream<cT> in(str);
+    STD istreambuf_iterator<cT> end;
+    typename STD basic_istream<cT>::pos_type start = in.tellg();
+
+    Val rc = val;
+    STD ios_base::iostate err(STD ios_base::goodbit);
+    STD istreambuf_iterator<cT> last = ng.get(in, end, b, err, rc);
+    STD cout << "\"" << str << "\": ";
+    STD cout << static_cast<long>(in.tellg() - start) << " ";
+    printflags(err);
+    STD cout << " " << rc << "\n";
+  }
+
+  int main(int ac, char *av[])
+  {
+    if (ac < 2)
+      {
+        STD cerr << "wrong number of arguments\n";
+        return 1;
+      }
+
+    STD istringstream in("a");
+
+    switch (av[1][0])
+      {
+      case '0':
+        {
+          STD cout << STD boolalpha;
+          test<char, bool>(in, "0 ", false);
+          test<char, bool>(in, "1 ", true);
+          test<char, bool>(in, "2 ", false);
+          test<char, bool>(in, "2 ", true);
+          test<char, bool>(in, "0123456789 ", false);
+          test<char, bool>(in, "0123456789 ", true);
+        }
+        break;
+      case '1':
+        {
+          STD cout << STD boolalpha;
+          in >> STD boolalpha;
+          test<char, bool>(in, "false ", false);
+          test<char, bool>(in, "false ", true);
+          test<char, bool>(in, "true ", true);
+          test<char, bool>(in, "true ", false);
+          test<char, bool>(in, "foo ", false);
+          test<char, bool>(in, "foo ", true);
+        }
+        break;
+      case '2':
+        {
+          in >> STD dec;
+          test<char, long>(in, "+1 ", 17);
+          test<char, long>(in, "1 ", 17);
+          test<char, long>(in, "-1 ", 17);
+          test<char, long>(in, "0 ", 17);
+          test<char, long>(in, "010 ", 17);
+          test<char, long>(in, "-2147483648 ", 17);
+          test<char, long>(in, "-2147483649 ", 17);
+          test<char, long>(in, "-21474836481 ", 17);
+          test<char, long>(in, "2147483647 ", 17);
+          test<char, long>(in, "2147483648 ", 17);
+          test<char, long>(in, "21474836471 ", 17);
+          test<char, long>(in, "x", 17);
+          test<char, long>(in, "a", 17);
+          test<char, long>(in, "", 17);
+          test<char, long>(in, "+ ", 17);
+          test<char, long>(in, "- ", 17);
+          test<char, long>(in, "+", 17);
+          test<char, long>(in, "-", 17);
+          test<char, long>(in, "1", 17);
+          test<char, long>(in, "21474836471", 17);
+          test<char, long>(in, "0x1", 17);
+          test<char, long>(in, "0X1", 17);
+        }
+        break;
+      case '3':
+        {
+          in >> STD oct;
+          test<char, long>(in, "+1 ", 17);
+          test<char, long>(in, "1 ", 17);
+          test<char, long>(in, "-1 ", 17);
+          test<char, long>(in, "0 ", 17);
+          test<char, long>(in, "010 ", 17);
+          test<char, long>(in, "x", 17);
+          test<char, long>(in, "9", 17);
+          test<char, long>(in, "", 17);
+          test<char, long>(in, "+ ", 17);
+          test<char, long>(in, "- ", 17);
+          test<char, long>(in, "+", 17);
+          test<char, long>(in, "-", 17);
+          test<char, long>(in, "1", 17);
+          test<char, long>(in, "0x1", 17);
+          test<char, long>(in, "0X1", 17);
+        }
+        break;
+      case '4':
+        {
+          in >> STD hex;
+          test<char, long>(in, "+1 ", 17);
+          test<char, long>(in, "1 ", 17);
+          test<char, long>(in, "-1 ", 17);
+          test<char, long>(in, "0 ", 17);
+          test<char, long>(in, "010 ", 17);
+          test<char, long>(in, "0x10 ", 17);
+          test<char, long>(in, "x", 17);
+          test<char, long>(in, "g", 17);
+          test<char, long>(in, "", 17);
+          test<char, long>(in, "+ ", 17);
+          test<char, long>(in, "- ", 17);
+          test<char, long>(in, "+", 17);
+          test<char, long>(in, "-", 17);
+          test<char, long>(in, "1", 17);
+          test<char, long>(in, "0x1", 17);
+          test<char, long>(in, "0X1", 17);
+        }
+        break;
+      case '5':
+        {
+          in.setf(STD ios_base::fmtflags(), STD ios_base::basefield);
+          test<char, long>(in, "10 ", 17);
+          test<char, long>(in, "+10 ", 17);
+          test<char, long>(in, "-10 ", 17);
+          test<char, long>(in, "010 ", 17);
+          test<char, long>(in, "+010 ", 17);
+          test<char, long>(in, "-010 ", 17);
+          test<char, long>(in, "0x10 ", 17);
+          test<char, long>(in, "+0x10 ", 17);
+          test<char, long>(in, "-0x10 ", 17);
+          test<char, long>(in, "0X10 ", 17);
+          test<char, long>(in, "+0X10 ", 17);
+          test<char, long>(in, "-0X10 ", 17);
+        }
+        break;
+      case '6':
+        {
+          in >> STD dec;
+          test<char, unsigned short>(in, "1 ", 17);
+          test<char, unsigned short>(in, "-1 ", 17);
+          test<char, unsigned short>(in, "0 ", 17);
+          test<char, unsigned short>(in, "65535 ", 17);
+          test<char, unsigned short>(in, "65536 ", 17);
+          test<char, unsigned short>(in, "655351 ", 17);
+          test<char, unsigned short>(in, "x", 17);
+          test<char, unsigned short>(in, "a", 17);
+        }
+        break;
+      case '7':
+        {
+          test<char, unsigned int>(in, "1 ", 17);
+          test<char, unsigned int>(in, "-1 ", 17);
+          test<char, unsigned int>(in, "0 ", 17);
+          test<char, unsigned int>(in, "4294967295 ", 17);
+          test<char, unsigned int>(in, "4294967296 ", 17);
+          test<char, unsigned int>(in, "42949672951 ", 17);
+          test<char, unsigned int>(in, "x", 17);
+          test<char, unsigned int>(in, "a", 17);
+        }
+        break;
+      case '8':
+        {
+          test<char, unsigned long>(in, "1 ", 17);
+          test<char, unsigned long>(in, "-1 ", 17);
+          test<char, unsigned long>(in, "0 ", 17);
+          test<char, unsigned long>(in, "4294967295 ", 17);
+          test<char, unsigned long>(in, "4294967296 ", 17);
+          test<char, unsigned long>(in, "42949672951 ", 17);
+          test<char, unsigned long>(in, "x", 17);
+          test<char, unsigned long>(in, "a", 17);
+        }
+        break;
+
+      case 'a':
+        {
+          test<char, float>(in, "e", 5.0);
+          test<char, float>(in, "++", 5.0);
+          test<char, float>(in, "--", 5.0);
+          test<char, float>(in, "..", 5.0);
+          test<char, float>(in, ".1.1", 5.0);
+          test<char, float>(in, "1.1.1", 5.0);
+          test<char, float>(in, "+.1.1", 5.0);
+          test<char, float>(in, "+1.1.1", 5.0);
+
+          test<char, float>(in, "x", 5.0);
+          test<char, float>(in, " ", 5.0);
+          test<char, float>(in, "+ ", 5.0);
+          test<char, float>(in, "- ", 5.0);
+          test<char, float>(in, "125 ", 5.0);
+          test<char, float>(in, "+125 ", 5.0);
+          test<char, float>(in, "-125 ", 5.0);
+          test<char, float>(in, "125. ", 5.0);
+          test<char, float>(in, "+125. ", 5.0);
+          test<char, float>(in, "-125. ", 5.0);
+          test<char, float>(in, ".125 ", 5.0);
+          test<char, float>(in, "+.125 ", 5.0);
+          test<char, float>(in, "-.125 ", 5.0);
+          test<char, float>(in, "125e ", 5.0);
+          test<char, float>(in, "+125e ", 5.0);
+          test<char, float>(in, "-125e ", 5.0);
+          test<char, float>(in, "125.e ", 5.0);
+          test<char, float>(in, "+125.e ", 5.0);
+          test<char, float>(in, "-125.e ", 5.0);
+          test<char, float>(in, ".125e ", 5.0);
+          test<char, float>(in, "+.125e ", 5.0);
+          test<char, float>(in, "-.125e ", 5.0);
+          test<char, float>(in, "125e2 ", 5.0);
+          test<char, float>(in, "+125e2 ", 5.0);
+          test<char, float>(in, "-125e2 ", 5.0);
+          test<char, float>(in, "125.e2 ", 5.0);
+          test<char, float>(in, "+125.e2 ", 5.0);
+          test<char, float>(in, "-125.e2 ", 5.0);
+          test<char, float>(in, ".125e2 ", 5.0);
+          test<char, float>(in, "+.125e2 ", 5.0);
+          test<char, float>(in, "-.125e2 ", 5.0);
+          test<char, float>(in, "125e+2 ", 5.0);
+          test<char, float>(in, "+125e+2 ", 5.0);
+          test<char, float>(in, "-125e+2 ", 5.0);
+          test<char, float>(in, "125.e+2 ", 5.0);
+          test<char, float>(in, "+125.e+2 ", 5.0);
+          test<char, float>(in, "-125.e+2 ", 5.0);
+          test<char, float>(in, ".125e+2 ", 5.0);
+          test<char, float>(in, "+.125e+2 ", 5.0);
+          test<char, float>(in, "-.125e+2 ", 5.0);
+          test<char, float>(in, "125e-2 ", 5.0);
+          test<char, float>(in, "+125e-2 ", 5.0);
+          test<char, float>(in, "-125e-2 ", 5.0);
+          test<char, float>(in, "125.e-2 ", 5.0);
+          test<char, float>(in, "+125.e-2 ", 5.0);
+          test<char, float>(in, "-125.e-2 ", 5.0);
+          test<char, float>(in, ".125e-2 ", 5.0);
+          test<char, float>(in, "+.125e-2 ", 5.0);
+          test<char, float>(in, "-.125e-2 ", 5.0);
+
+          test<char, float>(in, "", 5.0);
+          test<char, float>(in, "+", 5.0);
+          test<char, float>(in, "-", 5.0);
+          test<char, float>(in, "125", 5.0);
+          test<char, float>(in, "+125", 5.0);
+          test<char, float>(in, "-125", 5.0);
+          test<char, float>(in, "125.", 5.0);
+          test<char, float>(in, "+125.", 5.0);
+          test<char, float>(in, "-125.", 5.0);
+          test<char, float>(in, ".125", 5.0);
+          test<char, float>(in, "+.125", 5.0);
+          test<char, float>(in, "-.125", 5.0);
+          test<char, float>(in, "125e", 5.0);
+          test<char, float>(in, "+125e", 5.0);
+          test<char, float>(in, "-125e", 5.0);
+          test<char, float>(in, "125.e", 5.0);
+          test<char, float>(in, "+125.e", 5.0);
+          test<char, float>(in, "-125.e", 5.0);
+          test<char, float>(in, ".125e", 5.0);
+          test<char, float>(in, "+.125e", 5.0);
+          test<char, float>(in, "-.125e", 5.0);
+          test<char, float>(in, "125e2", 5.0);
+          test<char, float>(in, "+125e2", 5.0);
+          test<char, float>(in, "-125e2", 5.0);
+          test<char, float>(in, "125.e2", 5.0);
+          test<char, float>(in, "+125.e2", 5.0);
+          test<char, float>(in, "-125.e2", 5.0);
+          test<char, float>(in, ".125e2", 5.0);
+          test<char, float>(in, "+.125e2", 5.0);
+          test<char, float>(in, "-.125e2", 5.0);
+          test<char, float>(in, "125e+2", 5.0);
+          test<char, float>(in, "+125e+2", 5.0);
+          test<char, float>(in, "-125e+2", 5.0);
+          test<char, float>(in, "125.e+2", 5.0);
+          test<char, float>(in, "+125.e+2", 5.0);
+          test<char, float>(in, "-125.e+2", 5.0);
+          test<char, float>(in, ".125e+2", 5.0);
+          test<char, float>(in, "+.125e+2", 5.0);
+          test<char, float>(in, "-.125e+2", 5.0);
+          test<char, float>(in, "125e-2", 5.0);
+          test<char, float>(in, "+125e-2", 5.0);
+          test<char, float>(in, "-125e-2", 5.0);
+          test<char, float>(in, "125.e-2", 5.0);
+          test<char, float>(in, "+125.e-2", 5.0);
+          test<char, float>(in, "-125.e-2", 5.0);
+          test<char, float>(in, ".125e-2", 5.0);
+          test<char, float>(in, "+.125e-2", 5.0);
+          test<char, float>(in, "-.125e-2", 5.0);
+        }
+        break;
+      case 'b':
+        {
+          test<char, double>(in, "e", 5.0);
+          test<char, double>(in, "++", 5.0);
+          test<char, double>(in, "--", 5.0);
+          test<char, double>(in, "..", 5.0);
+          test<char, double>(in, ".1.1", 5.0);
+          test<char, double>(in, "1.1.1", 5.0);
+          test<char, double>(in, "+.1.1", 5.0);
+          test<char, double>(in, "+1.1.1", 5.0);
+
+          test<char, double>(in, "x", 5.0);
+          test<char, double>(in, " ", 5.0);
+          test<char, double>(in, "+ ", 5.0);
+          test<char, double>(in, "- ", 5.0);
+          test<char, double>(in, "125 ", 5.0);
+          test<char, double>(in, "+125 ", 5.0);
+          test<char, double>(in, "-125 ", 5.0);
+          test<char, double>(in, "125. ", 5.0);
+          test<char, double>(in, "+125. ", 5.0);
+          test<char, double>(in, "-125. ", 5.0);
+          test<char, double>(in, ".125 ", 5.0);
+          test<char, double>(in, "+.125 ", 5.0);
+          test<char, double>(in, "-.125 ", 5.0);
+          test<char, double>(in, "125e ", 5.0);
+          test<char, double>(in, "+125e ", 5.0);
+          test<char, double>(in, "-125e ", 5.0);
+          test<char, double>(in, "125.e ", 5.0);
+          test<char, double>(in, "+125.e ", 5.0);
+          test<char, double>(in, "-125.e ", 5.0);
+          test<char, double>(in, ".125e ", 5.0);
+          test<char, double>(in, "+.125e ", 5.0);
+          test<char, double>(in, "-.125e ", 5.0);
+          test<char, double>(in, "125e2 ", 5.0);
+          test<char, double>(in, "+125e2 ", 5.0);
+          test<char, double>(in, "-125e2 ", 5.0);
+          test<char, double>(in, "125.e2 ", 5.0);
+          test<char, double>(in, "+125.e2 ", 5.0);
+          test<char, double>(in, "-125.e2 ", 5.0);
+          test<char, double>(in, ".125e2 ", 5.0);
+          test<char, double>(in, "+.125e2 ", 5.0);
+          test<char, double>(in, "-.125e2 ", 5.0);
+          test<char, double>(in, "125e+2 ", 5.0);
+          test<char, double>(in, "+125e+2 ", 5.0);
+          test<char, double>(in, "-125e+2 ", 5.0);
+          test<char, double>(in, "125.e+2 ", 5.0);
+          test<char, double>(in, "+125.e+2 ", 5.0);
+          test<char, double>(in, "-125.e+2 ", 5.0);
+          test<char, double>(in, ".125e+2 ", 5.0);
+          test<char, double>(in, "+.125e+2 ", 5.0);
+          test<char, double>(in, "-.125e+2 ", 5.0);
+          test<char, double>(in, "125e-2 ", 5.0);
+          test<char, double>(in, "+125e-2 ", 5.0);
+          test<char, double>(in, "-125e-2 ", 5.0);
+          test<char, double>(in, "125.e-2 ", 5.0);
+          test<char, double>(in, "+125.e-2 ", 5.0);
+          test<char, double>(in, "-125.e-2 ", 5.0);
+          test<char, double>(in, ".125e-2 ", 5.0);
+          test<char, double>(in, "+.125e-2 ", 5.0);
+          test<char, double>(in, "-.125e-2 ", 5.0);
+
+          test<char, double>(in, "", 5.0);
+          test<char, double>(in, "+", 5.0);
+          test<char, double>(in, "-", 5.0);
+          test<char, double>(in, "125", 5.0);
+          test<char, double>(in, "+125", 5.0);
+          test<char, double>(in, "-125", 5.0);
+          test<char, double>(in, "125.", 5.0);
+          test<char, double>(in, "+125.", 5.0);
+          test<char, double>(in, "-125.", 5.0);
+          test<char, double>(in, ".125", 5.0);
+          test<char, double>(in, "+.125", 5.0);
+          test<char, double>(in, "-.125", 5.0);
+          test<char, double>(in, "125e", 5.0);
+          test<char, double>(in, "+125e", 5.0);
+          test<char, double>(in, "-125e", 5.0);
+          test<char, double>(in, "125.e", 5.0);
+          test<char, double>(in, "+125.e", 5.0);
+          test<char, double>(in, "-125.e", 5.0);
+          test<char, double>(in, ".125e", 5.0);
+          test<char, double>(in, "+.125e", 5.0);
+          test<char, double>(in, "-.125e", 5.0);
+          test<char, double>(in, "125e2", 5.0);
+          test<char, double>(in, "+125e2", 5.0);
+          test<char, double>(in, "-125e2", 5.0);
+          test<char, double>(in, "125.e2", 5.0);
+          test<char, double>(in, "+125.e2", 5.0);
+          test<char, double>(in, "-125.e2", 5.0);
+          test<char, double>(in, ".125e2", 5.0);
+          test<char, double>(in, "+.125e2", 5.0);
+          test<char, double>(in, "-.125e2", 5.0);
+          test<char, double>(in, "125e+2", 5.0);
+          test<char, double>(in, "+125e+2", 5.0);
+          test<char, double>(in, "-125e+2", 5.0);
+          test<char, double>(in, "125.e+2", 5.0);
+          test<char, double>(in, "+125.e+2", 5.0);
+          test<char, double>(in, "-125.e+2", 5.0);
+          test<char, double>(in, ".125e+2", 5.0);
+          test<char, double>(in, "+.125e+2", 5.0);
+          test<char, double>(in, "-.125e+2", 5.0);
+          test<char, double>(in, "125e-2", 5.0);
+          test<char, double>(in, "+125e-2", 5.0);
+          test<char, double>(in, "-125e-2", 5.0);
+          test<char, double>(in, "125.e-2", 5.0);
+          test<char, double>(in, "+125.e-2", 5.0);
+          test<char, double>(in, "-125.e-2", 5.0);
+          test<char, double>(in, ".125e-2", 5.0);
+          test<char, double>(in, "+.125e-2", 5.0);
+          test<char, double>(in, "-.125e-2", 5.0);
+        }
+        break;
+      case 'c':
+        {
+          test<char, long double>(in, "e", 5.0);
+          test<char, long double>(in, "++", 5.0);
+          test<char, long double>(in, "--", 5.0);
+          test<char, long double>(in, "..", 5.0);
+          test<char, long double>(in, ".1.1", 5.0);
+          test<char, long double>(in, "1.1.1", 5.0);
+          test<char, long double>(in, "+.1.1", 5.0);
+          test<char, long double>(in, "+1.1.1", 5.0);
+
+          test<char, long double>(in, "x", 5.0);
+          test<char, long double>(in, " ", 5.0);
+          test<char, long double>(in, "+ ", 5.0);
+          test<char, long double>(in, "- ", 5.0);
+          test<char, long double>(in, "125 ", 5.0);
+          test<char, long double>(in, "+125 ", 5.0);
+          test<char, long double>(in, "-125 ", 5.0);
+          test<char, long double>(in, "125. ", 5.0);
+          test<char, long double>(in, "+125. ", 5.0);
+          test<char, long double>(in, "-125. ", 5.0);
+          test<char, long double>(in, ".125 ", 5.0);
+          test<char, long double>(in, "+.125 ", 5.0);
+          test<char, long double>(in, "-.125 ", 5.0);
+          test<char, long double>(in, "125e ", 5.0);
+          test<char, long double>(in, "+125e ", 5.0);
+          test<char, long double>(in, "-125e ", 5.0);
+          test<char, long double>(in, "125.e ", 5.0);
+          test<char, long double>(in, "+125.e ", 5.0);
+          test<char, long double>(in, "-125.e ", 5.0);
+          test<char, long double>(in, ".125e ", 5.0);
+          test<char, long double>(in, "+.125e ", 5.0);
+          test<char, long double>(in, "-.125e ", 5.0);
+          test<char, long double>(in, "125e2 ", 5.0);
+          test<char, long double>(in, "+125e2 ", 5.0);
+          test<char, long double>(in, "-125e2 ", 5.0);
+          test<char, long double>(in, "125.e2 ", 5.0);
+          test<char, long double>(in, "+125.e2 ", 5.0);
+          test<char, long double>(in, "-125.e2 ", 5.0);
+          test<char, long double>(in, ".125e2 ", 5.0);
+          test<char, long double>(in, "+.125e2 ", 5.0);
+          test<char, long double>(in, "-.125e2 ", 5.0);
+          test<char, long double>(in, "125e+2 ", 5.0);
+          test<char, long double>(in, "+125e+2 ", 5.0);
+          test<char, long double>(in, "-125e+2 ", 5.0);
+          test<char, long double>(in, "125.e+2 ", 5.0);
+          test<char, long double>(in, "+125.e+2 ", 5.0);
+          test<char, long double>(in, "-125.e+2 ", 5.0);
+          test<char, long double>(in, ".125e+2 ", 5.0);
+          test<char, long double>(in, "+.125e+2 ", 5.0);
+          test<char, long double>(in, "-.125e+2 ", 5.0);
+          test<char, long double>(in, "125e-2 ", 5.0);
+          test<char, long double>(in, "+125e-2 ", 5.0);
+          test<char, long double>(in, "-125e-2 ", 5.0);
+          test<char, long double>(in, "125.e-2 ", 5.0);
+          test<char, long double>(in, "+125.e-2 ", 5.0);
+          test<char, long double>(in, "-125.e-2 ", 5.0);
+          test<char, long double>(in, ".125e-2 ", 5.0);
+          test<char, long double>(in, "+.125e-2 ", 5.0);
+          test<char, long double>(in, "-.125e-2 ", 5.0);
+
+          test<char, long double>(in, "", 5.0);
+          test<char, long double>(in, "+", 5.0);
+          test<char, long double>(in, "-", 5.0);
+          test<char, long double>(in, "125", 5.0);
+          test<char, long double>(in, "+125", 5.0);
+          test<char, long double>(in, "-125", 5.0);
+          test<char, long double>(in, "125.", 5.0);
+          test<char, long double>(in, "+125.", 5.0);
+          test<char, long double>(in, "-125.", 5.0);
+          test<char, long double>(in, ".125", 5.0);
+          test<char, long double>(in, "+.125", 5.0);
+          test<char, long double>(in, "-.125", 5.0);
+          test<char, long double>(in, "125e", 5.0);
+          test<char, long double>(in, "+125e", 5.0);
+          test<char, long double>(in, "-125e", 5.0);
+          test<char, long double>(in, "125.e", 5.0);
+          test<char, long double>(in, "+125.e", 5.0);
+          test<char, long double>(in, "-125.e", 5.0);
+          test<char, long double>(in, ".125e", 5.0);
+          test<char, long double>(in, "+.125e", 5.0);
+          test<char, long double>(in, "-.125e", 5.0);
+          test<char, long double>(in, "125e2", 5.0);
+          test<char, long double>(in, "+125e2", 5.0);
+          test<char, long double>(in, "-125e2", 5.0);
+          test<char, long double>(in, "125.e2", 5.0);
+          test<char, long double>(in, "+125.e2", 5.0);
+          test<char, long double>(in, "-125.e2", 5.0);
+          test<char, long double>(in, ".125e2", 5.0);
+          test<char, long double>(in, "+.125e2", 5.0);
+          test<char, long double>(in, "-.125e2", 5.0);
+          test<char, long double>(in, "125e+2", 5.0);
+          test<char, long double>(in, "+125e+2", 5.0);
+          test<char, long double>(in, "-125e+2", 5.0);
+          test<char, long double>(in, "125.e+2", 5.0);
+          test<char, long double>(in, "+125.e+2", 5.0);
+          test<char, long double>(in, "-125.e+2", 5.0);
+          test<char, long double>(in, ".125e+2", 5.0);
+          test<char, long double>(in, "+.125e+2", 5.0);
+          test<char, long double>(in, "-.125e+2", 5.0);
+          test<char, long double>(in, "125e-2", 5.0);
+          test<char, long double>(in, "+125e-2", 5.0);
+          test<char, long double>(in, "-125e-2", 5.0);
+          test<char, long double>(in, "125.e-2", 5.0);
+          test<char, long double>(in, "+125.e-2", 5.0);
+          test<char, long double>(in, "-125.e-2", 5.0);
+          test<char, long double>(in, ".125e-2", 5.0);
+          test<char, long double>(in, "+.125e-2", 5.0);
+          test<char, long double>(in, "-.125e-2", 5.0);
+        }
+        break;
+      }
+
+    return 0;
+  }
+}
+
+simple_test "numeric boolean input" "0" {
+"0 ": 1 (good) false
+"1 ": 1 (good) true
+"2 ": 1 (fail) false
+"2 ": 1 (fail) true
+"0123456789 ": 10 (fail) false
+"0123456789 ": 10 (fail) true
+}
+
+simple_test "literal boolean input" "1" {
+"false ": 5 (good) false
+"false ": 0 (fail) true
+"true ": 4 (good) true
+"true ": 0 (fail) false
+"foo ": 1 (fail) false
+"foo ": 0 (fail) true
+}
+
+simple_test "decimal long input" "2" {
+"+1 ": 2 (good) 1
+"1 ": 1 (good) 1
+"-1 ": 2 (good) -1
+"0 ": 1 (good) 0
+"010 ": 3 (good) 10
+"-2147483648 ": 11 (good) -2147483648
+"-2147483649 ": 11 (good) -2147483648
+"-21474836481 ": 12 (good) -2147483648
+"2147483647 ": 10 (good) 2147483647
+"2147483648 ": 10 (good) 2147483647
+"21474836471 ": 11 (good) 2147483647
+"x": 0 (fail) 17
+"a": 0 (fail) 17
+"": 0 (fail eof) 17
+"+ ": 1 (good) 0
+"- ": 1 (good) 0
+"+": 1 (eof) 0
+"-": 1 (eof) 0
+"1": 1 (eof) 1
+"21474836471": 11 (eof) 2147483647
+"0x1": 1 (good) 0
+"0X1": 1 (good) 0
+}
+
+simple_test "octal long input" "3" {
+"+1 ": 2 (good) 1
+"1 ": 1 (good) 1
+"-1 ": 2 (good) -1
+"0 ": 1 (good) 0
+"010 ": 3 (good) 8
+"x": 0 (fail) 17
+"9": 0 (fail) 17
+"": 0 (fail eof) 17
+"+ ": 1 (good) 0
+"- ": 1 (good) 0
+"+": 1 (eof) 0
+"-": 1 (eof) 0
+"1": 1 (eof) 1
+"0x1": 1 (good) 0
+"0X1": 1 (good) 0
+}
+
+simple_test "hexadecimal long input" "4" {
+"+1 ": 2 (good) 1
+"1 ": 1 (good) 1
+"-1 ": 2 (good) -1
+"0 ": 1 (good) 0
+"010 ": 3 (good) 16
+"0x10 ": 4 (good) 16
+"x": 0 (fail) 17
+"g": 0 (fail) 17
+"": 0 (fail eof) 17
+"+ ": 1 (good) 0
+"- ": 1 (good) 0
+"+": 1 (eof) 0
+"-": 1 (eof) 0
+"1": 1 (eof) 1
+"0x1": 3 (eof) 1
+"0X1": 3 (eof) 1
+}
+
+simple_test "open base long input" "5" {
+"10 ": 2 (good) 10
+"+10 ": 3 (good) 10
+"-10 ": 3 (good) -10
+"010 ": 3 (good) 8
+"+010 ": 4 (good) 8
+"-010 ": 4 (good) -8
+"0x10 ": 4 (good) 16
+"+0x10 ": 5 (good) 16
+"-0x10 ": 5 (good) -16
+"0X10 ": 4 (good) 16
+"+0X10 ": 5 (good) 16
+"-0X10 ": 5 (good) -16
+}
+
+simple_test "decimal unsigned short input" "6" {
+"1 ": 1 (good) 1
+"-1 ": 2 (good) 65535
+"0 ": 1 (good) 0
+"65535 ": 5 (good) 65535
+"65536 ": 5 (good) 65535
+"655351 ": 6 (good) 65535
+"x": 0 (fail) 17
+"a": 0 (fail) 17
+}
+
+simple_test "decimal unsigned int input" "7" {
+"1 ": 1 (good) 1
+"-1 ": 2 (good) 4294967295
+"0 ": 1 (good) 0
+"4294967295 ": 10 (good) 4294967295
+"4294967296 ": 10 (good) 4294967295
+"42949672951 ": 11 (good) 4294967295
+"x": 0 (fail) 17
+"a": 0 (fail) 17
+}
+
+simple_test "decimal unsigned long input" "8" {
+"1 ": 1 (good) 1
+"-1 ": 2 (good) 4294967295
+"0 ": 1 (good) 0
+"4294967295 ": 10 (good) 4294967295
+"4294967296 ": 10 (good) 4294967295
+"42949672951 ": 11 (good) 4294967295
+"x": 0 (fail) 17
+"a": 0 (fail) 17
+}
+
+simple_test "float input" "a" {
+"e": 0 (fail) 5
+"++": 1 (good) 0
+"--": 1 (good) 0
+"..": 1 (good) 0
+".1.1": 2 (good) 0.1
+"1.1.1": 3 (good) 1.1
+"+.1.1": 3 (good) 0.1
+"+1.1.1": 4 (good) 1.1
+"x": 0 (fail) 5
+" ": 0 (fail) 5
+"+ ": 1 (good) 0
+"- ": 1 (good) 0
+"125 ": 3 (good) 125
+"+125 ": 4 (good) 125
+"-125 ": 4 (good) -125
+"125. ": 4 (good) 125
+"+125. ": 5 (good) 125
+"-125. ": 5 (good) -125
+".125 ": 4 (good) 0.125
+"+.125 ": 5 (good) 0.125
+"-.125 ": 5 (good) -0.125
+"125e ": 4 (good) 125
+"+125e ": 5 (good) 125
+"-125e ": 5 (good) -125
+"125.e ": 5 (good) 125
+"+125.e ": 6 (good) 125
+"-125.e ": 6 (good) -125
+".125e ": 5 (good) 0.125
+"+.125e ": 6 (good) 0.125
+"-.125e ": 6 (good) -0.125
+"125e2 ": 5 (good) 12500
+"+125e2 ": 6 (good) 12500
+"-125e2 ": 6 (good) -12500
+"125.e2 ": 6 (good) 12500
+"+125.e2 ": 7 (good) 12500
+"-125.e2 ": 7 (good) -12500
+".125e2 ": 6 (good) 12.5
+"+.125e2 ": 7 (good) 12.5
+"-.125e2 ": 7 (good) -12.5
+"125e+2 ": 6 (good) 12500
+"+125e+2 ": 7 (good) 12500
+"-125e+2 ": 7 (good) -12500
+"125.e+2 ": 7 (good) 12500
+"+125.e+2 ": 8 (good) 12500
+"-125.e+2 ": 8 (good) -12500
+".125e+2 ": 7 (good) 12.5
+"+.125e+2 ": 8 (good) 12.5
+"-.125e+2 ": 8 (good) -12.5
+"125e-2 ": 6 (good) 1.25
+"+125e-2 ": 7 (good) 1.25
+"-125e-2 ": 7 (good) -1.25
+"125.e-2 ": 7 (good) 1.25
+"+125.e-2 ": 8 (good) 1.25
+"-125.e-2 ": 8 (good) -1.25
+".125e-2 ": 7 (good) 0.00125
+"+.125e-2 ": 8 (good) 0.00125
+"-.125e-2 ": 8 (good) -0.00125
+"": 0 (fail eof) 5
+"+": 1 (eof) 0
+"-": 1 (eof) 0
+"125": 3 (eof) 125
+"+125": 4 (eof) 125
+"-125": 4 (eof) -125
+"125.": 4 (eof) 125
+"+125.": 5 (eof) 125
+"-125.": 5 (eof) -125
+".125": 4 (eof) 0.125
+"+.125": 5 (eof) 0.125
+"-.125": 5 (eof) -0.125
+"125e": 4 (eof) 125
+"+125e": 5 (eof) 125
+"-125e": 5 (eof) -125
+"125.e": 5 (eof) 125
+"+125.e": 6 (eof) 125
+"-125.e": 6 (eof) -125
+".125e": 5 (eof) 0.125
+"+.125e": 6 (eof) 0.125
+"-.125e": 6 (eof) -0.125
+"125e2": 5 (eof) 12500
+"+125e2": 6 (eof) 12500
+"-125e2": 6 (eof) -12500
+"125.e2": 6 (eof) 12500
+"+125.e2": 7 (eof) 12500
+"-125.e2": 7 (eof) -12500
+".125e2": 6 (eof) 12.5
+"+.125e2": 7 (eof) 12.5
+"-.125e2": 7 (eof) -12.5
+"125e+2": 6 (eof) 12500
+"+125e+2": 7 (eof) 12500
+"-125e+2": 7 (eof) -12500
+"125.e+2": 7 (eof) 12500
+"+125.e+2": 8 (eof) 12500
+"-125.e+2": 8 (eof) -12500
+".125e+2": 7 (eof) 12.5
+"+.125e+2": 8 (eof) 12.5
+"-.125e+2": 8 (eof) -12.5
+"125e-2": 6 (eof) 1.25
+"+125e-2": 7 (eof) 1.25
+"-125e-2": 7 (eof) -1.25
+"125.e-2": 7 (eof) 1.25
+"+125.e-2": 8 (eof) 1.25
+"-125.e-2": 8 (eof) -1.25
+".125e-2": 7 (eof) 0.00125
+"+.125e-2": 8 (eof) 0.00125
+"-.125e-2": 8 (eof) -0.00125
+}
+
+simple_test "double input" "b" {
+"e": 0 (fail) 5
+"++": 1 (good) 0
+"--": 1 (good) 0
+"..": 1 (good) 0
+".1.1": 2 (good) 0.1
+"1.1.1": 3 (good) 1.1
+"+.1.1": 3 (good) 0.1
+"+1.1.1": 4 (good) 1.1
+"x": 0 (fail) 5
+" ": 0 (fail) 5
+"+ ": 1 (good) 0
+"- ": 1 (good) 0
+"125 ": 3 (good) 125
+"+125 ": 4 (good) 125
+"-125 ": 4 (good) -125
+"125. ": 4 (good) 125
+"+125. ": 5 (good) 125
+"-125. ": 5 (good) -125
+".125 ": 4 (good) 0.125
+"+.125 ": 5 (good) 0.125
+"-.125 ": 5 (good) -0.125
+"125e ": 4 (good) 125
+"+125e ": 5 (good) 125
+"-125e ": 5 (good) -125
+"125.e ": 5 (good) 125
+"+125.e ": 6 (good) 125
+"-125.e ": 6 (good) -125
+".125e ": 5 (good) 0.125
+"+.125e ": 6 (good) 0.125
+"-.125e ": 6 (good) -0.125
+"125e2 ": 5 (good) 12500
+"+125e2 ": 6 (good) 12500
+"-125e2 ": 6 (good) -12500
+"125.e2 ": 6 (good) 12500
+"+125.e2 ": 7 (good) 12500
+"-125.e2 ": 7 (good) -12500
+".125e2 ": 6 (good) 12.5
+"+.125e2 ": 7 (good) 12.5
+"-.125e2 ": 7 (good) -12.5
+"125e+2 ": 6 (good) 12500
+"+125e+2 ": 7 (good) 12500
+"-125e+2 ": 7 (good) -12500
+"125.e+2 ": 7 (good) 12500
+"+125.e+2 ": 8 (good) 12500
+"-125.e+2 ": 8 (good) -12500
+".125e+2 ": 7 (good) 12.5
+"+.125e+2 ": 8 (good) 12.5
+"-.125e+2 ": 8 (good) -12.5
+"125e-2 ": 6 (good) 1.25
+"+125e-2 ": 7 (good) 1.25
+"-125e-2 ": 7 (good) -1.25
+"125.e-2 ": 7 (good) 1.25
+"+125.e-2 ": 8 (good) 1.25
+"-125.e-2 ": 8 (good) -1.25
+".125e-2 ": 7 (good) 0.00125
+"+.125e-2 ": 8 (good) 0.00125
+"-.125e-2 ": 8 (good) -0.00125
+"": 0 (fail eof) 5
+"+": 1 (eof) 0
+"-": 1 (eof) 0
+"125": 3 (eof) 125
+"+125": 4 (eof) 125
+"-125": 4 (eof) -125
+"125.": 4 (eof) 125
+"+125.": 5 (eof) 125
+"-125.": 5 (eof) -125
+".125": 4 (eof) 0.125
+"+.125": 5 (eof) 0.125
+"-.125": 5 (eof) -0.125
+"125e": 4 (eof) 125
+"+125e": 5 (eof) 125
+"-125e": 5 (eof) -125
+"125.e": 5 (eof) 125
+"+125.e": 6 (eof) 125
+"-125.e": 6 (eof) -125
+".125e": 5 (eof) 0.125
+"+.125e": 6 (eof) 0.125
+"-.125e": 6 (eof) -0.125
+"125e2": 5 (eof) 12500
+"+125e2": 6 (eof) 12500
+"-125e2": 6 (eof) -12500
+"125.e2": 6 (eof) 12500
+"+125.e2": 7 (eof) 12500
+"-125.e2": 7 (eof) -12500
+".125e2": 6 (eof) 12.5
+"+.125e2": 7 (eof) 12.5
+"-.125e2": 7 (eof) -12.5
+"125e+2": 6 (eof) 12500
+"+125e+2": 7 (eof) 12500
+"-125e+2": 7 (eof) -12500
+"125.e+2": 7 (eof) 12500
+"+125.e+2": 8 (eof) 12500
+"-125.e+2": 8 (eof) -12500
+".125e+2": 7 (eof) 12.5
+"+.125e+2": 8 (eof) 12.5
+"-.125e+2": 8 (eof) -12.5
+"125e-2": 6 (eof) 1.25
+"+125e-2": 7 (eof) 1.25
+"-125e-2": 7 (eof) -1.25
+"125.e-2": 7 (eof) 1.25
+"+125.e-2": 8 (eof) 1.25
+"-125.e-2": 8 (eof) -1.25
+".125e-2": 7 (eof) 0.00125
+"+.125e-2": 8 (eof) 0.00125
+"-.125e-2": 8 (eof) -0.00125
+}
+
+simple_test "long double input" "c" {
+"e": 0 (fail) 5
+"++": 1 (good) 0
+"--": 1 (good) 0
+"..": 1 (good) 0
+".1.1": 2 (good) 0.1
+"1.1.1": 3 (good) 1.1
+"+.1.1": 3 (good) 0.1
+"+1.1.1": 4 (good) 1.1
+"x": 0 (fail) 5
+" ": 0 (fail) 5
+"+ ": 1 (good) 0
+"- ": 1 (good) 0
+"125 ": 3 (good) 125
+"+125 ": 4 (good) 125
+"-125 ": 4 (good) -125
+"125. ": 4 (good) 125
+"+125. ": 5 (good) 125
+"-125. ": 5 (good) -125
+".125 ": 4 (good) 0.125
+"+.125 ": 5 (good) 0.125
+"-.125 ": 5 (good) -0.125
+"125e ": 4 (good) 125
+"+125e ": 5 (good) 125
+"-125e ": 5 (good) -125
+"125.e ": 5 (good) 125
+"+125.e ": 6 (good) 125
+"-125.e ": 6 (good) -125
+".125e ": 5 (good) 0.125
+"+.125e ": 6 (good) 0.125
+"-.125e ": 6 (good) -0.125
+"125e2 ": 5 (good) 12500
+"+125e2 ": 6 (good) 12500
+"-125e2 ": 6 (good) -12500
+"125.e2 ": 6 (good) 12500
+"+125.e2 ": 7 (good) 12500
+"-125.e2 ": 7 (good) -12500
+".125e2 ": 6 (good) 12.5
+"+.125e2 ": 7 (good) 12.5
+"-.125e2 ": 7 (good) -12.5
+"125e+2 ": 6 (good) 12500
+"+125e+2 ": 7 (good) 12500
+"-125e+2 ": 7 (good) -12500
+"125.e+2 ": 7 (good) 12500
+"+125.e+2 ": 8 (good) 12500
+"-125.e+2 ": 8 (good) -12500
+".125e+2 ": 7 (good) 12.5
+"+.125e+2 ": 8 (good) 12.5
+"-.125e+2 ": 8 (good) -12.5
+"125e-2 ": 6 (good) 1.25
+"+125e-2 ": 7 (good) 1.25
+"-125e-2 ": 7 (good) -1.25
+"125.e-2 ": 7 (good) 1.25
+"+125.e-2 ": 8 (good) 1.25
+"-125.e-2 ": 8 (good) -1.25
+".125e-2 ": 7 (good) 0.00125
+"+.125e-2 ": 8 (good) 0.00125
+"-.125e-2 ": 8 (good) -0.00125
+"": 0 (fail eof) 5
+"+": 1 (eof) 0
+"-": 1 (eof) 0
+"125": 3 (eof) 125
+"+125": 4 (eof) 125
+"-125": 4 (eof) -125
+"125.": 4 (eof) 125
+"+125.": 5 (eof) 125
+"-125.": 5 (eof) -125
+".125": 4 (eof) 0.125
+"+.125": 5 (eof) 0.125
+"-.125": 5 (eof) -0.125
+"125e": 4 (eof) 125
+"+125e": 5 (eof) 125
+"-125e": 5 (eof) -125
+"125.e": 5 (eof) 125
+"+125.e": 6 (eof) 125
+"-125.e": 6 (eof) -125
+".125e": 5 (eof) 0.125
+"+.125e": 6 (eof) 0.125
+"-.125e": 6 (eof) -0.125
+"125e2": 5 (eof) 12500
+"+125e2": 6 (eof) 12500
+"-125e2": 6 (eof) -12500
+"125.e2": 6 (eof) 12500
+"+125.e2": 7 (eof) 12500
+"-125.e2": 7 (eof) -12500
+".125e2": 6 (eof) 12.5
+"+.125e2": 7 (eof) 12.5
+"-.125e2": 7 (eof) -12.5
+"125e+2": 6 (eof) 12500
+"+125e+2": 7 (eof) 12500
+"-125e+2": 7 (eof) -12500
+"125.e+2": 7 (eof) 12500
+"+125.e+2": 8 (eof) 12500
+"-125.e+2": 8 (eof) -12500
+".125e+2": 7 (eof) 12.5
+"+.125e+2": 8 (eof) 12.5
+"-.125e+2": 8 (eof) -12.5
+"125e-2": 6 (eof) 1.25
+"+125e-2": 7 (eof) 1.25
+"-125e-2": 7 (eof) -1.25
+"125.e-2": 7 (eof) 1.25
+"+125.e-2": 8 (eof) 1.25
+"-125.e-2": 8 (eof) -1.25
+".125e-2": 7 (eof) 0.00125
+"+.125e-2": 8 (eof) 0.00125
+"-.125e-2": 8 (eof) -0.00125
+}

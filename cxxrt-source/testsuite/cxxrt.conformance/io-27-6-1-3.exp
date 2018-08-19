@@ -1,0 +1,1023 @@
+#!/usr/local/bin/expect
+# -*-C++-*- io-27-6-1-3.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  Unformatted input functions 
+# Version: $Id: io-27-6-1-3.exp,v 1.1.1.1 2002/06/05 01:03:26 dietmar_kuehl Exp $ 
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <istream>
+  #include <iostream>
+  #include <streambuf>
+  #if !defined(_CXXRT_STD)
+  #  define STD std::
+  #else
+  #  define STD _CXXRT_STD
+  #endif
+
+  bool set(bool& error) { error = true; return error; }
+
+  // ---------------------------------------------------------------------------
+
+  template <class cT>
+    class bufferedbuf: public STD basic_streambuf<cT>
+    {
+    public:
+      bufferedbuf(cT* str, int size) { this->setg(str, str, str + size); }
+
+    private:
+      int sync() { return this->gptr() == this->egptr()? STD char_traits<cT>::eof(): 0; }
+      typename STD char_traits<cT>::pos_type seekpos(typename STD char_traits<cT>::pos_type pos,
+                                                     STD ios_base::openmode w)
+        {
+          if ((w & STD ios_base::in) == 0 || pos < 0 || this->egptr() - this->eback() < pos)
+            return typename STD char_traits<cT>::pos_type(-1);
+          else
+            {
+              this->setg(this->eback(), this->eback() + pos, this->egptr());
+              return pos;
+            }
+        }
+      typename STD char_traits<cT>::pos_type seekoff(typename STD char_traits<cT>::off_type off,
+                                                     STD ios_base::seekdir d, STD ios_base::openmode w)
+        {
+          if ((w & STD ios_base::in) == 0)
+            return typename STD char_traits<cT>::pos_type(-1);
+            
+          switch (d)
+            {
+            case STD ios_base::beg:
+              if (off > 0 && off < this->egptr() - this->eback())
+                this->setg(this->eback(), this->eback() + off, this->egptr());
+              else
+                return typename STD char_traits<cT>::pos_type(-1);
+              break;
+            case STD ios_base::cur:
+              if ((off <= 0 && this->gptr() + off >= this->eback())
+                  || (off > 0 && this->gptr() + off < this->egptr()))
+                  this->setg(this->eback(), this->gptr() + off, this->egptr());
+              else
+                return typename STD char_traits<cT>::pos_type(-1);
+              break;
+            case STD ios_base::end:
+              if (off <= 0 && -off < (this->egptr() - this->eback()))
+                this->setg(this->eback(), this->egptr() + off, this->egptr());
+              else
+                return typename STD char_traits<cT>::pos_type(-1);
+              break;
+            }
+          
+          return this->gptr() - this->eback();
+        }
+    };
+
+  template <class cT>
+    class unbufferedbuf: public STD basic_streambuf<cT>
+    {
+    public:
+      unbufferedbuf(cT* str, int size): beg(str), cur(str), end(str + size) {}
+
+    private:
+      typename STD char_traits<cT>::int_type underflow()
+        {
+          return cur == end? STD char_traits<cT>::eof(): STD char_traits<cT>::to_int_type(*cur);
+        }
+      typename STD char_traits<cT>::int_type uflow()
+        {
+          return cur == end? STD char_traits<cT>::eof(): STD char_traits<cT>::to_int_type(*cur++);
+        }
+      STD streamsize showmanyc() { return end - cur; }
+      typename STD char_traits<cT>::int_type pbackfail(typename STD char_traits<cT>::int_type c)
+        {
+          if (beg != cur && (c == STD char_traits<cT>::eof()
+			     || typename STD char_traits<cT>::int_type(cur[-1]) == c))
+            {
+              return *--cur;
+            }
+          else
+            return STD char_traits<cT>::eof();
+        }
+      int sync() { return cur == end? STD char_traits<cT>::eof(): 0; }
+      typename STD char_traits<cT>::pos_type seekpos(typename STD char_traits<cT>::pos_type pos,
+                                                     STD ios_base::openmode w)
+        {
+          if ((w & STD ios_base::in) == 0 || pos < 0 && end - beg < pos)
+            return typename STD char_traits<cT>::pos_type(-1);
+          else
+            {
+              cur =  beg + pos;
+              return pos;
+            }
+        }
+      typename STD char_traits<cT>::pos_type seekoff(typename STD char_traits<cT>::off_type off,
+                                                     STD ios_base::seekdir d, STD ios_base::openmode w)
+        {
+          if ((w & STD ios_base::in) == 0)
+            return typename STD char_traits<cT>::pos_type(-1);
+            
+          switch (d)
+            {
+            case STD ios_base::beg:
+              if (off > 0 && off < end - beg)
+                cur = beg + off;
+              else
+                return typename STD char_traits<cT>::pos_type(-1);
+              break;
+            case STD ios_base::cur:
+              if ((off <= 0 && cur + off >= beg)
+                  || (off > 0 && cur + off < end))
+                  cur += off;
+              else
+                return typename STD char_traits<cT>::pos_type(-1);
+              break;
+            case STD ios_base::end:
+              if (off <= 0 && -off < (end - beg))
+                cur = end + off;
+              else
+                return typename STD char_traits<cT>::pos_type(-1);
+              break;
+            }
+          
+          return cur - beg;
+        }
+
+      cT* beg;
+      cT* cur;
+      cT* end;
+
+      unbufferedbuf(unbufferedbuf const&);
+      void operator=(unbufferedbuf const&);
+    };
+
+  // ---------------------------------------------------------------------------
+
+  template <class cT>
+    struct init
+    {
+      static cT  str[];
+      static int size;
+    };
+
+  #if !defined(_MSC_VER)
+  template <class T, int sz> inline int str_size(T (&)[sz]) { return sz - 1; }
+  
+  template<> char init<char>::str[] = "  0123456789\nabcdefghijklmnopqrstuvwxyz";
+  template<> int  init<char>::size  = str_size(str);
+  template<> wchar_t init<wchar_t>::str[] = L"  0123456789\nabcdefghijklmnopqrstuvwxyz";
+  template<> int     init<wchar_t>::size  = str_size(str);
+  #else
+  template<> char init<char>::str[] = "  0123456789\nabcdefghijklmnopqrstuvwxyz";
+  template<> int  init<char>::size  = 39;
+  template<> wchar_t init<wchar_t>::str[] = L"  0123456789\nabcdefghijklmnopqrstuvwxyz";
+  template<> int     init<wchar_t>::size  = 39;
+  #endif
+
+  // ---------------------------------------------------------------------------
+
+  template <class cT, class sbuf>
+    inline char const* test_char1()
+    {
+      STD basic_istream<cT> in(new sbuf(init<cT>::str, init<cT>::size));
+      cT const* str = init<cT>::str;
+      while (in.good())
+        {
+          typename STD char_traits<cT>::int_type i;
+          if ((i = in.get()) != STD char_traits<cT>::eof())
+            {
+              cT c = STD char_traits<cT>::to_char_type(i);
+              if (in.gcount() != 1) return "error in test_char: gcount() != 1\n";
+              if (c != *str++) return "error in test_char: c != *str\n";
+              if (in.rdstate() != STD ios_base::goodbit) return "error in test_char: !good()\n";
+            }
+          else
+            if (in.rdstate() != (STD ios_base::failbit | STD ios_base::eofbit))
+              return "error in test_char: state flags set wrong\n";
+        }
+      if (str - init<cT>::str != init<cT>::size)
+        return "error: too few characters read\n";
+      return "OK\n";
+    }
+
+  // ---------------------------------------------------------------------------
+
+  template <class cT, class sbuf>
+    inline char const* test_char2()
+    {
+      STD basic_istream<cT> in(new sbuf(init<cT>::str, init<cT>::size));
+      cT const* str = init<cT>::str;
+      while (in.good())
+        {
+          cT c;
+          if (in.get(c).good())
+            {
+              if (in.gcount() != 1) return "error in test_char: gcount() != 1\n";
+              if (c != *str++) return "error in test_char: c != *str\n";
+              if (in.rdstate() != STD ios_base::goodbit) return "error in test_char: !good()\n";
+            }
+          else
+            if (in.rdstate() != (STD ios_base::failbit | STD ios_base::eofbit))
+              return "error in test_char: state flags set wrong\n";
+        }
+      if (str - init<cT>::str != init<cT>::size)
+        return "error: too few characters read\n";
+      return "OK\n";
+    }
+  
+  // ---------------------------------------------------------------------------
+
+
+  template <class scT, class cT>
+    inline bool tst_compare(scT const* s1, cT const* s2)
+    {
+      while (*s1 != 0)
+	if (cT(*s1++) != *s2++)
+	  return false;
+      return true;
+    }
+
+  template <class cT, class sbuf>
+    inline char const* test_string1()
+    {
+      STD basic_istream<cT> in(new sbuf(init<cT>::str, init<cT>::size));
+      cT buffer[1024];
+
+      in.get(buffer, 4, in.widen('\n'));
+      if (in.gcount() != 3) return "error in test_string1: gcount() != 3\n";
+      if (buffer[3] != cT() || !tst_compare(buffer, init<cT>::str))
+        return "error in test_string1: unexpected stored characters\n";
+      if (in.rdstate() != STD ios_base::goodbit) return "error in test_string1: !good()\n";
+
+      in.get(buffer, 1024, in.widen('\n'));
+      if (in.gcount() != 9) return "error in test_string1: gcount() != 9\n";
+      if (buffer[9] != cT() || !tst_compare(buffer, init<cT>::str + 3))
+        return "error in test_string1: unexpected stored characters\n";
+      if (in.rdstate() != STD ios_base::goodbit) return "error in test_string1: !good()\n";
+
+      in.get(buffer, 1024, in.widen('\n'));
+      if (in.gcount() != 0) return "error in test_string1: gcount() != 9\n";
+      if (buffer[0] != cT() || !tst_compare(buffer, init<cT>::str + 12))
+        return "error in test_string1: unexpected stored characters\n";
+      if (in.rdstate() != STD ios_base::failbit) return "error in test_string1: !fail()\n";
+      in.clear();
+      in.ignore();
+
+      in.get(buffer, 1024, in.widen('\n'));
+      if (in.gcount() != 26) return "error in test_string1: gcount() != 26\n";
+      if (buffer[26] != cT() || !tst_compare(buffer, init<cT>::str + 13))
+        return "error in test_string1: unexpected stored characters\n";
+      if (in.rdstate() != STD ios_base::eofbit) return "error in test_string1: !eof()\n";
+      in.clear();
+
+      in.get(buffer, 1024, in.widen('\n'));
+      if (in.gcount() != 0) return "error in test_string1: gcount() != 26\n";
+      if (buffer[0] != cT() || !tst_compare(buffer, init<cT>::str + 39))
+        return "error in test_string1: unexpected stored characters\n";
+      if (in.rdstate() != (STD ios_base::eofbit | STD ios_base::failbit))
+        return "error in test_string1: not both eofbit and failbit are set\n";
+
+      return "OK\n";
+    }
+
+  template <class cT, class sbuf>
+    inline char const* test_string2()
+    {
+      STD basic_istream<cT> in(new sbuf(init<cT>::str, init<cT>::size));
+      cT buffer[1024];
+
+      in.get(buffer, 1024);
+      if (in.gcount() != 12) return "error in test_string2: gcount() != 12\n";
+      if (buffer[12] != cT() || !tst_compare(buffer, init<cT>::str))
+        return "error in test_string2: unexpected stored characters\n";
+      if (in.rdstate() != STD ios_base::goodbit) return "error in test_string2: !good()\n";
+
+      return "OK\n";
+    }
+
+  // ---------------------------------------------------------------------------
+
+  template <class cT, class sbuf>
+    inline char const* test_getline1()
+    {
+      STD basic_istream<cT> in(new sbuf(init<cT>::str, init<cT>::size));
+      cT buffer[1024];
+
+      in.getline(buffer, 4, in.widen('\n'));
+      if (in.gcount() != 3) return "error in test_getline1: gcount() != 3\n";
+      if (buffer[3] != cT() || !tst_compare(buffer, init<cT>::str))
+        return "error in test_getline1: unexpected stored characters\n";
+      if (in.rdstate() != STD ios_base::failbit) return "error in test_getline1: !fail()\n";
+      in.clear();
+
+      in.getline(buffer, 4, in.widen('4'));
+      if (in.gcount() != 4) return "error in test_getline1: gcount() != 4\n";
+      if (buffer[3] != cT() || !tst_compare(buffer, init<cT>::str + 3))
+        return "error in test_getline1: unexpected stored characters\n";
+      if (in.rdstate() != STD ios_base::goodbit) return "error in test_getline1: !good()\n";
+      in.clear();
+
+      in.getline(buffer, 1024, in.widen('\n'));
+      if (in.gcount() != 6) return "error in test_getline1: gcount() != 6\n";
+      if (buffer[5] != cT() || !tst_compare(buffer, init<cT>::str + 7))
+        return "error in test_getline1: unexpected stored characters\n";
+      if (in.rdstate() != STD ios_base::goodbit) return "error in test_getline1: !good()\n";
+
+      in.getline(buffer, 1024, in.widen('\n'));
+      if (in.gcount() != 26) return "error in test_getline1: gcount() != 26\n";
+      if (buffer[26] != cT() || !tst_compare(buffer, init<cT>::str + 13))
+        return "error in test_getline1: unexpected stored characters\n";
+      if (in.rdstate() != STD ios_base::eofbit) return "error in test_getline1: !eof()\n";
+      in.clear();
+
+      in.getline(buffer, 1024, in.widen('\n'));
+      if (in.gcount() != 0) return "error in test_getline1: gcount() != 0\n";
+      if (buffer[0] != cT() || !tst_compare(buffer, init<cT>::str + 39))
+        return "error in test_getline1: unexpected stored characters\n";
+      if (in.rdstate() != (STD ios_base::eofbit | STD ios_base::failbit))
+        return "error in test_getline1: not both eofbit and failbit are set\n";
+
+      return "OK\n";
+    }
+
+  template <class cT, class sbuf>
+    inline char const* test_getline2()
+    {
+      STD basic_istream<cT> in(new sbuf(init<cT>::str, init<cT>::size));
+      cT buffer[1024];
+
+      in.getline(buffer, 1024);
+      if (in.gcount() != 13) return "error in test_getline2: gcount() != 1e\n";
+      if (buffer[12] != cT() || !tst_compare(buffer, init<cT>::str))
+        return "error in test_getline2: unexpected stored characters\n";
+      if (in.rdstate() != STD ios_base::goodbit) return "error in test_getline2: !good()\n";
+
+      return "OK\n";
+    }
+
+  // ---------------------------------------------------------------------------
+
+  template <class cT, class sbuf>
+    inline char const* test_ignore1()
+    {
+      STD basic_istream<cT> in(new sbuf(init<cT>::str, init<cT>::size));
+      int count = 0;
+      while (in.ignore().good())
+        {
+          ++count;
+          if (in.gcount() != 1)
+            return "error in ignore(): gcount() != 1\n";
+        }
+      if (in.gcount() != 0)
+        return "error in ignore(): gcount() != 0\n";
+      if (in.rdstate() != STD ios_base::eofbit)
+        return "error in ignore(): eofbit not set correctly\n";
+      if (count != init<cT>::size) return "error in ignore(): wrong number of ignored characters\n";
+      return 0;
+    }
+
+  template <class cT, class sbuf>
+    inline char const* test_ignore2()
+    {
+      STD basic_istream<cT> in(new sbuf(init<cT>::str, init<cT>::size));
+      in.ignore(10);
+      if (in.rdstate() != STD ios_base::goodbit)
+        return "error in ignore(n): goodbit not set correctly\n";
+      if (in.gcount() != 10)
+        return "error in ignore(n): gcount() not set correctly\n";
+      in.ignore(1024);
+      if (in.rdstate() != STD ios_base::eofbit)
+        return "error in ignore(n): eofbit not set correctly\n";
+      if (in.gcount() != STD streamsize(init<cT>::size - 10))
+        return "error in ignore(n): gcount() not set correctly\n";
+      return 0;
+    }
+
+  template <class cT, class sbuf>
+    inline char const* test_ignore3()
+    {
+      STD basic_istream<cT> in(new sbuf(init<cT>::str, init<cT>::size));
+      in.ignore(10, in.widen('0'));
+      if (in.rdstate() != STD ios_base::goodbit)
+        return "error in ignore(n, d): goodbit not set correctly\n";
+      if (in.gcount() != 3)
+        return "error in ignore(n, d): gcount() != 3\n";
+      in.ignore(10, in.widen('0'));
+      if (in.rdstate() != STD ios_base::goodbit)
+        return "error in ignore(n, d): goodbit not set correctly\n";
+      if (in.gcount() != 10)
+        return "error in ignore(n, d): gcount() != 10\n";
+      in.ignore(1024, in.widen('0'));
+      if (in.rdstate() != STD ios_base::eofbit)
+        return "error in ignore(n, d): eofbit not set correctly\n";
+      if (in.gcount() != STD streamsize(init<cT>::size - 13))
+        return "error in ignore(n, d): gcount() != init<cT>::size - 13 \n";
+      return 0;
+    }
+
+  template <class cT, class sbuf>
+    inline char const* test_ignore()
+    {
+      char const* rc = 0;
+      if ((rc = test_ignore1<cT, sbuf>()) != 0)
+        return rc;
+      else if ((rc = test_ignore2<cT, sbuf>()) != 0)
+        return rc;
+      else if ((rc = test_ignore3<cT, sbuf>()) != 0)
+        return rc;
+
+      return "OK\n";
+    }
+
+  // ---------------------------------------------------------------------------
+
+  template <class cT, class sbuf>
+    inline char const* test_peek()
+    {
+      typedef typename sbuf::int_type int_type;
+
+      STD basic_istream<cT> in(new sbuf(init<cT>::str + 2, init<cT>::size - 2));
+      if (in.peek() != int_type(in.widen('0')))
+        return "error in test_peek(): wrong character\n";
+      if (in.gcount() != 0)
+        return "error in test_peek(): gcount() != 0\n";
+      if (in.peek() != int_type(in.widen('0')))
+        return "error in test_peek(): wrong character\n";
+      if (in.gcount() != 0)
+        return "error in test_peek(): gcount() != 0\n";
+      in.ignore();
+      if (in.peek() != int_type(in.widen('1')))
+        return "error in test_peek(): wrong character\n";
+      if (in.gcount() != 0)
+        return "error in test_peek(): gcount() != 0\n";
+      in.ignore(1024);
+      in.clear();
+      if (in.peek() != STD char_traits<cT>::eof())
+        return "error in test_peek(): not eof()\n";
+      if (in.gcount() != 0)
+        return "error in test_peek(): gcount() != 0\n";
+      if (in.peek() != STD char_traits<cT>::eof())
+        return "error in test_peek(): not eof()\n";
+      if (in.gcount() != 0)
+        return "error in test_peek(): gcount() != 0\n";
+
+      return "OK\n";
+    }
+
+  // ---------------------------------------------------------------------------
+
+  template <class cT, class sbuf>
+    inline char const* test_read()
+    {
+      STD basic_istream<cT> in(new sbuf(init<cT>::str, init<cT>::size));
+      cT buffer[1024];
+
+      if (&in.read(buffer, 10) != &in)
+        return "error in test_read(): wrong object is returned\n";
+      if (in.gcount() != 10)
+        return "error in test_read(): gcount() != 10\n";
+      if (in.rdstate() != STD ios_base::goodbit)
+        return "error in test_read(): rdstate() != goodbit\n";
+
+      in.read(buffer, 1024);
+      if (in.gcount() != STD streamsize(init<cT>::size - 10))
+        return "error in test_read(): gcount() != init<cT>::size - 10\n";
+      if (in.rdstate() != (STD ios_base::eofbit | STD ios_base::failbit))
+        return "error in test_read(): rdstate() != eofbit | failbit\n";
+
+      in.setstate(STD ios_base::eofbit);
+      in.read(buffer, 1024);
+      if (in.gcount() != 0)
+        return "error in test_read(): gcount() != 0\n";
+      if (in.rdstate() != (STD ios_base::eofbit | STD ios_base::failbit))
+        return "error in test_read(): rdstate() != eofbit | failbit\n";
+
+      return "OK\n";
+    }
+
+  // ---------------------------------------------------------------------------
+
+  template <class cT>
+    class readsomebuf: public STD basic_streambuf<cT>
+    {
+      STD streamsize showmanyc() { return STD char_traits<cT>::eof(); }
+    };
+
+  template <class cT, class sbuf>
+    inline char const* test_readsome()
+    {
+      STD basic_istream<cT> in(new sbuf(init<cT>::str, init<cT>::size));
+      cT buffer[1024];
+
+      STD streamsize count = in.readsome(buffer, 1024);
+      if (in.gcount() != count)
+        return "error in test_readsome(): count != gcount()\n";
+      if (count != STD streamsize(init<cT>::size))
+        return "error in test_readsome(): count != init<cT>::size\n";
+      if (in.rdstate() != STD ios_base::goodbit)
+        return "error in test_readsome(): rdstate() != goodbit\n";
+
+      count = in.readsome(buffer, 1024);
+      if (in.gcount() != count)
+        return "error in test_readsome(): count != gcount()\n";
+      if (count != 0)
+        return "error in test_readsome(): 0\n";
+      if (in.rdstate() != STD ios_base::goodbit)
+        return "error in test_readsome(): rdstate() != goodbit\n";
+
+      in.rdbuf(new readsomebuf<cT>);
+      count = in.readsome(buffer, 1024);
+      if (in.gcount() != count)
+        return "error in test_readsome(): count != gcount()\n";
+      if (count != 0)
+        return "error in test_readsome(): 0\n";
+      if (in.rdstate() != STD ios_base::eofbit)
+        return "error in test_readsome(): rdstate() != eofbit\n";
+
+      return "OK\n";
+    }
+
+  // ---------------------------------------------------------------------------
+
+  template <class cT, class sbuf>
+    inline char const* test_putback()
+    {
+      typedef typename STD basic_istream<cT>::int_type int_type;
+
+      STD basic_istream<cT> in(new sbuf(init<cT>::str, init<cT>::size));
+      cT c;
+      in.get(c);
+      in.get(c);
+      in.get(c);
+      
+      if (&in.putback(c) != &in)
+        return "error in putback(): wrong object returned\n";
+      if (in.rdstate() != STD ios_base::goodbit)
+        return "error in putback(): rdstate() != goodbit\n";
+      if (in.peek() != int_type(c))
+        return "error in putback(): character was not put back\n";
+
+      in.putback(c);
+      if (in.rdstate() != STD ios_base::badbit)
+        return "error in putback(): rdstate() != badbit\n";
+
+      in.putback(c);
+      if (in.rdstate() != (STD ios_base::badbit | STD ios_base::failbit))
+        return "error in putback(): rdstate() != badbit | failbit\n";
+      
+      return "OK\n";
+    }
+
+  // ---------------------------------------------------------------------------
+
+  template <class cT, class sbuf>
+    inline char const* test_unget()
+    {
+      typedef typename STD basic_istream<cT>::int_type int_type;
+
+      STD basic_istream<cT> in(new sbuf(init<cT>::str, init<cT>::size));
+      cT c;
+      in.get(c);
+      in.get(c);
+      in.get(c);
+      
+      if (&in.unget() != &in)
+        return "error in putback(): wrong object returned\n";
+      if (in.rdstate() != STD ios_base::goodbit)
+        return "error in putback(): rdstate() != goodbit\n";
+      if (in.peek() != int_type(c))
+        return "error in putback(): character was not put back\n";
+
+      in.unget();
+      in.unget();
+      in.unget();
+      if (in.rdstate() != STD ios_base::badbit)
+        return "error in putback(): rdstate() != badbit\n";
+
+      in.putback(c);
+      if (in.rdstate() != (STD ios_base::badbit | STD ios_base::failbit))
+        return "error in putback(): rdstate() != badbit | failbit\n";
+      
+      return "OK\n";
+    }
+
+  // ---------------------------------------------------------------------------
+
+  template <class cT, class sbuf>
+    inline char const* test_sync()
+    {
+      STD basic_istream<cT> in(new sbuf(init<cT>::str, init<cT>::size));
+      
+      if (in.sync() != 0)
+        return "error in test_sync(): rc != 0\n";
+
+      in.ignore(1024);
+      in.clear();
+      if (in.sync() != -1)
+        return "error in test_sync(): rc != eof()\n";
+      if (in.rdstate() != STD ios_base::badbit)
+        return "error in test_sync(): rdstate() != badbit\n";
+
+      in.clear();
+      in.rdbuf(0);
+      if (in.sync() != -1)
+        return "error in test_sync(): rc != -1\n";
+
+      return "OK\n";
+    }
+
+  // ---------------------------------------------------------------------------
+
+  template <class cT, class sbuf>
+    inline char const* test_tellg()
+    {
+      typedef typename STD basic_istream<cT>::int_type int_type;
+
+      STD basic_istream<cT> in(new sbuf(init<cT>::str, init<cT>::size));
+      in.ignore(10);
+
+      if (in.tellg() != typename STD char_traits<cT>::pos_type(10))
+        return "error in test_tellg(): rc != 10\n";
+      if (in.get() != int_type(in.widen('8')))
+        return "error in test_tellg(): get() != '8'\n";
+      if (in.tellg() != typename STD char_traits<cT>::pos_type(11))
+        return "error in test_tellg(): rc != 11\n";
+
+      in.setstate(STD ios_base::failbit);
+      if (in.tellg() != typename STD char_traits<cT>::pos_type(-1))
+        return "error in test_tellg(): rc != -1\n";
+  
+      return "OK\n";
+    }
+
+  // ---------------------------------------------------------------------------
+
+  template <class cT, class sbuf>
+    inline char const* test_seekg1()
+    {
+      STD basic_istream<cT> in(new sbuf(init<cT>::str, init<cT>::size));
+
+      in.seekg(10);
+      if (in.tellg() != typename STD char_traits<cT>::pos_type(10))
+        return "error in test_seekg1(): tellg() != 10\n";
+
+      in.setstate(STD ios_base::failbit);
+      in.seekg(15);
+      in.clear();
+      if (in.tellg() != typename STD char_traits<cT>::pos_type(10))
+        return "error in test_seekg1(): tellg() != 10\n";
+
+      return "OK\n";
+    }
+
+  // ---------------------------------------------------------------------------
+
+  template <class cT, class sbuf>
+    inline char const* test_seekg2()
+    {
+      STD basic_istream<cT> in(new sbuf(init<cT>::str, init<cT>::size));
+
+      in.seekg(10, STD ios_base::beg);
+      if (in.tellg() != typename STD char_traits<cT>::pos_type(10))
+        return "error in test_seekg2(): tellg() != 10\n";
+
+      in.setstate(STD ios_base::failbit);
+      in.seekg(15);
+      in.clear();
+      if (in.tellg() != typename STD char_traits<cT>::pos_type(10))
+        return "error in test_seekg1(): tellg() != 10\n";
+
+      in.seekg(-3, STD ios_base::cur);
+      if (in.tellg() != typename STD char_traits<cT>::pos_type(7))
+        return "error in test_seekg2(): tellg() != 7\n";
+
+      in.seekg(-3, STD ios_base::end);
+      if (in.tellg() != typename STD char_traits<cT>::pos_type(init<cT>::size - 3))
+        return "error in test_seekg2(): tellg() != init<cT>::size - 3\n";
+
+      return "OK\n";
+    }
+
+  // ---------------------------------------------------------------------------
+
+  static int const offset = 4;
+
+  template <class cT>
+    struct smallbuf: public STD basic_streambuf<cT> {
+      smallbuf() { this->setp(buffer, buffer + offset); }
+      cT buffer[offset];
+    };
+
+  template <class cT>
+    struct consumebuf: public STD basic_streambuf<cT> {
+      typedef typename STD basic_streambuf<cT>::traits_type traits_type;
+      typename STD basic_streambuf<cT>::int_type
+      overflow(typename STD basic_streambuf<cT>::int_type c) {
+	return traits_type::not_eof(c);
+      }
+    };
+
+  template <class cT, class sbuf>
+    inline char const* test_streambuf()
+    {
+      typedef STD char_traits<cT> traits_type;
+      bool error = false;
+
+      STD basic_istream<cT> in(new sbuf(init<cT>::str, init<cT>::size));
+
+      smallbuf<cT> sb;
+      if (&in.get(sb, init<cT>::str[offset + 2]) != & in && set(error))
+	STD cout << "wrong object is returned\n";
+      if (sb.buffer[0] != init<cT>::str[0] && set(error))
+	STD cout << "wrong character inserted\n";
+      if (!traits_type::eq_int_type(in.rdbuf()->sgetc(), init<cT>::str[offset]) && set(error))
+	STD cout << "too many character extracted from input stream\n";
+      if (in.rdstate() != STD ios_base::goodbit && set(error))
+	STD cout << "error flags set after successful insert\n";
+      in.clear();
+
+      in.get(sb, init<cT>::str[offset + 2]);
+      if (in.rdstate() != STD ios_base::failbit && set(error))
+	STD cout << "failbit not set after failed insert\n";
+      if (!traits_type::eq_int_type(in.rdbuf()->sgetc(), init<cT>::str[offset]) && set(error))
+	STD cout << "too many character extracted from input stream\n";
+      in.clear();
+
+      consumebuf<cT> strbuf;
+      in.get(strbuf);
+      if (in.rdstate() != STD ios_base::goodbit && set(error))
+	STD cout << "goodbit not set after successful insert\n";
+      if (!traits_type::eq_int_type(in.rdbuf()->sgetc(), init<cT>::str[12]) && set(error))
+	STD cout << "too many character extracted from input stream\n";
+      in.clear();
+
+      in.get(strbuf, init<cT>::str[0]);
+      if (in.rdstate() != STD ios_base::eofbit && set(error))
+	STD cout << "eofbit not set after reaching end of stream\n";
+
+      return error? "error\n": "OK\n";
+    }
+
+  // ---------------------------------------------------------------------------
+
+  int main(int ac, char *av[])
+  {
+    if (ac != 2)
+      {
+        STD cerr << "wrong number of arguments\n";
+        return 1;
+      }
+
+    switch (av[1][0])
+      {
+      case '0':
+        STD cout << test_char1<char, bufferedbuf<char> >();
+        STD cout << test_char1<char, unbufferedbuf<char> >();
+        STD cout << test_char1<wchar_t, bufferedbuf<wchar_t> >();
+        STD cout << test_char1<wchar_t, unbufferedbuf<wchar_t> >();
+        break;
+      case '1':
+        STD cout << test_char2<char, bufferedbuf<char> >();
+        STD cout << test_char2<char, unbufferedbuf<char> >();
+        STD cout << test_char2<wchar_t, bufferedbuf<wchar_t> >();
+        STD cout << test_char2<wchar_t, unbufferedbuf<wchar_t> >();
+        break;
+      case '2':
+        STD cout << test_string1<char, bufferedbuf<char> >();
+        STD cout << test_string1<char, unbufferedbuf<char> >();
+        STD cout << test_string1<wchar_t, bufferedbuf<wchar_t> >();
+        STD cout << test_string1<wchar_t, unbufferedbuf<wchar_t> >();
+        break;
+      case '3':
+        STD cout << test_string2<char, bufferedbuf<char> >();
+        STD cout << test_string2<char, unbufferedbuf<char> >();
+        STD cout << test_string2<wchar_t, bufferedbuf<wchar_t> >();
+        STD cout << test_string2<wchar_t, unbufferedbuf<wchar_t> >();
+        break;
+      case '4':
+        STD cout << test_streambuf<char, bufferedbuf<char> >();
+        STD cout << test_streambuf<char, unbufferedbuf<char> >();
+        break;
+      case '5':
+        STD cout << test_streambuf<wchar_t, bufferedbuf<wchar_t> >();
+        STD cout << test_streambuf<wchar_t, unbufferedbuf<wchar_t> >();
+        break;
+      case '6':
+        STD cout << test_getline1<char, bufferedbuf<char> >();
+        STD cout << test_getline1<char, unbufferedbuf<char> >();
+        STD cout << test_getline1<wchar_t, bufferedbuf<wchar_t> >();
+        STD cout << test_getline1<wchar_t, unbufferedbuf<wchar_t> >();
+        break;
+      case '7':
+        STD cout << test_getline2<char, bufferedbuf<char> >();
+        STD cout << test_getline2<char, unbufferedbuf<char> >();
+        STD cout << test_getline2<wchar_t, bufferedbuf<wchar_t> >();
+        STD cout << test_getline2<wchar_t, unbufferedbuf<wchar_t> >();
+        break;
+      case '8':
+        STD cout << test_ignore<char, bufferedbuf<char> >();
+        STD cout << test_ignore<char, unbufferedbuf<char> >();
+        STD cout << test_ignore<wchar_t, bufferedbuf<wchar_t> >();
+        STD cout << test_ignore<wchar_t, unbufferedbuf<wchar_t> >();
+        break;
+      case '9':
+        STD cout << test_peek<char, bufferedbuf<char> >();
+        STD cout << test_peek<char, unbufferedbuf<char> >();
+        STD cout << test_peek<wchar_t, bufferedbuf<wchar_t> >();
+        STD cout << test_peek<wchar_t, unbufferedbuf<wchar_t> >();
+        break;
+      case 'a':
+        STD cout << test_read<char, bufferedbuf<char> >();
+        STD cout << test_read<char, unbufferedbuf<char> >();
+        STD cout << test_read<wchar_t, bufferedbuf<wchar_t> >();
+        STD cout << test_read<wchar_t, unbufferedbuf<wchar_t> >();
+        break;
+      case 'b':
+        STD cout << test_readsome<char, bufferedbuf<char> >();
+        STD cout << test_readsome<char, unbufferedbuf<char> >();
+        STD cout << test_readsome<wchar_t, bufferedbuf<wchar_t> >();
+        STD cout << test_readsome<wchar_t, unbufferedbuf<wchar_t> >();
+        break;
+      case 'c':
+        STD cout << test_putback<char, bufferedbuf<char> >();
+        STD cout << test_putback<char, unbufferedbuf<char> >();
+        STD cout << test_putback<wchar_t, bufferedbuf<wchar_t> >();
+        STD cout << test_putback<wchar_t, unbufferedbuf<wchar_t> >();
+        break;
+      case 'd':
+        STD cout << test_unget<char, bufferedbuf<char> >();
+        STD cout << test_unget<char, unbufferedbuf<char> >();
+        STD cout << test_unget<wchar_t, bufferedbuf<wchar_t> >();
+        STD cout << test_unget<wchar_t, unbufferedbuf<wchar_t> >();
+        break;
+      case 'e':
+        STD cout << test_sync<char, bufferedbuf<char> >();
+        STD cout << test_sync<char, unbufferedbuf<char> >();
+        STD cout << test_sync<wchar_t, bufferedbuf<wchar_t> >();
+        STD cout << test_sync<wchar_t, unbufferedbuf<wchar_t> >();
+        break;
+      case 'f':
+        STD cout << test_tellg<char, bufferedbuf<char> >();
+        STD cout << test_tellg<char, unbufferedbuf<char> >();
+        STD cout << test_tellg<wchar_t, bufferedbuf<wchar_t> >();
+        STD cout << test_tellg<wchar_t, unbufferedbuf<wchar_t> >();
+        break;
+      case 'g':
+        STD cout << test_seekg1<char, bufferedbuf<char> >();
+        STD cout << test_seekg1<char, unbufferedbuf<char> >();
+        STD cout << test_seekg1<wchar_t, bufferedbuf<wchar_t> >();
+        STD cout << test_seekg1<wchar_t, unbufferedbuf<wchar_t> >();
+        break;
+      case 'h':
+        STD cout << test_seekg2<char, bufferedbuf<char> >();
+        STD cout << test_seekg2<char, unbufferedbuf<char> >();
+        STD cout << test_seekg2<wchar_t, bufferedbuf<wchar_t> >();
+        STD cout << test_seekg2<wchar_t, unbufferedbuf<wchar_t> >();
+        break;
+      }
+
+    return 0;
+  }
+}
+
+simple_test "basic_istream::get()" "0" {
+OK
+OK
+OK
+OK
+}
+
+simple_test "basic_istream::get(c)" "1" {
+OK
+OK
+OK
+OK
+}
+
+simple_test "basic_istream::get(str, n, delim)" "2" {
+OK
+OK
+OK
+OK
+}
+
+simple_test "basic_istream::get(str, n)" "3" {
+OK
+OK
+OK
+OK
+}
+
+simple_test "basic_istream::get(sb, delim)" "4" {
+OK
+OK
+}
+
+simple_test "basic_istream::get(sb)" "5" {
+OK
+OK
+}
+
+simple_test "basic_istream::getline(str, n, delim)" "6" {
+OK
+OK
+OK
+OK
+}
+
+simple_test "basic_istream::getline(str, n)" "7" {
+OK
+OK
+OK
+OK
+}
+
+simple_test "basic_istream::ignore(...)" "8" {
+OK
+OK
+OK
+OK
+}
+
+simple_test "basic_istream::peek()" "9" {
+OK
+OK
+OK
+OK
+}
+
+simple_test "basic_istream::read(s, n)" "a" {
+OK
+OK
+OK
+OK
+}
+
+simple_test "basic_istream::readsome(s, n)" "b" {
+OK
+OK
+OK
+OK
+}
+
+simple_test "basic_istream::putback(c)" "c" {
+OK
+OK
+OK
+OK
+}
+
+simple_test "basic_istream::unget()" "d" {
+OK
+OK
+OK
+OK
+}
+
+simple_test "basic_istream::sync()" "e" {
+OK
+OK
+OK
+OK
+}
+
+simple_test "basic_istream::tellg()" "f" {
+OK
+OK
+OK
+OK
+}
+
+simple_test "basic_istream::seek(pos)" "g" {
+OK
+OK
+OK
+OK
+}
+
+simple_test "basic_istream::sync(off, dir)" "h" {
+OK
+OK
+OK
+OK
+}

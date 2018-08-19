@@ -1,0 +1,130 @@
+#!/usr/local/bin/expect
+# -*-C++-*- io-27-5-2.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  Template class basic_streambuf<charT, traits> 
+# Version: $Id: lib-streambuf.exp,v 1.2 2006/04/07 07:07:13 dietmar_kuehl Exp $
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <streambuf>
+  #include <locale>
+  #if !defined(_CXXRT_STD)
+  #  define STD std::
+  #else
+  #  define STD _CXXRT_STD
+  #endif
+
+  template <class T> inline void check_type(T const&) {}
+
+  template <class charT, class traits>
+  class my_streambuf: public STD basic_streambuf<charT, traits>
+  {
+    typedef typename STD basic_streambuf<charT>::traits_type traits_type;
+    typedef typename STD basic_streambuf<charT>::char_type char_type;
+    typedef typename STD basic_streambuf<charT>::int_type int_type;
+    typedef typename STD basic_streambuf<charT>::pos_type pos_type;
+    typedef typename STD basic_streambuf<charT>::off_type off_type;
+
+  public:
+    my_streambuf():
+      STD basic_streambuf<charT, traits>()
+    {
+      char_type* c1 = 0;
+      char_type* c2 = 0;
+      char_type* c3 = 0;
+
+      check_type<char_type*>(this->eback());
+      check_type<char_type*>(this->gptr());
+      check_type<char_type*>(this->egptr());
+      this->gbump(int(1));
+      this->setg(c1, c2, c3);
+
+      check_type<char_type*>(this->pbase());
+      check_type<char_type*>(this->pptr());
+      check_type<char_type*>(this->epptr());
+      this->pbump(int(1));
+      this->setp(c1, c2);
+
+      this->imbue(STD locale());
+
+      check_type< STD basic_streambuf<charT, traits>*>(this->setbuf(new char_type[10], STD streamsize(10)));
+      check_type<pos_type>(this->seekoff(off_type(), STD ios_base::cur, STD ios_base::in));
+      check_type<pos_type>(this->seekpos(pos_type(0), STD ios_base::in));
+      check_type<int>(this->sync());
+
+      check_type<int_type>(this->showmanyc());
+      check_type< STD streamsize>(this->xsgetn(new char_type[10], STD streamsize(10)));
+      check_type<int_type>(this->underflow());
+      check_type<int_type>(this->uflow());
+
+      check_type<int_type>(this->pbackfail(int_type()));
+
+      check_type< STD streamsize>(this->xsputn(new char_type[10], STD streamsize(10)));
+      check_type<int_type>(this->overflow(int_type()));
+    }
+  };
+
+  template <class charT, class traits>
+  inline void f(STD basic_streambuf<charT, traits> *sb)
+  {
+    typedef typename STD basic_streambuf<charT, traits>::char_type char_type;
+    typedef typename STD basic_streambuf<charT, traits>::int_type int_type;
+    typedef typename STD basic_streambuf<charT, traits>::pos_type pos_type;
+    typedef typename STD basic_streambuf<charT, traits>::off_type off_type;
+    typedef typename STD basic_streambuf<charT, traits>::traits_type traits_type;
+
+    typedef STD basic_streambuf<charT, traits> sbuf_type;
+    sb->~sbuf_type();
+
+    check_type< STD locale>(sb->pubimbue(STD locale()));
+    check_type< STD locale>(sb->getloc());
+
+    check_type< STD basic_streambuf<charT, traits>*>(sb->pubsetbuf(new char_type[10], STD streamsize(10)));
+    check_type<pos_type>(sb->pubseekoff(off_type(), STD ios_base::cur, STD ios_base::in));
+    check_type<pos_type>(sb->pubseekpos(pos_type(0), STD ios_base::in));
+    check_type<int>(sb->pubsync());
+
+    check_type< STD streamsize>(sb->in_avail());
+    check_type<int_type>(sb->snextc());
+    check_type<int_type>(sb->sbumpc());
+    check_type<int_type>(sb->sgetc());
+    check_type< STD streamsize>(sb->sgetn(new char_type[10], STD streamsize(10)));
+
+    check_type<int_type>(sb->sputbackc(char_type()));
+    check_type<int_type>(sb->sungetc());
+
+    check_type<int_type>(sb->sputc(char_type()));
+    check_type< STD streamsize>(sb->sputn(new char_type[10], STD streamsize(10)));
+
+    new my_streambuf<charT, traits>();
+  }
+
+  int main(int, char *[])
+  {
+    f(static_cast< STD basic_streambuf<char, STD char_traits<char> > *>(0));
+    f(static_cast< STD basic_streambuf<wchar_t, STD char_traits<wchar_t> > *>(0));
+    return 0;
+  }
+}

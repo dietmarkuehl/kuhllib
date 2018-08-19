@@ -1,0 +1,189 @@
+#!/usr/local/bin/expect
+# -*-C++-*- io-27-5-2-2-4.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  Putback 
+# Version: $Id: io-27-5-2-2-4.exp,v 1.1.1.1 2002/06/05 01:03:03 dietmar_kuehl Exp $
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <streambuf>
+  #include <locale>
+  #include <cstdio>
+  namespace my_std
+  {
+  #if !defined(_CXXRT_STD)
+  #  define STD std::
+  using namespace std;
+  struct flush { ~flush() { fflush(0); } } dummy;
+  #else
+  #  define STD _CXXRT_STD
+  using STD printf;
+  #endif
+  }
+
+  void write(char const* msg) { my_std::printf(msg); }
+  void result(bool rc)
+  {
+    char const msg_OK[] =   "test OK\n";
+    char const msg_fail[] = "test failed\n";
+    if (rc)
+      write(msg_OK);
+    else
+      write(msg_fail);
+  }
+
+  template <class charT>
+  class my_streambuf: public STD basic_streambuf<charT>
+  {
+    typedef typename STD basic_streambuf<charT>::traits_type traits_type;
+    typedef typename STD basic_streambuf<charT>::char_type char_type;
+    typedef typename STD basic_streambuf<charT>::int_type int_type;
+
+    bool flag;
+    int_type pbackfail(int_type c)
+    {
+      char const msg[] = "pbackfail()\n";
+      write(msg);
+      return flag? c: traits_type::eof();
+    }
+  public:
+    my_streambuf(): flag(false) {}
+
+    void check_sputbackc()
+    {
+      char_type buf[2];
+      buf[0] = char_type('1');
+      buf[1] = char_type('2');
+
+      this->setg(buf, buf + 1, buf + 2);
+
+      flag = false;
+      result(traits_type::eq_int_type(this->sputbackc(char_type('3')), traits_type::eof()));
+      flag = true;
+      result(traits_type::eq_int_type(this->sputbackc(char_type('2')), int_type('2')));
+      result(traits_type::eq_int_type(this->sputbackc(char_type('1')), int_type('1')));
+      result(traits_type::eq_int_type(this->sputbackc(char_type('0')), int_type('0')));
+      flag = false;
+      result(traits_type::eq_int_type(this->sputbackc(char_type('0')), traits_type::eof()));
+    }
+    void check_sungetc()
+    {
+      char_type buf[2];
+      buf[0] = char_type('1');
+      buf[1] = char_type('2');
+
+      this->setg(buf, buf + 2, buf + 2);
+
+      flag = true;
+      result(traits_type::eq_int_type(this->sungetc(), int_type('2')));
+      result(traits_type::eq_int_type(this->sungetc(), int_type('1')));
+      result(traits_type::eq_int_type(this->sungetc(), traits_type::eof()));
+      flag = false;
+      result(traits_type::eq_int_type(this->sungetc(), traits_type::eof()));
+    }
+  };
+
+  int main(int ac, char *av[])
+  {
+    if (ac != 2)
+      {
+        char const oops[] = "wrong number of arguments\n";
+        write(oops);
+        return 1;
+      }
+
+    switch (av[1][0])
+      {
+      case '0':
+        {
+          my_streambuf<char> sb;
+          sb.check_sputbackc();
+        }
+        break;
+      case '1':
+        {
+          my_streambuf<char> sb;
+          sb.check_sungetc();
+        }
+        break;
+      case '2':
+        {
+          my_streambuf<wchar_t> sb;
+          sb.check_sputbackc();
+        }
+        break;
+      case '3':
+        {
+          my_streambuf<wchar_t> sb;
+          sb.check_sungetc();
+        }
+        break;
+      }
+
+    return 0;
+  }
+}
+
+simple_test "basic_streambuf<char> sputbackc()" "0" {
+pbackfail()
+test OK
+pbackfail()
+test OK
+test OK
+pbackfail()
+test OK
+pbackfail()
+test OK
+}
+
+simple_test "basic_streambuf<char> sungetc()" "1" {
+test OK
+test OK
+pbackfail()
+test OK
+pbackfail()
+test OK
+}
+
+simple_test "basic_streambuf<wchar_t> sputbackc()" "2" {
+pbackfail()
+test OK
+pbackfail()
+test OK
+test OK
+pbackfail()
+test OK
+pbackfail()
+test OK
+}
+
+simple_test "basic_streambuf<wchar_t> sungetc()" "3" {
+test OK
+test OK
+pbackfail()
+test OK
+pbackfail()
+test OK
+}

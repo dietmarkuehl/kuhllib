@@ -1,0 +1,82 @@
+#!/usr/local/bin/expect
+# -*-C++-*- io-27-3-2.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  Wide stream objects
+# Version: $Id: lib-wide-stream-objects.exp,v 1.1.1.1 2002/06/05 01:03:28 dietmar_kuehl Exp $
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <iostream>
+  #include <cstdio>
+  #include <testio.hpp>
+
+  bool check(STD wios &base)
+    {
+      if (base.rdbuf() == 0) return false;
+      if (base.tie() != 0) return false;
+      if (base.rdstate() != STD ios_base::goodbit) return false;
+      if (base.exceptions() != STD ios_base::goodbit) return false;
+      if (base.flags() != (STD ios_base::skipws | STD ios_base::dec)) return false;
+      if (base.width() != 0) return false;
+      if (base.precision() != 6) return false;
+      if (base.fill() != base.widen(' ')) return false;
+      if (base.getloc() != STD locale()) return false;
+
+      return true;
+    }
+
+  int main(int, char *[])
+  {
+    char const wcin_ok[]  = "wcin OK\n";
+    char const wcout_ok[] = "wcout OK\n";
+    char const wcerr_ok[] = "wcerr OK\n";
+    char const wclog_ok[] = "wclog OK\n";
+
+    if (STD wcin.tie() == &STD wcout)
+      {
+        STD wcin.tie(0);
+        if (check(STD wcin)) write(wcin_ok);
+      }
+
+    if (check(STD wcout)) write(wcout_ok);
+
+    if ((STD wcerr.flags() & STD ios_base::unitbuf) != 0)
+      {
+        STD wcerr.unsetf(STD ios_base::unitbuf);
+        if (check(STD wcerr)) write(wcerr_ok);
+      }
+
+    if (check(STD wclog)) write(wclog_ok);
+
+    return 0;
+  }
+}
+
+simple_test "initialization of standard stream objects" "" {
+wcin OK
+wcout OK
+wcerr OK
+wclog OK
+}

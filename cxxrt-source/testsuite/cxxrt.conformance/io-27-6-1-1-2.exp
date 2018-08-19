@@ -1,0 +1,251 @@
+#!/usr/local/bin/expect
+# -*-C++-*- io-27-6-1-1-2.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  Class basic_istream::sentry
+# Version: $Id: io-27-6-1-1-2.exp,v 1.1.1.1 2002/06/05 01:03:04 dietmar_kuehl Exp $ 
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <istream>
+  #include <ostream>
+  #include <iostream>
+  #include <streambuf>
+  #include <locale>
+  #if !defined(_CXXRT_STD)
+  #  define STD std::
+  #else
+  #  define STD _CXXRT_STD
+  #endif
+
+  void result(bool rc)
+  {
+    STD cout << (rc? "test OK": "test failed") << "\n";
+  }
+
+  template <class cT>
+    class testbuf: public STD basic_streambuf<cT>
+    {
+    public:
+      testbuf(char const* n, char const* str = 0):
+        name(n),
+        len(str != 0? STD char_traits<char>::length(str): 0),
+        ct(new STD ctype<cT>())
+        {
+          if (str != 0)
+            ct->widen(str, str + (len < 20? len: 20), buffer);
+
+          this->setg(0, 0, 0);
+        }
+
+    private:
+      typedef typename STD basic_streambuf<cT>::traits_type traits_type;
+      
+      int sync() { STD cout << name << ": sync()\n"; return 0; }
+      typename traits_type::int_type underflow()
+        {
+          if (this->gptr() == buffer + len)
+            {
+              STD cout << name << ": eof\n";
+              return traits_type::eof();
+            }
+
+          if (this->gptr() == 0)
+            this->setg(buffer, buffer, buffer + 1);
+          else
+            this->setg(this->gptr(), this->gptr(), this->gptr() + 1);
+
+          STD cout << name << ": get (" << (ct->is(STD ctype_base::space, *this->gptr())? "space":
+                                                                                    "non-space") << ")\n";
+          return traits_type::to_int_type(*this->gptr());
+        }
+
+      char const* name;
+      int         len;
+      cT          buffer[20];
+      STD ctype<cT> const* ct;
+
+      testbuf(testbuf const&);
+      void operator=(testbuf const&);
+    };
+
+  template <class cT>
+  inline void test()
+    {
+      STD basic_ostream<cT> out(new testbuf<cT>("out"));
+      STD basic_istream<cT> in(new testbuf<cT>("in", "  \r\t\nf  "));
+      in.tie(&out);
+
+      {
+        STD cout << "ctor1 begin:\n";
+        typename STD basic_istream<cT>::sentry kerberos(in, true);
+        STD cout << "ctor1 end\n";
+        STD cout << "in.good(): " << in.good() << "\n";
+        STD cout << "kerberos: " << kerberos << "\n";
+        STD cout << "dtor1 begin:\n";
+      }
+      STD cout << "dtor1 end\n";
+
+      {
+        STD cout << "ctor2 begin:\n";
+        typename STD basic_istream<cT>::sentry kerberos(in);
+        STD cout << "ctor2 end\n";
+        STD cout << "in.good(): " << in.good() << "\n";
+        STD cout << "kerberos: " << kerberos << "\n";
+        STD cout << "dtor2 begin:\n";
+      }
+      STD cout << "dtor2 end\n";
+
+      STD cout << "skip:\n";
+      in.rdbuf()->snextc();
+
+      {
+        STD cout << "ctor3 begin:\n";
+        typename STD basic_istream<cT>::sentry kerberos(in);
+        STD cout << "ctor3 end\n";
+        STD cout << "in.good(): " << in.good() << "\n";
+        STD cout << "kerberos: " << kerberos << "\n";
+        STD cout << "dtor3 begin:\n";
+      }
+      STD cout << "dtor3 end\n";
+
+    }
+
+  template <class cT>
+  inline void good_test()
+    {
+      STD basic_istream<cT> in(new testbuf<cT>("in", "f"));
+      typename STD basic_istream<cT>::sentry kerberos(in);
+      in.ignore();
+      in.ignore();
+      STD cout << "in.good(): " << in.good() << "\n";
+      STD cout << "kerberos: " << kerberos << "\n";
+    }
+
+  int main(int ac, char *av[])
+  {
+    if (ac != 2)
+      {
+        STD cerr << "wrong number of arguments\n";
+        return 1;
+      }
+
+    STD cout << STD boolalpha;
+
+    switch (av[1][0])
+      {
+      case '0':
+        test<char>();
+        break;
+      case '1':
+        test<wchar_t>();
+        break;
+      case '2':
+        good_test<char>();
+        good_test<wchar_t>();
+        break;
+      }
+
+    return 0;
+  }
+}
+
+simple_test "basic_istream<char>::sentry" "0" {
+ctor1 begin:
+out: sync()
+ctor1 end
+in.good(): true
+kerberos: true
+dtor1 begin:
+dtor1 end
+ctor2 begin:
+out: sync()
+in: get (space)
+in: get (space)
+in: get (space)
+in: get (space)
+in: get (space)
+in: get (non-space)
+ctor2 end
+in.good(): true
+kerberos: true
+dtor2 begin:
+dtor2 end
+skip:
+in: get (space)
+ctor3 begin:
+out: sync()
+in: get (space)
+in: eof
+ctor3 end
+in.good(): false
+kerberos: false
+dtor3 begin:
+dtor3 end
+}
+
+simple_test "basic_istream::good() vs. sentry::operator bool()" "2" {
+in: get (non-space)
+in: eof
+in.good(): false
+kerberos: true
+in: get (non-space)
+in: eof
+in.good(): false
+kerberos: true
+}
+
+simple_test "basic_istream<wchar_t>::sentry" "1" {
+ctor1 begin:
+out: sync()
+ctor1 end
+in.good(): true
+kerberos: true
+dtor1 begin:
+dtor1 end
+ctor2 begin:
+out: sync()
+in: get (space)
+in: get (space)
+in: get (space)
+in: get (space)
+in: get (space)
+in: get (non-space)
+ctor2 end
+in.good(): true
+kerberos: true
+dtor2 begin:
+dtor2 end
+skip:
+in: get (space)
+ctor3 begin:
+out: sync()
+in: get (space)
+in: eof
+ctor3 end
+in.good(): false
+kerberos: false
+dtor3 begin:
+dtor3 end
+}

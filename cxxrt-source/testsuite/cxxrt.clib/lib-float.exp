@@ -1,0 +1,309 @@
+#!/usr/local/bin/expect
+# -*-C++-*- lib-float.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:   
+# Version: $Id: lib-float.exp,v 1.2 2002/06/06 01:56:55 dietmar_kuehl Exp $ 
+# -------------------------------------------------------------------------- 
+
+setup_xfail *
+inline_compile {
+  #include <cfloat>
+
+  #if defined(_CRT_STD)
+  #  define CSTD _CRT_STD
+  #else
+  #  define CSTD ::std::
+  #endif
+  #if defined(_CXXRT_STD)
+  #  define STD _CXXRT_STD
+  #else
+  #  define STD ::std::
+  #endif
+
+  #if !defined(FLT_ROUNDS)
+  #  error "FLT_ROUNDS is not defined"
+  #endif
+
+  #if 0
+  //-dk:TODO check whether this is needed
+  #  if !defined(FLT_EVAL_METHOD)
+  #    error "FLT_EVAL_METHOD is not defined"
+  #  elif FLT_EVAL_METHOD == 0 && FLT_EVAL_METHOD == 1
+  #    error "FLT_EVAL_METHOD cannot be used in #if conditional"
+  #  endif  
+  #endif
+  
+  #if !defined(FLT_RADIX)
+  #  error "FLT_RADIX is not defined"
+  #elif FLT_RADIX < 2
+  #  error "FLT_RADIX is smaller than 2"
+  #endif  
+  
+  #if !defined(FLT_MANT_DIG)
+  #  error "FLT_MANT_DIG is not defined"
+  #elif FLT_MANT_DIG == 0 && FLT_MANT_DIG == 1
+  #  error "FLT_MANT_DIG cannot be used in #if conditional"
+  #endif  
+  #if !defined(DBL_MANT_DIG)
+  #  error "DBL_MANT_DIG is not defined"
+  #elif DBL_MANT_DIG == 0 && DBL_MANT_DIG == 1
+  #  error "DBL_MANT_DIG cannot be used in #if conditional"
+  #endif  
+  #if !defined(LDBL_MANT_DIG)
+  #  error "LDBL_MANT_DIG is not defined"
+  #elif LDBL_MANT_DIG == 0 && FLT_MANT_DIG == 1
+  #  error "LDBL_MANT_DIG cannot be used in #if conditional"
+  #endif  
+  
+  #if 0
+  #  if !defined(DECIMAL_DIG)
+  #    error "DECIMAL_DIG is not defined"
+  #  elif DECIMAL_DIG < 10
+  #    error "DECIMAL_DIG is smaller than 10"
+  #  endif  
+  #  if !defined(FLT_DIG)
+  #    error "FLT_DIG is not defined"
+  #  elif FLT_DIG < 6
+  #    error "FLT_DIG is smaller than 10"
+  #  endif  
+  #  if !defined(DBL_DIG)
+  #    error "DBL_DIG is not defined"
+  #  elif DBL_DIG < 10
+  #    error "DBL_DIG is smaller than 10"
+  #  endif  
+  #endif
+  #if !defined(LDBL_DIG)
+  #  error "LDBL_DIG is not defined"
+  #elif LDBL_DIG < 10
+  #  error "LDBL_DIG is smaller than 10"
+  #endif  
+  
+  #if !defined(FLT_MIN_EXP)
+  #  error "FLT_MIN_EXP is not defined"
+  #elif FLT_MIN_EXP == 0 && FLT_MIN_EXP == 1
+  #  error "FLT_MIN_EXP cannot be used in #if conditional"
+  #endif  
+  #if !defined(DBL_MIN_EXP)
+  #  error "DBL_MIN_EXP is not defined"
+  #elif DBL_MIN_EXP == 0 && DBL_MIN_EXP == 1
+  #  error "DBL_MIN_EXP cannot be used in #if conditional"
+  #endif  
+  #if !defined(LDBL_MIN_EXP)
+  #  error "LDBL_MIN_EXP is not defined"
+  #elif LDBL_MIN_EXP == 0 && LDBL_MIN_EXP == 1
+  #  error "LDBL_MIN_EXP cannot be used in #if conditional"
+  #endif  
+
+  #if !defined(FLT_MIN_10_EXP)
+  #  error "FLT_MIN_10_EXP is not defined"
+  #elif FLT_MIN_10_EXP > -37
+  #  error "FLT_MIN_10_EXP is bigger than -37"
+  #endif  
+  #if !defined(DBL_MIN_10_EXP)
+  #  error "DBL_MIN_10_EXP is not defined"
+  #elif DBL_MIN_10_EXP > -37
+  #  error "DBL_MIN_10_EXP is bigger than -37"
+  #endif  
+  #if !defined(LDBL_MIN_10_EXP)
+  #  error "LDBL_MIN_10_EXP is not defined"
+  #elif LDBL_MIN_10_EXP > -37
+  #  error "LDBL_MIN_10_EXP is bigger than -37"
+  #endif  
+
+  #if !defined(FLT_MAX_EXP)
+  #  error "FLT_MAX_EXP is not defined"
+  #elif FLT_MAX_EXP == 0 && FLT_MAX_EXP == 1
+  #  error "FLT_MAX_EXP cannot be used in #if conditional"
+  #endif  
+  #if !defined(DBL_MAX_EXP)
+  #  error "DBL_MAX_EXP is not defined"
+  #elif DBL_MAX_EXP == 0 && DBL_MAX_EXP == 1
+  #  error "DBL_MAX_EXP cannot be used in #if conditional"
+  #endif  
+  #if !defined(LDBL_MAX_EXP)
+  #  error "LDBL_MAX_EXP is not defined"
+  #elif LDBL_MAX_EXP == 0 && LDBL_MAX_EXP == 1
+  #  error "LDBL_MAX_EXP cannot be used in #if conditional"
+  #endif  
+
+  #if !defined(FLT_MAX_10_EXP)
+  #  error "FLT_MAX_10_EXP is not defined"
+  #elif FLT_MAX_10_EXP < 37
+  #  error "FLT_MAX_10_EXP is bigger than 37"
+  #endif  
+  #if !defined(DBL_MAX_10_EXP)
+  #  error "DBL_MAX_10_EXP is not defined"
+  #elif DBL_MAX_10_EXP < 37
+  #  error "DBL_MAX_10_EXP is bigger than 37"
+  #endif  
+  #if !defined(LDBL_MAX_10_EXP)
+  #  error "LDBL_MAX_10_EXP is not defined"
+  #elif LDBL_MAX_10_EXP < 37
+  #  error "LDBL_MAX_10_EXP is bigger than 37"
+  #endif  
+
+  #if !defined(FLT_MAX)
+  #  error "FLT_MAX is not defined"
+  #endif
+  #if !defined(DBL_MAX)
+  #  error "DBL_MAX is not defined"
+  #endif
+  #if !defined(LDBL_MAX)
+  #  error "LDBL_MAX is not defined"
+  #endif
+
+  #if !defined(FLT_EPSILON)
+  #  error "FLT_EPSILON is not defined"
+  #endif
+  #if !defined(DBL_EPSILON)
+  #  error "DBL_EPSILON is not defined"
+  #endif
+  #if !defined(LDBL_EPSILON)
+  #  error "LDBL_EPSILON is not defined"
+  #endif
+
+  #if !defined(FLT_MIN)
+  #  error "FLT_MIN is not defined"
+  #endif
+  #if !defined(DBL_MIN)
+  #  error "DBL_MIN is not defined"
+  #endif
+  #if !defined(LDBL_MIN)
+  #  error "LDBL_MIN is not defined"
+  #endif
+
+  #include <iostream>
+  int main(int ac, char* av[])
+  {
+    if (ac != 2)
+      {
+        STD cout << "wrong number of arguments\n";
+        return 1;
+      }
+
+    switch (av[1][0])
+      {
+      case 'a':
+	if (FLT_ROUNDS == -1)
+	  STD cout << "float rounding not specified\n";
+	else
+	  STD cout << "OK\n";
+	break;
+      case 'b':
+	//if (FLT_EVAL_METHOD == -1)
+	//  STD cout << "float evaluation method not specified\n";
+	//else
+	  STD cout << "OK\n";
+	break;
+      case 'c':
+	if (FLT_MAX < 1e+37)
+	  STD cout << "float maximum is too small\n";
+	else
+	  STD cout << "OK\n";
+	break;
+      case 'd':
+	if (DBL_MAX < 1e+37)
+	  STD cout << "double maximum is too small\n";
+	else
+	  STD cout << "OK\n";
+	break;
+      case 'e':
+	if (LDBL_MAX < 1e+37)
+	  STD cout << "long double maximum is too small\n";
+	else
+	  STD cout << "OK\n";
+	break;
+      case 'f':
+	if (FLT_EPSILON > 1e-5)
+	  STD cout << "float epsilon is too big\n";
+	else
+	  STD cout << "OK\n";
+	break;
+      case 'g':
+	if (DBL_EPSILON > 1e-9)
+	  STD cout << "double epsilon is too big\n";
+	else
+	  STD cout << "OK\n";
+	break;
+      case 'h':
+	if (LDBL_EPSILON > 1e-9)
+	  STD cout << "long double epsilon is too big\n";
+	else
+	  STD cout << "OK\n";
+	break;
+      case 'i':
+	if (FLT_MIN > 1e-37)
+	  STD cout << "float minimum is too big\n";
+	else
+	  STD cout << "OK\n";
+	break;
+      case 'j':
+	if (DBL_MIN > 1e-37)
+	  STD cout << "double minimum is too big\n";
+	else
+	  STD cout << "OK\n";
+	break;
+      case 'k':
+	if (LDBL_MIN > 1e-37)
+	  STD cout << "long double minimum is too big\n";
+	else
+	  STD cout << "OK\n";
+	break;
+      }
+    return 0;
+  }
+}
+
+simple_test "FLT_ROUNDS" "a" {
+OK
+}
+
+simple_test "FLT_EVAL_METHOD" "b" {
+OK
+}
+
+simple_test "FLT_MAX" "c" {
+OK
+}
+
+simple_test "DBL_MAX" "d" {
+OK
+}
+
+simple_test "LDBL_MAX" "e" {
+OK
+}
+
+simple_test "FLT_EPSILON" "f" {
+OK
+}
+
+simple_test "DBL_EPSILON" "g" {
+OK
+}
+
+simple_test "LDBL_EPSILON" "h" {
+OK
+}

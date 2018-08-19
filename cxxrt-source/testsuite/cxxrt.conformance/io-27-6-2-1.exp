@@ -1,0 +1,120 @@
+#!/usr/local/bin/expect
+# -*-C++-*- io-27-6-2-1.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  Template class basic_ostream
+# Version: $Id: io-27-6-2-1.exp,v 1.1.1.1 2002/06/05 01:03:34 dietmar_kuehl Exp $ 
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <ostream>
+  #if !defined(_CXXRT_STD)
+  #  define STD std::
+  #else
+  #  define STD _CXXRT_STD
+  #endif
+
+  // ---------------------------------------------------------------------------
+
+  template <class T>
+    void test_type(T) {}
+  template <class T>
+    void test_ref_type(T&) {}
+  template <class cT, class T>
+    void test_op(STD basic_ostream<cT>& (*)(STD basic_ostream<cT>&, T)) {}
+  template <class cT, class T>
+    void test_mem_op(STD basic_ostream<cT>& (STD basic_ostream<cT>::*)(T)) {}
+
+  // ---------------------------------------------------------------------------
+
+  template <class cT>
+    void test_ostream_members()
+    {
+      STD basic_ostream<cT> out(static_cast< STD basic_streambuf<cT>*>(0));
+
+      test_ref_type< STD basic_ostream<cT, STD char_traits<cT> > >(out);
+      
+      typedef typename STD basic_ostream<cT>::char_type char_type;
+      typedef typename STD basic_ostream<cT>::int_type int_type;
+      typedef typename STD basic_ostream<cT>::pos_type pos_type;
+      typedef typename STD basic_ostream<cT>::off_type off_type;
+      typedef typename STD basic_ostream<cT>::traits_type traits_type;
+
+      typedef typename STD basic_ostream<cT>::sentry sentry;
+
+      test_mem_op<cT, STD ios_base&(*)(STD ios_base&)>(&STD basic_ostream<cT>::operator<<);
+      test_mem_op<cT, STD basic_ios<cT>&(*)(STD basic_ios<cT>&)>(&STD basic_ostream<cT>::operator<<);
+      test_mem_op<cT, STD basic_ostream<cT>&(*)(STD basic_ostream<cT>&)>(&STD basic_ostream<cT>::operator<<);
+
+      test_mem_op<cT, bool>(&STD basic_ostream<cT>::operator<<);
+      test_mem_op<cT, short>(&STD basic_ostream<cT>::operator<<);
+      test_mem_op<cT, int>(&STD basic_ostream<cT>::operator<<);
+      test_mem_op<cT, long>(&STD basic_ostream<cT>::operator<<);
+      test_mem_op<cT, unsigned short>(&STD basic_ostream<cT>::operator<<);
+      test_mem_op<cT, unsigned int>(&STD basic_ostream<cT>::operator<<);
+      test_mem_op<cT, unsigned long>(&STD basic_ostream<cT>::operator<<);
+      test_mem_op<cT, float>(&STD basic_ostream<cT>::operator<<);
+      test_mem_op<cT, double>(&STD basic_ostream<cT>::operator<<);
+      test_mem_op<cT, long double>(&STD basic_ostream<cT>::operator<<);
+      test_mem_op<cT, void const*>(&STD basic_ostream<cT>::operator<<);
+      test_mem_op<cT, STD basic_streambuf<cT>*>(&STD basic_ostream<cT>::operator<<);
+
+      STD streamsize n(0);
+      cT             buffer[1024];
+      pos_type       pos(0);
+      off_type       off(0);
+
+      test_ref_type< STD basic_ostream<cT> >(out.write(buffer, n));
+      test_ref_type< STD basic_ostream<cT> >(out.flush());
+      test_type<pos_type>(out.tellp());
+      test_ref_type< STD basic_ostream<cT> >(out.seekp(pos));
+      test_ref_type< STD basic_ostream<cT> >(out.seekp(off, STD ios_base::beg));
+    }
+
+  // ---------------------------------------------------------------------------
+
+  template <class cT, class scT>
+    void test_ostream_globals()
+    {
+      STD basic_ostream<cT> out(static_cast< STD basic_streambuf<cT>*>(0));
+
+      test_op<cT, char>(&STD operator<<);
+      test_op<cT, scT>(&STD operator<<);
+      test_op<cT, char const*>(&STD operator<<);
+      test_op<cT, scT const*>(&STD operator<<);
+    }
+
+  // ---------------------------------------------------------------------------
+
+  int main()
+  {
+    test_ostream_members<char>();
+    test_ostream_globals<char, char>();
+    test_ostream_globals<char, signed char>();
+    test_ostream_globals<char, unsigned char>();
+    test_ostream_members<wchar_t>();
+    test_ostream_globals<wchar_t, wchar_t>();
+    return 0;
+  }
+}

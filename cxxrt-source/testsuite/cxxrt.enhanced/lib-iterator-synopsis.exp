@@ -1,0 +1,195 @@
+#!/usr/local/bin/expect
+# -*-C++-*- lib-iterator-synopsis.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  Header iterator synopsis
+# Version: $Id: lib-iterator-synopsis.exp,v 1.1.1.1 2002/06/05 01:03:44 dietmar_kuehl Exp $ 
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include "testtools.hpp"
+  #include "testiterator.hpp"
+  #include <iterator>
+
+  #if defined(_ESTD_STD)
+  #  define STD _ESTD_STD
+  using STD ptrdiff_t;
+  #elif defined(_CXXRT_STD)
+  #  define STD _CXXRT_STD
+  using STD ptrdiff_t;
+  #else
+  #  define STD ::std::
+  using namespace std;
+  #endif
+
+  struct foo {};
+
+  template <class It>
+    void test_iterator_traits()
+    {
+      STD iterator_traits<It> traits;
+      use(traits);
+    }
+
+  template <class Category, class T>
+    class iterator_t: public STD iterator<Category, T>
+    {
+    };
+
+  template <class Category, class T>
+    void test_iterator()
+    {
+      iterator_t<Category, T> it1;
+      STD iterator<Category, T>& it2 = it1;
+      STD iterator<Category, T, ptrdiff_t>& it3 = it2;
+      STD iterator<Category, T, ptrdiff_t, T*>& it4 = it3;
+      STD iterator<Category, T, ptrdiff_t, T*, T&>& it5 = it4;
+      use(it5);
+    }
+
+  int main(int ac, char *av[])
+  {
+    foo array[5];
+    test_iterator_traits<tst::input_iterator<foo> >();
+    test_iterator_traits<foo*>();
+
+    test_iterator< STD input_iterator_tag, foo>();
+    test_iterator< STD output_iterator_tag, foo>();
+    test_iterator< STD forward_iterator_tag, foo>();
+    test_iterator< STD bidirectional_iterator_tag, foo>();
+    test_iterator< STD random_access_iterator_tag, foo>();
+
+    STD random_access_iterator_tag rait;
+    STD bidirectional_iterator_tag& bit = rait;
+    STD forward_iterator_tag& fit = bit;
+    STD input_iterator_tag const& iit = fit;
+    use(iit);
+
+    tst::input_iterator<foo> input_it = tst::begin_input(array); STD advance(input_it, 3);
+    tst::output_iterator<foo> output_it = tst::begin_output(array); STD advance(output_it, 3);
+    tst::forward_iterator<foo> forward_it = tst::begin_forward(array); STD advance(forward_it, 3);
+    tst::bidirectional_iterator<foo> bidirectional_it = tst::begin_bidirectional(array); STD advance(bidirectional_it, 3);
+    tst::random_access_iterator<foo> random_access_it = tst::begin_random_access(array); STD advance(random_access_it, 3);
+
+    typedef tst::input_iterator<foo> InIt;
+    check_fct_type< STD iterator_traits<InIt>::difference_type>(STD distance(tst::begin_input(array), tst::end_input(array)));
+
+    STD reverse_iterator<foo*> f1;
+    STD reverse_iterator<foo*> f2;
+    STD reverse_iterator<foo*> const& cf1 = f1;
+    STD reverse_iterator<foo*> const& cf2 = f2;
+    
+    check_fct_type<bool>(cf1 == cf2);
+    check_fct_type<bool>(cf1 <= cf2);
+    check_fct_type<bool>(cf1 < cf2);
+    check_fct_type<bool>(cf1 != cf2);
+    check_fct_type<bool>(cf1 >= cf2);
+    check_fct_type<bool>(cf1 > cf2);
+    check_fct_type<bool>(STD operator== (cf1, cf2));
+    check_fct_type<bool>(STD operator<= (cf1, cf2));
+    check_fct_type<bool>(STD operator< (cf1, cf2));
+    check_fct_type<bool>(STD operator!= (cf1, cf2));
+    check_fct_type<bool>(STD operator>= (cf1, cf2));
+    check_fct_type<bool>(STD operator> (cf1, cf2));
+
+    check_fct_type< STD reverse_iterator<foo*>::difference_type>(cf1 - cf2);
+    check_fct_type< STD reverse_iterator<foo*>::difference_type>(STD operator -(cf1, cf2));
+    check_fct_type< STD reverse_iterator<foo*> >(STD reverse_iterator<foo*>::difference_type(0) + cf1);
+    check_fct_type< STD reverse_iterator<foo*> >(STD operator+ (STD reverse_iterator<foo*>::difference_type(0), cf1));
+    
+    return 0;
+  }
+}
+
+inline_compile {
+  #include "testtools.hpp"
+  #include <iterator>
+  #include <list>
+
+  #if defined(_ESTD_STD)
+  #  define STD _ESTD_STD
+  #elif defined(_CXXRT_STD)
+  #  define STD _CXXRT_STD
+  #else
+  #  define STD ::std::
+  #endif
+
+  struct foo {};
+
+  int main(int ac, char *av[])
+  {
+    STD list<foo> cont;
+    check_fct_type< STD back_insert_iterator< STD list<foo> > >(STD back_inserter(cont));
+    check_fct_type< STD front_insert_iterator< STD list<foo> > >(STD front_inserter(cont));
+    check_fct_type< STD insert_iterator< STD list<foo> > >(STD inserter(cont, cont.begin()));
+    return 0;
+  }
+}
+
+inline_compile {
+  #include "testtools.hpp"
+  #include <iterator>
+
+  #if defined(_ESTD_STD)
+  #  define STD _ESTD_STD
+  #elif defined(_CXXRT_STD)
+  #  define STD _CXXRT_STD
+  using _CXXRT_STD ptrdiff_t;
+  #else
+  #  define STD ::std::
+  using namespace ::std;
+  #endif
+
+  int main(int ac, char *av[])
+  {
+    STD istream_iterator<int>* iip1 = 0;
+    STD istream_iterator<int, char>* iip2 = iip1;
+    STD istream_iterator<int, char, STD char_traits<char> >* iip3 = iip2;
+    STD istream_iterator<int, char, STD char_traits<char>, ptrdiff_t>* iip4 = iip3;
+    
+    check_fct_type<bool>(*iip1 == *iip2);
+    check_fct_type<bool>(STD operator== (*iip1, *iip2));
+    check_fct_type<bool>(*iip1 != *iip2);
+    check_fct_type<bool>(STD operator!= (*iip1, *iip2));
+    
+    STD ostream_iterator<int>* oip1 = 0;
+    STD ostream_iterator<int, char>* oip2 = oip1;
+    STD ostream_iterator<int, char, STD char_traits<char> >* oip3 = oip2;
+    use(oip3);
+
+    STD istreambuf_iterator<char>* isp1 = 0;
+    STD istreambuf_iterator<char, STD char_traits<char> >* isp2 = isp1;
+
+    check_fct_type<bool>(*isp1 == *isp2);
+    check_fct_type<bool>(STD operator== (*isp1, *isp2));
+    check_fct_type<bool>(*isp1 != *isp2);
+    check_fct_type<bool>(STD operator!= (*isp1, *isp2));
+    
+    STD ostreambuf_iterator<char>* osp1 = 0;
+    STD ostreambuf_iterator<char, STD char_traits<char> >* osp2 = osp1;
+    use(osp2);
+
+    return 0;
+  }
+}

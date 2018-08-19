@@ -1,0 +1,75 @@
+#!/usr/local/bin/expect
+# -*-C++-*- iter-24-5-1.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  Template class istream_iterator
+# Version: $Id: iter-24-5-1.exp,v 1.1.1.1 2002/06/05 01:02:55 dietmar_kuehl Exp $ 
+# -------------------------------------------------------------------------- 
+#-dk:TODO function tests.
+
+inline_compile {
+  #include <iterator>
+  #if !defined(STD)
+  #  if !defined(_CXXRT_STD)
+  #    define STD std::
+  #  else
+  #    define STD _CXXRT_STD
+  #  endif
+  #endif
+
+  template <class T> void test_pointer_type(T*) {}
+  template <class T> void test_ref_type(T&) {}
+  template <class T> void equal_types(T**, T**) {}
+  template <class T, class S> void test_type()
+    {
+      T* tptr = 0;
+      S* sptr = 0;
+      equal_types(&tptr, &sptr);
+    }
+
+  template <class cT, class T>
+    void test_istream_iterator()
+    {
+      STD istream_iterator<T, cT> *it = 0;
+      test_pointer_type< STD istream_iterator<T, cT, STD char_traits<cT>, STD ptrdiff_t> >(it);
+      test_pointer_type< STD iterator< STD input_iterator_tag, T, STD ptrdiff_t, T const*, T const&> >(it);
+
+      test_type<cT, typename STD istream_iterator<T, cT>::char_type>();
+      test_type< STD char_traits<cT>, typename STD istream_iterator<T, cT>::traits_type>();
+      test_type< STD basic_istream<cT>, typename STD istream_iterator<T, cT>::istream_type>();
+      
+    }
+
+  struct foobar {};
+  template <class cT>
+    STD basic_istream<cT>& operator>> (STD basic_istream<cT>& out, foobar&) { return out; }
+
+  int main()
+  {
+    test_istream_iterator<char, int>();
+    test_istream_iterator<char, foobar>();
+    test_istream_iterator<wchar_t, int>();
+    test_istream_iterator<wchar_t, foobar>();
+  }
+}

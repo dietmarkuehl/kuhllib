@@ -1,0 +1,136 @@
+#!/usr/local/bin/expect
+# -*-C++-*- sstream1.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  Basic Tests for basic_stringbuf
+# Version: $Id: sstream1.exp,v 1.1.1.1 2002/06/05 01:02:39 dietmar_kuehl Exp $
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+
+  #include <sstream>
+  #include <iostream>
+  #include <algorithm>
+  #include <iterator>
+
+  #if !defined(_CXXRT_STD)
+  #  define STD std::
+  #else
+  #  define STD _CXXRT_STD
+  #endif
+
+  template <class InIt, class OutIt>
+  inline void my_copy(InIt beg, InIt end, OutIt to)
+    {
+      for (; beg != end; ++beg, ++to)
+	*to = *beg;
+    }
+
+  int main(int ac, char *av[])
+  {
+    if (ac < 2)
+      return -1;
+
+    char def[] = {'d', 'e', 'f', 'a', 'u', 'l', 't' };
+    char str[] = {'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd' }; 
+    char hello[] = {'h', 'e', 'l', 'l', 'o' }; 
+    STD basic_stringbuf<char> sbuf;
+    
+    switch (av[1][0])
+      {
+      case '1':
+        {
+          sbuf.sputn(str, sizeof(str));
+        }
+        break;
+      case '2':
+        {
+          for (unsigned int i = 0; i < sizeof(str); ++i)
+            sbuf.sputc(str[i]);
+        }
+        break;
+      case '3':
+        {
+          for (unsigned int i = 0; i < sizeof(str); i += 3)
+            {
+              sbuf.sputc('.');
+              sbuf.sputn(str + i, (i + 3 <= sizeof(str))? 3: sizeof(str) - i);
+            }
+          sbuf.sputc('.');
+        }
+        break;
+      case '4':
+        {
+          sbuf.str("..... world");
+          sbuf.sputn(hello, sizeof(hello));
+        }
+        break;
+      case '5':
+        {
+          sbuf.str("..... world");
+          for (unsigned int i = 0; i < sizeof(hello); ++i)
+            sbuf.sputc(hello[i]);
+        }
+        break;
+      default:
+        {
+          sbuf.sputn(def, sizeof(def));
+        }
+        break;
+      }
+    
+    STD basic_string<char, STD char_traits<char> > s = sbuf.str();
+    STD cout << "size: " << s.size() << "\n";
+    STD cout << "->";
+    my_copy(s.begin(), s.end(), STD ostreambuf_iterator<char>(STD cout));
+    STD cout << "<-\n";
+    
+    return 0;
+  }
+}
+
+simple_test "sstream::sputn()" "1" {
+size: 11
+->hello world<-
+}
+
+simple_test "sstream::sputc()" "2" {
+size: 11
+->hello world<-
+}
+
+simple_test "sstream::sputc() + sstream::sputn()" "3" {
+size: 16
+->.hel.lo .wor.ld.<-
+}
+
+simple_test "sstream::str() + sstream::sputn()" "4" {
+size: 11
+->hello world<-
+}
+
+simple_test "sstream::str() + sstream::sputc()" "5" {
+size: 11
+->hello world<-
+}

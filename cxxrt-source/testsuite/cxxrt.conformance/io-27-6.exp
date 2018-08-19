@@ -1,0 +1,118 @@
+#!/usr/local/bin/expect
+# -*-C++-*- io-27-6.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  Formatting and manipulators 
+# Version: $Id: io-27-6.exp,v 1.1.1.1 2002/06/05 01:02:49 dietmar_kuehl Exp $
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <istream>
+  #include <ostream>
+  #if !defined(_CXXRT_STD)
+  #  define STD std::
+  #else
+  #  define STD _CXXRT_STD
+  #endif
+
+  template <class T> void check_ref_type(T) {}
+
+  int main(int, char *[])
+  {
+    STD basic_istream<char>    *in  = 0;
+    STD basic_istream<wchar_t> *win = 0;
+
+    check_ref_type< STD basic_istream<char, STD char_traits<char> >&>(*in);
+    check_ref_type< STD istream&>(*in);
+
+    check_ref_type< STD basic_istream<wchar_t, STD char_traits<wchar_t> >&>(*win);
+    check_ref_type< STD wistream&>(*win);
+
+    check_ref_type< STD basic_istream<char>&>(STD ws(*in));
+    check_ref_type< STD basic_istream<wchar_t>&>(STD ws(*win));
+
+    STD basic_iostream<char>    *io = 0;
+    STD basic_iostream<wchar_t> *wio = 0;
+
+    check_ref_type< STD basic_iostream<char, STD char_traits<char> >&>(*io);
+    check_ref_type< STD iostream&>(*io);
+
+    check_ref_type< STD basic_iostream<wchar_t, STD char_traits<wchar_t> >&>(*wio);
+    check_ref_type< STD wiostream&>(*wio);
+    
+    return 0;
+  }
+}
+
+inline_compile {
+  #include <ostream>
+  #if !defined(_CXXRT_STD)
+  #  define STD std::
+  #else
+  #  define STD _CXXRT_STD
+  #endif
+
+  template <class T> void check_ref_type(T) {}
+  int main(int, char *[])
+  {
+    STD basic_ostream<char>    *out  = 0;
+    STD basic_ostream<wchar_t> *wout = 0;
+
+    check_ref_type< STD basic_ostream<char, STD char_traits<char> >&>(*out);
+    check_ref_type< STD ostream&>(*out);
+    check_ref_type< STD basic_ostream<char>&>(STD endl(*out));
+    check_ref_type< STD basic_ostream<char>&>(STD ends(*out));
+    check_ref_type< STD basic_ostream<char>&>(STD flush(*out));
+
+    check_ref_type< STD basic_ostream<wchar_t, STD char_traits<wchar_t> >&>(*wout);
+    check_ref_type< STD wostream&>(*wout);
+    check_ref_type< STD basic_ostream<wchar_t>&>(STD endl(*wout));
+    check_ref_type< STD basic_ostream<wchar_t>&>(STD ends(*wout));
+    check_ref_type< STD basic_ostream<wchar_t>&>(STD flush(*wout));
+
+    return 0;
+  }
+}
+
+inline_compile {
+  #include <iomanip>
+  #if !defined(_CXXRT_STD)
+  #  define STD std::
+  #else
+  #  define STD _CXXRT_STD
+  #endif
+
+  int main(int, char *[])
+  {
+    STD resetiosflags(STD ios_base::uppercase);
+    STD setiosflags(STD ios_base::uppercase);
+    STD setbase(10);
+    STD setfill('a');
+    STD setfill(L'a');
+    STD setprecision(10);
+    STD setw(10);
+
+    return 0;
+  }
+}

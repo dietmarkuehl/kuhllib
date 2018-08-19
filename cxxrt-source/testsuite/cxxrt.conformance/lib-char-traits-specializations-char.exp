@@ -1,0 +1,86 @@
+#!/usr/local/bin/expect
+# -*-C++-*- cxxrt.conformance/lib-char-traits-specializations-char.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  struct char_traits<char>
+# Version: $Id: lib-char-traits-specializations-char.exp,v 1.1.1.1 2002/06/05 01:03:07 dietmar_kuehl Exp $ 
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <string>
+  #if !defined(STD)
+  #  if !defined(_CXXRT_STD)
+  #    define STD std::
+  using namespace std;
+  #  else
+  #    define STD _CXXRT_STD
+  using STD mbstate_t;
+  using STD size_t;
+  #  endif
+  #endif
+
+  template <class T> inline void test_type() {}
+  template <class T> inline void check_type(T const&) {}
+
+  template <class T> void same_type_help(T const*, T const*) {}
+  template <class T, class S>
+  struct same_type_struct {
+    same_type_struct() { same_type_help(static_cast<T const*>(0), static_cast<S const*>(0)); }
+  };
+  template <class T, class S>
+  struct same_type_struct<T&, S&> {
+    same_type_struct() { same_type_help(static_cast<T const*>(0), static_cast<S const*>(0)); }
+  };
+  template <class T, class S> inline void same_type() { same_type_struct<T, S>(); }
+
+  int main()
+  {
+    same_type<char, STD char_traits<char>::char_type>();
+    same_type<int, STD char_traits<char>::int_type>();
+    same_type< STD streamoff, STD char_traits<char>::off_type>();
+    same_type< STD streampos, STD char_traits<char>::pos_type>();
+    same_type<mbstate_t, STD char_traits<char>::state_type>();
+
+    check_type<void (*)(char&, char const&)>(static_cast<void(*)(char&, char const&)>(&STD char_traits<char>::assign));
+
+    check_type<bool (*)(char const&, char const&)>(&STD char_traits<char>::eq);
+    check_type<bool (*)(char const&, char const&)>(&STD char_traits<char>::lt);
+
+    check_type<int (*)(const char*, const char*, size_t)>(&STD char_traits<char>::compare);
+
+    check_type<size_t (*)(const char*)>(&STD char_traits<char>::length);
+    check_type<const char* (*)(const char*, size_t, const char&)>(&STD char_traits<char>::find);
+    check_type<char* (*)(char*, const char*, size_t)>(&STD char_traits<char>::move);
+    check_type<char* (*)(char*, const char*, size_t)>(&STD char_traits<char>::copy);
+    check_type<char* (*)(char*, size_t, char)>(static_cast<char*(*)(char*, size_t, char)>(&STD char_traits<char>::assign));
+
+    check_type<int (*)(const int&)>(&STD char_traits<char>::not_eof);
+    check_type<char (*)(const int&)>(&STD char_traits<char>::to_char_type);
+    check_type<int (*)(char const&)>(&STD char_traits<char>::to_int_type);
+    check_type<bool (*)(const int&, const int&)>(&STD char_traits<char>::eq_int_type);
+    check_type<int (*)()>(&STD char_traits<char>::eof);
+
+    return 0;
+  }
+}

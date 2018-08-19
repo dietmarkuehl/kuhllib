@@ -1,0 +1,69 @@
+This file briefly describes the overall structure of the directory
+hierarchy containing the sources and headers implementing the IOStream
+and locale library of the standard C++ library.
+
+- doc
+  I hope that this directory will not stay empty like it is currently:
+  eventually it should contain a whole documentation suite for the locales
+  and IOStreams library. However, currently it is empty but I hope to find
+  the time to create documentation.
+
+- examples
+  Like the doc directory this directory has good chances to end up basically
+  unused... However, I already have some examples available which merely
+  need to be updated to compile with the stuff and which can then be placed
+  into this directory.
+
+- extensions
+  This directory is intended for extension which are non-standard. For
+  example I'm planning to make something like a POSIX streambuf available
+  which is mainly identical to the basic_filebuf except that it includes
+  additional functionality which is not required by the standard (eg. access
+  to the file descriptor).
+
+- include
+  All files considered to be header files. This partially includes sources
+  due to the fact that the separation model is not completely supported.
+  However, at least for locales and IOStreams the implementation of the
+  stuff is not included automatically but factored into special
+  implementation header files. These are then included into a file used
+  for an explicit instantiation of a template.
+
+  - .
+    This directory mainly stores the forwarding headers, ie. those funny
+    headers without an extension. It is also root of the other directories
+    which store the headers with the actual implementation.
+    In this directory are also the headers which include the implementation
+    files. These are included to generate explicit instantiations of the
+    standard template classes. These headers include macros which can be
+    used to faciliate instantation of a whole bunch of classes.
+
+  - cxxrt
+    This directory stores all headers which declare the standard classes
+    implemented here. This separation is choosen to avoid littering the
+    directory first searched by users with lots of auxiliary files.
+
+  - srccxx
+    The files in this directory are the actual implementation of the
+    template classes. These files are used firstly to generate the required
+    instantations of the IOStream classes and the locale facets. However,
+    they are also used for explicit instantations made by users. The
+    explicit instantiations are not necessary if the compiler supports the
+    separation model. In this case the source files should be made aware
+    to the compiler and instantiations should be made automatically by the
+    compiler. However, I haven't heard of any compiler supporting this
+    feature yet...
+
+- src
+  This directory includes all sources. This are basically the
+  instantiations of the required locale facets and IOStreams classes plus,
+  of course, all non-template code.
+
+- testsuite
+  This directory hierarchy contains the whole testsuite used during the
+  development of this library. The test driver used is dejagnu. Thus,
+  the directory testsuite contains subdirectories starting with the name
+  of the component (cxxrt) followed by some suffix. The suffix gives
+  a brief indication what is tested by the files in this directory or
+  by whom
+  the directory and the files therein was created.

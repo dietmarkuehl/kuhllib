@@ -1,0 +1,182 @@
+#!/usr/local/bin/expect
+# -*-C++-*- cxxrt.conformance/lib-support-runtime.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  Other runtime support
+# Version: $Id: lib-support-runtime.exp,v 1.1.1.1 2002/06/05 01:02:42 dietmar_kuehl Exp $ 
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <cstdarg>
+  #if !defined(STD)
+  #  if !defined(_CXXRT_STD)
+  #    define STD std::
+  #  else
+  #    define STD _CXXRT_STD
+  #  endif
+  #endif
+
+  #if !defined(va_arg)
+  #  error "va_arg is not defined"
+  #endif
+  #if !defined(va_end)
+  #  error "va_end is not defined"
+  #endif
+  #if !defined(va_start)
+  #  error "va_start is not defined"
+  #endif
+
+  template <class T> void test_type() {}
+
+  int main()
+  {
+    test_type< STD va_list>();
+    return 0;
+  }
+}
+
+inline_compile {
+  #include <csetjmp>
+  #if !defined(STD)
+  #  if !defined(_CXXRT_STD)
+  #    define STD std::
+  #  else
+  #    define STD _CXXRT_STD
+  #  endif
+  #endif
+
+  #if !defined(setjmp)
+  #  error "setjmp is not defined"
+  #endif
+
+  template <class T> void test_type() {}
+
+  int main()
+  {
+    STD jmp_buf buf;
+    setjmp(buf);
+    test_type< STD jmp_buf>();
+    STD longjmp(buf, 0); 
+    return 0;
+  }
+}
+
+inline_compile {
+  #include <ctime>
+  #if !defined(STD)
+  #  if !defined(_CXXRT_STD)
+  #    define STD std::
+  #  else
+  #    define STD _CXXRT_STD
+  #  endif
+  #endif
+
+  #if !defined(CLOCKS_PER_SEC)
+  #  error "CLOCKS_PER_SEC is not defined"
+  #endif
+
+  template <class T> void test_type() {}
+  template <class T> void check_type(T const&) {}
+
+  int main()
+  {
+    test_type< STD clock_t>();
+    check_type< STD clock_t>(STD clock());
+    return 0;
+  }
+}
+
+inline_compile {
+  #include <csignal>
+  #if !defined(STD)
+  #  if !defined(_CXXRT_STD)
+  #    define STD std::
+  #  else
+  #    define STD _CXXRT_STD
+  #  endif
+  #endif
+
+  #if !defined(SIGABRT)
+  #  error "SIGABRT is not defined"
+  #endif
+  #if !defined(SIGILL)
+  #  error "SIGILL is not defined"
+  #endif
+  #if !defined(SIGSEGV)
+  #  error "SIGSEGV is not defined"
+  #endif
+  #if !defined(SIG_DFL)
+  #  error "SIG_DFL is not defined"
+  #endif
+  #if !defined(SIG_IGN)
+  #  error "SIG_IGN is not defined"
+  #endif
+  #if !defined(SIGFPE)
+  #  error "SIGFPE is not defined"
+  #endif
+  #if !defined(SIGINT)
+  #  error "SIGINT is not defined"
+  #endif
+  #if !defined(SIGTERM)
+  #  error "SIGTERM is not defined"
+  #endif
+  #if !defined(SIG_ERR)
+  #  error "SIG_ERR is not defined"
+  #endif
+
+  template <class T> void test_type() {}
+  template <class T> void check_type(T const&) {}
+
+  void sig(int) {}
+
+  int main()
+  {
+    test_type< STD sig_atomic_t>();
+    check_type<void (*)(int)>(STD signal(SIGTERM, sig));
+    check_type<int>(STD raise(SIGTERM));
+
+    STD signal(SIGTERM, SIG_DFL);
+    STD signal(SIGTERM, SIG_IGN);
+    return 0;
+  }
+}
+
+inline_compile {
+  #include <cstdlib>
+  #if !defined(STD)
+  #  if !defined(_CXXRT_STD)
+  #    define STD std::
+  #  else
+  #    define STD _CXXRT_STD
+  #  endif
+  #endif
+
+  template <class T> void check_type(T const&) {}
+
+  int main()
+  {
+    check_type<char const*>(STD getenv("HOME"));
+    return 0;
+  }
+}

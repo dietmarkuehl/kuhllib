@@ -1,0 +1,94 @@
+#!/usr/local/bin/expect
+# -*-C++-*- lib-default-allocator.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  The default allocator 
+# Version: $Id: lib-default-allocator.exp,v 1.1.1.1 2002/06/05 01:03:41 dietmar_kuehl Exp $ 
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include "testtools.hpp"
+  #include <memory>
+
+  #if defined(_ESTD_STD)
+  #  define STD _ESTD_STD
+  using STD size_t;
+  using STD ptrdiff_t;
+  #elif defined(_CXXRT_STD)
+  #  define STD _CXXRT_STD
+  using STD size_t;
+  using STD ptrdiff_t;
+  #else
+  #  define STD ::std::
+  using namespace std;
+  #endif
+
+  struct foo
+  {
+  };
+
+  struct bar
+  {
+  };
+
+  int main()
+  {
+    compare_types< STD allocator<void>::pointer, void*>();
+    compare_types< STD allocator<void>::const_pointer, void const*>();
+    compare_types< STD allocator<void>::value_type, void>();
+    compare_types< STD allocator<void>::rebind<foo>::other, STD allocator<foo> >();
+    
+    compare_types< STD allocator<foo>::size_type, size_t>();
+    compare_types< STD allocator<foo>::difference_type, ptrdiff_t>();
+    compare_types< STD allocator<foo>::pointer, foo*>();
+    compare_types< STD allocator<foo>::const_pointer, foo const*>();
+    compare_types< STD allocator<foo>::reference, foo&>();
+    compare_types< STD allocator<foo>::const_reference, foo const&>();
+    compare_types< STD allocator<foo>::value_type, foo>();
+    compare_types< STD allocator<foo>::rebind<bar>::other, STD allocator<bar> >();
+    
+    STD allocator<foo> a1;
+    STD allocator<foo> a2(a1);
+    STD allocator<bar> a3(const_cast< STD allocator<foo> const&>(a2));
+
+    a1 = a2;
+    
+    bar b;
+    check_fct_type<bar*>(a3.address(b));
+    check_fct_type<bar const*>(a3.address(const_cast<bar const&>(b)));
+
+    check_fct_type<bar*>(a3.allocate(size_t(1)));
+    check_fct_type<bar*>(a3.allocate(size_t(1), static_cast<void const*>(0)));
+    
+    bar* bp = a3.allocate(1);
+    bar const& br = b;
+    a3.construct(bp, br);
+    a3.destroy(bp);
+
+    a3.deallocate(bp, size_t(1));
+    check_fct_type<size_t>(const_cast< STD allocator<bar> const&>(a3).max_size());
+
+    return 0;
+  } 
+}

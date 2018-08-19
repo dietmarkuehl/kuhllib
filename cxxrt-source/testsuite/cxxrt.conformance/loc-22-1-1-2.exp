@@ -1,0 +1,214 @@
+#!/usr/local/bin/expect
+# -*-C++-*- loc-22-1-1-2.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  locale constructors and destructors
+# Version: $Id: loc-22-1-1-2.exp,v 1.2 2006/04/07 07:07:13 dietmar_kuehl Exp $
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <locale>
+  #include <iostream>
+  #include <string>
+  #if !defined(_CXXRT_STD)
+  using namespace std;
+  #  define STD std::
+  #else
+  #  define STD _CXXRT_STD
+  using STD mbstate_t;
+  #endif
+
+  void result(bool rc)
+  {
+    STD cout << (rc? "test OK": "test failed") << "\n";
+  }
+
+  int main(int ac, char *av[])
+  {
+    if (ac != 2)
+      {
+        STD cerr << "wrong number of arguments\n";
+        return 1;
+      }
+
+    switch (av[1][0])
+      {
+      case '0':
+        {
+          result(STD locale() == STD locale::classic());
+          STD locale l(STD locale::classic(), new STD numpunct<char>);
+          result(STD locale::global(l) == STD locale::classic());
+          result(STD locale() == STD locale::global(l));
+          result(STD locale() != STD locale::classic());
+        }
+        break;
+      case '1':
+        {
+          STD locale l(STD locale::classic(), new STD numpunct<char>);
+          result(l == STD locale(l));
+        }
+        break;
+      case '2':
+        {
+          STD locale l(STD locale::classic(), new STD numpunct<char>);
+          result(l != STD locale::classic());
+          l = STD locale::classic();
+          result(l == STD locale::classic());
+        }
+        break;
+      case '3':
+        {
+          result(STD locale("C") == STD locale::classic());
+          result(STD locale("") != STD locale::classic());
+
+
+	  try
+	    {
+	      STD locale deloc("de_DE"); // make sure everyone has MY locale installed ;-)
+	      STD cout << deloc.name().c_str() << "\n";
+	    }
+	  catch (...)
+	    {
+	      STD cout << "construction of de_DE failed\n";
+	    }
+
+          STD locale loc("C");
+          STD cout << loc.name().c_str() << "\n";
+
+          result(STD has_facet< STD collate<char> >(loc));
+          result(STD has_facet< STD collate<wchar_t> >(loc));
+          result(STD has_facet< STD ctype<char> >(loc));
+          result(STD has_facet< STD ctype<wchar_t> >(loc));
+          result(STD has_facet< STD codecvt<char, char, mbstate_t> >(loc));
+          result(STD has_facet< STD codecvt<wchar_t, char, mbstate_t> >(loc));
+          result(STD has_facet< STD moneypunct<char, false> >(loc));
+          result(STD has_facet< STD moneypunct<char, true> >(loc));
+          result(STD has_facet< STD moneypunct<wchar_t, false> >(loc));
+          result(STD has_facet< STD moneypunct<wchar_t, true> >(loc));
+          result(STD has_facet< STD money_get<char> >(loc));
+          result(STD has_facet< STD money_get<wchar_t> >(loc));
+          result(STD has_facet< STD money_put<char> >(loc));
+          result(STD has_facet< STD money_put<wchar_t> >(loc));
+          result(STD has_facet< STD numpunct<char> >(loc));
+          result(STD has_facet< STD numpunct<wchar_t> >(loc));
+          result(STD has_facet< STD num_get<char> >(loc));
+          result(STD has_facet< STD num_get<wchar_t> >(loc));
+          result(STD has_facet< STD num_put<char> >(loc));
+          result(STD has_facet< STD num_put<wchar_t> >(loc));
+          result(STD has_facet< STD time_get<char> >(loc));
+          result(STD has_facet< STD time_get<wchar_t> >(loc));
+          result(STD has_facet< STD time_put<char> >(loc));
+          result(STD has_facet< STD time_put<wchar_t> >(loc));
+          result(STD has_facet< STD messages<char> >(loc));
+          result(STD has_facet< STD messages<wchar_t> >(loc));
+        }
+        break;
+      case '4':
+        {
+          STD locale l1(STD locale::classic(), "de_DE", STD locale::ctype | STD locale::messages);
+          STD cout << l1.name().c_str() << "\n";
+          STD locale l2(l1, "en_US", STD locale::time);
+          STD cout << l2.name().c_str() << "\n";
+        }
+        break;
+      case '5':
+        {
+          STD locale l1(STD locale::classic(), new STD numpunct<char>);
+          STD cout << l1.name().c_str() << "\n";
+        }
+        break;
+      case '6':
+        {
+          // actually from locale 22.1.1.3
+          STD locale l1("de_DE");
+          STD cout << l1.combine< STD numpunct<char> >(STD locale::classic()).name().c_str() << "\n";
+        }
+        break;
+      }
+
+    return 0;
+  }
+}
+
+simple_test "locale default ctor" "0" {
+test OK
+test OK
+test OK
+test OK
+}
+
+simple_test "locale copy ctor" "1" {
+test OK
+}
+
+simple_test "locale copy assignment" "2" {
+test OK
+test OK
+}
+
+simple_test "locale construction from a name" "3" {
+test OK
+test OK
+de_DE
+C
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+}
+
+simple_test "locale from two locales by category" "4" {
+de_DE;C;C;C;C;de_DE
+de_DE;C;en_US;C;C;de_DE
+}
+
+simple_test "locale from a locale and a facet" "5" {
+*
+}
+
+simple_test "locale from two locales by facet" "6" {
+*
+}

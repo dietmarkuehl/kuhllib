@@ -1,0 +1,84 @@
+#!/usr/local/bin/expect
+# -*-C++-*- loc-22-2-3-1.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  Template class numpunct
+# Version: $Id: loc-22-2-3-1.exp,v 1.1.1.1 2002/06/05 01:03:32 dietmar_kuehl Exp $
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <locale>
+  #include <string>
+  #if !defined(_CXXRT_STD)
+  #  define STD std::
+  #else
+  #  define STD _CXXRT_STD
+  #endif
+
+  template <class T> inline void check_type(T const&) {}
+
+  template <class Facet>
+  inline void test_public(Facet const &np)
+  {
+    check_type< STD locale::facet>(np);
+    typedef typename Facet::char_type   char_type;
+    typedef typename Facet::string_type string_type;
+
+    check_type<Facet*>(new Facet);
+    check_type<Facet*>(new Facet(1));
+
+    check_type<char_type>(np.decimal_point());
+    check_type<char_type>(np.thousands_sep());
+    check_type< STD string>(np.grouping());
+    check_type<string_type>(np.truename());
+    check_type<string_type>(np.falsename());
+    
+    check_type< STD locale::id>(Facet::id);
+  }
+
+  template <class T>
+  class test_protected: public STD numpunct<T>
+  {
+    typedef typename STD numpunct<T>::char_type char_type;
+    typedef typename STD numpunct<T>::string_type string_type;
+
+  public:
+    test_protected()
+    {
+      check_type<char_type>(this->do_decimal_point());
+      check_type<char_type>(this->do_thousands_sep());
+      check_type< STD string>(this->do_grouping());
+      check_type<string_type>(this->do_truename());
+      check_type<string_type>(this->do_falsename());
+    }
+  };
+
+  int main(int, char *[])
+  {
+    test_public(STD use_facet< STD numpunct<char> >(STD locale::classic()));
+    test_public(STD use_facet< STD numpunct<wchar_t> >(STD locale::classic()));
+    test_protected<char>();
+    test_protected<wchar_t>();
+  }
+}

@@ -1,0 +1,93 @@
+# -*-makefile-*-
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author:  Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:   makefile for the generation of the standard C++ library stuff
+# Version: $Id: Makefile.in,v 1.2 2002/06/07 00:46:11 dietmar_kuehl Exp $
+# -------------------------------------------------------------------------- 
+
+@SET_MAKE@
+
+SUBDIRS = \
+	include \
+	src \
+	testsuite
+
+LIBBASE = cxxrt
+SLIBRARY = lib$(LIBBASE).so
+LIBRARY = lib$(LIBBASE).a
+
+CC       = $(CXX)
+CXX      = @CXX@
+# should be: CXXFLAGS = -g -W -Wall -Weffc++ -Iinclude
+CXXFLAGS = -g -W -Wall -Iinclude
+LDLIBS   = -l$(LIBBASE)
+LDFLAGS  = -L.
+
+# -------------------------------------------------------------------------- 
+
+default: $(SLIBRARY)
+$(SLIBRARY): empty
+	cd src; $(MAKE) ../$(SLIBRARY)
+
+lib$(LIBBASE).a: empty
+	cd src; $(MAKE) ../lib$(LIBBASE).a
+
+test check: $(LIBRARY) empty
+	cd testsuite; $(MAKE) check
+
+depend:
+	for dir in $(SUBDIRS); do cd $$dir; $(MAKE) depend; cd ..; done
+
+empty:
+
+# -------------------------------------------------------------------------- 
+
+INSTALLDIR = /usr/local/lib/cxxrt
+INSTALLLIB = $(INSTALLDIR)
+INSTALL    = install
+RANLIB     = ranlib
+
+install: libcxxrt.a libcxxrt.so
+	mkdirhier $(INSTALLDIR)
+	mkdirhier $(INSTALLLIB)
+	$(INSTALL) -m 0444 libcxxrt.a $(INSTALLLIB)
+	$(RANLIB) $(INSTALLLIB)/libcxxrt.a
+	$(INSTALL) -m 0555 libcxxrt.so $(INSTALLLIB)
+	for dir in $(SUBDIRS); do cd $$dir; $(MAKE) INSTALLDIR=$(INSTALLDIR) install; cd ..; done
+
+# -------------------------------------------------------------------------- 
+
+clean.local:
+	$(RM) *~ #*#
+	$(RM) mkerr olderr
+
+clean: clean.local
+	for dir in $(SUBDIRS); do cd $$dir; $(MAKE) clean; cd ..; done
+
+distclean: clean.local
+	for dir in $(SUBDIRS); do cd $$dir; $(MAKE) distclean; cd ..; done
+	$(RM) cxxrt.a
+	$(RM) config.status config.cache config.log
+	$(RM) Makefile
+

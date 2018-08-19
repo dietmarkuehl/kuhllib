@@ -1,0 +1,230 @@
+#!/usr/local/bin/expect
+# -*-C++-*- lib-template-valarray.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  Template class valarray
+# Version: $Id: lib-template-valarray.exp,v 1.1.1.1 2002/06/05 01:03:32 dietmar_kuehl Exp $ 
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include "testtools.hpp"
+  #include <valarray>
+
+  #if defined(_ESTD_STD)
+  #  define STD _ESTD_STD
+  using STD size_t;
+  #elif defined(_CXXRT_STD)
+  #  define STD _CXXRT_STD
+  using STD size_t;
+  #else
+  #  define STD ::std::
+  using namespace std;
+  #endif
+
+  template <class T> void f(STD valarray<T> const&) {}
+  template <class T> void fs(STD slice_array<T> const&) {}
+  template <class T> void fg(STD gslice_array<T> const&) {}
+  template <class T> void fm(STD mask_array<T> const&) {}
+  template <class T> void fi(STD indirect_array<T> const&) {}
+
+  template <class T> T func1(T) { return T(); }
+  template <class T> T func2(T const&) { return T(); }
+
+  template <class T>
+    void test_float()
+    {
+      compare_types<T, typename STD valarray<T>::value_type>();
+
+      T t;
+      STD slice                    sl;
+      STD gslice                   gs;
+      STD valarray<bool>           vb;
+      STD valarray<size_t>         vs;
+      STD valarray<T>              va;
+      STD valarray<T> const&       cva = va;
+
+      STD slice_array<T> const&    sa = va[sl];
+      STD gslice_array<T> const&   ga = va[gs];
+      STD mask_array<T> const&     ma = va[vb];
+      STD indirect_array<T> const& ia = va[vs];
+
+      STD valarray<T> va1; use(va1);
+      STD valarray<T> va2(size_t(5)); use(va2);
+      STD valarray<T> va3(t, size_t(5)); use(va3);
+      STD valarray<T> va4(&t, size_t(5)); use(va3);
+      STD valarray<T> va5(cva); use(va5);
+      STD valarray<T> va6(sa); use(va6);
+      STD valarray<T> va7(ga); use(va7);
+      STD valarray<T> va8(ma); use(va8);
+      STD valarray<T> va9(ia); use(va9);
+
+      f(va = cva);
+      f(va = t);
+      f(va = sa);
+      f(va = ga);
+      f(va = ma);
+      f(va = ia);
+
+      T const& t1 = cva[0]; use(t1);
+      T&       t2 = va[0]; use(t2);
+
+      f(cva[sl]);
+      fs(va[sl]);
+      f(cva[gs]);
+      fg(va[gs]);
+      f(cva[vb]);
+      fm(va[vb]);
+      f(cva[vs]);
+      fi(va[vs]);
+
+      f(+cva);
+      f(-cva);
+      f(!cva);
+
+      f(va += t);
+      f(va -= t);
+      f(va *= t);
+      f(va /= t);
+
+      f(va += cva);
+      f(va -= cva);
+      f(va *= cva);
+      f(va /= cva);
+
+      check_fct_type<size_t>(cva.size());
+
+      check_fct_type<T>(cva.sum());
+      check_fct_type<T>(cva.min());
+      check_fct_type<T>(cva.max());
+
+      f(cva.shift(4));
+      f(cva.cshift(4));
+
+      f(cva.apply(static_cast<T (*)(T)>(func1)));
+      f(cva.apply(static_cast<T (*)(T const&)>(func2)));
+
+      va.resize(size_t(5));
+      va.resize(size_t(5), T());
+    }
+
+  template <class T>
+    void test_int()
+    {
+      compare_types<T, typename STD valarray<T>::value_type>();
+
+      T t;
+      STD slice                    sl;
+      STD gslice                   gs;
+      STD valarray<bool>           vb;
+      STD valarray<size_t>     vs;
+      STD valarray<T>              va;
+      STD valarray<T> const&       cva = va;
+
+      STD slice_array<T> const&    sa = va[sl];
+      STD gslice_array<T> const&   ga = va[gs];
+      STD mask_array<T> const&     ma = va[vb];
+      STD indirect_array<T> const& ia = va[vs];
+
+      STD valarray<T> va1; use(va1);
+      STD valarray<T> va2(size_t(5)); use(va2);
+      STD valarray<T> va3(t, size_t(5)); use(va3);
+      STD valarray<T> va4(&t, size_t(5)); use(va3);
+      STD valarray<T> va5(cva); use(va5);
+      STD valarray<T> va6(sa); use(va6);
+      STD valarray<T> va7(ga); use(va7);
+      STD valarray<T> va8(ma); use(va8);
+      STD valarray<T> va9(ia); use(va9);
+
+      f(va = cva);
+      f(va = t);
+      f(va = sa);
+      f(va = ga);
+      f(va = ma);
+      f(va = ia);
+
+      T const& t1 = cva[0]; use(t1);
+      T&       t2 = va[0]; use(t2);
+
+      f(cva[sl]);
+      fs(va[sl]);
+      f(cva[gs]);
+      fg(va[gs]);
+      f(cva[vb]);
+      fm(va[vb]);
+      f(cva[vs]);
+      fi(va[vs]);
+
+      f(+cva);
+      f(-cva);
+      f(~cva);
+      f(!cva);
+
+      f(va += t);
+      f(va -= t);
+      f(va *= t);
+      f(va /= t);
+      f(va %= t);
+      f(va <<= t);
+      f(va >>= t);
+      f(va |= t);
+      f(va ^= t);
+      f(va &= t);
+
+      f(va += cva);
+      f(va -= cva);
+      f(va *= cva);
+      f(va /= cva);
+      f(va %= cva);
+      f(va <<= cva);
+      f(va >>= cva);
+      f(va |= cva);
+      f(va ^= cva);
+      f(va &= cva);
+
+      check_fct_type<size_t>(cva.size());
+
+      check_fct_type<T>(cva.sum());
+      check_fct_type<T>(cva.min());
+      check_fct_type<T>(cva.max());
+
+      f(cva.shift(4));
+      f(cva.cshift(4));
+
+      f(cva.apply(static_cast<T (*)(T)>(func1)));
+      f(cva.apply(static_cast<T (*)(T const&)>(func2)));
+
+      va.resize(size_t(5));
+      va.resize(size_t(5), T());
+    }
+
+  int main()
+  {
+    test_int<int>();
+    test_int<long>();
+    test_float<float>();
+    test_float<double>();
+    test_float<long double>();
+    return 0;
+  }
+}

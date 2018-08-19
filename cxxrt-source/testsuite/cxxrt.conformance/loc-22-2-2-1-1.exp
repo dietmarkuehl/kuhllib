@@ -1,0 +1,170 @@
+#!/usr/local/bin/expect
+# -*-C++-*- loc-22-2-2-1-1.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  num_get members
+# Version: $Id: loc-22-2-2-1-1.exp,v 1.1.1.1 2002/06/05 01:03:18 dietmar_kuehl Exp $
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <locale>
+  #include <iostream>
+	#include <iterator>
+	#if !defined(_CXXRT_STD)
+	#  define STD std::
+	#else
+	#  define STD _CXXRT_STD
+	#endif
+
+	template <class T> void check_type(T const&) {}
+
+	template <class cT>
+	class test: public STD num_get<cT>
+	{
+		typedef typename STD num_get<cT>::iter_type iter_type;
+
+		iter_type do_get(iter_type, iter_type, STD ios_base&, STD ios_base::iostate&, bool&) const
+		{
+			STD cout << "do_get(bool)\n";
+			return iter_type();
+		}
+		iter_type do_get(iter_type, iter_type, STD ios_base&, STD ios_base::iostate&, long&) const
+		{
+			STD cout << "do_get(long)\n";
+			return iter_type();
+		}
+		iter_type do_get(iter_type, iter_type, STD ios_base&, STD ios_base::iostate&, unsigned short&) const
+		{
+			STD cout << "do_get(unsigned short)\n";
+			return iter_type();
+		}
+		iter_type do_get(iter_type, iter_type, STD ios_base&, STD ios_base::iostate&, unsigned int&) const
+		{
+			STD cout << "do_get(unsigned int)\n";
+			return iter_type();
+		}
+		iter_type do_get(iter_type, iter_type, STD ios_base&, STD ios_base::iostate&, unsigned long&) const
+		{
+			STD cout << "do_get(unsigned long)\n";
+			return iter_type();
+		}
+		iter_type do_get(iter_type, iter_type, STD ios_base&, STD ios_base::iostate&, float&) const
+		{
+			STD cout << "do_get(float)\n";
+			return iter_type();
+		}
+		iter_type do_get(iter_type, iter_type, STD ios_base&, STD ios_base::iostate&, double&) const
+		{
+			STD cout << "do_get(double)\n";
+			return iter_type();
+		}
+		iter_type do_get(iter_type, iter_type, STD ios_base&, STD ios_base::iostate&, long double&) const
+		{
+			STD cout << "do_get(long double)\n";
+			return iter_type();
+		}
+		iter_type do_get(iter_type, iter_type, STD ios_base&, STD ios_base::iostate&, void*&) const
+		{
+			STD cout << "do_get(void*)\n";
+			return iter_type();
+		}
+	};
+
+  template <class cT>
+	void call()
+  {
+		typedef typename STD num_get<cT>::char_type char_type;
+		typedef typename STD num_get<cT>::iter_type iter_type;
+
+		test<cT> ng;
+
+		iter_type             begin;
+		iter_type             end;
+		STD ios_base::iostate err;
+
+		bool b;
+		check_type<iter_type>(ng.get(begin, end, STD cout, err, b));
+		long l;
+		check_type<iter_type>(ng.get(begin, end, STD cout, err, l));
+		unsigned short us;
+		check_type<iter_type>(ng.get(begin, end, STD cout, err, us));
+		unsigned int ui;
+		check_type<iter_type>(ng.get(begin, end, STD cout, err, ui));
+		unsigned long ul;
+		check_type<iter_type>(ng.get(begin, end, STD cout, err, ul));
+		float f;
+		check_type<iter_type>(ng.get(begin, end, STD cout, err, f));
+		double d;
+		check_type<iter_type>(ng.get(begin, end, STD cout, err, d));
+		long double ld;
+		check_type<iter_type>(ng.get(begin, end, STD cout, err, ld));
+		void *vp;
+		check_type<iter_type>(ng.get(begin, end, STD cout, err, vp));
+  }
+
+  int main(int ac, char *av[])
+  {
+		if (ac != 2)
+			{
+				STD cerr << "wrong number of arguments\n";
+				return 1;
+			}
+
+		switch (av[1][0])
+			{
+			case '0':
+				call<char>();
+				break;
+			case '1':
+				call<wchar_t>();
+				break;
+			}
+
+    return 0;
+  }
+}
+
+simple_test "num_get<char> members" "0" {
+do_get(bool)
+do_get(long)
+do_get(unsigned short)
+do_get(unsigned int)
+do_get(unsigned long)
+do_get(float)
+do_get(double)
+do_get(long double)
+do_get(void*)
+}
+
+simple_test "num_get<wchar_t> members" "1" {
+do_get(bool)
+do_get(long)
+do_get(unsigned short)
+do_get(unsigned int)
+do_get(unsigned long)
+do_get(float)
+do_get(double)
+do_get(long double)
+do_get(void*)
+}

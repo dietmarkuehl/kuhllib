@@ -1,0 +1,92 @@
+#!/usr/local/bin/expect
+# -*-C++-*- lib-character-case-mapping.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  Character Case Mapping Functions
+# Version: $Id: lib-character-case-mapping.exp,v 1.1.1.1 2002/06/05 01:03:49 dietmar_kuehl Exp $ 
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include "testtools.hpp"
+  #include <iostream>
+  #include <limits>
+  #include <cctype>
+
+  #if defined(_CRT_STD)
+  #  define CSTD _CRT_STD
+  #else
+  #  if defined(_CXXRT_STD)
+  #    define CSTD _CXXRT_STD
+  #  else
+  #    define CSTD ::std::
+  #  endif
+  #endif
+  #if defined(_CXXRT_STD)
+  #  define STD _CXXRT_STD
+  #else
+  #  define STD ::std::
+  #endif
+
+  int main(int ac, char *av[])
+  {
+    if (ac != 2)
+      {
+        STD cout << "wrong number of arguments\n";
+        return 1;
+      }
+
+    try
+      {
+	switch (av[1][0])
+	  {
+	  case '0':
+	    {
+	      check_fct_type<int(*)(int)>(CSTD tolower);
+	      for (int i = -1; i < STD numeric_limits<unsigned char>::max(); ++i)
+		if ((CSTD isupper(i) && !CSTD islower(CSTD tolower(i)))
+		    || (!CSTD isupper(i) && i != CSTD tolower(i)))
+		  throw "tolower() returned wong value";
+	      STD cout << "tolower() OK\n";
+	    }
+	    break;
+	  case '1':
+	    {
+	      check_fct_type<int(*)(int)>(CSTD toupper);
+	      for (int i = -1; i < STD numeric_limits<unsigned char>::max(); ++i)
+		if ((CSTD islower(i) && !CSTD isupper(CSTD toupper(i)))
+		    || (!CSTD islower(i) && i != CSTD toupper(i)))
+		  throw "toupper() returned wong value";
+	      STD cout << "toupper() OK\n";
+	    }
+	    break;
+	  }
+      }
+    catch (char const* msg)
+      {
+	STD cout << msg << "\n";
+      }
+	
+    return 0;
+  }
+}

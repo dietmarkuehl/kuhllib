@@ -1,0 +1,89 @@
+#!/usr/local/bin/expect
+# -*-C++-*- depr-strstreambuf.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:   
+# Version: $Id: depr-strstreambuf.exp,v 1.1.1.1 2002/06/05 01:03:17 dietmar_kuehl Exp $ 
+
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <strstream>
+  namespace my_std
+  {
+  #if !defined(_CXXRT_STD)
+  #  define STD std::
+  using namespace std;
+  #else
+  #  define STD _CXXRT_STD
+  using _CXXRT_STD size_t;
+  #endif
+  }
+
+  template <class T> inline void test_type(T const&) {}
+
+  void* my_alloc(my_std::size_t) { return 0; }
+  void  my_free(void*) {}
+
+  void use(STD strstreambuf&) {}
+
+  int main()
+  {
+    // this program is not supposed to run correctly!
+
+    STD streamsize sz = 0;
+    STD strstreambuf sb1; use(sb1);
+    STD strstreambuf sb2(sz); use(sb2);
+    STD strstreambuf sb3(my_alloc, my_free); use(sb3);
+      
+    char* arg = 0;
+    STD strstreambuf sb4(arg, STD streamsize()); use(sb4);
+    STD strstreambuf sb5(arg, STD streamsize(), arg); use(sb5);
+
+    char const* carg = 0;
+    STD strstreambuf sb6(carg, STD streamsize()); use(sb6);
+      
+    signed char* sarg = 0;
+    STD strstreambuf sb7(sarg, STD streamsize()); use(sb7);
+    STD strstreambuf sb8(sarg, STD streamsize(), sarg); use(sb8);
+
+    signed char const* csarg = 0;
+    STD strstreambuf sb9(csarg, STD streamsize()); use(sb9);
+
+    unsigned char* uarg = 0;
+    STD strstreambuf sba(uarg, STD streamsize()); use(sba);
+    STD strstreambuf sbb(uarg, STD streamsize(), uarg); use(sbb);
+
+    unsigned char const* cuarg = 0;
+    STD strstreambuf sbc(cuarg, STD streamsize()); use(sbc);
+
+    STD strstreambuf sbuf;
+    sbuf.freeze();
+    sbuf.freeze(true);
+    test_type<char*>(sbuf.str());
+    test_type<int>(sbuf.pcount());
+
+    return 0;
+  }
+}

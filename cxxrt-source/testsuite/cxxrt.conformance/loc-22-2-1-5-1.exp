@@ -1,0 +1,154 @@
+#!/usr/local/bin/expect
+# -*-C++-*- loc-22-2-1-5-1.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  codecvt members
+# Version: $Id: loc-22-2-1-5-1.exp,v 1.1.1.1 2002/06/05 01:03:21 dietmar_kuehl Exp $
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <locale>
+  #include <iostream>
+  #include <cstdlib>
+  #if !defined(_CXXRT_STD)
+  #  define STD std::
+  using namespace std;
+  #else
+  #  define STD _CXXRT_STD
+  using STD size_t;
+  using STD mbstate_t;
+  #endif
+
+  template <class T> inline void check_type(T const&) {}
+
+  template <class iT, class eT, class sT>
+  class test_protected: public STD codecvt<iT, eT, sT>
+  {
+  protected:
+    STD codecvt_base::result do_out(sT&, iT const*, iT const*, iT const*&, eT*, eT*, eT*&) const
+    {
+      STD cout << "do_out(s, ib, ie, in, eb, ee, en)\n";
+      return STD codecvt_base::noconv;
+    }
+    STD codecvt_base::result do_unshift(sT&, eT*, eT*, eT*&) const
+    {
+      STD cout << "do_unshift(s, eb, ee, en)\n";
+      return STD codecvt_base::noconv;
+    }
+    STD codecvt_base::result do_in(sT&, eT const*, eT const*, eT const*&, iT*, iT*, iT*&) const
+    {
+      STD cout << "do_in(s, eb, ee, en, ib, ie, in)\n";
+      return STD codecvt_base::noconv;
+    }
+      
+    int do_encoding() const throw()
+    {
+      STD cout << "do_encoding()\n";
+      return 0;
+    }
+    bool do_always_noconv() const throw()
+    {
+      STD cout << "do_always_noconv()\n";
+      return true;
+    }
+    int do_length(sT const&, eT const*, eT const*, size_t) const
+    {
+      STD cout << "do_length(s, eb, ee, m)\n";
+      return 0;
+
+    }
+    int do_max_length() const throw()
+    {
+      STD cout << "do_max_length()\n";
+      return 0;
+    }
+  };
+
+  template <class iT, class eT, class sT>
+  class test_public
+  {
+  public:
+    test_public()
+    {
+      test_protected<iT, eT, sT> cc1;
+
+      sT       st;
+      iT const *icp = 0;
+      iT       *ip = 0;
+      eT const *ecp = 0;
+      eT       *ep = 0;
+      size_t   max = 0;
+
+      check_type< STD codecvt_base::result>(cc1.out(st, icp, icp, icp, ep, ep, ep));
+      check_type< STD codecvt_base::result>(cc1.unshift(st, ep, ep, ep));
+      check_type< STD codecvt_base::result>(cc1.in(st, ecp, ecp, ecp, ip, ip, ip));
+      
+      check_type<int >(cc1.encoding());
+      check_type<bool>(cc1.always_noconv());
+      check_type<int >(cc1.length(st, ecp, ecp, max));
+      check_type<int >(cc1.max_length());
+
+      check_type< STD locale::id>(STD codecvt<iT, eT, sT>::id);
+    }
+  };
+
+  int main(int, char *av[])
+  {
+    switch (av[1][0])
+      {
+      case '0':
+        {
+          test_public<char, char, mbstate_t>();
+        }
+        break;
+      case '1':
+        {
+          test_public<wchar_t, char, mbstate_t>();
+        }
+        break;
+      }
+
+    return 0;
+  }
+}
+
+simple_test "codecvt<char, char, mbstate_t> members" "0" {
+do_out(s, ib, ie, in, eb, ee, en)
+do_unshift(s, eb, ee, en)
+do_in(s, eb, ee, en, ib, ie, in)
+do_encoding()
+do_always_noconv()
+do_length(s, eb, ee, m)
+do_max_length()
+}
+
+simple_test "codecvt<whcar_t, char, mbstate_t> members" "1" {
+do_out(s, ib, ie, in, eb, ee, en)
+do_unshift(s, eb, ee, en)
+do_in(s, eb, ee, en, ib, ie, in)
+do_encoding()
+do_always_noconv()
+do_length(s, eb, ee, m)
+do_max_length()
+}

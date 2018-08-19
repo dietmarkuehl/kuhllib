@@ -1,0 +1,144 @@
+#!/usr/local/bin/expect
+# -*-C++-*- in_it1.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  This file tests some stuff internal to cxxrt 
+# Version: $Id: in_it2.exp,v 1.1.1.1 2002/06/05 01:02:41 dietmar_kuehl Exp $ 
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <iostream>
+  #include <streambuf>
+  #include <cstdlib>
+  #include <cstring>
+  #include <cxxrt/in_it.h>
+  #if !defined(_CXXRT_STD)
+  #  define STD std::
+  #else
+  #  define STD _CXXRT_STD
+  #endif
+
+  class testbuf: public STD streambuf
+  {
+  public:
+    testbuf(char const *s):
+      beg(STD strcpy(new char[STD strlen(s) + 1], s)),
+      end(beg + STD strlen(beg))
+    {
+      setg(beg, beg, beg + (end - beg > 2? 2: end - beg));
+    }
+    ~testbuf() { delete[] beg; }
+
+    STD streambuf::int_type underflow()
+    {
+      if (gptr() != end)
+        setg(gptr(), gptr(), gptr() + (end - gptr()> 2? 2: end - gptr()));
+      if (gptr() == egptr())
+        return STD streambuf::traits_type::eof();
+      return STD streambuf::traits_type::to_int_type(*gptr());
+    }
+    STD streambuf::int_type uflow()
+    {
+      if (STD streambuf::traits_type::eq_int_type(underflow(), STD streambuf::traits_type::eof()))
+        return STD streambuf::traits_type::eof();
+      setg(gptr() + 1, gptr() + 1, egptr());
+      if (gptr() == egptr())
+        return STD streambuf::traits_type::eof();
+      return STD streambuf::traits_type::to_int_type(*gptr());
+    }
+
+  private:
+    char* beg;
+    char* end;
+    
+    testbuf(testbuf const&);
+    void operator=(testbuf const&);
+  };
+
+  int main(int ac, char *av[])
+  {
+    if (ac != 2)
+      {
+        STD cerr << "wrong number of arguments\n";
+        return 1;
+      }
+
+    testbuf buf("0123456789abcdefghijklmnopqrstuvwxyz");
+    STD istreambuf_iterator<char> beg(&buf);
+    STD istreambuf_iterator<char> end(0);
+
+    switch (av[1][0])
+      {
+      case '0':
+        {
+          STD ostreambuf_iterator<char> out(STD cout);
+
+          for (; beg != end; ++beg, ++out)
+            *out = *beg;
+          *out++ = '\n';
+        }
+        break;
+      case '1':
+        {
+          STD _CS_in_it<char, STD istreambuf_iterator<char>, STD input_iterator_tag> in(beg, end, 10);
+
+          STD ostreambuf_iterator<char> out(STD cout);
+
+          for (char c; in._CS_next_char(c); )
+            *out++ = c;
+          *out++ = '\n';
+        }
+        break;
+      case '2':
+        {
+          STD _CS_in_it<char, STD istreambuf_iterator<char>, STD input_iterator_tag> in(beg, end, 10);
+
+          STD ostreambuf_iterator<char> out(STD cout);
+
+          for (char c; in._CS_next_counted_char(c); )
+            *out++ = c;
+          *out++ = '\n';
+          for (char c; in._CS_next_char(c); )
+            *out++ = c;
+          *out++ = '\n';
+        }
+        break;
+      }
+
+    return 0;
+  }
+}
+
+simple_test "tstbuf" "0" {
+0123456789abcdefghijklmnopqrstuvwxyz
+}
+
+simple_test "non-counted in_it" "1" {
+0123456789abcdefghijklmnopqrstuvwxyz
+}
+
+simple_test "counted in_it" "2" {
+0123456789
+abcdefghijklmnopqrstuvwxyz
+}

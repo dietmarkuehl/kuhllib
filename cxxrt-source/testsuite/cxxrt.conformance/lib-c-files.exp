@@ -1,0 +1,275 @@
+#!/usr/local/bin/expect
+# -*-C++-*- cxxrt.conformance/lib-c-files.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  C library files
+# Version: $Id: lib-c-files.exp,v 1.1.1.1 2002/06/05 01:03:27 dietmar_kuehl Exp $ 
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <cstdio>
+  #if !defined(STD)
+  #  if !defined(_CXXRT_STD)
+  #    define STDNAME std
+  #    define STD std::
+  #  else
+  #    define STDNAME _CXXRT_STD_NAME
+  #    define STD _CXXRT_STD
+  #  endif
+  #endif
+
+  #if !defined(BUFSIZ)
+  #  error "BUFSIZ is not defined"
+  #endif
+  #if !defined(EOF)
+  #  error "EOF is not defined"
+  #endif
+  #if !defined(FILENAME_MAX)
+  #  error "FILENAME_MAX is not defined"
+  #endif
+  #if !defined(FOPEN_MAX)
+  #  error "FOPEN_MAX is not defined"
+  #endif
+  #if !defined(L_tmpnam)
+  #  error "L_tmpnam is not defined"
+  #endif
+  #if !defined(NULL)
+  #  error "NULL is not defined"
+  #endif
+  #if !defined(SEEK_CUR)
+  #  error "SEEK_CUR is not defined"
+  #endif
+  #if !defined(SEEK_END)
+  #  error "SEEK_END is not defined"
+  #endif
+  #if !defined(SEEK_SET)
+  #  error "SEEK_SET is not defined"
+  #endif
+  #if !defined(TMP_MAX)
+  #  error "TMP_MAX is not defined"
+  #endif
+  #if !defined(_IOFBF)
+  #  error "_IOFBF is not defined"
+  #endif
+  #if !defined(_IOLBF)
+  #  error "_IOLBF is not defined"
+  #endif
+  #if !defined(_IONBF)
+  #  error "_IONBF is not defined"
+  #endif
+  #if !defined(stderr)
+  #  error "stderr is not defined"
+  #endif
+  #if !defined(stdin)
+  #  error "stdin is not defined"
+  #endif
+  #if !defined(stdout)
+  #  error "stdout is not defined"
+  #endif
+
+  template <class T> inline void test_type() {}
+  template <class T> inline void check_type(T const&) {}
+
+  extern "C" {
+    typedef void (*clearerr_t)(STD FILE*);
+    typedef int (*fclose_t)(STD FILE*);
+    typedef int (*feof_t)(STD FILE*);
+    typedef int (*ferror_t)(STD FILE*);
+    typedef int (*fflush_t)(STD FILE*);
+    typedef int (*fgetc_t)(STD FILE*);
+    typedef int (*fgetpos_t)(STD FILE*, STD fpos_t*);
+    typedef char* (*fgets_t)(char*, int, STD FILE*);
+    typedef STD FILE* (*fopen_t)(char const*, char const*);
+    typedef int (*fprintf_t)(STD FILE*, char const*, ...);
+    typedef int (*fputc_t)(int, STD FILE*);
+    typedef int (*fputs_t)(char const*, STD FILE*);
+    typedef STD size_t (*fread_t)(void*, STD size_t, STD size_t, STD FILE*);
+    typedef STD FILE* (*freopen_t)(char const*, char const*, STD FILE*);
+    typedef int (*fscanf_t)(STD FILE*, char const*, ...);
+    typedef int (*fseek_t)(STD FILE*, long, int);
+    typedef int (*fsetpos_t)(STD FILE*, const STD fpos_t*);
+    typedef long (*ftell_t)(STD FILE*);
+    typedef STD size_t (*fwrite_t)(const void*, STD size_t, STD size_t, STD FILE*);
+    typedef int (*getc_t)(STD FILE*);
+    typedef int (*getchar_t)(void);
+    typedef char* (*gets_t)(char*);
+    typedef void (*perror_t)(char const*);
+    typedef int (*printf_t)(char const*, ...);
+    typedef int (*putc_t)(int, STD FILE*);
+    typedef int (*putchar_t)(int);
+    typedef int (*puts_t)(char const*);
+    typedef int (*remove_t)(char const*);
+    typedef int (*rename_t)(char const*, char const*);
+    typedef void (*rewind_t)(STD FILE*);
+    typedef int (*scanf_t)(char const*, ...);
+    typedef void (*setbuf_t)(STD FILE*, char*);
+    typedef int (*setvbuf_t)(STD FILE*, char*, int, STD size_t);
+    typedef int (*sprintf_t)(char*, char const*, ...);
+    typedef int (*sscanf_t)(char const*, char const*, ...);
+    typedef STD FILE* (*tmpfile_t)(void);
+    typedef char* (*tmpnam_t)(char*);
+    typedef int (*ungetc_t)(int, STD FILE*);
+  }
+
+  int main()
+  {
+    test_type< STD FILE>();
+    test_type< STD fpos_t>();
+    test_type< STD size_t>();
+
+    check_type<clearerr_t>(&STD clearerr);
+    check_type<fclose_t>(&STD fclose);
+    check_type<feof_t>(&STD feof);
+    check_type<ferror_t>(&STD ferror);
+    check_type<fflush_t>(&STD fflush);
+    check_type<fgetc_t>(&STD fgetc);
+    check_type<fgetpos_t>(&STD fgetpos);
+    check_type<fgets_t>(&STD fgets);
+    check_type<fopen_t>(&STD fopen);
+    check_type<fprintf_t>(&STD fprintf);
+    check_type<fputc_t>(&STD fputc);
+    check_type<fputs_t>(&STD fputs);
+    check_type<fread_t>(&STD fread);
+    check_type<freopen_t>(&STD freopen);
+    check_type<fscanf_t>(&STD fscanf);
+    check_type<fseek_t>(&STD fseek);
+    check_type<fsetpos_t>(&STD fsetpos);
+    check_type<ftell_t>(&STD ftell);
+    check_type<fwrite_t>(&STD fwrite);
+    check_type<getc_t>(&STD getc);
+    check_type<getchar_t>(&STD getchar);
+  #if !defined(__GNUC__)
+    // this issues a linker warning on GNU C++
+    check_type<gets_t>(&STD gets);
+  #endif
+    check_type<perror_t>(&STD perror);
+    check_type<printf_t>(&STD printf);
+    check_type<putc_t>(&STD putc);
+    check_type<putchar_t>(&STD putchar);
+    check_type<puts_t>(&STD puts);
+    check_type<remove_t>(&STD remove);
+    check_type<rename_t>(&STD rename);
+    check_type<rewind_t>(&STD rewind);
+    check_type<scanf_t>(&STD scanf);
+    check_type<setbuf_t>(&STD setbuf);
+    check_type<setvbuf_t>(&STD setvbuf);
+    check_type<sprintf_t>(&STD sprintf);
+    check_type<sscanf_t>(&STD sscanf);
+    check_type<tmpfile_t>(&STD tmpfile);
+    check_type<tmpnam_t>(&STD tmpnam);
+    check_type<ungetc_t>(&STD ungetc);
+
+    {
+      using namespace STDNAME;
+
+      test_type<FILE>();
+      test_type<fpos_t>();
+      test_type<size_t>();
+
+      check_type<clearerr_t>(&clearerr);
+      check_type<fclose_t>(&fclose);
+      check_type<feof_t>(&feof);
+      check_type<ferror_t>(&ferror);
+      check_type<fflush_t>(&fflush);
+      check_type<fgetc_t>(&fgetc);
+      check_type<fgetpos_t>(&fgetpos);
+      check_type<fgets_t>(&fgets);
+      check_type<fopen_t>(&fopen);
+      check_type<fprintf_t>(&fprintf);
+      check_type<fputc_t>(&fputc);
+      check_type<fputs_t>(&fputs);
+      check_type<fread_t>(&fread);
+      check_type<freopen_t>(&freopen);
+      check_type<fscanf_t>(&fscanf);
+      check_type<fseek_t>(&fseek);
+      check_type<fsetpos_t>(&fsetpos);
+      check_type<ftell_t>(&ftell);
+      check_type<fwrite_t>(&fwrite);
+      check_type<getc_t>(&getc);
+      check_type<getchar_t>(&getchar);
+  #if !defined(__GNUC__)
+      // this issues a linker warning on GNU C++
+      check_type<gets_t>(&gets);
+  #endif
+      check_type<perror_t>(&perror);
+      check_type<printf_t>(&printf);
+      check_type<putc_t>(&putc);
+      check_type<putchar_t>(&putchar);
+      check_type<puts_t>(&puts);
+      check_type<remove_t>(&remove);
+      check_type<rename_t>(&rename);
+      check_type<rewind_t>(&rewind);
+      check_type<scanf_t>(&scanf);
+      check_type<setbuf_t>(&setbuf);
+      check_type<setvbuf_t>(&setvbuf);
+      check_type<sprintf_t>(&sprintf);
+      check_type<sscanf_t>(&sscanf);
+      check_type<tmpfile_t>(&tmpfile);
+      check_type<tmpnam_t>(&tmpnam);
+      check_type<ungetc_t>(&ungetc);
+    }
+    
+    return 0;
+  }
+}
+
+inline_compile {
+  #include <cstdio>
+  #include <cstdarg>
+  #if !defined(STD)
+  #  if !defined(_CXXRT_STD)
+  #    define STDNAME std
+  #    define STD std::
+  #  else
+  #    define STDNAME _CXXRT_STD_NAME
+  #    define STD _CXXRT_STD
+  #  endif
+  #endif
+
+  template <class T> inline void test_type() {}
+  template <class T> inline void check_type(T const&) {}
+
+  extern "C" {
+    typedef int (*vfprintf_t)(STD FILE*, char const*, va_list);
+    typedef int (*vprintf_t)(char const*, va_list);
+    typedef int (*vsprintf_t)(char*s, char const*, va_list);
+  }
+
+  int main()
+  {
+    check_type<vfprintf_t>(&STD vfprintf);
+    check_type<vprintf_t>(&STD vprintf);
+    check_type<vsprintf_t>(&STD vsprintf);
+
+    {
+      using namespace STDNAME;
+
+      check_type<vfprintf_t>(&vfprintf);
+      check_type<vprintf_t>(&vprintf);
+      check_type<vsprintf_t>(&vsprintf);
+    }
+
+    return 0;
+  }
+}

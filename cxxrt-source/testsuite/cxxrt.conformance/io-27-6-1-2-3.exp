@@ -1,0 +1,443 @@
+#!/usr/local/bin/expect
+# -*-C++-*- io-27-6-1-2-3.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  basic_istream::operator>>
+# Version: $Id: io-27-6-1-2-3.exp,v 1.1.1.1 2002/06/05 01:03:15 dietmar_kuehl Exp $ 
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <sstream>
+  #include <iostream>
+  #include <istream>
+  #include <streambuf>
+  #include <locale>
+  #if !defined(_CXXRT_STD)
+  #  define STD std::
+  #else
+  #  define STD _CXXRT_STD
+  #endif
+
+  bool set(bool& b) { b = true; return b; }
+
+  // --- tests for paragraphs 1 to 5 -------------------------------------------
+
+  template <class cT, class traits>
+  inline STD basic_istream<cT, traits>& manip1(STD basic_istream<cT, traits>& in)
+    {
+      STD cout << "manip1: ";
+      return in;
+    }
+
+  template <class cT, class traits>
+  inline STD basic_ios<cT, traits>& manip2(STD basic_ios<cT, traits>& in)
+    {
+      STD cout << "manip2: ";
+      return in;
+    }
+
+  inline STD ios_base& manip3(STD ios_base& in)
+    {
+      STD cout << "manip3: ";
+      return in;
+    }
+
+  template <class cT>
+    inline void test_manipulators(STD basic_istream<cT>& in)
+    {
+      if (&in == &(in >> manip1)) STD cout << "OK\n"; else STD cout << "not OK\n";
+      if (&in == &(in >> manip2)) STD cout << "OK\n"; else STD cout << "not OK\n";
+      if (&in == &(in >> manip3)) STD cout << "OK\n"; else STD cout << "not OK\n";
+    }
+
+  // --- two stream buffers for testing ----------------------------------------
+
+  template <class cT>
+    class bufferedbuf: public STD basic_streambuf<cT>
+    {
+    public:
+      bufferedbuf(cT* s, int sz) { this->setg(s, s, s + sz); }
+    };
+
+  // ---
+
+  template <class cT>
+    class unbufferedbuf: public STD basic_streambuf<cT>
+    {
+    public:
+      unbufferedbuf(cT* s, int sz): str(s), size(sz), current(0) {}
+      typename STD basic_streambuf<cT>::int_type underflow()
+        {
+          return current < size? str[current]: STD char_traits<cT>::eof();
+        }
+      typename STD basic_streambuf<cT>::int_type uflow()
+        {
+          return current < size? str[current++]: STD char_traits<cT>::eof();
+        }
+      typename STD basic_streambuf<cT>::int_type pbackfail(typename STD basic_streambuf<cT>::int_type c)
+	{
+	  return str[--current];
+	}
+
+      cT* str;
+      int size;
+      int current;
+
+      unbufferedbuf(unbufferedbuf const&);
+      void operator=(unbufferedbuf const&);
+    };
+
+  // ---------------------------------------------------------------------------
+
+  template <class cT>
+  struct init
+  {
+    static cT str[];
+    static int size;
+    static cT space;
+  };
+
+  #if !defined(_MSC_VER)
+  template <class T, int sz> inline int str_size(T (&)[sz]) { return sz - 1; }
+  #endif
+
+  template <> char init<char>::str[] = "  0123456789 abcdefghijklmnopqrstuvwxyz\000ABC";
+  #if defined(_MSC_VER)
+  template <> int  init<char>::size  = 43;
+  #else
+  template <> int  init<char>::size  = str_size(str);
+  #endif
+  template <> char init<char>::space = ' ';
+
+  template <> wchar_t init<wchar_t>::str[] = L"  0123456789 abcdefghijklmnopqrstuvwxyz\000ABC";
+  #if defined(_MSC_VER)
+  template <> int  init<wchar_t>::size  = 43;
+  #else
+  template <> int  init<wchar_t>::size  = str_size(str);
+  #endif
+  template <> wchar_t init<wchar_t>::space = L' ';
+
+  // ---------------------------------------------------------------------------
+
+  STD ostream& operator<< (STD ostream& out, STD ios_base::iostate state)
+  {
+    if (state == STD ios_base::goodbit)
+      out << "good";
+    else
+      {
+        STD ios_base::iostate all = STD ios_base::eofbit | STD ios_base::failbit | STD ios_base::badbit;
+        if (state & STD ios_base::failbit)
+          out << ((state &= (all ^ STD ios_base::failbit)) == STD ios_base::goodbit? "fail": "fail ");
+        if (state & STD ios_base::eofbit)
+          out << ((state &= (all ^ STD ios_base::eofbit)) == STD ios_base::goodbit? "eof": "eof ");
+        if (state & STD ios_base::badbit)
+          out << "bad";
+      }
+    return out;
+  }
+
+  // ---------------------------------------------------------------------------
+
+  template <class scT, class cT>
+    inline bool tst_compare(scT const* s1, cT const* s2)
+    {
+      while (*s1 != 0)
+	if (cT(*s1++) != *s2++)
+	  return false;
+      return true;
+    }
+
+  template <class cT, class scT, class sbuf>
+    inline void test_string()
+    {
+      scT buffer[50];
+      STD basic_istream<cT> in(new sbuf(init<cT>::str, init<cT>::size));
+      STD cout << STD boolalpha;
+
+      in.width(5);
+      STD cout << (&in == &(in >> buffer)) << "\n";
+      STD cout << in.rdstate() << " " << (buffer[4] == cT()) << " "
+               << in.width() << " " << tst_compare(buffer, init<cT>::str + 2) << "\n";
+
+      in >> buffer;
+      STD cout << in.rdstate() << " " << (buffer[6] == cT()) << " "
+               << in.width() << " " << tst_compare(buffer, init<cT>::str + 6) << "\n";
+
+      in >> buffer;
+      STD cout << in.rdstate() << " " << (buffer[26] == cT()) << " "
+               << in.width() << " " << tst_compare(buffer, init<cT>::str + 13) << "\n";
+
+      in >> buffer;
+      STD cout << in.rdstate() << " " << (buffer[3] == cT()) << " "
+               << in.width() << " " << tst_compare(buffer, init<cT>::str + 40) << "\n";
+
+      in.clear();
+      in.ignore();
+      in >> buffer;
+      STD cout << in.rdstate() << " " << (buffer[0] == cT()) << " "
+               << in.width() << " " << tst_compare(buffer, init<cT>::str + 43) << "\n";
+
+      STD cout << "\n";
+    }
+
+  // ---------------------------------------------------------------------------
+
+  template <class cT, class scT, class sbuf>
+    inline void test_char()
+    {
+      scT c;
+      STD basic_istream<cT> in(new sbuf(init<cT>::str, init<cT>::size));
+
+      for (cT const* str = init<cT>::str; ((in >> c).good()); ++str)
+        {
+          while (*str == init<cT>::space)
+            ++str;
+          if (*str != c)
+            STD cout << "error!\n";
+        }
+
+      if (in.rdstate() != (STD ios_base::failbit | STD ios_base::eofbit))
+        STD cout << "error\n";
+      else
+        STD cout << "OK\n";
+    }
+
+  // ---------------------------------------------------------------------------
+
+  static int const offset = 4;
+
+  template <class cT>
+    struct smallbuf: public STD basic_streambuf<cT> {
+      smallbuf() { this->setp(buffer, buffer + offset); }
+      cT buffer[offset];
+    };
+
+  template <class cT>
+    struct consumebuf: public STD basic_streambuf<cT> {
+      typedef typename STD basic_streambuf<cT>::traits_type traits_type;
+      typename STD basic_streambuf<cT>::int_type
+      overflow(typename STD basic_streambuf<cT>::int_type c) {
+	return traits_type::not_eof(c);
+      }
+    };
+
+  template <class cT, class sbuf>
+    inline void test_streambuf()
+    {
+      typedef STD char_traits<cT> traits_type;
+      bool error = false;
+
+      STD basic_istream<cT> in(new sbuf(init<cT>::str, init<cT>::size));
+
+      if (&(in >> static_cast< STD basic_streambuf<cT>*>(0)) != &in && set(error))
+	STD cout << "the wrong object is returned\n";
+      if (in.rdstate() != STD ios_base::failbit && set(error))
+	STD cout << "failbit not set when inserting into null streambuf\n";
+      in.clear();
+
+      smallbuf<cT> sb;
+      in >> &sb;
+      if (sb.buffer[0] != init<cT>::str[2] && set(error))
+	STD cout << "wrong character inserted\n";
+      if (!traits_type::eq_int_type(in.rdbuf()->sgetc(), init<cT>::str[offset + 2]) && set(error))
+	STD cout << "too many character extracted from input stream\n";
+      if (in.rdstate() != STD ios_base::goodbit && set(error))
+	STD cout << "error flags set after successful insert\n";
+      in.clear();
+
+      in >> &sb;
+      if (in.rdstate() != STD ios_base::failbit && set(error))
+	STD cout << "failbit not set after failed insert\n";
+      if (!traits_type::eq_int_type(in.rdbuf()->sgetc(), init<cT>::str[offset + 2]) && set(error))
+	STD cout << "too many character extracted from input stream\n";
+      in.clear();
+
+      consumebuf<cT> strbuf;
+      in >> &strbuf;
+      if (in.rdstate() != STD ios_base::eofbit && set(error))
+	STD cout << "eofbit not set after reaching end of stream\n";
+
+      if (!error)
+	STD cout << "OK\n";
+    }
+
+  // ---------------------------------------------------------------------------
+
+  int main(int ac, char *av[])
+  {
+    if (ac != 2)
+      {
+        STD cerr << "wrong number of arguments\n";
+        return 1;
+      }
+
+    switch (av[1][0])
+      {
+      case '0':
+	{
+	  STD istringstream in("a");
+	  test_manipulators(in);
+	}
+        break;
+      case '1':
+	{
+	  STD wistringstream in(L"a");
+	  test_manipulators(in);
+	}
+        break;
+      case '2':
+        test_string<char, char, bufferedbuf<char> >();
+        test_string<char, char, unbufferedbuf<char> >();
+        test_string<char, signed char, bufferedbuf<char> >();
+        test_string<char, signed char, unbufferedbuf<char> >();
+        test_string<char, unsigned char, bufferedbuf<char> >();
+        test_string<char, unsigned char, unbufferedbuf<char> >();
+        break;
+      case '3':
+        test_string<wchar_t, wchar_t, bufferedbuf<wchar_t> >();
+        test_string<wchar_t, wchar_t, unbufferedbuf<wchar_t> >();
+        break;
+      case '4':
+        test_char<char, char, bufferedbuf<char> >();
+        test_char<char, char, unbufferedbuf<char> >();
+        test_char<char, signed char, bufferedbuf<char> >();
+        test_char<char, signed char, unbufferedbuf<char> >();
+        test_char<char, unsigned char, bufferedbuf<char> >();
+        test_char<char, unsigned char, unbufferedbuf<char> >();
+        break;
+      case '5':
+        test_char<wchar_t, wchar_t, bufferedbuf<wchar_t> >();
+        test_char<wchar_t, wchar_t, unbufferedbuf<wchar_t> >();
+        break;
+      case '6':
+        test_streambuf<char, bufferedbuf<char> >();
+        test_streambuf<char, unbufferedbuf<char> >();
+        break;
+      case '7':
+        test_streambuf<wchar_t, bufferedbuf<wchar_t> >();
+        test_streambuf<wchar_t, unbufferedbuf<wchar_t> >();
+        break;
+      }
+
+    return 0;
+  }
+} 
+
+simple_test "basic_istream<char> manipulator support" "0" {
+manip1: OK
+manip2: OK
+manip3: OK
+}
+
+simple_test "basic_istream<wchar_t> manipulator support" "1" {
+manip1: OK
+manip2: OK
+manip3: OK
+}
+
+simple_test "basic_istream<char> C-string" "2" {
+true
+good true 0 true
+good true 0 true
+good true 0 true
+fail false 0 true
+eof false 0 false
+
+true
+good true 0 true
+good true 0 true
+good true 0 true
+fail false 0 true
+eof false 0 false
+
+true
+good true 0 true
+good true 0 true
+good true 0 true
+fail false 0 true
+eof false 0 false
+
+true
+good true 0 true
+good true 0 true
+good true 0 true
+fail false 0 true
+eof false 0 false
+
+true
+good true 0 true
+good true 0 true
+good true 0 true
+fail false 0 true
+eof false 0 false
+
+true
+good true 0 true
+good true 0 true
+good true 0 true
+fail false 0 true
+eof false 0 false
+
+}
+
+simple_test "basic_istream<wchar_t> C-string" "3" {
+true
+good true 0 true
+good true 0 true
+good true 0 true
+fail false 0 true
+eof false 0 false
+
+true
+good true 0 true
+good true 0 true
+good true 0 true
+fail false 0 true
+eof false 0 false
+
+}
+
+simple_test "basic_istream<char> get character" "4" {
+OK
+OK
+OK
+OK
+OK
+OK
+}
+
+simple_test "basic_istream<wchar_t> get character" "5" {
+OK
+OK
+}
+
+simple_test "basic_istream<char> extract streambuf*" "6" {
+OK
+OK
+}
+
+simple_test "basic_istream<wchar_t> extract streambuf*" "7" {
+OK
+OK
+}

@@ -1,0 +1,103 @@
+# -*-C++-*- unix.exp --->
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  The init file for unix.
+# Version: $Id: unix.exp,v 1.1.1.1 2002/06/05 01:03:45 dietmar_kuehl Exp $
+# -------------------------------------------------------------------------- 
+
+# libtest.exp provides several frontends for $(tool)_start and $(tool)_load.
+
+set exec_output ""
+load_lib libtest.exp
+
+# $(tool)_start is used to compile and link a test file. The compiler and linker
+# flags are basically figured out by the Makefile (i.e. are found in 'site.exp').
+# Only additional flags and libraries have to be passed. All files are compiled
+# in sequence. If one fails '1' is returned. If linking fails '2' is returned.
+# Otherwise '0' is returned.
+
+proc [set tool]_start {files cflags libs ldflags} {
+  global CC
+  global CXX
+  global CXXFLAGS
+  global LDFLAGS
+  global LIBS
+  global PRE
+  global POST
+
+  set tindex 0
+  set ofiles ""
+  foreach file $files {
+    # send_user "$CXX $CXXFLAGS $cflags -c -o tmp$tindex.o $file"
+    if {[catch {eval "exec bash -c \"$CXX $CXXFLAGS $cflags -c -o tmp$tindex.o $file 2\>out.msg\""}]} {
+      # clean up, then signal an error upward...
+      send_user "[eval "exec cat out.msg"]\n"
+      eval "exec rm -f $ofiles dummy"
+      return 1
+    }
+    eval "exec rm -f *.ti"
+    lappend ofiles "tmp$tindex.o"
+    incr tindex
+  }
+  # send_user "$CC $LDFLAGS $ldflags -o test.out $PRE $ofiles $LIBS $libs $POST"
+  eval "exec rm -f test.out"
+  if {[catch {eval "exec $CC $LDFLAGS $ldflags -o test.out $PRE $ofiles $LIBS $libs $POST 2\>out.msg"}]} {
+    send_user "[eval "exec cat out.msg"]\n"
+    set rc 2
+  } else {
+    set rc 0
+  }
+  eval "exec rm -f $ofiles dummy"
+  if {[catch {exec test -f test.out}]} {
+    send_user "executable file not there\n"
+    send_user "[eval "exec cat out.msg"]\n"
+    return 2
+  }
+
+  return $rc
+}
+
+proc [set tool]_load {args} {
+  global exec_output
+
+  if {[catch {set exec_output [eval "exec ./test.out [split $args " "]"]}]} {
+    set rc 1
+  } else {
+    set rc 0
+  }
+  return $rc
+}
+
+proc [set tool]_exit {} {
+  exec rm -f test.out
+  libtest_cleanup
+  return 0
+}
+
+proc [set tool]_version {} {
+  global tool
+
+  clone_output "[exec ./[set tool]_version]"
+  return 0
+}

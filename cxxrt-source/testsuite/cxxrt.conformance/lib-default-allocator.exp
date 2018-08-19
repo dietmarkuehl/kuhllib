@@ -1,0 +1,97 @@
+#!/usr/local/bin/expect
+# -*-C++-*- cxxrt.conformance/lib-default-allocator.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  The default allocator
+# Version: $Id: lib-default-allocator.exp,v 1.1.1.1 2002/06/05 01:02:56 dietmar_kuehl Exp $ 
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <memory>
+  #if !defined(STD)
+  #  if !defined(_CXXRT_STD)
+  #    define STD std::
+  using namespace std;
+  #  else
+  #    define STD _CXXRT_STD
+  using STD size_t;
+  using STD ptrdiff_t;
+  #  endif
+  #endif
+
+  template <class T> inline void test_type() {}
+  template <class T> inline void check_type(T const&) {}
+
+  template <class T> void same_type_help(T const*, T const*) {}
+  template <class T, class S>
+  struct same_type_struct {
+    same_type_struct() { same_type_help(static_cast<T const*>(0), static_cast<S const*>(0)); }
+  };
+  template <class T, class S>
+  struct same_type_struct<T&, S&> {
+    same_type_struct() { same_type_help(static_cast<T const*>(0), static_cast<S const*>(0)); }
+  };
+  template <class T, class S> inline void same_type() { same_type_struct<T, S>(); }
+
+  struct foo {};
+
+  int main(int ac, char *av[])
+  {
+    test_type< STD allocator<void> >();
+    check_type<void*>(STD allocator<void>::pointer());
+    check_type<void const*>(STD allocator<void>::const_pointer());
+    same_type<void, STD allocator<void>::value_type>();
+    same_type< STD allocator<foo>, STD allocator<void>::rebind<foo>::other>();
+
+    same_type< STD allocator<foo>::size_type, size_t>();
+    same_type< STD allocator<foo>::difference_type, ptrdiff_t>();
+    same_type< STD allocator<foo>::pointer, foo*>();
+    same_type< STD allocator<foo>::const_pointer, foo const*>();
+    same_type< STD allocator<foo>::reference, foo&>();
+    same_type< STD allocator<foo>::const_reference, foo const&>();
+    same_type< STD allocator<foo>::value_type, foo>();
+    same_type< STD allocator<int>, STD allocator<foo>::rebind<int>::other>();
+
+    STD allocator<void> v1;
+    STD allocator<foo> a1;
+    STD allocator<foo> a2(a1);
+    STD allocator<foo> a3(v1);
+
+    foo        f;
+    foo const& cf(f);
+
+    check_type<foo*>(a2.address(f));
+    check_type<foo const*>(a2.address(cf));
+
+    foo* ptr = 0;
+    check_type<foo*>(a3.allocate(17));
+    check_type<foo*>(ptr = a3.allocate(17, static_cast< STD allocator<void>::const_pointer>(0)));
+    a3.construct(ptr, foo());
+    a3.destroy(ptr);
+    a3.deallocate(ptr, 17);
+    check_type< STD allocator<foo>::size_type>(a3.max_size());
+    
+    return 0;
+  }
+}

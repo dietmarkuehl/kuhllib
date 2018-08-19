@@ -1,0 +1,131 @@
+#!/usr/local/bin/expect
+# -*-C++-*- lib-reverse-iterator.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  Template class reverse_iterator
+# Version: $Id: lib-reverse-iterator.exp,v 1.1.1.1 2002/06/05 01:03:43 dietmar_kuehl Exp $ 
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include "testtools.hpp"
+  #include "testiterator.hpp"
+  #include <iterator>
+
+  #if defined(_ESTD_STD)
+  #  define STD _ESTD_STD
+  #elif defined(_CXXRT_STD)
+  #  define STD _CXXRT_STD
+  #else
+  #  define STD ::std::
+  #endif
+
+  struct foo {};
+
+  template <class It>
+    struct test_current: public STD reverse_iterator<It>
+    {
+      test_current(It const& it): STD reverse_iterator<It>(it) {}
+      void test() { check_fct_type<It*>(&this->current); }
+    };
+
+  template <class It>
+    void test()
+    {
+      typename It::value_type array[5];
+
+      compare_types<typename STD iterator_traits<It>::value_type, typename STD reverse_iterator<It>::value_type>();
+      compare_types<typename STD iterator_traits<It>::difference_type, typename STD reverse_iterator<It>::difference_type>();
+      compare_types<typename STD iterator_traits<It>::iterator_category, typename STD reverse_iterator<It>::iterator_category>();
+      compare_types<typename STD iterator_traits<It>::pointer, typename STD reverse_iterator<It>::pointer>();
+      compare_types<typename STD iterator_traits<It>::reference, typename STD reverse_iterator<It>::reference>();
+
+      compare_types<It, typename STD reverse_iterator<It>::iterator_type>();
+
+      STD iterator<typename STD iterator_traits<It>::iterator_category,
+	typename STD iterator_traits<It>::value_type,
+	typename STD iterator_traits<It>::difference_type,
+	typename STD iterator_traits<It>::pointer,
+	typename STD iterator_traits<It>::reference>* itptr = static_cast< STD reverse_iterator<It>*>(0);
+      use(itptr);
+
+      It it(array);
+
+      test_current<It> curit(it);
+      curit.test();
+
+      // STD reverse_iterator<It> rit1;
+      // use(rit1);
+      STD reverse_iterator<It> rit2(it);
+      STD reverse_iterator<It> rit3(rit2);
+      use(rit3);
+
+      typedef typename STD iterator_traits<It>::difference_type difference_type;
+      typedef typename STD iterator_traits<It>::pointer pointer;
+      typedef typename STD iterator_traits<It>::reference reference;
+
+      check_fct_type<It (STD reverse_iterator<It>::*)() const>(&STD reverse_iterator<It>::base);
+
+      check_fct_type<reference (STD reverse_iterator<It>::*)() const>(&STD reverse_iterator<It>::operator*);
+      check_fct_type<pointer (STD reverse_iterator<It>::*)() const>(&STD reverse_iterator<It>::operator->);
+
+      const_use(static_cast< STD reverse_iterator<It>& (STD reverse_iterator<It>::*)()>(&STD reverse_iterator<It>::operator++));
+      const_use(static_cast< STD reverse_iterator<It> (STD reverse_iterator<It>::*)(int)>(&STD reverse_iterator<It>::operator++));
+      const_use(static_cast< STD reverse_iterator<It>& (STD reverse_iterator<It>::*)()>(&STD reverse_iterator<It>::operator--));
+      const_use(static_cast< STD reverse_iterator<It> (STD reverse_iterator<It>::*)(int)>(&STD reverse_iterator<It>::operator--));
+
+      const_use(static_cast<bool (*)(STD reverse_iterator<It> const&, STD reverse_iterator<It> const&)>(STD operator==));
+      const_use(static_cast<bool (*)(STD reverse_iterator<It> const&, STD reverse_iterator<It> const&)>(STD operator!=));
+    }
+
+  template <class It>
+    void test_random_access()
+    {
+      typedef typename STD iterator_traits<It>::difference_type difference_type;
+      typedef typename STD iterator_traits<It>::pointer pointer;
+      typedef typename STD iterator_traits<It>::reference reference;
+
+      check_fct_type<reference (STD reverse_iterator<It>::*)(difference_type) const>(&STD reverse_iterator<It>::operator[]);
+
+      check_fct_type< STD reverse_iterator<It>& (STD reverse_iterator<It>::*)(difference_type)>(&STD reverse_iterator<It>::operator+=);
+      const_use(static_cast< STD reverse_iterator<It> (STD reverse_iterator<It>::*)(difference_type) const>(&STD reverse_iterator<It>::operator+));
+      check_fct_type< STD reverse_iterator<It>& (STD reverse_iterator<It>::*)(difference_type)>(&STD reverse_iterator<It>::operator-=);
+      const_use(static_cast< STD reverse_iterator<It> (STD reverse_iterator<It>::*)(difference_type) const>(&STD reverse_iterator<It>::operator-));
+
+      const_use(static_cast<bool (*)(STD reverse_iterator<It> const&, STD reverse_iterator<It> const&)>(STD operator<=));
+      const_use(static_cast<bool (*)(STD reverse_iterator<It> const&, STD reverse_iterator<It> const&)>(STD operator>=));
+      const_use(static_cast<bool (*)(STD reverse_iterator<It> const&, STD reverse_iterator<It> const&)>(STD operator<));
+      const_use(static_cast<bool (*)(STD reverse_iterator<It> const&, STD reverse_iterator<It> const&)>(STD operator>));
+
+      const_use(static_cast< STD reverse_iterator<It> (*)(difference_type, STD reverse_iterator<It> const&)>(STD operator+));
+      const_use(static_cast<difference_type (*)(STD reverse_iterator<It> const&, STD reverse_iterator<It> const&)>(STD operator-));
+    }
+
+  int main()
+  {
+    test<tst::bidirectional_iterator<foo> >();
+    test<tst::random_access_iterator<foo> >();
+    test_random_access<tst::random_access_iterator<foo> >();
+    return 0;
+  }
+}

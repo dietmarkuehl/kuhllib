@@ -1,0 +1,384 @@
+#!/usr/local/bin/expect
+# -*-C++-*- io-27-6-2-5.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  Arithmetic inserters
+# Version: $Id: io-27-6-2-5-2.exp,v 1.1.1.1 2002/06/05 01:03:16 dietmar_kuehl Exp $ 
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <ostream>
+  #include <locale>
+  #include <streambuf>
+  #include <iostream>
+  #include <iterator>
+  #if !defined(STD)
+  #  if !defined(_CXXRT_STD)
+  #    define STD std::
+  #  else
+  #    define STD _CXXRT_STD
+  #  endif
+  #endif
+
+  // ---------------------------------------------------------------------------
+  
+  template <class cT>
+    class tiebuf: public STD basic_streambuf<cT>
+    {
+    public:
+      tiebuf(char const* n): name(n) {}
+      
+    private:
+      typename STD basic_streambuf<cT>::int_type overflow(typename STD basic_streambuf<cT>::int_type i)
+        {
+          return STD char_traits<cT>::not_eof(i);
+        }
+      int sync() { STD cout << "  " << name << ": sync()\n"; return 0; }
+      char const* name;
+
+      tiebuf(tiebuf const&);
+      void operator= (tiebuf const&);
+    };
+
+  // ---------------------------------------------------------------------------
+
+  template <class cT, class It>
+    class tst_num_put: public STD num_put<cT, It>
+    {
+      typedef typename STD num_put<cT, It>::char_type char_type;
+      typedef typename STD num_put<cT, It>::iter_type iter_type;
+
+      iter_type do_put(iter_type it, STD ios_base&, char_type, bool) const
+        {
+          STD cout << "bool\n";
+          return it;
+        }
+      iter_type do_put(iter_type it, STD ios_base&, char_type, long) const
+        {
+          STD cout << "long\n";
+          return it;
+        }
+      iter_type do_put(iter_type it, STD ios_base&, char_type, unsigned long) const
+        {
+          STD cout << "unsigned long\n";
+          return it;
+        }
+      iter_type do_put(iter_type it, STD ios_base&, char_type, double) const
+        {
+          STD cout << "double\n";
+          return it;
+        }
+      iter_type do_put(iter_type it, STD ios_base&, char_type, long double) const
+        {
+          STD cout << "long double\n";
+          return it;
+        }
+      iter_type do_put(iter_type it, STD ios_base&, char_type, void const*) const
+        {
+          STD cout << "void const*\n";
+          return it;
+        }
+    };
+
+  // ---------------------------------------------------------------------------
+
+  template <class cT>
+    void test_sentry_construction()
+    {
+      STD basic_ostream<cT> tie(new tiebuf<cT>("tie"));
+      STD basic_ostream<cT> out(new tiebuf<cT>("out"));
+      out.tie(&tie);
+      out << STD unitbuf;
+
+      tie << "a";
+      STD cout << "bool:\n";
+      out << static_cast<bool>(true);
+      tie << "b";
+      STD cout << "short:\n";
+      out << static_cast<short>(0);
+      tie << "c";
+      STD cout << "unsigned short:\n"; out << static_cast<unsigned short>(0);
+      tie << "d";
+      STD cout << "int:\n";
+      out << static_cast<int>(0);
+      tie << "e";
+      STD cout << "unsigned int:\n";
+      out << static_cast<unsigned int>(0);
+      tie << "f";
+      STD cout << "long:\n";
+      out << static_cast<long>(0);
+      tie << "g";
+      STD cout << "unsigned long:\n";
+      out << static_cast<unsigned long>(0);
+      tie << "h";
+      STD cout << "float:\n";
+      out << static_cast<float>(0);
+      tie << "i";
+      STD cout << "double:\n";
+      out << static_cast<double>(0);
+      tie << "j";
+      STD cout << "long double:\n";
+      out << static_cast<long double>(0);
+      tie << "k";
+      STD cout << "void const*:\n";
+      out << static_cast<void const*>(0);
+    }
+
+  // ---------------------------------------------------------------------------
+
+  template <class cT>
+    class tstbuf: public STD basic_streambuf<cT>
+    {
+    };
+
+  // ---------------------------------------------------------------------------
+
+  template <class cT>
+    void test_num_put_calls()
+    {
+      STD basic_ostream<cT> out(new tstbuf<cT>);
+      STD locale tst_loc(STD locale::classic(), new tst_num_put<cT, STD ostreambuf_iterator<cT> >);
+      out.imbue(tst_loc);
+      
+      out << static_cast<bool>(true);
+      out << static_cast<short>(0);
+      out << static_cast<unsigned short>(0);
+      out << static_cast<int>(0);
+      out << static_cast<unsigned int>(0);
+      out << static_cast<long>(0);
+      out << static_cast<unsigned long>(0);
+      out << static_cast<float>(0);
+      out << static_cast<double>(0);
+      out << static_cast<long double>(0);
+      out << static_cast<void const*>(0);
+    }
+
+  // ---------------------------------------------------------------------------
+
+  template <class cT>
+    class failbuf: public STD basic_streambuf<cT>
+    {
+      typename STD char_traits<cT>::int_type overflow(typename STD char_traits<cT>::int_type)
+        {
+          return STD char_traits<cT>::eof();
+        }
+    };
+
+  // ---------------------------------------------------------------------------
+
+  template <class cT>
+    char const* test_failure()
+    {
+      STD basic_ostream<cT> out(new failbuf<cT>);
+
+      out << static_cast<bool>(true);
+      if (out.rdstate() != STD ios_base::badbit)
+        return "error in test_failure (bool): rdstate() != badbit\n";
+      out.clear();
+
+      out << static_cast<short>(0);
+      if (out.rdstate() != STD ios_base::badbit)
+        return "error in test_failure (short): rdstate() != badbit\n";
+      out.clear();
+
+      out << static_cast<unsigned short>(0);
+      if (out.rdstate() != STD ios_base::badbit)
+        return "error in test_failure (unsigned short): rdstate() != badbit\n";
+      out.clear();
+
+      out << static_cast<int>(0);
+      if (out.rdstate() != STD ios_base::badbit)
+        return "error in test_failure (int): rdstate() != badbit\n";
+      out.clear();
+
+      out << static_cast<unsigned int>(0);
+      if (out.rdstate() != STD ios_base::badbit)
+        return "error in test_failure (unsigned int): rdstate() != badbit\n";
+      out.clear();
+
+      out << static_cast<long>(0);
+      if (out.rdstate() != STD ios_base::badbit)
+        return "error in test_failure (long): rdstate() != badbit\n";
+      out.clear();
+
+      out << static_cast<unsigned long>(0);
+      if (out.rdstate() != STD ios_base::badbit)
+        return "error in test_failure (unsigned long): rdstate() != badbit\n";
+      out.clear();
+
+      out << static_cast<float>(0);
+      if (out.rdstate() != STD ios_base::badbit)
+        return "error in test_failure (float): rdstate() != badbit\n";
+      out.clear();
+
+      out << static_cast<double>(0);
+      if (out.rdstate() != STD ios_base::badbit)
+        return "error in test_failure (double): rdstate() != badbit\n";
+      out.clear();
+
+      out << static_cast<long double>(0);
+      if (out.rdstate() != STD ios_base::badbit)
+        return "error in test_failure (long double): rdstate() != badbit\n";
+      out.clear();
+
+      out << static_cast<void const*>(0);
+      if (out.rdstate() != STD ios_base::badbit)
+        return "error in test_failure (void const*): rdstate() != badbit\n";
+      out.clear();
+
+      return "OK\n";
+    }
+
+  // ---------------------------------------------------------------------------
+
+  int main(int ac, char *av[])
+  {
+    if (ac != 2)
+      {
+        STD cerr << "wrong number of arguments\n";
+        return 1;
+      }
+
+    switch (av[1][0])
+      {
+      case '0':
+        test_sentry_construction<char>();
+        STD cout << "===\n";
+        test_sentry_construction<wchar_t>();
+        break;
+      case '1':
+        test_num_put_calls<char>();
+        STD cout << "===\n";
+        test_num_put_calls<wchar_t>();
+        break;
+      case '2':
+        STD cout << test_failure<char>();
+        STD cout << test_failure<wchar_t>();
+        break;
+      }
+
+    return 0;
+  }
+}
+
+simple_test "basic_ostream::operator<< sentry construction" "0" {
+bool:
+  tie: sync()
+  out: sync()
+short:
+  tie: sync()
+  out: sync()
+unsigned short:
+  tie: sync()
+  out: sync()
+int:
+  tie: sync()
+  out: sync()
+unsigned int:
+  tie: sync()
+  out: sync()
+long:
+  tie: sync()
+  out: sync()
+unsigned long:
+  tie: sync()
+  out: sync()
+float:
+  tie: sync()
+  out: sync()
+double:
+  tie: sync()
+  out: sync()
+long double:
+  tie: sync()
+  out: sync()
+void const*:
+  tie: sync()
+  out: sync()
+===
+bool:
+  tie: sync()
+  out: sync()
+short:
+  tie: sync()
+  out: sync()
+unsigned short:
+  tie: sync()
+  out: sync()
+int:
+  tie: sync()
+  out: sync()
+unsigned int:
+  tie: sync()
+  out: sync()
+long:
+  tie: sync()
+  out: sync()
+unsigned long:
+  tie: sync()
+  out: sync()
+float:
+  tie: sync()
+  out: sync()
+double:
+  tie: sync()
+  out: sync()
+long double:
+  tie: sync()
+  out: sync()
+void const*:
+  tie: sync()
+  out: sync()
+}
+
+simple_test "basic_ostream::operator<< num_put calls" "1" {
+bool
+long
+unsigned long
+long
+unsigned long
+long
+unsigned long
+double
+double
+long double
+void const*
+===
+bool
+long
+unsigned long
+long
+unsigned long
+long
+unsigned long
+double
+double
+long double
+void const*
+}
+
+simple_test "basic_ostream::operator<< failure" "2" {
+OK
+OK
+}

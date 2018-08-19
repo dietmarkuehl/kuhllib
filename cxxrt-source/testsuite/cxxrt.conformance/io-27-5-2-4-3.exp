@@ -1,0 +1,212 @@
+#!/usr/local/bin/expect
+# -*-C++-*- io-27-5-2-4-3.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  Get area 
+# Version: $Id: io-27-5-2-4-3.exp,v 1.1.1.1 2002/06/05 01:03:30 dietmar_kuehl Exp $
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <streambuf>
+  #include <locale>
+  #include <cstdio>
+  namespace my_std
+  {
+  #if !defined(_CXXRT_STD)
+  #  define STD std::
+  using namespace std;
+  struct flush { ~flush() { fflush(0); } } dummy;
+  #else
+  #  define STD _CXXRT_STD
+  using STD printf;
+  #endif
+  }
+
+  void write(char const* msg) { my_std::printf(msg); }
+  void result(bool rc)
+  {
+    char const msg_OK[] =   "test OK\n";
+    char const msg_fail[] = "test failed\n";
+    if (rc)
+      write(msg_OK);
+    else
+      write(msg_fail);
+  }
+
+  template <class charT>
+  class my_streambuf: public STD basic_streambuf<charT>
+  {
+    typedef typename STD basic_streambuf<charT>::traits_type traits_type;
+    typedef typename STD basic_streambuf<charT>::char_type char_type;
+    typedef typename STD basic_streambuf<charT>::int_type int_type;
+    typedef typename STD basic_streambuf<charT>::pos_type pos_type;
+    typedef typename STD basic_streambuf<charT>::off_type off_type;
+
+  public:
+    my_streambuf()
+    {
+      char const* c1 = "0123456789";
+      char_type *buf = new char_type[10];
+      for (int i = 0; i < 10; ++i)
+        buf[i] = char_type(c1[i]);
+      this->setg(buf, buf, buf + 10);
+    }
+    void check_showmanyc()
+    {
+      result(this->showmanyc() == 0);
+    }
+    void check_xsgetn()
+    {
+      char const* c1 = "0123456789";
+      char_type buf[10];
+      result(this->xsgetn(buf, 7) == 7);
+      result(this->xsgetn(buf + 7, 7) == 3);
+      int i = 0;
+      for (i = 0; i < 10; ++i)
+        if (!traits_type::eq(buf[i], char_type(c1[i])))
+          break;
+      result(i == 10);
+    }
+    void check_underflow()
+    {
+      result(traits_type::eq_int_type(this->underflow(), traits_type::eof()));
+    }
+  };
+
+
+  template <class charT>
+  class uflow_streambuf: public STD basic_streambuf<charT>
+  {
+    typedef typename STD basic_streambuf<charT>::traits_type traits_type;
+    typedef typename STD basic_streambuf<charT>::char_type char_type;
+    typedef typename STD basic_streambuf<charT>::int_type int_type;
+    typedef typename STD basic_streambuf<charT>::pos_type pos_type;
+    typedef typename STD basic_streambuf<charT>::off_type off_type;
+
+    bool flag;
+  public:
+    uflow_streambuf(): flag(true) {}
+    int_type underflow()
+    {
+      char const msg[] = "underflow()\n";
+      write(msg);
+      if (flag)
+        {
+          char_type *buf = new char_type[1];
+          buf[0] = char_type('i');
+          this->setg(buf, buf, buf + 1);
+          return int_type(buf[0]);
+        }
+      else
+        return traits_type::eof();
+    }
+
+    void check_uflow()
+    {
+      result(traits_type::eq_int_type(this->uflow(), char_type('i')));
+      result(traits_type::eq_int_type(this->uflow(), char_type('i')));
+      flag = false;
+      result(traits_type::eq_int_type(this->uflow(), traits_type::eof()));
+    }
+  };
+
+  int main(int ac, char *av[])
+  {
+    if (ac != 2)
+      {
+        char const oops[] = "wrong number of arguments\n";
+        write(oops);
+        return 1;
+      }
+
+    my_streambuf<char> sb1;
+    my_streambuf<wchar_t> sb2;
+
+    switch (av[1][0])
+      {
+      case '0':
+        {
+          sb1.check_showmanyc();
+          sb2.check_showmanyc();
+        }
+        break;
+      case '1':
+        {
+          sb1.check_xsgetn();
+          sb2.check_xsgetn();
+        }
+        break;
+      case '2':
+        {
+          sb1.check_underflow();
+          sb2.check_underflow();
+        }
+        break;
+      case '3':
+        {
+          uflow_streambuf<char> ub1;
+          ub1.check_uflow();
+          uflow_streambuf<wchar_t> ub2;
+          ub2.check_uflow();
+        }
+        break;
+      }
+
+    return 0;
+  }
+}
+
+simple_test "basic_streambuf showmanyc()" "0" {
+test OK
+test OK
+}
+
+simple_test "basic_streambuf xsgetn()" "1" {
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+}
+
+simple_test "basic_streambuf underflow()" "2" {
+test OK
+test OK
+}
+
+simple_test "basic_streambuf uflow()" "3" {
+underflow()
+test OK
+underflow()
+test OK
+underflow()
+test OK
+underflow()
+test OK
+underflow()
+test OK
+underflow()
+test OK
+}

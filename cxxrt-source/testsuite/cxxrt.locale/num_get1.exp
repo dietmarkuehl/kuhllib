@@ -1,0 +1,81 @@
+#!/usr/local/bin/expect
+# -*-C++-*- num_put1.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  Tests for the num_put locale; testing bools 
+# Version: $Id: num_get1.exp,v 1.1.1.1 2002/06/05 01:03:48 dietmar_kuehl Exp $
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+#include <iostream>
+#include <locale>
+#include <iterator>
+#include <sstream>
+#include <cstdlib>
+#include <cstring>
+
+#if !defined(_CXXRT_STD_NAME)
+#  define _CXXRT_STD_NAME std
+#endif
+using namespace _CXXRT_STD_NAME;
+
+int main(int ac, char *av[])
+{
+  if (ac < 2)
+    {
+      _CXXRT_STD_NAME::cerr << "usage: " << av[0] << " <test string>\n";
+      return 1;
+    }
+
+  typedef num_get<char, istreambuf_iterator<char> > NGet;
+  locale l;
+  if (has_facet<NGet>(l))
+    {
+      NGet const        &ng = use_facet<NGet>(l);
+      long              i = 17;
+      ios fmt(static_cast<streambuf*>(0));
+      ios_base::iostate state = ios_base::goodbit;
+      istringstream in(av[1] + 1);
+          
+      ng.get(istreambuf_iterator<char>(in), istreambuf_iterator<char>(), fmt, state, i);
+
+      _CXXRT_STD_NAME::cout << "i: " << i;
+      _CXXRT_STD_NAME::cout << ((state & ios_base::failbit) != 0? " fail": "");
+      _CXXRT_STD_NAME::cout << ((state & ios_base::eofbit) != 0? " eof": "");
+      _CXXRT_STD_NAME::cout << "\n";
+    }
+
+  return 0;
+}
+}
+
+simple_test "empty" "#" {i: 17 fail eof}
+simple_test "plus only" "#+" {i: 17 fail eof}
+simple_test "minus only" "#-" {i: 17 fail eof}
+simple_test "null" "#0" {i: 0 eof}
+simple_test "plus null" "#+0" {i: 0 eof}
+simple_test "minus null" "#-0" {i: 0 eof} 
+simple_test "123" "#123" {i: 123 eof}
+simple_test "plus 123" "#+123" {i: 123 eof}
+simple_test "minus 123" "#-123" {i: -123 eof}

@@ -1,0 +1,93 @@
+#!/usr/local/bin/expect
+# -*-C++-*- io-27-7-2-1.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  basic_stringstream constructors
+# Version: $Id: io-27-7-5.exp,v 1.1.1.1 2002/06/05 01:03:11 dietmar_kuehl Exp $ 
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <sstream>
+  #include <iostream>
+  #if !defined(STD)
+  #  if !defined(_CXXRT_STD)
+  #    define STD std::
+  #  else
+  #    define STD _CXXRT_STD
+  #  endif
+  #endif
+
+  template <class cT>
+    struct strings
+    {
+      static cT const* str;
+      static cT const* empty;
+    };
+  
+  template<> char const* strings<char>::str = "hello, world";
+  template<> char const* strings<char>::empty = "";
+  template<> wchar_t const* strings<wchar_t>::str = L"hello, world";
+  template<> wchar_t const* strings<wchar_t>::empty = L"";
+
+  template <class cT>
+    char const* test_stringstream()
+    {
+      typedef STD char_traits<cT> traits;
+      typedef typename traits::off_type off_t;
+      typename traits::pos_type fail(off_t(-1));
+      
+      STD basic_stringstream<cT> inout1(STD ios_base::openmode(0));
+      if (dynamic_cast< STD basic_stringbuf<cT>*>(inout1.rdbuf()) == 0)
+	return "error in stringstream ctor: stream buffer has wrong type\n";
+      if (inout1.rdbuf()->pubseekoff(off_t(0), STD ios_base::cur, STD ios_base::in) == fail)
+	return "error in stringstream ctor: stream is not opened correctly\n";
+      if (inout1.rdbuf()->pubseekoff(off_t(0), STD ios_base::cur, STD ios_base::out) == fail)
+	return "error in stringstream ctor: stream is not opened correctly\n";
+
+      STD basic_stringstream<cT> inout2(strings<cT>::str, STD ios_base::openmode(0));
+      if (dynamic_cast< STD basic_stringbuf<cT>*>(inout2.rdbuf()) == 0)
+	return "error in stringstream ctor: stream buffer has wrong type\n";
+      if (inout2.rdbuf()->pubseekoff(off_t(0), STD ios_base::cur, STD ios_base::in) == fail)
+	return "error in stringstream ctor: stream is not opened correctly\n";
+      if (inout2.rdbuf()->pubseekoff(off_t(0), STD ios_base::cur, STD ios_base::out) == fail)
+	return "error in stringstream ctor: stream is not opened correctly\n";
+      if (!(inout2.rdbuf()->str() == strings<cT>::str))
+	return "error in stringstream ctor: underlying string mismatch\n";
+
+      return "OK\n";
+    }
+
+  int main()
+  {
+    STD cout << test_stringstream<char>();
+    STD cout << test_stringstream<wchar_t>();
+
+    return 0;
+  }
+}
+
+simple_test "basic_stringstream ctors" "" {
+OK
+OK
+}

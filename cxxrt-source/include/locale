@@ -1,0 +1,92 @@
+// -*-C++-*- locale
+// -------------------------------------------------------------------------- 
+// Copyright (c) 2002 Dietmar Kuehl
+
+// Permission is hereby granted, free of charge, to any person obtaining
+// a copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to
+// permit persons to whom the Software is furnished to do so, subject
+// to the following conditions:
+
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+// KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+// WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+// -------------------------------------------------------------------------- 
+// Author:  Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+// Title:  Forwarding header for the localization library 
+// Version: $Id: locale,v 1.1.1.1 2002/06/05 01:00:50 dietmar_kuehl Exp $
+// -------------------------------------------------------------------------- 
+// The headers included are the general header "locale" which defines the
+// basic stuff for the locale library and then a header for every component.
+// Actually, this header does a little more than mere forwarding: It includes
+// all headers needed for the declaration of the locale library. The stuff
+// is spread across several headers to make it possible for the implementation
+// to include only things really required (this actually necessary to avoid
+// cyclic dependencies).
+
+// The headers included are the general header "locale" which defines the
+// basic stuff for the locale library and then a header for every component.
+
+#if !defined(__LOCALE__)
+#define __LOCALE__
+
+// -------------------------------------------------------------------------- 
+
+#if !defined(_CXXRT_LOCALE_H__)
+#  include <cxxrt/locale.h>
+#endif
+
+#if !defined(_CXXRT_CTYPE_H__)
+#  include <cxxrt/ctype.h>
+#endif
+#if !defined(_CXXRT_CODECVT_H__)
+#  include <cxxrt/codecvt.h>
+#endif
+
+#if !defined(_CXXRT_NUM_GET_H__)
+#  include <cxxrt/num_get.h>
+#endif
+#if !defined(_CXXRT_NUM_PUT_H__)
+#  include <cxxrt/num_put.h>
+#endif
+#if !defined(_CXXRT_NUMPUNCT_H__)
+#  include <cxxrt/numpunct.h>
+#endif
+
+#if !defined(_CXXRT_COLLATE_H__)
+#  include <cxxrt/collate.h>
+#endif
+
+#if !defined(_CXXRT_TIME_GET_H__)
+#  include <cxxrt/time_get.h>
+#endif
+#if !defined(_CXXRT_TIME_PUT_H__)
+#  include <cxxrt/time_put.h>
+#endif
+
+#if !defined(_CXXRT_MONEY_GET_H__)
+#  include <cxxrt/money_get.h>
+#endif
+#if !defined(_CXXRT_MONEY_PUT_H__)
+#  include <cxxrt/money_put.h>
+#endif
+#if !defined(_CXXRT_MONEYPUNCT_H__)
+#  include <cxxrt/moneypunct.h>
+#endif
+
+#if !defined(_CXXRT_MESSAGES_H__)
+#  include <cxxrt/messages.h>
+#endif
+
+// --------------------------------------------------------------------------
+
+#endif /* __LOCALE__ */

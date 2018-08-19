@@ -1,0 +1,208 @@
+#!/usr/local/bin/expect
+# -*-C++-*- io-27-4-5-2.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  Member function
+# Version: $Id: lib-basic-ios-members.exp,v 1.1.1.1 2002/06/05 01:03:31 dietmar_kuehl Exp $
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <ios>
+  #include <locale>
+  #include <ostream>
+  #include <streambuf>
+  #include <cstdio>
+  namespace my_std
+  {
+  #if !defined(_CXXRT_STD)
+  #  define STD std::
+  using namespace std;
+  struct flush { ~flush() { fflush(0); } } dummy;
+  #else
+  #  define STD _CXXRT_STD
+  using STD printf;
+  #endif
+  }
+
+  void write(char const* msg) { my_std::printf(msg); }
+  void result(bool rc)
+    {
+      char const msg_OK[] =   "test OK\n";
+      char const msg_fail[] = "test failed\n";
+      if (rc)
+	write(msg_OK);
+      else
+	write(msg_fail);
+    }
+  
+  void callback(STD ios_base::event e, STD ios_base &, int)
+    {
+      char const msg_erase[] = "callback erase\n";
+      char const msg_imbue[] = "callback imbue\n";
+      char const msg_copyfmt[] = "callback copyfmt\n";
+      
+      switch (e)
+	{
+	case STD ios_base::erase_event:
+	  write(msg_erase);
+	  break;
+	case STD ios_base::imbue_event:
+	  write(msg_imbue);
+	  break;
+	case STD ios_base::copyfmt_event:
+	  write(msg_copyfmt);
+	  break;
+	}
+    }
+  
+  template <class charT>
+    class my_streambuf: public STD basic_streambuf<char>
+    {
+    };
+  
+  int main(int ac, char *av[])
+    {
+      if (ac != 2)
+	{
+	  char const oops[] = "wrong number of arguments\n";
+	  write(oops);
+	  return 1;
+	}
+      
+      STD basic_streambuf<char> *sb = new my_streambuf<char>();
+      STD basic_ios<char> fmt(sb);
+      
+      switch (av[1][0])
+	{
+	case '0':
+	  {
+	    result(fmt.tie() == 0);
+	    STD basic_ostream<char> *os = new STD basic_ostream<char>(sb);
+	    result(fmt.tie(os) == 0);
+	    result(fmt.tie() == os);
+	  }
+	  break;
+	case '1':
+	  {
+	    result(fmt.rdbuf() == sb);
+	    STD basic_streambuf<char> *sb2 = new my_streambuf<char>();
+	    result(fmt.rdbuf(sb2) == sb);
+	    result(fmt.rdbuf() == sb2);
+	  }
+	  break;
+	case '2':
+	  {
+	    STD locale l1;
+	    STD locale l2;
+	    fmt.imbue(l1);
+	    result(fmt.imbue(l2) == l1);
+	    result(fmt.narrow('t', 'f') == 't');
+	    result(fmt.widen('t') == 't');
+	  }
+	  break;
+	case '3':
+	  {
+	    result(fmt.fill() == ' ');
+	    result(fmt.fill('@') == ' ');
+	    result(fmt.fill() == '@');
+	  }
+	  break;
+	case '4':
+	  {
+	    STD basic_ios<char> cpy(sb);
+	    int idx1 = STD ios_base::xalloc();
+	    int idx2 = STD ios_base::xalloc();
+	    
+	    fmt.register_callback(callback, idx1);
+	    cpy.register_callback(callback, idx2);
+	    fmt.iword(idx1) = 1;
+	    cpy.iword(idx2) = 2;
+	    
+	    cpy.flags(STD ios_base::hex | STD ios_base::uppercase);
+	    cpy.precision(3);
+	    cpy.width(17);
+	    cpy.imbue(STD locale());
+	    cpy.tie(new STD basic_ostream<char>(sb));
+	    cpy.fill('@');
+	    
+	    fmt.copyfmt(cpy);
+	    
+	    result(fmt.flags() == cpy.flags());
+	    result(fmt.precision() == cpy.precision());
+	    result(fmt.width() == cpy.width());
+	    result(fmt.getloc() == cpy.getloc());
+	    result(fmt.tie() == cpy.tie());
+	    result(fmt.fill() == cpy.fill());
+	    result(fmt.exceptions() == cpy.exceptions());
+	    
+	    result(fmt.iword(idx1) == cpy.iword(idx1));
+	    result(fmt.iword(idx2) == cpy.iword(idx2));
+	  }
+	  break;
+	}
+      
+      return 0;
+    }
+}
+
+simple_test "basic_ios tie" "0" {
+test OK
+test OK
+test OK
+}
+
+simple_test "basic_ios rdbuf" "1" {
+test OK
+test OK
+test OK
+}
+
+simple_test "basic_ios locale stuff" "2" {
+test OK
+test OK
+test OK
+}
+
+simple_test "basic_sios fill character" "3" {
+test OK
+test OK
+test OK
+}
+
+simple_test "basic_ios copyfmt" "4" {
+callback imbue
+callback erase
+callback copyfmt
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+callback erase
+callback erase
+}

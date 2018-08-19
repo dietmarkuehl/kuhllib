@@ -1,0 +1,114 @@
+#!/usr/local/bin/expect
+# -*-C++-*- lib-wccvt.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  Tests for the multi-byte/wide-character conversions
+# Version: $Id: lib-wccvt.exp,v 1.3 2003/04/13 19:39:28 dietmar_kuehl Exp $ 
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include "testtools.hpp"
+  #include <cstdio>
+  #include <cwchar>
+
+  #if defined(_ESTD_STD)
+  #  define STD _ESTD_STD
+  #elif defined(_CXXRT_STD)
+  #  define STD _CXXRT_STD
+  #else
+  #  define STD ::std::
+  #endif
+
+  void test_btowc()
+    {
+      bool failed = false;
+      if (STD btowc(EOF) != WEOF && settrue(failed))
+	STD cout << "btowc(): EOF not converted to WEOF\n";
+      if (STD btowc('a') != L'a' && settrue(failed))
+	STD cout << "btowc(): literal character not correctly converted\n";
+      //-dk:TODO tests for non-trivial conversion
+
+      if (!failed)
+	STD cout << "OK\n";
+    }
+
+  void test_wctob()
+    {
+      bool failed = false;
+      if (STD wctob(WEOF) != EOF && settrue(failed))
+	STD cout << "wctob(): WEOF not converted to EOF\n";
+      if (STD btowc(L'a') != 'a' && settrue(failed))
+	STD cout << "wctob(): literal character not correctly converted\n";
+      //-dk:TODO tests for non-trivial conversion
+
+      if (!failed)
+	STD cout << "OK\n";
+    }
+
+  void test_mbsinit()
+    {
+      bool failed = false;
+      if (STD mbsinit(0) == 0)
+	STD cout << "mbsinit(): call for null pointer returned zero\n";
+      STD mbstate_t state = STD mbstate_t();
+      if (STD mbsinit(&state) == 0)
+	STD cout << "mbsinit(): call for initial state returned zero\n";
+      //-dk:TODO tests for non-initial state
+
+      if (!failed)
+	STD cout << "OK\n";
+    }
+
+  int main(int ac, char *av[])
+  {
+    if (ac != 2)
+      {
+        STD cout << "wrong number of arguments\n";
+        return 1;
+      }
+
+    switch (av[1][0])
+      {
+      case 'a': test_btowc(); break;
+      case 'b': test_wctob(); break;
+      case 'c': test_mbsinit(); break;
+      default:
+	break;
+      }
+
+    return 0;
+  }
+}
+
+simple_test "btowc()" "a" {
+OK
+}
+
+simple_test "wAtob()" "b" {
+OK
+}
+
+simple_test "mbsinit()" "c" {
+OK
+}

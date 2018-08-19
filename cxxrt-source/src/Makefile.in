@@ -1,0 +1,220 @@
+# -*-makefile-*-
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author:  Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:   Makefile to generate the real binary portion of the library
+# Version: $Id: Makefile.in,v 1.2 2002/06/07 00:46:11 dietmar_kuehl Exp $
+# -------------------------------------------------------------------------- 
+
+@SET_MAKE@
+
+LIBNAME = cxxrt
+LIBRARY = lib$(LIBNAME).a
+SLIBRARY = lib$(LIBNAME).so
+
+CC        = gcc
+CXX       = @CXX@
+CPPFLAGS  = -I../include -I../include/sgi
+WARN      = @CXXRT_WARNFLAGS@
+EXTRAWARN = -Wundef -Wshadow -Wcast-qual -Wcast-align -Wwrite-strings \
+            -Wnested-externs
+#           -Wnested-externs -Winline -Wredundant-decls 
+MCXXFLAGS = @CXXRT_MCXXFLAGS@
+CXXFLAGS  = @CXXFLAGS@ @CXXRT_CXXFLAGS@ $(WARN) $(MCXXFLAGS)
+LFLAGS   = -L.. -Wl,--gc-sections
+OBJEXT   = @OBJEXT@
+
+# -------------------------------------------------------------------------- 
+
+CXXFILES = \
+  alloc.cpp    \
+  cbstring.cpp \
+  ccnum_ge.cpp \
+  ccnum_pu.cpp \
+  ccodecvt.cpp \
+  ccollate.cpp \
+  cctype.cpp   \
+  ccty_dat.cpp \
+  cctraits.cpp \
+  cfilebuf.cpp \
+  cfstream.cpp \
+  cisbufit.cpp \
+  cifstrea.cpp \
+  ciomanip.cpp \
+  ciobj.cpp    \
+  cios.cpp     \
+  ciostrea.cpp \
+  cistream.cpp \
+  clcache.cpp  \
+  cmessage.cpp \
+  cmnypnct.cpp \
+  cmny_get.cpp \
+  cmny_put.cpp \
+  cnumpunc.cpp \
+  cofstrea.cpp \
+  coobj.cpp    \
+  cosbufit.cpp \
+  costream.cpp \
+  csbuf.cpp    \
+  csstream.cpp \
+  cstrstrm.cpp \
+  ctimeget.cpp \
+  ctimeput.cpp \
+  cty_base.cpp \
+  c_lfile.cpp  \
+  c_locale.cpp \
+  c_collat.cpp \
+  c_ctype.cpp  \
+  c_messag.cpp \
+  c_money.cpp  \
+  c_nctype.cpp \
+  c_num.cpp    \
+  c_time.cpp   \
+  c_wctype.cpp \
+  dcomplex.cpp \
+  d_error.cpp  \
+  fcomplex.cpp \
+  ia_error.cpp \
+  ioinit.cpp   \
+  ios_base.cpp \
+  iomanip.cpp  \
+  failure.cpp  \
+  lclassic.cpp \
+  lcomplex.cpp \
+  le_error.cpp \
+  lo_error.cpp \
+  limits.cpp   \
+  locale.cpp   \
+  locale_n.cpp \
+  locale_r.cpp \
+  new.cpp      \
+  num_putf.cpp \
+  num_puti.cpp \
+  or_error.cpp \
+  ov_error.cpp \
+  ra_error.cpp \
+  ru_error.cpp \
+  sysfile.cpp  \
+  u_error.cpp  \
+  wbstring.cpp \
+  wcodecvt.cpp \
+  wcollate.cpp \
+  wctraits.cpp \
+  wctype.cpp   \
+  wfstream.cpp \
+  wiomanip.cpp \
+  wioobj.cpp   \
+  wios.cpp     \
+  wiostrea.cpp \
+  wisbufit.cpp \
+  wistream.cpp \
+  wlcache.cpp  \
+  wmessage.cpp \
+  wmnypnct.cpp \
+  wmny_get.cpp \
+  wmny_put.cpp \
+  wnumpunc.cpp \
+  wosbufit.cpp \
+  wostream.cpp \
+  wsbuf.cpp    \
+  wsstream.cpp \
+  wtimeget.cpp \
+  wtimeput.cpp \
+  wwnum_ge.cpp \
+  wwnum_pu.cpp
+
+MINFILES = \
+  ios_base-FMTFLAGS.$(OBJEXT) \
+  ios_base-IOSTATE.$(OBJEXT) \
+  ios_base-OPENMODE.$(OBJEXT) \
+  ios_base-SEEKDIR.$(OBJEXT) \
+  ios_base-SETF1.$(OBJEXT) \
+  ios_base-SETF2.$(OBJEXT) \
+  ios_base-UNSETF.$(OBJEXT) \
+  ios_base-FLAGS.$(OBJEXT) \
+  ios_base-PRECISION.$(OBJEXT) \
+  ios_base-WIDTH.$(OBJEXT) \
+  ios_base-IMBUE.$(OBJEXT) \
+  ios_base-GETLOC1.$(OBJEXT) \
+  ios_base-GETLOC2.$(OBJEXT) \
+  ios_base-XALLOCIDX.$(OBJEXT) \
+  ios_base-REGCB.$(OBJEXT) \
+  ios_base-CALLCB.$(OBJEXT) \
+  ios_base-CTOR.$(OBJEXT) \
+  ios_base-DTOR.$(OBJEXT) \
+  ios_base-XALLOC.$(OBJEXT) \
+  ios_base-SYNC.$(OBJEXT) \
+  ios_base-IWORD.$(OBJEXT) \
+  ios_base-PWORD.o \
+  ios_base-COPYFMT.$(OBJEXT)
+
+LIBOFILES = $(CXXFILES:.cpp=.$(OBJEXT))
+
+default: ../$(LIBRARY) ../$(SLIBRARY)
+min: $(MINFILES)
+
+../$(LIBRARY): $(LIBOFILES)
+	$(AR) rus $@ $(LIBOFILES)
+
+../$(SLIBRARY): $(LIBOFILES)
+	$(CC) -shared -o $@ $(LIBOFILES)
+
+save:
+	$(AR) rc $@ $(LIBOFILES)
+	@RANLIB@ $@
+
+# -------------------------------------------------------------------------- 
+
+%.$(OBJEXT): %.cpp
+	$(COMPILE.cc) $< -o $@
+%.s: %.cpp
+	$(COMPILE.cc) -S $? -o $@
+%.ii: %.cpp
+	$(COMPILE.cc) -E $? > $@
+
+# -------------------------------------------------------------------------- 
+
+ios_base-%.$(OBJEXT): ios_base.cpp ios_base.$(OBJEXT)
+	$(COMPILE.cc) $< -o $@ -D_CXXRT_MIN_IO -D$(subst ios_base-,,$(@:.$(OBJEXT)=))
+
+# -------------------------------------------------------------------------- 
+
+install:
+
+clean:
+	$(RM) *~ #*#
+	$(RM) dummy
+	$(RM) $(LIBOFILES)
+	$(RM) make.depend
+	$(RM) mkerr
+
+distclean: clean
+	$(RM) Makefile
+
+depend make.depend:
+	@CXXRT_MKXXDEPEND@ $(CPPFLAGS) $(CXXFILES)
+	sed -e 's/\.o:/.$(OBJEXT):/' < make.depend > make.depend.tmp
+	$(RM) make.depend
+	mv make.depend.tmp make.depend
+
+include make.depend

@@ -1,0 +1,117 @@
+#!/usr/local/bin/expect
+# -*-C++-*- loc-22-2-1-1.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  Template class ctype
+# Version: $Id: loc-22-2-1-1.exp,v 1.1.1.1 2002/06/05 01:03:06 dietmar_kuehl Exp $
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <locale>
+  #if !defined(_CXXRT_STD)
+  #  define STD std::
+  #else
+  #  define STD _CXXRT_STD
+  #endif
+
+  template <class T> inline void check_type(T const&) {}
+  template <class charT> inline void test_types(charT &, charT &) {}
+
+  template <class charT>
+  class test_protected: public STD ctype<charT>
+  {
+  public:
+    test_protected()
+    {
+      charT     c = charT();
+      charT     cbuf[10];
+      typename STD ctype_base::mask mbuf[10];
+
+      check_type<bool>(this->do_is(STD ctype_base::space, c));
+      check_type<charT const *>(this->do_is(cbuf, cbuf + 1, mbuf));
+      check_type<charT const *>(this->do_scan_is(STD ctype_base::space, cbuf, cbuf + 1));
+      check_type<charT const *>(this->do_scan_not(STD ctype_base::space, cbuf, cbuf + 1));
+
+      check_type<charT const >(this->do_toupper(c));
+      check_type<charT const *>(this->do_toupper(cbuf, cbuf + 1));
+      check_type<charT const >(this->do_tolower(c));
+      check_type<charT const *>(this->do_tolower(cbuf, cbuf + 1));
+
+      char nbuf[10];
+
+      check_type<charT const >(this->do_widen('a'));
+      check_type<char const  *>(this->do_widen(nbuf, nbuf + 10, cbuf));
+
+      check_type<char        >(this->do_narrow(c, 'a'));
+      check_type<charT const *>(this->do_narrow(cbuf, cbuf + 10, 'a', nbuf));
+    }
+  };
+
+  template <class Facet>
+  inline void test(Facet const &ct)
+  {
+    check_type< STD locale::facet>(ct);
+    check_type< STD ctype_base>(ct);
+
+    typename Facet::char_type c1 = typename Facet::char_type(), c2 = typename Facet::char_type();
+    test_types(c1, c2);
+
+    check_type<Facet>(*new Facet);
+    check_type<Facet>(*new Facet(0));
+
+    typename Facet::char_type     c = typename Facet::char_type();
+    typename Facet::char_type     cbuf[10];
+    typename STD ctype_base::mask mbuf[10];
+
+    check_type<bool>(ct.is(STD ctype_base::space, c));
+    check_type<typename Facet::char_type const *>(ct.is(cbuf, cbuf + 1, mbuf));
+    check_type<typename Facet::char_type const *>(ct.scan_is(STD ctype_base::space, cbuf, cbuf + 1));
+    check_type<typename Facet::char_type const *>(ct.scan_not(STD ctype_base::space, cbuf, cbuf + 1));
+
+    check_type<typename Facet::char_type const >(ct.toupper(c));
+    check_type<typename Facet::char_type const *>(ct.toupper(cbuf, cbuf + 1));
+    check_type<typename Facet::char_type const >(ct.tolower(c));
+    check_type<typename Facet::char_type const *>(ct.tolower(cbuf, cbuf + 1));
+
+    char nbuf[10];
+
+    check_type<typename Facet::char_type const >(ct.widen('a'));
+    check_type<char const                      *>(ct.widen(nbuf, nbuf + 10, cbuf));
+
+    check_type<char                            >(ct.narrow(c, 'a'));
+    check_type<typename Facet::char_type const *>(ct.narrow(cbuf, cbuf + 10, 'a', nbuf));
+
+    check_type< STD locale::id>(Facet::id);
+  }
+
+  int main(int, char *[])
+  {
+
+    test(STD use_facet< STD ctype<char> >(STD locale::classic()));
+    test(STD use_facet< STD ctype<wchar_t> >(STD locale::classic()));
+    test_protected<wchar_t> tp;
+
+    return 0;
+  }
+}

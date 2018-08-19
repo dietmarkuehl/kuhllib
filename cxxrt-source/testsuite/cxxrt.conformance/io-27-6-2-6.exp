@@ -1,0 +1,188 @@
+#!/usr/local/bin/expect
+# -*-C++-*- io-27-6-2-6.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  Unformatted output functions
+# Version: $Id: io-27-6-2-6.exp,v 1.1.1.1 2002/06/05 01:03:36 dietmar_kuehl Exp $ 
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <ostream>
+  #include <iostream>
+  #include <streambuf>
+  #if !defined(STD)
+  #  if !defined(_CXXRT_STD)
+  #    define STD std::
+  #  else
+  #    define STD _CXXRT_STD
+  #  endif
+  #endif
+
+  // ---------------------------------------------------------------------------
+
+  template <class cT>
+    class tstbuf: public STD basic_streambuf<cT>
+    {
+    public:
+      tstbuf(int count) { this->setp(buffer, buffer + count); }
+      cT const* str() const { *this->pptr() = 0; return this->pbase(); }
+
+    private:
+      cT buffer[1024];
+    };
+
+  // ---------------------------------------------------------------------------
+
+  template <class cT>
+    struct chars
+    {
+      static cT c1;
+      static cT const* s1;
+    };
+
+  template<> char chars<char>::c1 = 'a';
+  template<> char const* chars<char>::s1 = "123456789";
+
+  template<> wchar_t chars<wchar_t>::c1 = L'a';
+  template<> wchar_t const* chars<wchar_t>::s1 = L"123456789";
+
+  // ---------------------------------------------------------------------------
+
+  template <class cT>
+    inline char const* test_put()
+    {
+      tstbuf<cT>            sb(1);
+      STD basic_ostream<cT> out(&sb);
+      
+      if (&out.put(chars<cT>::c1) != &out)
+        return "error in test_put(): wrong object returned\n";
+      if (sb.str()[0] != chars<cT>::c1)
+        return "error in test_put(): wrong character written\n";
+      if (out.rdstate() != STD ios_base::goodbit)
+        return "error in test_put(): rdstate() != goodbit\n";
+      
+      out.put(chars<cT>::c1);
+      if (out.rdstate() != STD ios_base::badbit)
+        return "error in test_put(): rdstate() != badbit\n";
+
+      return "OK\n";
+    }
+
+  // ---------------------------------------------------------------------------
+
+  template <class cT>
+    inline char const* test_write()
+    {
+      tstbuf<cT>            sb(15);
+      STD basic_ostream<cT> out(&sb);
+      
+      if (&out.write(chars<cT>::s1, 10) != &out)
+        return "error in test_write(): wrong object returned\n";
+      if (STD char_traits<cT>::compare(sb.str(), chars<cT>::s1, 10) != 0)
+        return "error in test_write(): wrong characters written\n";
+      if (out.rdstate() != STD ios_base::goodbit)
+        return "error in test_write(): rdstate() != goodbit\n";
+      
+      out.write(chars<cT>::s1, 10);
+      if (out.rdstate() != STD ios_base::badbit)
+        return "error in test_write(): rdstate() != badbit\n";
+      if (STD char_traits<cT>::compare(sb.str() + 10, chars<cT>::s1, 5) != 0)
+        return "error in test_write(): wrong characters written\n";
+      
+      return "OK\n";
+    }
+
+  // ---------------------------------------------------------------------------
+
+  template <class cT>
+    class flushbuf: public STD basic_streambuf<cT>
+    {
+    public:
+      flushbuf(): count(0) {}
+    private:
+      int sync() { return count++ == 1? -1: 0; }
+      int count;
+    };
+
+  template <class cT>
+    inline char const* test_flush()
+    {
+      STD basic_ostream<cT> out(new flushbuf<cT>);
+
+      if (&out.flush() != &out)
+        return "error in test_flush(): wrong object returned\n";
+      if (out.rdstate() != STD ios_base::goodbit)
+        return "error in test_flush(): rdstate() != goodbit\n";
+
+      out.flush();
+      if (out.rdstate() != STD ios_base::badbit)
+        return "error in test_flush(): rdstate() != badbit\n";
+
+      return "OK\n";
+    }
+
+  // ---------------------------------------------------------------------------
+
+  int main(int ac, char *av[])
+  {
+    if (ac != 2)
+      {
+        STD cerr << "wrong number of arguments\n";
+        return 1;
+      }
+
+    switch (av[1][0])
+      {
+      case '0':
+        STD cout << test_put<char>();
+        STD cout << test_put<wchar_t>();
+        break;
+      case '1':
+        STD cout << test_write<char>();
+        STD cout << test_write<wchar_t>();
+        break;
+      case '2':
+        STD cout << test_flush<char>();
+        STD cout << test_flush<wchar_t>();
+        break;
+      }
+
+    return 0;
+  }
+}
+
+simple_test "basic_ostream::put()" "0" {
+OK
+OK
+}
+
+simple_test "basic_ostream::write()" "1" {
+OK
+OK
+}
+
+simple_test "basic_ostream::flush()" "2" {
+OK
+OK
+}

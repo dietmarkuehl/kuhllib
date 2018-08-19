@@ -1,0 +1,82 @@
+#!/usr/local/bin/expect
+# -*-C++-*- io-27-3-1.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  Narrow stream objects 
+# Version: $Id: lib-narrow-stream-objects.exp,v 1.1.1.1 2002/06/05 01:02:55 dietmar_kuehl Exp $
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <iostream>
+  #include <locale>
+  #include <testio.hpp>
+
+  bool check(STD ios &base)
+    {
+      if (base.rdbuf() == 0) return false;
+      if (base.tie() != 0) return false;
+      if (base.rdstate() != STD ios_base::goodbit) return false;
+      if (base.exceptions() != STD ios_base::goodbit) return false;
+      if (base.flags() != (STD ios_base::skipws | STD ios_base::dec)) return false;
+      if (base.width() != 0) return false;
+      if (base.precision() != 6) return false;
+      if (base.fill() != base.widen(' ')) return false;
+      if (base.getloc() != STD locale()) return false;
+
+      return true;
+    }
+
+  int main(int, char *[])
+  {
+    char const cin_ok[]  = "cin OK\n";
+    char const cout_ok[] = "cout OK\n";
+    char const cerr_ok[] = "cerr OK\n";
+    char const clog_ok[] = "clog OK\n";
+
+    if (STD cin.tie() == &STD cout)
+      {
+        STD cin.tie(0);
+        if (check(STD cin)) write(cin_ok);
+      }
+
+    if (check(STD cout)) write(cout_ok);
+
+    if ((STD cerr.flags() & STD ios_base::unitbuf) != 0)
+      {
+        STD cerr.unsetf(STD ios_base::unitbuf);
+        if (check(STD cerr)) write(cerr_ok);
+      }
+
+    if (check(STD clog)) write(clog_ok);
+
+    return 0;
+  }
+}
+
+simple_test "initialization of standard stream objects" "" {
+cin OK
+cout OK
+cerr OK
+clog OK
+}

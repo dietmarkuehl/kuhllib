@@ -1,0 +1,397 @@
+#!/usr/local/bin/expect
+# -*-C++-*- io-27-7-1-3.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  Overridden virtual functions
+# Version: $Id: io-27-7-1-3.exp,v 1.1.1.1 2002/06/05 01:02:52 dietmar_kuehl Exp $ 
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <sstream>
+  #include <iostream>
+  #if !defined(STD)
+  #  if !defined(_CXXRT_STD)
+  #    define STD std::
+  #  else
+  #    define STD _CXXRT_STD
+  #  endif
+  #endif
+
+  // ---------------------------------------------------------------------------
+
+  template <class cT>
+    struct strings
+    {
+      static cT  empty[];
+      static cT  str1[];
+      static int size1;
+      static cT  str2[];
+    };
+
+  #if defined(_MSC_VER)
+  template <> char strings<char>::empty[] = "";
+  template <> char strings<char>::str1[] = "Hello, world\n";
+  template <> int  strings<char>::size1 = 12;
+  template <> char strings<char>::str2[] = "Goodbye, world\n";
+  template <> wchar_t strings<wchar_t>::empty[] = L"";
+  template <> wchar_t strings<wchar_t>::str1[] = L"Hello, world\n";
+  template <> int  strings<wchar_t>::size1 = 12;
+  template <> wchar_t strings<wchar_t>::str2[] = L"Goodbye, world\n";
+  #else
+  template <class T, int sz> inline int size(T (&)[sz]) { return sz; }
+
+  template <> char strings<char>::empty[] = "";
+  template <> char strings<char>::str1[] = "Hello, world\n";
+  template <> int  strings<char>::size1 = size(str1) - 1;
+  template <> char strings<char>::str2[] = "Goodbye, world\n";
+  template <> wchar_t strings<wchar_t>::empty[] = L"";
+  template <> wchar_t strings<wchar_t>::str1[] = L"Hello, world\n";
+  template <> int  strings<wchar_t>::size1 = size(str1) - 1;
+  template <> wchar_t strings<wchar_t>::str2[] = L"Goodbye, world\n";
+  #endif
+
+  // ---------------------------------------------------------------------------
+
+  template <class cT>
+  class basic_tstbuf: public STD basic_stringbuf<cT>
+  {
+    typedef typename STD basic_stringbuf<cT>::traits_type traits;
+
+  public:
+    basic_tstbuf(STD basic_string<cT> const& str, STD ios_base::openmode mode):
+	STD basic_stringbuf<cT>(str, mode)
+      {
+      }
+      
+    typename traits::int_type test_underflow() { return this->underflow(); }
+    typename traits::int_type test_pbackfail(typename traits::int_type c) { return this->pbackfail(c); }
+    typename traits::int_type test_overflow(typename traits::int_type c) { return this->overflow(c); }
+
+    bool compare_end_pointer() { return this->egptr() <= this->epptr(); }
+  };
+
+  // ---------------------------------------------------------------------------
+
+  template <class cT>
+    inline char const* test_underflow()
+    {
+      typedef STD char_traits<cT> traits;
+
+      basic_tstbuf<cT> sb1(strings<cT>::empty, STD ios_base::in);
+
+      if (!traits::eq_int_type(sb1.test_underflow(), traits::eof()))
+	return "underflow error: non existing character was returned\n";
+      
+      sb1.str(strings<cT>::str1);
+      if (!traits::eq_int_type(sb1.test_underflow(), traits::to_int_type(strings<cT>::str1[0])))
+	return "underflow error: unexpect character returned\n";
+      if (!traits::eq_int_type(sb1.test_underflow(), traits::to_int_type(strings<cT>::str1[0])))
+	return "underflow error: underflow changed the returned character\n";
+
+      basic_tstbuf<cT> sb2(strings<cT>::str1, STD ios_base::out);
+      if (!traits::eq_int_type(sb2.test_underflow(), traits::eof()))
+	return "underflow error: character read from write-only stream\n";
+
+      return "OK\n";
+    }
+
+  // ---------------------------------------------------------------------------
+
+  template <class cT>
+    inline char const* test_pbackfail()
+    {
+      typedef STD char_traits<cT> traits;
+
+      basic_tstbuf<cT> sb1(strings<cT>::str1, STD ios_base::in);
+      basic_tstbuf<cT> sb2(strings<cT>::str1, STD ios_base::in | STD ios_base::out);
+
+      if (!traits::eq_int_type(sb1.test_pbackfail(traits::to_int_type(strings<cT>::str1[0])), traits::eof()))
+	return "pbackfail error: character putback without position available\n";
+      if (!traits::eq_int_type(sb1.sgetc(), traits::to_int_type(strings<cT>::str1[0])))
+	return "pbackfail_error: wrong character in the sequence(1)\n";
+
+      sb1.sbumpc();
+      if (traits::eq_int_type(sb1.test_pbackfail(traits::to_int_type(strings<cT>::str1[0])), traits::eof()))
+	return "pbackfail error: character putback is not working correctly\n";
+      if (!traits::eq_int_type(sb1.sgetc(), traits::to_int_type(strings<cT>::str1[0])))
+	return "pbackfail_error: wrong character in the sequence(2)\n";
+      
+      sb1.sbumpc();
+      if (traits::eq_int_type(sb1.test_pbackfail(traits::eof()), traits::eof()))
+	return "pbackfail error: character putback is not working correctly\n";
+      if (!traits::eq_int_type(sb1.sgetc(), traits::to_int_type(strings<cT>::str1[0])))
+	return "pbackfail_error: wrong character in the sequence(3)\n";
+
+      sb1.sbumpc();
+      if (!traits::eq_int_type(sb1.test_pbackfail(strings<cT>::str1[1]), traits::eof()))
+	return "pbackfail error: different character putback in read-only stream\n";
+      if (!traits::eq_int_type(sb1.sgetc(), traits::to_int_type(strings<cT>::str1[1])))
+	return "pbackfail_error: wrong character in the sequence(4)\n";
+
+      sb2.sbumpc();
+      if (traits::eq_int_type(sb2.test_pbackfail(strings<cT>::str1[2]), traits::eof()))
+	return "pbackfail error: different character putback failed for writable stream\n";
+      if (!traits::eq_int_type(sb2.sgetc(), traits::to_int_type(strings<cT>::str1[2])))
+	return "pbackfail_error: wrong character in the sequence(5)\n";
+
+      return "OK\n";
+    }
+
+  // ---------------------------------------------------------------------------
+
+  template <class cT>
+    inline char const* test_overflow()
+    {
+      typedef STD char_traits<cT> traits;
+
+      basic_tstbuf<cT> sb1(strings<cT>::empty, STD ios_base::in);
+      basic_tstbuf<cT> sb2(strings<cT>::empty, STD ios_base::out);
+
+      if (traits::eq_int_type(sb1.test_overflow(traits::eof()), traits::eof()))
+	return "error in overflow(): failure when overflowing read-only buffer with EOF\n";
+      if (traits::eq_int_type(sb2.test_overflow(traits::eof()), traits::eof()))
+	return "error in overflow(): failure when overflowing buffer with EOF\n";
+
+      if (!traits::eq_int_type(sb1.test_overflow(traits::to_int_type(strings<cT>::str1[0])), traits::eof()))
+	return "error in overflow(): write to a read-only stream succeeded\n";
+
+      for (int i = 0; strings<cT>::str1[i] != 0; ++i)
+	if (!traits::eq_int_type(sb2.test_overflow(traits::to_int_type(strings<cT>::str1[i])),
+			 traits::to_int_type(strings<cT>::str1[i])))
+	  return "error in overflow(): write to string failed\n";
+
+      if (!(sb2.str() == strings<cT>::str1))
+	return "error in overflow(): unexpected result\n";
+
+      basic_tstbuf<cT> sb3(strings<cT>::empty, STD ios_base::in | STD ios_base::out);
+      for (int j = 0; strings<cT>::str1[j] != 0; ++j)
+	{
+	  if (!traits::eq_int_type(sb3.test_overflow(traits::to_int_type(strings<cT>::str1[j])),
+				   traits::to_int_type(strings<cT>::str1[j])))
+	    return "error in overflow(): write to string failed\n";
+          if (!sb3.compare_end_pointer())
+            return "error in overflow(): end pointers mismatch\n";
+        }
+
+      return "OK\n";
+    }
+
+  // ---------------------------------------------------------------------------
+
+  template <class cT>
+    inline char const* test_seekoff()
+    {
+	typedef STD char_traits<cT>       traits;
+	typedef typename traits::pos_type pos_t;
+	typedef typename traits::off_type off_t;
+
+	pos_t fail(off_t(-1));
+
+	// ---------------------------------------------------------------------
+
+	basic_tstbuf<cT> sb1(strings<cT>::str1, STD ios_base::in);
+
+	if (sb1.pubseekoff(off_t(0), STD ios_base::cur, STD ios_base::out) != fail)
+	    return "error in seekoff: positioned write position of read-only stream\n";
+	if (sb1.pubseekoff(off_t(0), STD ios_base::cur, STD ios_base::in | STD ios_base::out) != fail)
+	    return "error in seekoff: positioned both positions of read-only stream\n";
+
+	if (sb1.pubseekoff(off_t(5), STD ios_base::beg, STD ios_base::in) == fail)
+	    return "error in seekoff: positioning read position from begin failed\n";
+	if (!traits::eq_int_type(sb1.sgetc(), traits::to_int_type(strings<cT>::str1[5])))
+	    return "error in seekoff: wrong read position after positioning from begin\n";
+
+	if (sb1.pubseekoff(off_t(3), STD ios_base::cur, STD ios_base::in) == fail)
+	    return "error in seekoff: positioning read pointer from current failed\n";
+	if (!traits::eq_int_type(sb1.sgetc(), traits::to_int_type(strings<cT>::str1[8])))
+	    return "error in seekoff: wrong read position after positioning from current\n";
+
+	if (sb1.pubseekoff(off_t(-3), STD ios_base::end, STD ios_base::in) == fail)
+	    return "error in seekoff: positioning read pointer from end failed\n";
+	if (!traits::eq_int_type(sb1.sgetc(),
+				 traits::to_int_type(strings<cT>::str1[strings<cT>::size1 - 3])))
+	    return "error in seekoff: wrong read position after positioning from end\n";
+
+	// ---------------------------------------------------------------------
+
+	basic_tstbuf<cT> sb2(strings<cT>::str1, STD ios_base::out);
+
+	if (sb2.pubseekoff(off_t(0), STD ios_base::cur, STD ios_base::in) != fail)
+	    return "error in seekoff: positioned read position of write-only stream\n";
+	if (sb2.pubseekoff(off_t(0), STD ios_base::cur, STD ios_base::in | STD ios_base::out) != fail)
+	    return "error in seekoff: positioned both positions of write-only stream\n";
+
+	if (sb2.pubseekoff(off_t(3), STD ios_base::beg, STD ios_base::out) == fail)
+	    return "error in seekoff: positioning write pointer from begin failed\n";
+	sb2.sputc(strings<cT>::str1[0]);
+	if (!traits::eq(sb2.str()[3], strings<cT>::str1[0]))
+	    return "error in seekoff: wrong write position after positioning from begin\n";
+
+	if (sb2.pubseekoff(off_t(3), STD ios_base::cur, STD ios_base::out) == fail)
+	    return "error in seekoff: positioning write pointer from current failed\n";
+	sb2.sputc(strings<cT>::str1[0]);
+	if (!traits::eq(sb2.str()[7], strings<cT>::str1[0]))
+	    return "error in seekoff: wrong write position after positioning from current\n";
+
+	if (sb2.pubseekoff(off_t(-3), STD ios_base::end, STD ios_base::out) == fail)
+	    return "error in seekoff: positioning write pointer from end failed\n";
+	sb2.sputc(strings<cT>::str1[1]);
+	if (!traits::eq(sb2.str()[strings<cT>::size1 - 3], strings<cT>::str1[1]))
+	    return "error in seekoff: wrong write position after positioning from end\n";
+
+	// ---------------------------------------------------------------------
+
+	basic_tstbuf<cT> sb3(strings<cT>::str1, STD ios_base::in | STD ios_base::out);
+
+	if (sb3.pubseekoff(off_t(0), STD ios_base::cur, STD ios_base::in | STD ios_base::out) != fail)
+	    return "error in seekoff: relative positioned read/write stream\n";
+
+	if (sb3.pubseekoff(off_t(5), STD ios_base::beg, STD ios_base::in | STD ios_base::out) == fail)
+	    return "error in seekoff: positioning both pointers from begin failed\n";
+	if (!traits::eq_int_type(sb3.sgetc(), traits::to_int_type(strings<cT>::str1[5])))
+	    return "error in seekoff: wrong read position after positioning both from begin\n";
+	sb3.sputc(strings<cT>::str1[0]);
+	if (!traits::eq(sb3.str()[5], strings<cT>::str1[0]))
+	    return "error in seekoff: wrong write position after positioning both from begin\n";
+
+	if (sb3.pubseekoff(off_t(-3), STD ios_base::end, STD ios_base::in | STD ios_base::out) == fail)
+	    return "error in seekoff: positioning both pointers from end failed\n";
+	if (!traits::eq_int_type(sb3.sgetc(),
+				 traits::to_int_type(strings<cT>::str1[strings<cT>::size1 - 3])))
+	    return "error in seekoff: wrong read position after positioning both from end\n";
+	sb3.sputc(strings<cT>::str1[1]);
+	if (!traits::eq(sb3.str()[strings<cT>::size1 - 3], strings<cT>::str1[1]))
+	    return "error in seekoff: wrong write position after positioning both from end\n";
+
+	return "OK\n";
+    }
+
+  // ---------------------------------------------------------------------------
+
+  template <class cT>
+    inline char const* test_seekpos()
+    {
+	typedef STD char_traits<cT>       traits;
+	typedef typename traits::pos_type pos_t;
+	typedef typename traits::off_type off_t;
+
+	pos_t fail(off_t(-1));
+
+	basic_tstbuf<cT> sb0(strings<cT>::str1, STD ios_base::in);
+	basic_tstbuf<cT> sb1(strings<cT>::str1, STD ios_base::in);
+	basic_tstbuf<cT> sb2(strings<cT>::str1, STD ios_base::out);
+	basic_tstbuf<cT> sb3(strings<cT>::str1, STD ios_base::in | STD ios_base::out);
+
+	pos_t pos = sb0.pubseekoff(off_t(5), STD ios_base::cur, STD ios_base::in);
+
+	if (sb1.pubseekpos(pos, STD ios_base::out) != fail)
+	    return "error in pubseekpos: positioning write pointer in read-only stream successful\n";
+
+	if (sb1.pubseekpos(pos, STD ios_base::in) == fail)
+	    return "error in seekpos: positioning read pointer failed\n";
+	if (!traits::eq_int_type(sb1.sgetc(), traits::to_int_type(strings<cT>::str1[5])))
+	    return "error in seekpos: wrong read position after posisitioning read pointer\n";
+
+	if (sb2.pubseekpos(pos, STD ios_base::in) != fail)
+	    return "error in seekpos: positioning read pointer in write-only stream successful\n";
+
+	if (sb2.pubseekpos(pos, STD ios_base::out) == fail)
+	    return "error in seekpos: positioning write pointer failed\n";
+	sb2.sputc(strings<cT>::str1[0]);
+	if (!traits::eq(sb2.str()[5], strings<cT>::str1[0]))
+	    return "error in seekoff: wrong write position after positioning write pointer\n";
+
+	if (sb3.pubseekpos(pos, STD ios_base::in | STD ios_base::out) == fail)
+	    return "error in seekpos: positioning both pointers failed\n";
+	if (!traits::eq_int_type(sb3.sgetc(), traits::to_int_type(strings<cT>::str1[5])))
+	    return "error in seekpos: wrong read position after posisitioning both pointers\n";
+	sb3.sputc(strings<cT>::str1[0]);
+	if (!traits::eq(sb3.str()[5], strings<cT>::str1[0]))
+	    return "error in seekoff: wrong write position after positioning both pointers\n";
+
+	return "OK\n";
+    }
+
+  // ---------------------------------------------------------------------------
+
+  int main(int ac, char *av[])
+  {
+    if (ac < 2)
+      {
+        STD cerr << "wrong number of arguments\n";
+        return 1;
+      }
+
+    switch (av[1][0])
+      {
+      case '0':
+	STD cout << test_underflow<char>();
+	STD cout << test_underflow<wchar_t>();
+        break;
+      case '1':
+	STD cout << test_pbackfail<char>();
+	STD cout << test_pbackfail<wchar_t>();
+        break;
+      case '2':
+	STD cout << test_overflow<char>();
+	STD cout << test_overflow<wchar_t>();
+        break;
+      case '3':
+	STD cout << test_seekoff<char>();
+	STD cout << test_seekoff<wchar_t>();
+        break;
+      case '4':
+	STD cout << test_seekpos<char>();
+	STD cout << test_seekpos<wchar_t>();
+        break;
+      }
+
+    return 0;
+  }
+}
+
+simple_test "basic_stringbuf<>::underflow()" "0" {
+OK
+OK
+}
+
+simple_test "basic_stringbuf<>::pbackfail()" "1" {
+OK
+OK
+}
+
+simple_test "basic_stringbuf<>::overflow()" "2" {
+OK
+OK
+}
+
+simple_test "basic_stringbuf<>::seekoff()" "3" {
+OK
+OK
+}
+
+simple_test "basic_stringbuf<>::seekpos()" "4" {
+OK
+OK
+}

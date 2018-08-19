@@ -1,0 +1,142 @@
+#!/usr/local/bin/expect
+# -*-C++-*- io-27-2-0.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  Testing forward declarations 
+# Version: $Id: lib-iostream-forward.exp,v 1.1.1.1 2002/06/05 01:03:12 dietmar_kuehl Exp $
+# -------------------------------------------------------------------------- 
+# Clause 27.2 (Forward Declarations) defines the contents of the header
+# <iosfwd>. This header only contains forward declarations. To test this,
+# a bunch of functions is defined, each taking one of the forwarded types
+# as argument. The main function "calls" all of the functions defined in
+# this header.
+
+inline_compile {
+  #include <iosfwd>
+  #if !defined(_CXXRT_STD)
+  #  define STD std::
+  #else
+  #  define STD _CXXRT_STD
+  #endif
+
+  template <class T> void ctraits(STD char_traits<T> &ct);
+  void ctraits(STD char_traits<char> &ct);
+  void ctraits(STD char_traits<wchar_t> &ct);
+
+  template <class T> void talloc(STD allocator<T> &a);
+
+  //-- basic_ios:
+  template <class charT> inline void dbios(STD basic_ios<charT> &) {}
+  template <class charT, class traits> inline void bios(STD basic_ios<charT, traits> &) {}
+  void tios(STD ios &a) { dbios(a); }
+  void twios(STD wios &a) { dbios(a); }
+
+  //-- basic_streambuf:
+  template <class charT> inline void dbsbuf(STD basic_streambuf<charT> &) {}
+  template <class charT, class traits> inline void sbuf(STD basic_streambuf<charT, traits> &) {}
+  void tsbuf(STD streambuf &a) { dbsbuf(a); }
+  void twsbuf(STD wstreambuf &a) { dbsbuf(a); }
+
+  //-- basic_iostream and family
+  template <class charT> inline void dbostream(STD basic_ostream<charT> &) {}
+  template <class charT, class traits> inline void bostream(STD basic_ostream<charT, traits> &) {}
+  void tostream(STD ostream &a) { dbostream(a); }
+  void tostream(STD wostream &a) { dbostream(a); }
+
+  template <class charT> inline void dbistream(STD basic_istream<charT> &) {}
+  template <class charT, class traits> inline void bistream(STD basic_istream<charT, traits> &) {}
+  void tistream(STD istream &a) { dbistream(a); }
+  void tistream(STD wistream &a) { dbistream(a); }
+
+  template <class charT> inline void dbiostream(STD basic_iostream<charT> &) {}
+  template <class charT, class traits> inline void biostream(STD basic_iostream<charT, traits> &) {}
+  void tiostream(STD iostream &a) { dbiostream(a); }
+  void tiostream(STD wiostream &a) { dbiostream(a); }
+
+  //-- basic_stringbuf and family
+  template <class charT> inline void dbssbuf(STD basic_stringbuf<charT> &) {}
+  template <class charT, class traits> inline void bstringbuf(STD basic_stringbuf<charT, traits> &) {}
+  void tssbuf(STD stringbuf &a) { dbssbuf(a); }
+  void tssbuf(STD wstringbuf &a) { dbssbuf(a); }
+
+  template <class charT> inline void dbosstream(STD basic_ostringstream<charT> &) {}
+  template <class charT, class traits> inline void bostringstream(STD basic_ostringstream<charT, traits> &) {}
+  void tosstream(STD ostringstream &a) { dbosstream(a); }
+  void tosstream(STD wostringstream &a) { dbosstream(a); }
+
+  template <class charT> inline void dbisstream(STD basic_istringstream<charT> &) {}
+  template <class charT, class traits> inline void bistringstream(STD basic_istringstream<charT, traits> &) {}
+  void tisstream(STD istringstream &a) { dbisstream(a); }
+  void tisstream(STD wistringstream &a) { dbisstream(a); }
+
+  template <class charT> inline void dbsstream(STD basic_stringstream<charT> &) {}
+  template <class charT, class traits> inline void bstringstream(STD basic_stringstream<charT, traits> &) {}
+  void tsstream(STD stringstream &a) { dbsstream(a); }
+  void tsstream(STD wstringstream &a) { dbsstream(a); }
+
+  //-- basic_filebuf and family
+  template <class charT> inline void dbfbuf(STD basic_filebuf<charT> &) {}
+  template <class charT, class traits> inline void bfbuf(STD basic_filebuf<charT, traits> &) {}
+  void tfbuf(STD filebuf &a) { dbfbuf(a); }
+  void tfbuf(STD wfilebuf &a) { dbfbuf(a); }
+
+  template <class charT> inline void dbofstream(STD basic_ofstream<charT> &) {}
+  template <class charT, class traits> inline void bofstream(STD basic_ofstream<charT, traits> &) {}
+  void tofstream(STD ofstream &a) { dbofstream(a); }
+  void tofstream(STD wofstream &a) { dbofstream(a); }
+
+  template <class charT> inline void dbifstream(STD basic_ifstream<charT> &) {}
+  template <class charT, class traits> inline void bifstream(STD basic_ifstream<charT, traits> &) {}
+  void tifstream(STD ifstream &a) { dbifstream(a); }
+  void tifstream(STD wifstream &a) { dbifstream(a); }
+
+  template <class charT> inline void dbfstream(STD basic_fstream<charT> &) {}
+  template <class charT, class traits> inline void bfstream(STD basic_fstream<charT, traits> &) {}
+  void tfstream(STD fstream &a) { dbfstream(a); }
+  void tfstream(STD wfstream &a) { dbfstream(a); }
+
+  //-- iterators
+  template <class charT> inline void dbostreambuf_it(STD ostreambuf_iterator<charT> &) {}
+  template <class charT, class traits> inline void bostreambuf_it(STD ostreambuf_iterator<charT, traits> &) {}
+
+  template <class charT> inline void dbistreambuf_it(STD istreambuf_iterator<charT> &) {}
+  template <class charT, class traits> inline void bistreambuf_it(STD istreambuf_iterator<charT, traits> &) {}
+
+  //-- fpos: well, we would need a definition of 'char_traits' for a
+  //   sensible test:
+  // - 'streampos' is a typedef for 'char_traits<char>::state_type'
+  // - 'wstreampos' is a typedef for 'char_traits<wchar_t>::state_type'
+  template <class stateT> inline void ttfpos(STD fpos<stateT> &) {}
+  void tfpos(STD streampos &cp, STD wstreampos &wp)
+    {
+      ttfpos(cp);
+      ttfpos(wp);
+    }
+
+  //---
+  int main()
+  {
+    return 0;
+  }
+}

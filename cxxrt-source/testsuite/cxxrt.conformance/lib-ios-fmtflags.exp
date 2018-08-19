@@ -1,0 +1,97 @@
+#!/usr/local/bin/expect
+# -*-C++-*- io-27-4-2-1-2.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  Type ios_base::fmtflags
+# Version: $Id: lib-ios-fmtflags.exp,v 1.1.1.1 2002/06/05 01:03:07 dietmar_kuehl Exp $
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <ios>
+  #include <cstdio>
+  #include <testio.hpp>
+
+  void f(STD ios_base::fmtflags const&) {}
+
+  int main()
+  {
+    f(STD ios_base::boolalpha);
+    f(STD ios_base::dec);
+    f(STD ios_base::fixed);
+    f(STD ios_base::hex);
+    f(STD ios_base::internal);
+    f(STD ios_base::left);
+    f(STD ios_base::oct);
+    f(STD ios_base::right);
+    f(STD ios_base::scientific);
+    f(STD ios_base::showbase);
+    f(STD ios_base::showpoint);
+    f(STD ios_base::showpos);
+    f(STD ios_base::skipws);
+    f(STD ios_base::unitbuf);
+    f(STD ios_base::uppercase);
+
+    f(STD ios_base::adjustfield);
+    f(STD ios_base::basefield);
+    f(STD ios_base::floatfield);
+
+    if (STD ios_base::adjustfield == (STD ios_base::left | STD ios_base::internal | STD ios_base::right))
+      {
+        char const msg_ok[] = "ios_base::adjustfield OK\n";
+        write(msg_ok);
+      }
+
+    if (STD ios_base::basefield == (STD ios_base::dec | STD ios_base::hex | STD ios_base::oct))
+      {
+        char const msg_ok[] = "ios_base::basefield OK\n";
+        write(msg_ok);
+      }
+
+    if (STD ios_base::floatfield == (STD ios_base::fixed | STD ios_base::scientific))
+      {
+        char const msg_ok[] = "ios_base::floatfield OK\n";
+        write(msg_ok);
+      }
+
+    STD ios_base::fmtflags fa = STD ios_base::boolalpha;
+    STD ios_base::fmtflags fb = STD ios_base::dec;
+    STD ios_base::fmtflags fc = STD ios_base::uppercase;
+
+    fa = ~fb;
+    fa |= fb;
+    fa = fb | fc;
+    fa &= fb;
+    fa = fb & fc;
+    fa ^= fb;
+    fa = fb ^ fc;
+
+    return 0;
+  }
+}
+
+simple_test "ios_base::fmtflags" "1" {
+ios_base::adjustfield OK
+ios_base::basefield OK
+ios_base::floatfield OK
+}

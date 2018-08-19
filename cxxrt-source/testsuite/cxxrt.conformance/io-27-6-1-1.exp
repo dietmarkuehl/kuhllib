@@ -1,0 +1,122 @@
+#!/usr/local/bin/expect
+# -*-C++-*- io-27-6-1-1.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  Template class basic_istream
+# Version: $Id: io-27-6-1-1.exp,v 1.1.1.1 2002/06/05 01:03:23 dietmar_kuehl Exp $
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <istream>
+  #if !defined(_CXXRT_STD)
+  #  define STD std::
+  #else
+  #  define STD _CXXRT_STD
+  #endif
+
+  template <class T> inline void check_type(T const&) {}
+  template <class T> inline void check_ref_type(T) {}
+
+  STD basic_istream<char>    &manip1(STD basic_istream<char> &in)    { return in; }
+  STD basic_istream<wchar_t> &manip1(STD basic_istream<wchar_t> &in) { return in; }
+  STD basic_ios<char>        &manip2(STD basic_ios<char> &in)        { return in; }
+  STD basic_ios<wchar_t>     &manip2(STD basic_ios<wchar_t> &in)     { return in; }
+  STD ios_base               &manip3(STD ios_base &in)               { return in; }
+
+  template <class charT, class traits>
+  inline void f(STD basic_istream<charT, traits> &in)
+  {
+    check_ref_type< STD basic_ios<charT, traits>&>(in);
+
+    typedef typename STD basic_istream<charT, traits>::char_type   char_type;
+    typedef typename STD basic_istream<charT, traits>::int_type    int_type;
+    typedef typename STD basic_istream<charT, traits>::pos_type    pos_type;
+    typedef typename STD basic_istream<charT, traits>::off_type    off_type;
+    typedef typename STD basic_istream<charT, traits>::traits_type traits_type;
+
+    STD basic_streambuf<charT, traits> *sb = 0;
+    delete new STD basic_istream<charT, traits>(sb);
+
+    typename STD basic_istream<charT, traits>::sentry kerberos(in);
+    
+
+    check_ref_type< STD basic_istream<charT, traits>&>(in >> manip1);
+    check_ref_type< STD basic_istream<charT, traits>&>(in >> manip2);
+    check_ref_type< STD basic_istream<charT, traits>&>(in >> manip3);
+
+    bool b; check_ref_type< STD basic_istream<charT, traits>&>(in >> b);
+    short s; check_ref_type< STD basic_istream<charT, traits>&>(in >> s);
+    unsigned short us; check_ref_type< STD basic_istream<charT, traits>&>(in >> us);
+    int i; check_ref_type< STD basic_istream<charT, traits>&>(in >> i);
+    unsigned ui; check_ref_type< STD basic_istream<charT, traits>&>(in >> ui);
+    long l; check_ref_type< STD basic_istream<charT, traits>&>(in >> l);
+    unsigned long ul; check_ref_type< STD basic_istream<charT, traits>&>(in >> ul);
+    float f; check_ref_type< STD basic_istream<charT, traits>&>(in >> f);
+    double d; check_ref_type< STD basic_istream<charT, traits>&>(in >> d);
+    long double ld; check_ref_type< STD basic_istream<charT, traits>&>(in >> ld);
+    void *vp; check_ref_type< STD basic_istream<charT, traits>&>(in >> vp);
+    check_ref_type< STD basic_istream<charT, traits>&>(in >> sb);
+
+    char_type buf[10];
+    check_type< STD streamsize>(in.gcount());
+    check_type<int_type>(in.get());
+    char_type c1; check_ref_type< STD basic_istream<charT, traits>&>(in.get(c1));
+    check_ref_type< STD basic_istream<charT, traits>&>(in.get(buf, STD streamsize(10)));
+    check_ref_type< STD basic_istream<charT, traits>&>(in.get(buf, STD streamsize(10), char_type('\n')));
+    check_ref_type< STD basic_istream<charT, traits>&>(in.get(*sb));
+    check_ref_type< STD basic_istream<charT, traits>&>(in.get(*sb, char_type('\n')));
+    check_ref_type< STD basic_istream<charT, traits>&>(in.getline(buf, STD streamsize(10)));
+    check_ref_type< STD basic_istream<charT, traits>&>(in.getline(buf, STD streamsize(10), char_type('\n')));
+    check_ref_type< STD basic_istream<charT, traits>&>(in.ignore());
+    check_ref_type< STD basic_istream<charT, traits>&>(in.ignore(STD streamsize(10)));
+    check_ref_type< STD basic_istream<charT, traits>&>(in.ignore(STD streamsize(10), char_type('\n')));
+    check_type<int_type>(in.peek());
+    check_ref_type< STD basic_istream<charT, traits>&>(in.read(buf, STD streamsize(10)));
+    check_type< STD streamsize>(in.readsome(buf, STD streamsize(10)));
+    check_ref_type< STD basic_istream<charT, traits>&>(in.putback(char_type('a')));
+    check_ref_type< STD basic_istream<charT, traits>&>(in.unget());
+    check_type<int>(in.sync());
+    check_type<pos_type>(in.tellg());
+    check_ref_type< STD basic_istream<charT, traits>&>(in.seekg(pos_type(0)));
+    check_ref_type< STD basic_istream<charT, traits>&>(in.seekg(off_type(0), STD ios_base::cur));
+
+    char_type     c2; check_ref_type< STD basic_istream<charT, traits>&>(in >> c2);
+    char_type     str1[1]; check_ref_type< STD basic_istream<charT, traits>&>(in >> str1);
+  }
+
+  int main(int, char*[])
+  {
+    STD basic_istream<char>    in1(0);
+    STD basic_istream<wchar_t> in2(0);
+
+    f(in1);
+    signed char   c3; check_ref_type< STD basic_istream<char>&>(in1 >> c3);
+    unsigned char c4; check_ref_type< STD basic_istream<char>&>(in1 >> c4);
+    signed char   str2[1]; check_ref_type< STD basic_istream<char>&>(in1 >> str2);
+    unsigned char str3[1]; check_ref_type< STD basic_istream<char>&>(in1 >> str3);
+
+    f(in2);
+    return 0;
+  }
+}

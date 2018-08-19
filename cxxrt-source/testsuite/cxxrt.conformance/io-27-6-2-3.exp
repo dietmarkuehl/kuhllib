@@ -1,0 +1,96 @@
+#!/usr/local/bin/expect
+# -*-C++-*- io-27-6-2-3.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  Class basic_ostream::sentry
+# Version: $Id: io-27-6-2-3.exp,v 1.1.1.1 2002/06/05 01:03:35 dietmar_kuehl Exp $ 
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <ostream>
+  #include <streambuf>
+  #include <iostream>
+  #if !defined(STD)
+  #  if !defined(_CXXRT_STD)
+  #    define STD std::
+  #  else
+  #    define STD _CXXRT_STD
+  #  endif
+  #endif
+
+  template <class cT>
+    class tstbuf: public STD basic_streambuf<cT>
+    {
+    public:
+      tstbuf(char const* n): name(n) {}
+    private:
+      int sync() { STD cout << name << ": sync\n"; return 0; }
+      char const* name;
+
+      tstbuf(tstbuf const&);
+      void operator=(tstbuf const&);
+    };
+
+  template <class cT>
+    void test_sentry()
+    {
+      STD basic_ostream<cT> tie(new tstbuf<cT>("tie"));
+      STD basic_ostream<cT> out(new tstbuf<cT>("out"));
+
+      out << STD nounitbuf;
+      {
+        typename STD basic_ostream<cT>::sentry kerberos(out);
+        STD cout << (kerberos? "OK\n": "error: sentry object is not OK\n");
+      }
+      STD cout << "----\n";
+      out.tie(&tie);
+      out << STD unitbuf;
+      {
+        typename STD basic_ostream<cT>::sentry kerberos(out);
+        STD cout << (kerberos? "OK\n": "error: sentry object is not OK\n");
+      }
+    }
+
+  int main()
+  {
+    test_sentry<char>();
+    STD cout << "====\n";
+    test_sentry<wchar_t>();
+    return 0;
+  }
+}
+
+simple_test "basic_ostream::sentry" "" {
+OK
+----
+tie: sync
+OK
+out: sync
+====
+OK
+----
+tie: sync
+OK
+out: sync
+}

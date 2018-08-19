@@ -1,0 +1,604 @@
+dnl -*-plain-*- file: configure.in
+dnl --------------------------------------------------------------------------
+dnl Copyright (c) 2002 Dietmar Kuehl
+
+dnl Permission is hereby granted, free of charge, to any person obtaining
+dnl a copy of this software and associated documentation files (the
+dnl "Software"), to deal in the Software without restriction, including
+dnl without limitation the rights to use, copy, modify, merge, publish,
+dnl distribute, sublicense, and/or sell copies of the Software, and to
+dnl permit persons to whom the Software is furnished to do so, subject
+dnl to the following conditions:
+
+dnl The above copyright notice and this permission notice shall be included
+dnl in all copies or substantial portions of the Software.
+
+dnl THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+dnl KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+dnl WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+dnl NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+dnl LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+dnl OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+dnl WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+dnl --------------------------------------------------------------------------
+dnl Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+dnl Title:  Source file for the configure script
+dnl --------------------------------------------------------------------------
+
+AC_DEFUN(CXXRT_PROG_MKXXDEPEND,[
+  if eval "test \"$ac_cv_prog_gxx\" = yes"; then
+    AC_MSG_CHECKING([for makedepend])
+    CXXRT_MKXXDEPEND="$CXX -M > make.depend"
+    AC_MSG_RESULT($CXXRT_MKXXDEPEND)
+  else
+    AC_CHECK_PROG(cxxrt_mxxdepend,makedepend,makedepend -fmake.depend,:)
+    CXXRT_MKXXDEPEND="touch make.depend; $cxxrt_mxxdepend"
+  fi
+  AC_SUBST(CXXRT_MKXXDEPEND)
+])
+
+dnl ----------------------------------------------------------------------
+
+AC_DEFUN(CXXRT_NAMESPACES,
+AC_MSG_CHECKING([for namespace support])
+[AC_TRY_COMPILE([
+    namespace std { int f() { return 0; } };
+    using namespace std;
+  ],[
+    return f();
+  ],
+  eval "cxxrt_namespaces=yes",
+  eval "cxxrt_namespaces=no",
+  eval "cxxrt_namespaces=no")]
+  if eval "test \"$cxxrt_namespaces\" = yes"; then
+    AC_MSG_RESULT(yes)
+    AC_DEFINE(_CXXRT_HAS_NAMESPACES, 1)
+  else
+    AC_MSG_RESULT(no)
+    AC_DEFINE(_CXXRT_HAS_NAMESPACES, 0)
+  fi
+)
+
+dnl ----------------------------------------------------------------------
+
+AC_DEFUN(CXXRT_EXPLICIT_TEMPLATE_ARGS,
+AC_MSG_CHECKING([for support of explicit template arguments])
+[AC_TRY_COMPILE([
+    template <class T> T f()
+    {
+      return T();
+    }
+  ],[
+    return f<int>();
+  ],
+  eval "cxxrt_explicit_template_args=yes",
+  eval "cxxrt_explicit_template_args=no",
+  eval "cxxrt_explicit_template_args=no")]
+  if eval "test \"$cxxrt_explicit_template_args\" = yes"; then
+    AC_MSG_RESULT(yes)
+    AC_DEFINE(_CXXRT_HAS_EXPLICIT_TEMPLATE_ARGS, 1)
+  else
+    AC_MSG_RESULT(no)
+    AC_DEFINE(_CXXRT_HAS_EXPLICIT_TEMPLATE_ARGS, 0)
+  fi
+)
+
+dnl ----------------------------------------------------------------------
+
+AC_DEFUN(CXXRT_CONST_EXPRESSION_MEMBER,
+AC_MSG_CHECKING([for const expression members])
+[AC_TRY_COMPILE([
+    struct foo {
+      static const int bar = 17;
+    };
+  ],[
+    int foobar[foo::bar];
+  ],
+  eval "cxxrt_const_expression_members=yes",
+  eval "cxxrt_const_expression_members=no",
+  eval "cxxrt_const_expression_members=no")]
+  if eval "test \"$cxxrt_const_expression_members\" = yes"; then
+    AC_MSG_RESULT(yes)
+    AC_DEFINE(_CXXRT_HAS_CONST_EXPRESSION_MEMBER, 1)
+  else
+    AC_MSG_RESULT(no)
+    AC_DEFINE(_CXXRT_HAS_CONST_EXPRESSION_MEMBER, 0)
+  fi
+)
+
+dnl ----------------------------------------------------------------------
+
+AC_DEFUN(CXXRT_TEMPLATE_ORDERING,
+AC_MSG_CHECKING([for template ordering support])
+[AC_TRY_COMPILE([
+    template <class T> struct foo {};
+    template <class T> void bar(T) {}
+    template <class T> void bar(foo<T>) {}
+  ],[
+    bar(17);
+    bar(foo<int>());
+  ],
+  eval "cxxrt_template_ordering=yes",
+  eval "cxxrt_template_ordering=no",
+  eval "cxxrt_template_ordering=no")]
+  if eval "test \"$cxxrt_template_ordering\" = yes"; then
+    AC_MSG_RESULT(yes)
+    AC_DEFINE(_CXXRT_HAS_TEMPLATE_ORDERING, 1)
+  else
+    AC_MSG_RESULT(no)
+    AC_DEFINE(_CXXRT_TEMPLATE_ORDERING, 0)
+  fi
+)
+
+dnl ----------------------------------------------------------------------
+
+AC_DEFUN(CXXRT_EXPLICIT,
+AC_MSG_CHECKING([for explicit keyword support])
+[AC_TRY_COMPILE([
+    class foo { public: explicit foo(int) {} };
+  ],[
+    foo f(0);
+    return 0;
+  ],
+  eval "cxxrt_explicit=yes",
+  eval "cxxrt_explicit=no",
+  eval "cxxrt_explicit=no")]
+  if eval "test \"$cxxrt_explicit\" = yes"; then
+    AC_MSG_RESULT(yes)
+    AC_DEFINE(_CXXRT_HAS_EXPLICIT, 1)
+  else
+    AC_MSG_RESULT(no)
+    AC_DEFINE(_CXXRT_HAS_EXPLICIT, 0)
+  fi
+)
+
+dnl ----------------------------------------------------------------------
+
+AC_DEFUN(CXXRT_TYPENAME,
+AC_MSG_CHECKING([for typename keyword support])
+[AC_TRY_COMPILE([
+    struct foo { typedef int bar; };
+    template <class T>
+    struct foobar { typedef typename T::bar bar; };
+  ],[
+    foobar<foo> fb;
+    return 0;
+  ],
+  eval "cxxrt_explicit=yes",
+  eval "cxxrt_explicit=no",
+  eval "cxxrt_explicit=no")]
+  if eval "test \"$cxxrt_explicit\" = yes"; then
+    AC_MSG_RESULT(yes)
+    AC_DEFINE(_CXXRT_HAS_TYPENAME, 1)
+  else
+    AC_MSG_RESULT(no)
+    AC_DEFINE(_CXXRT_HAS_TYPENAME, 0)
+  fi
+)
+
+dnl ----------------------------------------------------------------------
+
+AC_DEFUN(CXXRT_THROW_SPECS,
+AC_MSG_CHECKING([for throw specification support])
+[AC_TRY_COMPILE([
+    class foo { public: foo() throw() {} };
+],[
+    foo f;
+  ],
+  eval "cxxrt_throw_specs=yes",
+  eval "cxxrt_throw_specs=no",
+  eval "cxxrt_throw_specs=no")]
+  if eval "test \"$cxxrt_throw_specs\" = yes"; then
+    AC_MSG_RESULT(yes)
+    AC_DEFINE(_CXXRT_HAS_THROW_SPECS, 1)
+  else
+    AC_MSG_RESULT(no)
+    AC_DEFINE(_CXXRT_HAS_THROW_SPECS, 0)
+  fi
+)
+
+dnl ----------------------------------------------------------------------
+
+AC_DEFUN(CXXRT_FULL_SPECIALIZATION,
+AC_MSG_CHECKING([for template<> syntax])
+[AC_TRY_COMPILE([
+    template <class T> class foo {};
+    template <> class foo<char> {};
+],[
+    foo<int>  fi;
+    foo<char> fc;
+  ],
+  eval "cxxrt_full_specialization=yes",
+  eval "cxxrt_full_specialization=no",
+  eval "cxxrt_full_specialization=no")]
+  if eval "test \"$cxxrt_full_specialization\" = yes"; then
+    AC_MSG_RESULT(yes)
+    AC_DEFINE(_CXXRT_HAS_FULL_SPECIALIZATION, 1)
+  else
+    AC_MSG_RESULT(no)
+    AC_DEFINE(_CXXRT_HAS_FULL_SPECIALIZATION, 0)
+  fi
+)
+
+dnl ----------------------------------------------------------------------
+
+AC_DEFUN(CXXRT_MEMBER_TEMPLATES,
+AC_MSG_CHECKING([for member template support])
+[AC_TRY_COMPILE([
+    struct foo { template <class T> foo(T const &) {} };
+],[
+    foo f(17);
+  ],
+  eval "cxxrt_member_templates=yes",
+  eval "cxxrt_member_templates=no",
+  eval "cxxrt_member_templates=no")]
+  if eval "test \"$cxxrt_member_templates\" = yes"; then
+    AC_MSG_RESULT(yes)
+    AC_DEFINE(_CXXRT_HAS_MEMBER_TEMPLATES, 1)
+  else
+    AC_MSG_RESULT(no)
+    AC_DEFINE(_CXXRT_HAS_MEMBER_TEMPLATES, 0)
+  fi
+)
+
+dnl ----------------------------------------------------------------------
+
+AC_DEFUN(CXXRT_PLACEMENT_NEW,
+AC_MSG_CHECKING([for placement new])
+[AC_TRY_COMPILE([
+    #include <cstddef>
+    #include <exception>
+],[
+    char array[64];
+    new(array) int;
+  ],
+  eval "cxxrt_placement_new=yes",
+  eval "cxxrt_placement_new=no",
+  eval "cxxrt_placement_new=no")]
+  if eval "test \"$cxxrt_placement_new\" = yes"; then
+    AC_MSG_RESULT(yes)
+    AC_DEFINE(_CXXRT_HAS_PLACEMENT_NEW, 1)
+  else
+    AC_MSG_RESULT(no)
+    AC_DEFINE(_CXXRT_HAS_PLACEMENT_NEW, 0)
+  fi
+)
+
+dnl ----------------------------------------------------------------------
+
+AC_DEFUN(CXXRT_TEMPLATE_DEF_ARGS,
+AC_MSG_CHECKING([for template default arguments])
+[AC_TRY_COMPILE([
+    template <class T, class S = int>
+    class foo {};
+],[
+    foo<int> f;
+  ],
+  eval "cxxrt_template_def_args=yes",
+  eval "cxxrt_template_def_args=no",
+  eval "cxxrt_template_def_args=no")]
+  if eval "test \"$cxxrt_template_def_args\" = yes"; then
+    AC_MSG_RESULT(yes)
+    AC_DEFINE(_CXXRT_HAS_TEMPLATE_DEF_ARGS, 1)
+  else
+    AC_MSG_RESULT(no)
+    AC_DEFINE(_CXXRT_HAS_TEMPLATE_DEF_ARGS, 0)
+  fi
+)
+
+dnl ----------------------------------------------------------------------
+
+AC_DEFUN(CXXRT_FRIEND_TEMPLATE,
+AC_MSG_CHECKING([for friend template support])
+[AC_TRY_COMPILE([
+  template <class T> class bar;
+  struct foo {
+    template <class T> friend class bar;
+  };
+    ],[
+    return 0;
+  ],
+  eval "cxxrt_friend_template=yes",
+  eval "cxxrt_friend_template=no",
+  eval "cxxrt_friend_template=no")]
+  if eval "test \"$cxxrt_friend_template\" = yes"; then
+    AC_MSG_RESULT(yes)
+    AC_DEFINE(_CXXRT_HAS_FRIEND_TEMPLATES, 1)
+  else
+    AC_MSG_RESULT(no)
+    AC_DEFINE(_CXXRT_HAS_FRIEND_TEMPLATES, 0)
+  fi
+)
+
+dnl ----------------------------------------------------------------------
+
+AC_DEFUN(CXXRT_WCHAR_T,
+AC_MSG_CHECKING([for wchar_t support])
+[AC_TRY_COMPILE([
+    ],[
+    wchar_t w;
+  ],
+  eval "cxxrt_wchar_t=yes",
+  eval "cxxrt_wchar_t=no",
+  eval "cxxrt_wchar_t=no")]
+  if eval "test \"$cxxrt_wchar_t\" = yes"; then
+    AC_MSG_RESULT(yes)
+    AC_DEFINE(_CXXRT_HAS_WCHAR_T, 1)
+  else
+    AC_MSG_RESULT(no)
+    AC_DEFINE(_CXXRT_HAS_WCHAR_T, 0)
+  fi
+)
+
+dnl ----------------------------------------------------------------------
+
+AC_DEFUN(CXXRT_DYNAMIC_CAST,
+AC_MSG_CHECKING([for dynamic_cast support])
+[AC_TRY_COMPILE([
+  struct A { virtual ~A() {} };
+  struct B: A { };
+    ],[
+    A *a = new B;
+    if (dynamic_cast<B*>(a) != 0)
+      return 0;
+    return 1;
+  ],
+  eval "cxxrt_dynamic_cast=yes",
+  eval "cxxrt_dynamic_cast=no",
+  eval "cxxrt_dynamic_cast=no")]
+  if eval "test \"$cxxrt_dynamic_cast\" = yes"; then
+    AC_MSG_RESULT(yes)
+    AC_DEFINE(_CXXRT_HAS_DYNAMIC_CAST, 1)
+  else
+    AC_MSG_RESULT(no)
+    AC_DEFINE(_CXXRT_HAS_DYNAMIC_CAST, 0)
+  fi
+)
+
+dnl ----------------------------------------------------------------------
+
+AC_DEFUN(CXXRT_MBSTATE_T,
+AC_MSG_CHECKING([for mbstate_t support])
+[AC_EGREP_HEADER(mbstate_t,wchar.h,cxxrt_has_feature=yes,cxxrt_has_feature=no)]
+if eval "test \"$cxxrt_has_feature\" = yes"; then
+  AC_MSG_RESULT(yes)
+  AC_DEFINE(_CXXRT_HAS_MBSTATE_T, 1)
+  AC_MSG_CHECKING([for mbstate_t comparison operators])
+  [AC_TRY_COMPILE([
+    #include <wchar.h>
+      ],[
+      mbstate_t mb;
+      mb == mb;
+      mb != mb;
+    ],
+    eval "cxxrt_mbstate_t_compare=yes",
+    eval "cxxrt_mbstate_t_compare=no",
+    eval "cxxrt_mbstate_t_compare=no")]
+    if eval "test \"$cxxrt_mbstate_t_compare\" = yes"; then
+      AC_MSG_RESULT(yes)
+      AC_DEFINE(_CXXRT_HAS_MBSTATE_T_COMPARE, 1)
+    else
+      AC_MSG_RESULT(no)
+      AC_DEFINE(_CXXRT_HAS_MBSTATE_T_COMPARE, 0)
+    fi
+  else
+  AC_MSG_RESULT(no)
+  AC_DEFINE(_CXXRT_HAS_MBSTATE_T, 0)
+fi
+)
+
+dnl ----------------------------------------------------------------------
+
+AC_DEFUN(CXXRT_TEST_DECL,
+AC_MSG_CHECKING([for $1 support])
+[AC_EGREP_HEADER($1,$2,cxxrt_has_feature=yes,cxxrt_has_feature=no)]
+if eval "test \"$cxxrt_has_feature\" = yes"; then
+  AC_MSG_RESULT(yes)
+  AC_DEFINE($3, 1)
+else
+  AC_MSG_RESULT(no)
+  AC_DEFINE($3, 0)
+fi
+)
+
+dnl ----------------------------------------------------------------------
+
+AC_DEFUN(CXXRT_CXX_FLAGS,[
+AC_MSG_CHECKING([for additional compiler flags])
+  if eval "test \"$GXX\" = yes"; then
+    dnl CXXRT_WARNFLAGS="-W -Wall -Weffc++ -pedantic -ansi -Wno-unused -fvtable-gc"
+    CXXRT_WARNFLAGS="-W -Wall -ansi -Wno-unused"
+    CXXRT_CXXFLAGS="-fno-builtin -fno-implicit-templates"
+    CXXRT_BCXXFLAGS="-fno-implicit-templates"
+    CXXRT_CXXSO="-fPIC"
+    dnl CXXRT_MCXXFLAGS="-Os -ffunction-sections -fdata-sections"
+    CXXRT_MCXXFLAGS="-ffunction-sections -fdata-sections"
+    CXXRT_TSTWARNFLAGS="-W -Wall -pedantic -ansi -Wno-unused"
+    CXXRT_TSTCXXFLAGS="-fno-builtin -Wno-unused -ftemplate-depth-32"
+    CXXRT_EXTRALIBS="-lsupc++"
+    AC_MSG_RESULT("using -fPIC -fno-builtin -W -Wall -Weffc++ -pedantic -ansi -fno-implicit-templates -Wno-unused")
+  else
+    CXXRT_CXXFLAGS=""
+    CXXRT_MCXXFLAGS=""
+    CXXRT_TSTCXXFLAGS=""
+    AC_MSG_RESULT("using no additional flags")
+  fi
+  AC_SUBST(CXXRT_WARNFLAGS)
+  AC_SUBST(CXXRT_CXXFLAGS)
+  AC_SUBST(CXXRT_BCXXFLAGS)
+  AC_SUBST(CXXRT_CXXSO)
+  AC_SUBST(CXXRT_MCXXFLAGS)
+  AC_SUBST(CXXRT_TSTCXXFLAGS)
+  AC_SUBST(CXXRT_TSTWARNFLAGS)
+  AC_SUBST(CXXRT_EXTRALIBS)
+])
+
+dnl ----------------------------------------------------------------------
+
+AC_DEFUN(CXXRT_FIND_HEADER,
+[AC_MSG_CHECKING("location of $1")
+echo "#include <$1>" > conftest.$ac_ext
+eval "$ac_cpp conftest.$ac_ext >conftest.out 2>/dev/null"
+cxxrt_name=`sed -n < conftest.out '/$1/s/.*"\(.*\)".*/\1/p' | head -n1`
+if test -z "$cxxrt_name"; then
+  cxxrt_name="/usr/include/$1"
+fi
+$2="$cxxrt_name"
+AC_MSG_RESULT($cxxrt_name)
+AC_SUBST($2)
+])
+
+dnl ----------------------------------------------------------------------
+
+AC_DEFUN(CXXRT_STD_TYPES,
+[AC_MSG_CHECKING("value of size_t")
+AC_MSG_RESULT("unsigned int")
+CXXRT_SIZE_T="unsigned int"
+AC_SUBST(CXXRT_SIZE_T)
+CXXRT_PTRDIFF_T="int"
+AC_SUBST(CXXRT_PTRDIFF_T)
+])
+
+dnl ----------------------------------------------------------------------
+
+AC_DEFUN(CXXRT_FIND_LIMIT,
+[AC_MSG_CHECKING("value of $1")
+echo "#include <limits.h>" > conftest.$ac_ext
+echo "#include <float.h>" >> conftest.$ac_ext
+echo "#include <wchar.h>" >> conftest.$ac_ext
+echo "CXXRT_LIMIT_VALUE @$1@" >> conftest.$ac_ext
+eval "$ac_cpp conftest.$ac_ext >conftest.out 2>/dev/null"
+cxxrt_value=`sed -n < conftest.out '/CXXRT_LIMIT_VALUE/s/CXXRT_LIMIT_VALUE @\(.*\)@.*/\1/p' | head -n1`
+CXXRT_$1="$cxxrt_value"
+AC_MSG_RESULT($cxxrt_value)
+AC_SUBST(CXXRT_$1)
+])
+
+AC_DEFUN(CXXRT_LIMITS,
+[
+CXXRT_FIND_LIMIT(CHAR_BIT)
+CXXRT_FIND_LIMIT(CHAR_MAX)
+CXXRT_FIND_LIMIT(CHAR_MIN)
+CXXRT_FIND_LIMIT(INT_MAX)
+CXXRT_FIND_LIMIT(INT_MIN)
+CXXRT_FIND_LIMIT(LONG_MAX)
+CXXRT_FIND_LIMIT(LONG_MIN)
+CXXRT_FIND_LIMIT(MB_LEN_MAX)
+CXXRT_FIND_LIMIT(SCHAR_MAX)
+CXXRT_FIND_LIMIT(SCHAR_MIN)
+CXXRT_FIND_LIMIT(SHRT_MAX)
+CXXRT_FIND_LIMIT(SHRT_MIN)
+CXXRT_FIND_LIMIT(UCHAR_MAX)
+CXXRT_FIND_LIMIT(USHRT_MAX)
+CXXRT_FIND_LIMIT(UINT_MAX)
+CXXRT_FIND_LIMIT(ULONG_MAX)
+
+CXXRT_FIND_LIMIT(DBL_DIG)
+CXXRT_FIND_LIMIT(DBL_EPSILON)
+CXXRT_FIND_LIMIT(DBL_MANT_DIG)
+CXXRT_FIND_LIMIT(DBL_MAX)
+CXXRT_FIND_LIMIT(DBL_MAX_10_EXP)
+CXXRT_FIND_LIMIT(DBL_MAX_EXP)
+CXXRT_FIND_LIMIT(DBL_MIN)
+CXXRT_FIND_LIMIT(DBL_MIN_10_EXP)
+CXXRT_FIND_LIMIT(DBL_MIN_EXP)
+CXXRT_FIND_LIMIT(FLT_DIG)
+CXXRT_FIND_LIMIT(FLT_EPSILON)
+CXXRT_FIND_LIMIT(FLT_MANT_DIG)
+CXXRT_FIND_LIMIT(FLT_MAX)
+CXXRT_FIND_LIMIT(FLT_MAX_10_EXP)
+CXXRT_FIND_LIMIT(FLT_MAX_EXP)
+CXXRT_FIND_LIMIT(FLT_MIN)
+CXXRT_FIND_LIMIT(FLT_MIN_10_EXP)
+CXXRT_FIND_LIMIT(FLT_MIN_EXP)
+CXXRT_FIND_LIMIT(FLT_RADIX)
+CXXRT_FIND_LIMIT(FLT_ROUNDS)
+CXXRT_FIND_LIMIT(LDBL_DIG)
+CXXRT_FIND_LIMIT(LDBL_EPSILON)
+CXXRT_FIND_LIMIT(LDBL_MANT_DIG)
+CXXRT_FIND_LIMIT(LDBL_MAX)
+CXXRT_FIND_LIMIT(LDBL_MAX_10_EXP)
+CXXRT_FIND_LIMIT(LDBL_MAX_EXP)
+CXXRT_FIND_LIMIT(LDBL_MIN)
+CXXRT_FIND_LIMIT(LDBL_MIN_10_EXP)
+CXXRT_FIND_LIMIT(LDBL_MIN_EXP)
+
+CXXRT_FIND_LIMIT(WCHAR_MIN)
+CXXRT_FIND_LIMIT(WCHAR_MAX)
+
+AC_MSG_CHECKING("value of FLT_EVAL_METHOD")
+CXXRT_FLT_EVAL_METHOD="-1"
+AC_MSG_RESULT("-1 defaulted value")
+AC_SUBST(CXXRT_FLT_EVAL_METHOD)
+])
+
+dnl ----------------------------------------------------------------------
+
+AC_INIT(organization)
+  AC_CONFIG_HEADER(include/cxxrtcf.h:include/cxxrtcf.hin)
+  dnl programs
+    AC_PROG_MAKE_SET
+    AC_PROG_CC
+    AC_PROG_CXX
+    AC_PROG_CXXCPP
+    AC_PROG_RANLIB
+    CXXRT_PROG_MKXXDEPEND
+    CXXRT_CXX_FLAGS
+  dnl libraries
+  dnl header files
+    AC_LANG_CPLUSPLUS
+    CXXRT_FIND_HEADER(assert.h,CXXRT_ASSERT_H)
+    CXXRT_FIND_HEADER(ctype.h,CXXRT_CTYPE_H)
+    CXXRT_FIND_HEADER(errno.h,CXXRT_ERRNO_H)
+    CXXRT_FIND_HEADER(float.h,CXXRT_FLOAT_H)
+    CXXRT_FIND_HEADER(limits.h,CXXRT_LIMITS_H)
+    CXXRT_FIND_HEADER(locale.h,CXXRT_LOCALE_H)
+    CXXRT_FIND_HEADER(math.h,CXXRT_MATH_H)
+    CXXRT_FIND_HEADER(setjmp.h,CXXRT_SETJMP_H)
+    CXXRT_FIND_HEADER(signal.h,CXXRT_SIGNAL_H)
+    CXXRT_FIND_HEADER(stdarg.h,CXXRT_STDARG_H)
+    CXXRT_FIND_HEADER(stddef.h,CXXRT_STDDEF_H)
+    CXXRT_FIND_HEADER(stdio.h,CXXRT_STDIO_H)
+    CXXRT_FIND_HEADER(stdlib.h,CXXRT_STDLIB_H)
+    CXXRT_FIND_HEADER(string.h,CXXRT_STRING_H)
+    CXXRT_FIND_HEADER(time.h,CXXRT_TIME_H)
+    CXXRT_FIND_HEADER(wchar.h,CXXRT_WCHAR_H)
+    CXXRT_FIND_HEADER(wctype.h,CXXRT_WCTYPE_H)
+    CXXRT_FIND_HEADER(exception,CXXRT_EXCEPTION)
+    CXXRT_FIND_HEADER(new,CXXRT_NEW)
+  dnl typedefs
+  dnl structures
+  dnl compiler characteriscs
+    CXXRT_WCHAR_T
+    CXXRT_DYNAMIC_CAST
+    CXXRT_NAMESPACES
+    CXXRT_EXPLICIT_TEMPLATE_ARGS
+    CXXRT_THROW_SPECS
+    CXXRT_MEMBER_TEMPLATES
+    CXXRT_PLACEMENT_NEW
+    CXXRT_TEMPLATE_DEF_ARGS
+    CXXRT_FULL_SPECIALIZATION
+    CXXRT_EXPLICIT
+    CXXRT_TYPENAME
+    CXXRT_MBSTATE_T
+    CXXRT_CONST_EXPRESSION_MEMBER
+    CXXRT_TEMPLATE_ORDERING
+    CXXRT_FRIEND_TEMPLATE
+    CXXRT_TEST_DECL(__assert_fail,assert.h,_CXXRT_HAS_ASSERT_FAIL)
+    CXXRT_TEST_DECL(_eprintf,assert.h,_CXXRT_HAS_EPRINTF)
+    CXXRT_TEST_DECL(_assert\>,assert.h,_CXXRT_HAS__ASSERT)
+    CXXRT_TEST_DECL(__errno_location\>,errno.h,_CXXRT_HAS_ERRNO_LOCATION)
+    CXXRT_LIMITS
+    CXXRT_STD_TYPES
+  dnl library functions
+  dnl system services
+    AC_OBJEXT
+  dnl Variable settings
+AC_OUTPUT(
+  Makefile
+  src/Makefile
+  testsuite/Makefile
+  src/limits.cpp
+  include/cxxrt/limits.h
+  include/cxxrtcf.hin)
+

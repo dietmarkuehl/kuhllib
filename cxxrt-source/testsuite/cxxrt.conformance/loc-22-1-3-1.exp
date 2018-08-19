@@ -1,0 +1,66 @@
+#!/usr/local/bin/expect
+# -*-C++-*- loc-22-1-3-1.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  Character classification
+# Version: $Id: loc-22-1-3-1.exp,v 1.1.1.1 2002/06/05 01:02:50 dietmar_kuehl Exp $
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <locale>
+  #include <iostream>
+  #include <limits>
+  #include <cstdlib>
+  #include <testio.hpp>
+
+  int main(int, char *[])
+  {
+    STD locale l;
+    STD ctype<char> const &ct = STD use_facet< STD ctype<char> >(l);
+
+    char c = STD numeric_limits<char>::min();
+    do
+      {
+        if (STD isspace(c, l) != ct.is(STD ctype_base::space, c)) exit(0);
+        if (STD isprint(c, l) != ct.is(STD ctype_base::print, c)) exit(0);
+        if (STD iscntrl(c, l) != ct.is(STD ctype_base::cntrl, c)) exit(0);
+        if (STD isupper(c, l) != ct.is(STD ctype_base::upper, c)) exit(0);
+        if (STD islower(c, l) != ct.is(STD ctype_base::lower, c)) exit(0);
+        if (STD isalpha(c, l) != ct.is(STD ctype_base::alpha, c)) exit(0);
+        if (STD isdigit(c, l) != ct.is(STD ctype_base::digit, c)) exit(0);
+        if (STD ispunct(c, l) != ct.is(STD ctype_base::punct, c)) exit(0);
+        if (STD isxdigit(c, l) != ct.is(STD ctype_base::xdigit, c)) exit(0);
+        if (STD isalnum(c, l) != ct.is(STD ctype_base::alnum, c)) exit(0);
+        if (STD isgraph(c, l) != ct.is(STD ctype_base::graph, c)) exit(0);
+      }
+    while (c++ != STD numeric_limits<char>::max());
+
+    STD cout << "test OK\n";
+    return 0;
+  }
+}
+
+simple_test "character classification" "" {
+test OK
+}

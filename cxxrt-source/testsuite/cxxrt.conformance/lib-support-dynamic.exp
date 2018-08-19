@@ -1,0 +1,71 @@
+#!/usr/local/bin/expect
+# -*-C++-*- cxxrt.conformance/lib-support-dynamic.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  Dynamic memory management
+# Version: $Id: lib-support-dynamic.exp,v 1.1.1.1 2002/06/05 01:03:33 dietmar_kuehl Exp $ 
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <new>
+  #if !defined(STD)
+  #  if !defined(_CXXRT_STD)
+  #    define STD std::
+  using namespace std;
+  #  else
+  #    define STD _CXXRT_STD
+  using STD size_t;
+  #  endif
+  #endif
+
+  template <class T> inline void test_type() {}
+  template <class T> inline void check_type(T const&) {}
+  template <class T> inline void use_object(T const&) {}
+
+  void nh() {}
+
+  int main()
+  {
+    test_type< STD bad_alloc>();
+    test_type< STD nothrow_t>();
+    check_type< STD nothrow_t>(STD nothrow);
+    test_type< STD new_handler>();
+    check_type< STD new_handler>(nh);
+
+    use_object(static_cast<void* (*)(size_t)>(operator new));
+    use_object(static_cast<void*(*)(size_t, STD nothrow_t const&)>(operator new));
+    use_object(static_cast<void (*)(void*)>(operator delete));
+    use_object(static_cast<void (*)(void*, STD nothrow_t const&)>(operator delete));
+    use_object(static_cast<void* (*)(size_t)>(operator new[]));
+    use_object(static_cast<void* (*)(size_t, STD nothrow_t const&)>(operator new[]));
+    use_object(static_cast<void (*)(void*)>(operator delete[]));
+    use_object(static_cast<void (*)(void*, STD nothrow_t const&)>(operator delete[]));
+
+    use_object(static_cast<void* (*)(size_t, void*)>(operator new));
+    use_object(static_cast<void* (*)(size_t, void*)>(operator new[]));
+    use_object(static_cast<void (*)(void*, void*)>(operator delete));
+    use_object(static_cast<void (*)(void*, void*)>(operator delete[]));
+    return 0;
+  }
+}

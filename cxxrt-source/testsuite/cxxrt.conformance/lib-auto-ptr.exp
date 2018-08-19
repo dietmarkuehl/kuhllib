@@ -1,0 +1,77 @@
+#!/usr/local/bin/expect
+# -*-C++-*- cxxrt.conformance/lib-auto-ptr.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  Template class auto_ptr
+# Version: $Id: lib-auto-ptr.exp,v 1.1.1.1 2002/06/05 01:03:10 dietmar_kuehl Exp $ 
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <memory>
+  #if !defined(STD)
+  #  if !defined(_CXXRT_STD)
+  #    define STD std::
+  #  else
+  #    define STD _CXXRT_STD
+  #  endif
+  #endif
+
+  template <class T> inline void test_type() {}
+  template <class T> inline void check_type(T const&) {}
+
+  template <class T> inline void same_type_help(T const*, T const*) {}
+  template <class T, class S>
+  struct same_type_struct {
+    same_type_struct() { same_type_help(static_cast<T const*>(0), static_cast<S const*>(0)); }
+  };
+  template <class T, class S>
+  struct same_type_struct<T&, S&> {
+    same_type_struct() { same_type_help(static_cast<T const*>(0), static_cast<S const*>(0)); }
+  };
+  template <class T, class S> inline void same_type() { same_type_struct<T, S>(); }
+
+  struct foo {};
+  struct bar: foo {};
+
+  int main()
+  {
+    same_type<int, STD auto_ptr<int>::element_type>();
+
+    STD auto_ptr<foo> fa1;
+    STD auto_ptr<bar> fb1(new bar);
+    STD auto_ptr<foo> fa2(fa1);
+    STD auto_ptr<foo> fb2(fb1);
+    fa1 = fa2;
+    fa1 = fb2;
+    
+    check_type<foo>(*fa1);
+    check_type<foo*>(fa1.operator->());
+    check_type<foo*>(fa1.get());
+    check_type<foo*>(fa1.release());
+    fa1.reset();
+    fa1.reset(0);
+    
+    return 0;
+  }
+}

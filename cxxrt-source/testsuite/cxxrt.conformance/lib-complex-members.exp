@@ -1,0 +1,92 @@
+#!/usr/local/bin/expect
+# -*-C++-*- lib-complex-members.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  complex member functions
+# Version: $Id: lib-complex-members.exp,v 1.1.1.1 2002/06/05 01:03:00 dietmar_kuehl Exp $ 
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include "testtools.hpp"
+  #include "testnumeric.hpp"
+  #include <complex>
+
+  #if defined(_ESTD_STD)
+  #  define STD _ESTD_STD
+  #elif defined(_CXXRT_STD)
+  #  define STD _CXXRT_STD
+  #else
+  #  define STD ::std::
+  #endif
+
+  template <class T, class S>
+    void test()
+    {
+      bool failed = false;
+
+      STD complex<T> c1;
+      if ((c1.real() != T() || c1.imag() != T()) && (failed = true))
+	STD cout << "default ctor failed\n";
+
+      STD complex<T> c2(T(2.0));
+      if ((c2.real() != T(2.0) || c2.imag() != T()) && (failed = true))
+	STD cout << "conversion ctor failed\n";
+
+      STD complex<T> c3(T(3.0), T(4.0));
+      if ((c3.real() != T(3.0) || c3.imag() != T(4.0)) && (failed = true))
+	STD cout << "coordinates ctor failed\n";
+
+      STD complex<T> c4(c3);
+      if ((c4.real() != T(3.0) || c4.imag() != T(4.0)) && (failed = true))
+	STD cout << "copy ctor failed\n";
+
+      STD complex<S> cs(S(3.0), S(4.0));
+      STD complex<T> c5(cs);
+      if ((c5.real() != T(3.0) || c5.imag() != T(4.0)) && (failed = true))
+	STD cout << "copy conversion failed\n";
+
+      STD cout << (failed? "test failed\n": "OK\n");
+    }
+
+  int main()
+  {
+    test<float, double>();
+    test<double, long double>();
+    test<long double, float>();
+  #if defined(_CXXRT_STD)
+    test<tst::number, double>();
+  #else
+    STD cout << "OK\n";
+  #endif
+
+    return 0;
+  }
+}
+
+simple_test "complex members" "" {
+OK
+OK
+OK
+OK
+}

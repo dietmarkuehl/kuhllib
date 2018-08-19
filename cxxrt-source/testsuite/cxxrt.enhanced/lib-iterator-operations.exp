@@ -1,0 +1,102 @@
+#!/usr/local/bin/expect
+# -*-C++-*- lib-iterator-operations.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  Iterator operations
+# Version: $Id: lib-iterator-operations.exp,v 1.1.1.1 2002/06/05 01:03:43 dietmar_kuehl Exp $ 
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <iterator>
+  #include <iostream>
+  #include "testtools.hpp"
+  #include "testiterator.hpp"
+
+  #if defined(_ESTD_STD)
+  #  define STD _ESTD_STD
+  #elif defined(_CXXRT_STD)
+  #  define STD _CXXRT_STD
+  #else
+  #  define STD ::std::
+  #endif
+
+  template <class Category>
+    void test_advance(int dist)
+    {
+      tst::print_iterator<Category> it;
+      STD advance(it, dist);
+      STD cout << "\n";
+    }
+
+  int main(int ac, char *av[])
+  {
+    if (ac != 2)
+      {
+        STD cout << "wrong number of arguments\n";
+        return 1;
+      }
+
+    switch (av[1][0])
+      {
+      case '1':
+	test_advance< STD input_iterator_tag>(5);
+	test_advance< STD output_iterator_tag>(5);
+	test_advance< STD forward_iterator_tag>(5);
+	test_advance< STD bidirectional_iterator_tag>(5);
+	test_advance< STD bidirectional_iterator_tag>(-5);
+	test_advance< STD random_access_iterator_tag>(5);
+	test_advance< STD random_access_iterator_tag>(-5);
+	break;
+
+      case '2':
+	{
+	  int array[5];
+	  STD cout << STD distance(tst::begin_input(array), tst::end_input(array)) << "\n";
+	  STD cout << STD distance(tst::begin_forward(array), tst::end_forward(array)) << "\n";
+	  STD cout << STD distance(tst::begin_bidirectional(array), tst::end_bidirectional(array)) << "\n";
+	  STD cout << STD distance(tst::begin_random_access(array), tst::end_random_access(array)) << "\n";
+	}
+	break;
+      }
+
+    return 0;
+  }
+}
+
+simple_test "iterator operations: advance" "1" {
+++ ++ ++ ++ ++ 
+++ ++ ++ ++ ++ 
+++ ++ ++ ++ ++ 
+++ ++ ++ ++ ++ 
+-- -- -- -- -- 
++= 
++= 
+}
+
+simple_test "iterator operations: distance" "2" {
+5
+5
+5
+5
+}

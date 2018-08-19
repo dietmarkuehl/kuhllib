@@ -1,0 +1,112 @@
+#!/usr/local/bin/expect
+# -*-C++-*- io-27-5-2-2-1.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  Locales 
+# Version: $Id: io-27-5-2-2-1.exp,v 1.1.1.1 2002/06/05 01:03:01 dietmar_kuehl Exp $
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <streambuf>
+  #include <locale>
+  #include <cstdio>
+  namespace my_std
+  {
+  #if !defined(_CXXRT_STD)
+  #  define STD std::
+  using namespace std;
+  struct flush { ~flush() { fflush(0); } } dummy;
+  #else
+  #  define STD _CXXRT_STD
+  using STD printf;
+  #endif
+  }
+
+  void write(char const* msg) { my_std::printf(msg); }
+  void result(bool rc)
+  {
+    char const msg_OK[] =   "test OK\n";
+    char const msg_fail[] = "test failed\n";
+    if (rc)
+      write(msg_OK);
+    else
+      write(msg_fail);
+  }
+
+  template <class charT>
+  class my_streambuf: public STD basic_streambuf<charT>
+  {
+    void imbue(STD locale const &)
+    {
+      char const msg[] = "imbue()\n";
+      write(msg);
+    }
+  };
+
+  int main(int ac, char *av[])
+  {
+    if (ac != 2)
+      {
+        char const oops[] = "wrong number of arguments\n";
+        write(oops);
+        return 1;
+      }
+
+    switch (av[1][0])
+      {
+      case '0':
+        {
+          my_streambuf<char> sb;
+          STD locale l1 = sb.getloc();
+          STD locale l2;
+          result(l1 == sb.pubimbue(l2));
+          result(l2 == sb.getloc());
+        }
+        break;
+      case '1':
+        {
+          my_streambuf<wchar_t> sb;
+          STD locale l1 = sb.getloc();
+          STD locale l2;
+          result(l1 == sb.pubimbue(l2));
+          result(l2 == sb.getloc());
+        }
+        break;
+      }
+
+    return 0;
+  }
+}
+
+simple_test "basic_streambuf<char> public locale" "0" {
+imbue()
+test OK
+test OK
+}
+
+simple_test "basic_streambuf<wchar_t> public locale" "1" {
+imbue()
+test OK
+test OK
+}

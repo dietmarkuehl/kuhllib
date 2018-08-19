@@ -1,0 +1,125 @@
+#!/usr/local/bin/expect
+# -*-C++-*- lib-complex-member-ops.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  complex member operators
+# Version: $Id: lib-complex-member-ops.exp,v 1.1.1.1 2002/06/05 01:02:53 dietmar_kuehl Exp $ 
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include "testtools.hpp"
+  #include "testnumeric.hpp"
+  #include <complex>
+
+  #if defined(_ESTD_STD)
+  #  define STD _ESTD_STD
+  #elif defined(_CXXRT_STD)
+  #  define STD _CXXRT_STD
+  #else
+  #  define STD ::std::
+  #endif
+
+  template <class T, class S>
+    void test()
+    {
+      bool failed = false;
+
+      STD complex<T> c(T(3.0), T(4.0));
+
+      if ((&(c = STD complex<T>(T(2.0), T(5.0))) != &c) && (failed = true))
+        STD cout << "copy assign returned wrong object\n";
+      if ((!tst::feq(c.real(), T(2.0)) || !tst::feq(c.imag(), T(5.0))) && (failed = true))
+	STD cout << "copy assign failed\n";
+
+      if ((&(c = STD complex<S>(S(3.0), S(4.0))) != &c) && (failed = true))
+        STD cout << "convert assign returned wrong object\n";
+      if ((!tst::feq(c.real(), T(3.0)) || !tst::feq(c.imag(), T(4.0))) && (failed = true))
+	STD cout << "convert assign failed\n";
+
+      if ((&(c += T(2.0)) != &c) && (failed = true))
+        STD cout << "scalar add assign returned wrong object\n";
+      if ((!tst::feq(c.real(), T(5.0)) || !tst::feq(c.imag(), T(4.0))) && (failed = true))
+	STD cout << "scalar add assign failed\n";
+
+      if ((&(c -= T(2.0)) != &c) && (failed = true))
+        STD cout << "scalar sub assign returned wrong object\n";
+      if ((!tst::feq(c.real(), T(3.0)) || !tst::feq(c.imag(), T(4.0))) && (failed = true))
+	STD cout << "scalar sub assign failed\n";
+
+      if ((&(c *= T(2.0)) != &c) && (failed = true))
+        STD cout << "scalar mult assign returned wrong object\n";
+      if ((!tst::feq(c.real(), T(6.0)) || !tst::feq(c.imag(), T(8.0))) && (failed = true))
+	STD cout << "scalar mult assign failed\n";
+
+      if ((&(c /= T(2.0)) != &c) && (failed = true))
+        STD cout << "scalar div assign returned wrong object\n";
+      if ((!tst::feq(c.real(), T(3.0)) || !tst::feq(c.imag(), T(4.0))) && (failed = true))
+	STD cout << "scalar div assign failed\n";
+
+      STD complex<S> cs(S(2.0), S(5.0));
+
+      if ((&(c += cs) != &c) && (failed = true))
+        STD cout << "complex add assign returned wrong object\n";
+      if ((!tst::feq(c.real(), T(5.0)) || !tst::feq(c.imag(), T(9.0))) && (failed = true))
+	STD cout << "complex add assign failed\n";
+
+      if ((&(c -= cs) != &c) && (failed = true))
+        STD cout << "complex sub assign returned wrong object\n";
+      if ((!tst::feq(c.real(), T(3.0)) || !tst::feq(c.imag(), T(4.0))) && (failed = true))
+	STD cout << "complex sub assign failed\n";
+
+      if ((&(c *= cs) != &c) && (failed = true))
+        STD cout << "complex mult assign returned wrong object\n";
+      if ((!tst::feq(c.real(), T(-14.0)) || !tst::feq(c.imag(), T(23.0))) && (failed = true))
+	STD cout << "complex mult assign failed\n";
+
+      if ((&(c /= cs) != &c) && (failed = true))
+        STD cout << "complex div assign returned wrong object\n";
+      if ((!tst::feq(c.real(), T(3.0)) || !tst::feq(c.imag(), T(4.0))) && (failed = true))
+	STD cout << "complex div assign failed\n";
+
+      STD cout << (failed? "test failed\n": "OK\n");
+    }
+
+  int main()
+  {
+    test<float, double>();
+    test<double, long double>();
+    test<long double, float>();
+  #if defined(_CXXRT_STD)
+    test<tst::number, double>();
+  #else
+    STD cout << "OK\n";
+  #endif
+      
+    return 0;
+  }
+}
+
+simple_test "complex member operators" "" {
+OK
+OK
+OK
+OK
+}

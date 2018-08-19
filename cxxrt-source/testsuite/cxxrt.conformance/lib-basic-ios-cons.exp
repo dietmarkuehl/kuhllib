@@ -1,0 +1,143 @@
+#!/usr/local/bin/expect
+# -*-C++-*- io-27-4-5-1.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  basic_ios constructors 
+# Version: $Id: lib-basic-ios-cons.exp,v 1.1.1.1 2002/06/05 01:02:59 dietmar_kuehl Exp $
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <ios>
+  #include <streambuf>
+  #include <cstdio>
+
+  namespace my_std
+  {
+  #if !defined(_CXXRT_STD)
+  #  define STD std::
+  using namespace std;
+  struct flush { ~flush() { fflush(0); } } dummy;
+  #else
+  #  define STD _CXXRT_STD
+  using STD printf;
+  #endif
+  }
+
+  void write(char const* msg) { my_std::printf(msg); }
+  void result(bool rc)
+  {
+    char const msg_OK[] =   "test OK\n";
+    char const msg_fail[] = "test failed\n";
+    if (rc)
+      write(msg_OK);
+    else
+      write(msg_fail);
+  }
+
+  bool fail(char const* msg) { write(msg); return false; }
+
+  template <class charT, class traits>
+  inline bool check(STD basic_ios<charT, traits> const &fmt)
+  {
+    if (fmt.tie() != 0)
+      return fail("there is a tie!\n");
+
+    if (fmt.rdbuf() == 0?
+        (fmt.rdstate() != STD ios_base::badbit):
+        (fmt.rdstate() != STD ios_base::goodbit))
+      return fail("rdstate() is set wrongly\n");
+    if (fmt.exceptions() != STD ios_base::goodbit)
+      return fail("execeptions() not set to goodbit\n");
+    if (fmt.flags() != (STD ios_base::skipws | STD ios_base::dec))
+      return fail("wrong initial formatting flags\n");
+    if (fmt.width() != 0)
+      return fail("wrong initial width\n");
+    if (fmt.precision() != 6)
+      return fail("wrong initial precision\n");
+    if (fmt.fill() != fmt.widen(' '))
+      return fail("wrong initial fill character\n");
+
+    return true;
+  }
+
+  template <class charT>
+  class my_streambuf: public STD basic_streambuf<charT>
+  {
+  };
+
+  template <class charT>
+  class my_ios: public STD basic_ios<charT>
+  {
+  public:
+    my_ios():
+      STD basic_ios<charT>()
+    {
+      STD basic_streambuf<char> *sb = new my_streambuf<char>();
+      this->init(sb);
+    }
+  };
+
+  int main(int ac, char *av[])
+  {
+    if (ac != 2)
+      {
+        char const oops[] = "wrong number of arguments\n";
+        write(oops);
+        return 1;
+      }
+
+    STD basic_streambuf<char> *sb = new my_streambuf<char>();
+
+    switch (av[1][0])
+      {
+      case '0':
+        {
+          STD basic_ios<char> fmt(sb);
+
+          result(fmt.rdbuf() == sb);
+          result(check(fmt));
+        }
+        break;
+      case '1':
+        {
+          my_ios<char> fmt;
+          result(fmt.rdbuf() != 0);
+          result(check(fmt));
+        }
+        break;
+      }
+
+    return 0;
+  }
+}
+
+simple_test "streambuf ctor of basic_ios" "0" {
+test OK
+test OK
+}
+
+simple_test "default ctor and init of basic_ios" "1" {
+test OK
+test OK
+}

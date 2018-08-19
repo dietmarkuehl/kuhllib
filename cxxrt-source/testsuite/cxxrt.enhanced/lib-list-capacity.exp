@@ -1,0 +1,77 @@
+#!/usr/local/bin/expect
+# -*-C++-*- lib-list-capacity.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  list capacity
+# Version: $Id: lib-list-capacity.exp,v 1.3 2003/04/13 19:39:28 dietmar_kuehl Exp $ 
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <list>
+  #include "testalloc.hpp"
+  #include <iostream>
+  #include <algorithm>
+  #include <iterator>
+
+  #if defined(_ESTD_STD)
+  #  define STD _ESTD_STD
+  #elif defined(_CXXRT_STD)
+  #  define STD _CXXRT_STD
+  #else
+  #  define STD ::std::
+  #endif
+
+  struct foo { foo(int i): m_val(i) {}; int m_val; };
+  STD ostream& operator<< (STD ostream& os, foo const& f) { return os << f.m_val; }
+
+  int main(int ac, char *av[])
+  {
+    {
+      foo vals[] = { 1, 2, 3 };
+      STD list<foo, tst::allocator<foo> > lst(vals, vals + 3, tst::allocator<foo>(true));
+
+      lst.resize(3, 17);
+      STD copy(lst.begin(), lst.end(), STD ostream_iterator<foo>(STD cout, "-"));
+      STD cout << "\n";
+      
+      lst.resize(5, 18);
+      STD copy(lst.begin(), lst.end(), STD ostream_iterator<foo>(STD cout, "-"));
+      STD cout << "\n";
+      
+      lst.resize(2, 19);
+      STD copy(lst.begin(), lst.end(), STD ostream_iterator<foo>(STD cout, "-"));
+      STD cout << "\n";
+    }
+
+    tst::allocator<foo>::report();
+    return 0;
+  }
+}
+
+simple_test "list::resize()" "" {
+1-2-3-
+1-2-3-18-18-
+1-2-
+allocator used with all memory released and all objects destructed
+}

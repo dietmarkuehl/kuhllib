@@ -1,0 +1,115 @@
+#!/usr/local/bin/expect
+# -*-C++-*- io-27-4-5.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  Template class basic_ios 
+# Version: $Id: lib-ios-extra.exp,v 1.1.1.1 2002/06/05 01:03:12 dietmar_kuehl Exp $
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <ios>
+  #include <locale>
+  #if !defined(_CXXRT_STD)
+  #  define STD std::
+  #else
+  #  define STD _CXXRT_STD
+  #endif
+
+  template <class charT, class traits>
+  class my_ios: public STD basic_ios<charT, traits>
+  {
+  public:
+    my_ios():
+      STD basic_ios<charT, traits>()
+    {
+      STD basic_streambuf<charT, traits> *sb = 0;
+      this->init(sb);
+    }
+  };
+
+  inline void fvoid(void const* const&) {}
+  inline void fbool(bool const&) {}
+  template <class charT>
+    inline void fchar(charT const&) {}
+  inline void fiostate(STD ios_base::iostate const&) {}
+  template <class charT, class traits>
+    inline void fios(STD basic_ios<charT, traits> const&) {}
+  template <class charT, class traits>
+    inline void fostream(STD basic_ostream<charT, traits>* const&) {}
+  template <class charT, class traits>
+    inline void fstreambuf(STD basic_streambuf<charT, traits>* const&) {}
+
+  template <class charT, class traits>
+  inline void f(STD basic_ios<charT, traits> &fmt)
+  {
+    typedef typename STD basic_ios<charT, traits>::char_type   char_type;
+    typedef typename STD basic_ios<charT, traits>::int_type    int_type;
+    typedef typename STD basic_ios<charT, traits>::pos_type    pos_type;
+    typedef typename STD basic_ios<charT, traits>::off_type    off_type;
+    typedef typename STD basic_ios<charT, traits>::traits_type traits_type;
+
+    fvoid(fmt);
+    fbool(!fmt);
+
+    fiostate(fmt.rdstate());
+    fmt.clear();
+    fmt.clear(STD ios_base::goodbit);
+    fmt.setstate(STD ios_base::badbit);
+    fbool(fmt.good());
+    fbool(fmt.bad());
+    fbool(fmt.fail());
+    fbool(fmt.eof());
+
+    fiostate(fmt.exceptions());
+    fmt.exceptions(STD ios_base::goodbit);
+
+    STD basic_streambuf<charT, traits> *sb = 0;
+    STD basic_ios<charT, traits> i1(sb);
+
+    fostream<charT, traits>(fmt.tie());
+    fostream<charT, traits>(fmt.tie(fmt.tie()));
+    fstreambuf<charT, traits>(fmt.rdbuf());
+    fstreambuf<charT, traits>(fmt.rdbuf(fmt.rdbuf()));
+
+    fios<charT, traits>(fmt.copyfmt(i1));
+
+    fchar<charT>(fmt.fill());
+    fchar<charT>(fmt.fill(charT()));
+
+    STD locale l = fmt.imbue(STD locale());
+    l == l; // use the locale object to avoid a waring
+    char      c3 = fmt.narrow(char_type(), char());
+    fchar<charT>(fmt.widen(c3));
+
+    my_ios<charT, traits> m;
+  }
+
+  void cf(STD basic_ios<char> &fmt) { f(fmt); }
+  void wf(STD basic_ios<wchar_t> &fmt) { f(fmt); }
+
+  int main(int, char *[])
+  {
+    return 0;
+  }
+}

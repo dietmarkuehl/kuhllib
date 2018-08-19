@@ -1,0 +1,161 @@
+#!/usr/local/bin/perl
+# -*-C++-*- num_put3.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  Tests for the num_put locale; testing grouping of longs 
+# Version: $Id: num_put3.exp,v 1.1.1.1 2002/06/05 01:03:47 dietmar_kuehl Exp $
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <locale>
+  #include <sstream>
+  #include <iterator>
+  #include <string>
+  #include <ios>
+  #include <cstdio>
+  #include <cstdlib>
+  #include <testio.hpp>
+
+  class group: public STD numpunct<char>
+  {
+  public:
+    group(STD string const &g): grp(g) {}
+    STD string do_grouping() const { return grp; }
+  private:
+    STD string grp;
+  };
+
+  void print_longs(STD ios_base &fmt, int width)
+  {
+    STD locale loc;
+    STD num_put<char, STD ostreambuf_iterator<char> > const& np = STD use_facet< STD num_put<char, STD ostreambuf_iterator<char> > >(loc);
+    STD ostringstream out;
+
+    fmt.width(width);
+    np.put(out, fmt, '@', 0l);
+    my_std::printf("0:       >%s<\n", out.str().c_str());
+    out.str("");
+
+    fmt.width(width);
+    np.put(out, fmt, '@', 123456l);
+    my_std::printf("123456:  >%s<\n", out.str().c_str());
+    out.str("");
+
+    fmt.width(width);
+    np.put(out, fmt, '@', -123456l);
+    my_std::printf("-123456: >%s<\n", out.str().c_str());
+    out.str("");
+  }
+
+  int main(int ac, char *av[])
+  {
+    if (ac < 2)
+      {
+        my_std::fprintf(stderr, "usage: %s <test-no>\n", av[0]);
+        return 1;
+      }
+
+    STD ios fmt(static_cast< STD streambuf*>(0));
+
+    switch (av[1][0])
+      {
+      case '0':
+        {
+          fmt.imbue(STD locale(STD locale(), new group("")));
+          print_longs(fmt, 10);
+        }
+        break;
+      case '1':
+        {
+          fmt.imbue(STD locale(STD locale(), new group("\1")));
+          print_longs(fmt, 10);
+        }
+        break;
+      case '2':
+        {
+          fmt.imbue(STD locale(STD locale(), new group("\2")));
+          print_longs(fmt, 10);
+        }
+        break;
+      case '3':
+        {
+          fmt.imbue(STD locale(STD locale(), new group("\3")));
+          print_longs(fmt, 10);
+        }
+        break;
+      case '4':
+        {
+          fmt.imbue(STD locale(STD locale(), new group("\0")));
+          print_longs(fmt, 10);
+        }
+        break;
+      case '5':
+        {
+          fmt.imbue(STD locale(STD locale(), new group("\1\2\3")));
+          print_longs(fmt, 10);
+        }
+        break;
+      default:
+        break;
+      }
+
+    return 0;
+  }
+}
+
+simple_test "default long output" "0" {
+0:       >@@@@@@@@@0<
+123456:  >@@@@123456<
+-123456: >@@@-123456<
+}
+
+simple_test "long output; grouping 1" "1" {
+0:       >@@@@@@@@@0<
+123456:  >1,2,3,4,5,6<
+-123456: >-1,2,3,4,5,6<
+}
+
+simple_test "long output; grouping 2" "2" {
+0:       >@@@@@@@@@0<
+123456:  >@@12,34,56<
+-123456: >@-12,34,56<
+}
+
+simple_test "long output; grouping 3" "3" {
+0:       >@@@@@@@@@0<
+123456:  >@@@123,456<
+-123456: >@@-123,456<
+}
+
+simple_test "long output; grouping 0" "4" {
+0:       >@@@@@@@@@0<
+123456:  >@@@@123456<
+-123456: >@@@-123456<
+}
+
+simple_test "long output; grouping 1 2 3" "5" {
+0:       >@@@@@@@@@0<
+123456:  >@@123,45,6<
+-123456: >@-123,45,6<
+}

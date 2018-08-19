@@ -1,0 +1,183 @@
+#!/usr/local/bin/expect
+# -*-C++-*- cxxrt.conformance/lib-c-limits.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  C Library
+# Version: $Id: lib-c-limits.exp,v 1.1.1.1 2002/06/05 01:03:05 dietmar_kuehl Exp $ 
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <climits>
+
+  #if !defined(CHAR_BIT)
+  #  error "CHAR_BIT is not defined"
+  #endif
+  #if !defined(CHAR_MAX)
+  #  error "CHAR_MAX is not defined"
+  #endif
+  #if !defined(CHAR_MIN)
+  #  error "CHAR_MIN is not defined"
+  #endif
+  #if !defined(INT_MAX)
+  #  error "INT_MAX is not defined"
+  #endif
+  #if !defined(INT_MIN)
+  #  error "INT_MIN is not defined"
+  #endif
+  #if !defined(LONG_MAX)
+  #  error "LONG_MAX is not defined"
+  #endif
+  #if !defined(LONG_MIN)
+  #  error "LONG_MIN is not defined"
+  #endif
+  #if !defined(MB_LEN_MAX)
+  #  error "MB_LEN_MAX is not defined"
+  #endif
+  #if !defined(SCHAR_MAX)
+  #  error "SCHAR_MAX is not defined"
+  #endif
+  #if !defined(SCHAR_MIN)
+  #  error "SCHAR_MIN is not defined"
+  #endif
+  #if !defined(SHRT_MAX)
+  #  error "SHRT_MAX is not defined"
+  #endif
+  #if !defined(SHRT_MIN)
+  #  error "SHRT_MIN is not defined"
+  #endif
+  #if !defined(UCHAR_MAX)
+  #  error "UCHAR_MAX is not defined"
+  #endif
+  #if !defined(UINT_MAX)
+  #  error "UINT_MAX is not defined"
+  #endif
+  #if !defined(ULONG_MAX)
+  #  error "ULONG_MAX is not defined"
+  #endif
+  #if !defined(USHRT_MAX)
+  #  error "USHRT_MAX is not defined"
+  #endif
+
+  int main(int ac, char *av[])
+  {
+    return 0;
+  }
+}
+
+inline_compile {
+  #include <cfloat>
+
+  #if !defined(DBL_DIG)
+  #  error "DBL_DIG is not defined"
+  #endif
+  #if !defined(DBL_MIN_EXP)
+  #  error "DBL_MIN_EXP is not defined"
+  #endif
+  #if !defined(FLT_MIN_10_EXP)
+  #  error "FLT_MIN_10_EXP is not defined"
+  #endif
+  #if !defined(LDBL_MAX_10_EXP)
+  #  error "LDBL_MAX_10_EXP is not defined"
+  #endif
+  #if !defined(DBL_EPSILON)
+  #  error "DBL_EPSILON is not defined"
+  #endif
+  #if !defined(FLT_DIG)
+  #  error "FLT_DIG is not defined"
+  #endif
+  #if !defined(FLT_MIN_EXP)
+  #  error "FLT_MIN_EXP is not defined"
+  #endif
+  #if !defined(LDBL_MAX_EXP)
+  #  error "LDBL_MAX_EXP is not defined"
+  #endif
+  #if !defined(DBL_MANT_DIG)
+  #  error "DBL_MANT_DIG is not defined"
+  #endif
+  #if !defined(FLT_EPSILON)
+  #  error "FLT_EPSILON is not defined"
+  #endif
+  #if !defined(FLT_RADIX)
+  #  error "FLT_RADIX is not defined"
+  #endif
+  #if !defined(LDBL_MIN)
+  #  error "LDBL_MIN is not defined"
+  #endif
+  #if !defined(DBL_MAX)
+  #  error "DBL_MAX is not defined"
+  #endif
+  #if !defined(FLT_MANT_DIG)
+  #  error "FLT_MANT_DIG is not defined"
+  #endif
+  #if !defined(FLT_ROUNDS)
+  #  error "FLT_ROUNDS is not defined"
+  #endif
+  #if !defined(LDBL_MIN_10_EXP)
+  #  error "LDBL_MIN_10_EXP is not defined"
+  #endif
+  #if !defined(DBL_MAX_10_EXP)
+  #  error "DBL_MAX_10_EXP is not defined"
+  #endif
+  #if !defined(FLT_MAX)
+  #  error "FLT_MAX is not defined"
+  #endif
+  #if !defined(LDBL_DIG)
+  #  error "LDBL_DIG is not defined"
+  #endif
+  #if !defined(LDBL_MIN_EXP)
+  #  error "LDBL_MIN_EXP is not defined"
+  #endif
+  #if !defined(DBL_MAX_EXP)
+  #  error "DBL_MAX_EXP is not defined"
+  #endif
+  #if !defined(FLT_MAX_10_EXP)
+  #  error "FLT_MAX_10_EXP is not defined"
+  #endif
+  #if !defined(LDBL_EPSILON)
+  #  error "LDBL_EPSILON is not defined"
+  #endif
+  #if !defined(DBL_MIN)
+  #  error "DBL_MIN is not defined"
+  #endif
+  #if !defined(FLT_MAX_EXP)
+  #  error "FLT_MAX_EXP is not defined"
+  #endif
+  #if !defined(LDBL_MANT_DIG)
+  #  error "LDBL_MANT_DIG is not defined"
+  #endif
+  #if !defined(DBL_MIN_10_EXP)
+  #  error "DBL_MIN_10_EXP is not defined"
+  #endif
+  #if !defined(FLT_MIN)
+  #  error "FLT_MIN is not defined"
+  #endif
+  #if !defined(LDBL_MAX)
+  #  error "LDBL_MAX is not defined"
+  #endif
+
+  int main()
+  {
+    return 0;
+  }
+}

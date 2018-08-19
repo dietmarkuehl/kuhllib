@@ -1,0 +1,158 @@
+#!/usr/local/bin/expect
+# -*-C++-*- loc-22-2-2-2-2.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  num_put virtual functions (-dk:TODO check the wchar_t results)
+# Version: $Id: loc-22-2-2-2-2.exp,v 1.1.1.1 2002/06/05 01:03:32 dietmar_kuehl Exp $ 
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <locale>
+  #include <iostream>
+  #include <iterator>
+  #include <string>
+  #if !defined(_CXXRT_STD)
+  #  define STD std::
+  #else
+  #  define STD _CXXRT_STD
+  #endif
+
+  STD basic_ostream<char> &stream(char) { STD cout.fill('#'); return STD cout; }
+  STD basic_ostream<wchar_t> &stream(wchar_t) { STD wcout.fill(L'#'); return STD wcout; }
+
+  template <class cT> class test_numpunct;
+  template <> class test_numpunct<char>: public STD numpunct<char>
+  {
+    STD string do_truename() const { return "wahr"; }
+    STD string do_falsename() const { return "falsch"; }
+  };
+  template <> class test_numpunct<wchar_t>: public STD numpunct<wchar_t>
+  {
+    STD wstring do_truename() const { return L"wahr"; }
+    STD wstring do_falsename() const { return L"falsch"; }
+  };
+
+  template <class cT>
+  inline void test_bool(STD num_put<cT> const &np)
+  {
+    STD basic_ostream<cT>       &strm = stream(cT());
+    STD ostreambuf_iterator<cT> it(strm);
+
+    np.put(it, strm, strm.fill(), true); strm << STD endl;
+    np.put(it, strm, strm.fill(), false); strm << STD endl;
+    strm.setf(STD ios_base::right, STD ios_base::adjustfield);
+    strm.width(10); np.put(it, strm, strm.fill(), true); strm << STD endl;
+    strm.width(10); np.put(it, strm, strm.fill(), false); strm << STD endl;
+    strm.setf(STD ios_base::left, STD ios_base::adjustfield);
+    strm.width(10); np.put(it, strm, strm.fill(), true); strm << STD endl;
+    strm.width(10); np.put(it, strm, strm.fill(), false); strm << STD endl;
+
+    strm.setf(STD ios_base::boolalpha);
+    np.put(it, strm, strm.fill(), true); strm << STD endl;
+    np.put(it, strm, strm.fill(), false); strm << STD endl;
+    strm.setf(STD ios_base::right, STD ios_base::adjustfield);
+    strm.width(10); np.put(it, strm, strm.fill(), true); strm << STD endl;
+    strm.width(10); np.put(it, strm, strm.fill(), false); strm << STD endl;
+    strm.setf(STD ios_base::left, STD ios_base::adjustfield);
+    strm.width(10); np.put(it, strm, strm.fill(), true); strm << STD endl;
+    strm.width(10); np.put(it, strm, strm.fill(), false); strm << STD endl;
+
+    STD locale l(STD locale::classic(), new test_numpunct<cT>);
+    strm.imbue(l);
+    np.put(it, strm, strm.fill(), true); strm << STD endl;
+    np.put(it, strm, strm.fill(), false); strm << STD endl;
+    strm.setf(STD ios_base::uppercase);
+    np.put(it, strm, strm.fill(), true); strm << STD endl;
+    np.put(it, strm, strm.fill(), false); strm << STD endl;
+  }
+
+  template <class cT>
+  inline void test_long(STD num_put<cT> const &np)
+  {
+    STD basic_ostream<cT>       &strm = stream(cT());
+    STD ostreambuf_iterator<cT> it(strm);
+
+    np.put(it, strm, strm.fill(), 0l); strm << STD endl;
+    np.put(it, strm, strm.fill(), 1l); strm << STD endl;
+    np.put(it, strm, strm.fill(), -1l); strm << STD endl;
+
+    strm.setf(STD ios_base::right, STD ios_base::adjustfield);
+    strm.width(5); np.put(it, strm, strm.fill(), 0l); strm << STD endl;
+    strm.width(5); np.put(it, strm, strm.fill(), 1l); strm << STD endl;
+    strm.width(5); np.put(it, strm, strm.fill(), -1l); strm << STD endl;
+
+    strm.setf(STD ios_base::left, STD ios_base::adjustfield);
+    strm.width(5); np.put(it, strm, strm.fill(), 0l); strm << STD endl;
+    strm.width(5); np.put(it, strm, strm.fill(), 1l); strm << STD endl;
+    strm.width(5); np.put(it, strm, strm.fill(), -1l); strm << STD endl;
+
+    strm.setf(STD ios_base::internal, STD ios_base::adjustfield);
+    strm.width(5); np.put(it, strm, strm.fill(), 0l); strm << STD endl;
+    strm.width(5); np.put(it, strm, strm.fill(), 1l); strm << STD endl;
+    strm.width(5); np.put(it, strm, strm.fill(), -1l); strm << STD endl;
+  }
+
+  int main(int ac, char *av[])
+  {
+    if (ac != 2)
+      {
+        STD cerr << "wrong number of arguments\n";
+        return 1;
+      }
+
+    switch (av[1][0])
+      {
+      case '0':
+        test_bool(STD use_facet< STD num_put<char> >(STD locale::classic()));
+        break;
+      case '1':
+        test_bool(STD use_facet< STD num_put<wchar_t> >(STD locale::classic()));
+        break;
+      case '2':
+        test_long(STD use_facet< STD num_put<char> >(STD locale::classic()));
+        break;
+      }
+
+    return 0;
+  }
+}
+
+simple_test "num_put<char>: bool" "0" {
+1
+0
+#########1
+#########0
+1#########
+0#########
+true
+false
+######true
+#####false
+true######
+false#####
+wahr
+falsch
+wahr
+falsch
+}

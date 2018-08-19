@@ -1,0 +1,116 @@
+#!/usr/local/bin/expect
+# -*-C++-*- io-27-4-4.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  Template class basic_ios
+# Version: $Id: lib-ios.exp,v 1.1.1.1 2002/06/05 01:03:09 dietmar_kuehl Exp $
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <ios>
+  #if !defined(_CXXRT_STD)
+  #  define STD std::
+  #else
+  #  define STD _CXXRT_STD
+  #endif
+
+  template <class T> inline void equal_types_helper(T, T) {}
+  template <class T1, class T2> inline void equal_types()
+  {
+    T1* p1 = 0;
+    T2* p2 = 0;
+    equal_types_helper(&p1, &p2);
+  }
+
+  template <class T> inline void check_type(T const&) {}
+
+  template <class cT>
+  class my_ios: public STD basic_ios<cT>
+  {
+  public:
+    my_ios():
+      STD basic_ios<cT>()
+    {
+      this->init(static_cast< STD basic_streambuf<cT>*>(0));
+    }
+  }; 
+
+  template <class cT>
+  inline void test_basic_ios()
+  {
+    my_ios<cT>();
+
+    if (static_cast< STD ios_base*>(static_cast< STD basic_ios<cT>*>(0)) != 0)
+      return;
+
+    equal_types< STD basic_ios<cT>, STD basic_ios<cT, STD char_traits<cT> > >();
+
+    equal_types<cT, typename STD basic_ios<cT>::char_type>();
+    equal_types<typename STD char_traits<cT>::int_type, typename STD basic_ios<cT>::int_type>();
+    equal_types<typename STD char_traits<cT>::pos_type, typename STD basic_ios<cT>::pos_type>();
+    equal_types<typename STD char_traits<cT>::off_type, typename STD basic_ios<cT>::off_type>();
+    equal_types< STD char_traits<cT>, typename STD basic_ios<cT>::traits_type>();
+
+    STD basic_ios<cT> obj(static_cast< STD basic_streambuf<cT>*>(0));
+    STD basic_ios<cT> const& cobj = obj;
+
+    static_cast<void*>(cobj);
+    check_type<bool>(!obj);
+
+    check_type< STD ios_base::iostate>(cobj.rdstate());
+    obj.clear();
+    obj.clear(STD ios_base::iostate());
+    obj.setstate(STD ios_base::iostate());
+
+    check_type<bool>(cobj.bad());
+    check_type<bool>(cobj.eof());
+    check_type<bool>(cobj.fail());
+    check_type<bool>(cobj.good());
+
+    check_type< STD ios_base::iostate>(cobj.exceptions());
+    obj.exceptions(STD ios_base::iostate());
+
+    check_type< STD basic_ostream<cT>*>(cobj.tie());
+    obj.tie(static_cast< STD basic_ostream<cT>*>(0));
+
+    check_type< STD basic_streambuf<cT>*>(cobj.rdbuf());
+    check_type< STD basic_streambuf<cT>*>(obj.rdbuf(static_cast< STD basic_streambuf<cT>*>(0)));
+
+    check_type< STD basic_ios<cT> >(obj.copyfmt(obj));
+
+    check_type<cT>(cobj.fill());
+    check_type<cT>(obj.fill(cT()));
+
+    check_type< STD locale>(obj.imbue(STD locale()));
+
+    check_type<char>(obj.narrow(cT(), char()));
+    check_type<cT>(obj.widen(char()));
+  }
+
+  int main()
+  {
+    test_basic_ios<char>();
+    test_basic_ios<wchar_t>();
+  }
+}

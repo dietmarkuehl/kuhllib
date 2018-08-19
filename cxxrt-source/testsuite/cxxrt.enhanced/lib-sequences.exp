@@ -1,0 +1,256 @@
+#!/usr/local/bin/expect
+# -*-C++-*- lib-sequences.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  Sequences 
+# Version: $Id: lib-sequences.exp,v 1.1.1.1 2002/06/05 01:03:38 dietmar_kuehl Exp $ 
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include "testtools.hpp"
+  #include <deque>
+
+  #if defined(_ESTD_STD)
+  #  define STD _ESTD_STD
+  #elif defined(_CXXRT_STD)
+  #  define STD _CXXRT_STD
+  #else
+  #  define STD ::std::
+  #endif
+
+  void test(STD deque<int> const& c1, STD deque<int> const& c2)
+    {
+      c1 == c2;
+      c1 <  c2;
+      c1 != c2;
+      c1 >  c2;
+      c1 >= c2;
+      c1 <= c2;
+    }
+      
+  int main()
+    {
+      STD deque<int> c1;
+      STD deque<int> c2;
+      STD deque<int, STD allocator<int> >& c3 = c1;
+
+      swap(c1, c2);
+      test(c1, c3);
+
+      const_use(static_cast<bool (*)(STD deque<int> const&, STD deque<int> const&)>(STD operator==));
+      const_use(static_cast<bool (*)(STD deque<int> const&, STD deque<int> const&)>(STD operator<));
+      const_use(static_cast<bool (*)(STD deque<int> const&, STD deque<int> const&)>(STD operator!=));
+      const_use(static_cast<bool (*)(STD deque<int> const&, STD deque<int> const&)>(STD operator>));
+      const_use(static_cast<bool (*)(STD deque<int> const&, STD deque<int> const&)>(STD operator>=));
+      const_use(static_cast<bool (*)(STD deque<int> const&, STD deque<int> const&)>(STD operator<=));
+
+      const_use(static_cast<void (*)(STD deque<int>&, STD deque<int>&)>(STD swap));
+
+      return 0;
+    }
+}
+
+inline_compile {
+  #include "testtools.hpp"
+  #include <list>
+  #include <memory>
+
+  #if defined(_ESTD_STD)
+  #  define STD _ESTD_STD
+  #elif defined(_CXXRT_STD)
+  #  define STD _CXXRT_STD
+  #else
+  #  define STD ::std::
+  #endif
+
+  void test(STD list<int> const& c1, STD list<int> const& c2)
+    {
+      c1 == c2;
+      c1 <  c2;
+      c1 != c2;
+      c1 >  c2;
+      c1 >= c2;
+      c1 <= c2;
+    }
+      
+  int main()
+    {
+      STD list<int> c1;
+      STD list<int> c2;
+      STD list<int, STD allocator<int> >& c3 = c1;
+
+      swap(c1, c2);
+      test(c1, c3);
+
+      const_use(static_cast<bool (*)(STD list<int> const&, STD list<int> const&)>(STD operator==));
+      const_use(static_cast<bool (*)(STD list<int> const&, STD list<int> const&)>(STD operator<));
+      const_use(static_cast<bool (*)(STD list<int> const&, STD list<int> const&)>(STD operator!=));
+      const_use(static_cast<bool (*)(STD list<int> const&, STD list<int> const&)>(STD operator>));
+      const_use(static_cast<bool (*)(STD list<int> const&, STD list<int> const&)>(STD operator>=));
+      const_use(static_cast<bool (*)(STD list<int> const&, STD list<int> const&)>(STD operator<=));
+
+      const_use(static_cast<void (*)(STD list<int>&, STD list<int>&)>(STD swap));
+
+      return 0;
+    }
+}
+
+inline_compile {
+  #include "testtools.hpp"
+  #include <queue>
+
+  #if defined(_ESTD_STD)
+  #  define STD _ESTD_STD
+  #elif defined(_CXXRT_STD)
+  #  define STD _CXXRT_STD
+  #else
+  #  define STD ::std::
+  #endif
+
+  void test(STD queue<int> const& c1, STD queue<int> const& c2)
+    {
+      c1 == c2;
+      c1 <  c2;
+      c1 != c2;
+      c1 >  c2;
+      c1 >= c2;
+      c1 <= c2;
+    }
+
+  int main()
+    {
+      STD queue<int> c1;
+      STD queue<int> c2;
+      STD queue<int, STD deque<int> >& c3 = c1;
+
+      test(c1, c3);
+
+      const_use(static_cast<bool (*)(STD queue<int> const&, STD queue<int> const&)>(STD operator==));
+      const_use(static_cast<bool (*)(STD queue<int> const&, STD queue<int> const&)>(STD operator<));
+      const_use(static_cast<bool (*)(STD queue<int> const&, STD queue<int> const&)>(STD operator!=));
+      const_use(static_cast<bool (*)(STD queue<int> const&, STD queue<int> const&)>(STD operator>));
+      const_use(static_cast<bool (*)(STD queue<int> const&, STD queue<int> const&)>(STD operator>=));
+      const_use(static_cast<bool (*)(STD queue<int> const&, STD queue<int> const&)>(STD operator<=));
+
+      STD priority_queue<int> p1;
+      STD priority_queue<int, STD vector<int> >& p2 = p1;
+      STD priority_queue<int, STD vector<int>, STD less< STD vector<int>::value_type> >& p3 = p2;
+      use(p3);
+
+      return 0;
+    }
+}
+
+inline_compile {
+  #include "testtools.hpp"
+  #include <stack>
+
+  #if defined(_ESTD_STD)
+  #  define STD _ESTD_STD
+  #elif defined(_CXXRT_STD)
+  #  define STD _CXXRT_STD
+  #else
+  #  define STD ::std::
+  #endif
+
+  void test(STD stack<int> const& c1, STD stack<int> const& c2)
+    {
+      c1 == c2;
+      c1 <  c2;
+      c1 != c2;
+      c1 >  c2;
+      c1 >= c2;
+      c1 <= c2;
+    }
+      
+  int main()
+    {
+      STD stack<int> c1;
+      STD stack<int> c2;
+      STD stack<int, STD deque<int> >& c3 = c1;
+
+      test(c1, c3);
+
+      const_use(static_cast<bool (*)(STD stack<int> const&, STD stack<int> const&)>(STD operator==));
+      const_use(static_cast<bool (*)(STD stack<int> const&, STD stack<int> const&)>(STD operator<));
+      const_use(static_cast<bool (*)(STD stack<int> const&, STD stack<int> const&)>(STD operator!=));
+      const_use(static_cast<bool (*)(STD stack<int> const&, STD stack<int> const&)>(STD operator>));
+      const_use(static_cast<bool (*)(STD stack<int> const&, STD stack<int> const&)>(STD operator>=));
+      const_use(static_cast<bool (*)(STD stack<int> const&, STD stack<int> const&)>(STD operator<=));
+
+      return 0;
+    }
+}
+
+inline_compile {
+  #include "testtools.hpp"
+  #include <vector>
+
+  #if defined(_ESTD_STD)
+  #  define STD _ESTD_STD
+  #elif defined(_CXXRT_STD)
+  #  define STD _CXXRT_STD
+  #else
+  #  define STD ::std::
+  #endif
+
+  template <class T>
+  void test(STD vector<T> const& c1, STD vector<T> const& c2)
+    {
+      c1 == c2;
+      c1 <  c2;
+      c1 != c2;
+      c1 >  c2;
+      c1 >= c2;
+      c1 <= c2;
+    }
+      
+  int main()
+    {
+      STD vector<int> c1;
+      STD vector<int> c2;
+      STD vector<int, STD allocator<int> >& c3 = c1;
+
+      swap(c1, c2);
+      test(c1, c3);
+
+      STD vector<bool> b1;
+      STD vector<bool> b2;
+      STD vector<bool, STD allocator<bool> >& b3 = b1;
+
+      swap(b1, b2);
+      test(b1, b3);
+
+      const_use(static_cast<bool (*)(STD vector<int> const&, STD vector<int> const&)>(STD operator==));
+      const_use(static_cast<bool (*)(STD vector<int> const&, STD vector<int> const&)>(STD operator<));
+      const_use(static_cast<bool (*)(STD vector<int> const&, STD vector<int> const&)>(STD operator!=));
+      const_use(static_cast<bool (*)(STD vector<int> const&, STD vector<int> const&)>(STD operator>));
+      const_use(static_cast<bool (*)(STD vector<int> const&, STD vector<int> const&)>(STD operator>=));
+      const_use(static_cast<bool (*)(STD vector<int> const&, STD vector<int> const&)>(STD operator<=));
+
+      const_use(static_cast<void (*)(STD vector<int>&, STD vector<int>&)>(STD swap));
+
+      return 0;
+    }
+}

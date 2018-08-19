@@ -1,0 +1,285 @@
+#!/usr/local/bin/expect
+# -*-C++-*- loc-22-2-1-3-2.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  ctype<char> members
+# Version: $Id: loc-22-2-1-3-2.exp,v 1.1.1.1 2002/06/05 01:02:59 dietmar_kuehl Exp $
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <locale>
+  #include <iostream>
+  #if !defined(_CXXRT_STD)
+  #  define STD std::
+  #else
+  #  define STD _CXXRT_STD
+  #endif
+
+  void result(bool rc)
+  {
+    STD cout << (rc? "test OK": "test failed") << "\n";
+  }
+
+  class facet: public STD ctype<char>
+  {
+  public:
+    static STD ctype_base::mask const *pub_classic() { return classic_table(); }
+
+    facet():
+      STD ctype<char>(0, false, 0)
+    {
+      result(table() == classic_table());
+    }
+    facet(STD ctype_base::mask *tbl):
+      STD ctype<char>(tbl, false, 0)
+    {
+      result(table() == tbl);
+    }
+    
+  protected:
+    char do_toupper(char c) const
+    {
+      STD cout << "do_toupper(c)\n";
+      return c;
+    }
+    char const *do_toupper(char *b, char const*) const
+    {
+      STD cout << "do_toupper(b, e)\n";
+      return b;
+    }
+    char do_tolower(char c) const
+    {
+      STD cout << "do_tolower(c)\n";
+      return c;
+    }
+    char const *do_tolower(char *b, char const*) const
+    {
+      STD cout << "do_tolower(b, e)\n";
+      return b;
+    }
+    char do_widen(char c) const
+    {
+      STD cout << "do_widen(c)\n";
+      return c;
+    }
+    char const *do_widen(char const *b, char const*, char*) const
+    {
+      STD cout << "do_widen(b, e, t)\n";
+      return b;
+    }
+    char do_narrow(char c, char) const
+    {
+      STD cout << "do_narrow(c, d)\n";
+      return c;
+    }
+    char const *do_narrow(char const *b, char const*, char, char*) const
+    {
+      STD cout << "do_narrow(b, e, d, t)\n";
+      return b;
+    }
+  };
+
+  int main(int ac, char *av[])
+  {
+    if (ac != 2)
+      {
+        STD cerr << "wrong number of arguments\n";
+        return 1;
+      }
+
+    STD ctype<char> const &ct = STD use_facet< STD ctype<char> >(STD locale::classic());
+
+    switch (av[1][0])
+      {
+      case '0':
+        {
+          facet f1;
+          facet f2(new STD ctype_base::mask[static_cast<int>(STD ctype<char>::table_size)]);
+        }
+        break;
+      case '1':
+        {
+          result(ct.is(STD ctype_base::space, ' '));
+          result(!ct.is(STD ctype_base::space, 'a'));
+          result(ct.is(STD ctype_base::alpha, 'a'));
+          result(!ct.is(STD ctype_base::alpha, '1'));
+          result(ct.is(STD ctype_base::digit, '1'));
+          result(!ct.is(STD ctype_base::digit, 'a'));
+          result(ct.is(STD ctype_base::xdigit, 'a'));
+          result(!ct.is(STD ctype_base::xdigit, '.'));
+          result(ct.is(STD ctype_base::punct, '.'));
+          result(!ct.is(STD ctype_base::punct, 'A'));
+          result(ct.is(STD ctype_base::upper, 'A'));
+          result(!ct.is(STD ctype_base::upper, 'a'));
+          result(ct.is(STD ctype_base::lower, 'a'));
+          result(!ct.is(STD ctype_base::lower, ' '));
+
+          char str[] = "aAnN1. ";
+          STD ctype_base::mask vec[sizeof(str)];
+
+          result(ct.is(str, str + sizeof(str), vec) == str + sizeof(str));
+          result(vec[0] == facet::pub_classic()['a']);
+          result(vec[1] == facet::pub_classic()['A']);
+          result(vec[2] == facet::pub_classic()['n']);
+          result(vec[3] == facet::pub_classic()['N']);
+          result(vec[4] == facet::pub_classic()['1']);
+          result(vec[5] == facet::pub_classic()['.']);
+          result(vec[6] == facet::pub_classic()[' ']);
+        }
+        break;
+      case '2':
+        {
+          char str[] = "aAnN1. ";
+          int  size = sizeof(str);
+
+          result(ct.scan_is(STD ctype_base::upper, str, str + size) == str + 1);
+          result(ct.scan_is(STD ctype_base::lower, str, str + size) == str + 0);
+          result(ct.scan_is(STD ctype_base::alpha, str, str + size) == str + 0);
+          result(ct.scan_is(STD ctype_base::digit, str, str + size) == str + 4);
+          result(ct.scan_is(STD ctype_base::punct, str, str + size) == str + 5);
+          result(ct.scan_is(STD ctype_base::space, str, str + size) == str + 6);
+        }
+        break;
+      case '3':
+        {
+          char str[] = "aAnN1. ";
+          int  size = sizeof(str);
+
+          result(ct.scan_not(STD ctype_base::upper, str, str + size) == str + 0);
+          result(ct.scan_not(STD ctype_base::lower, str, str + size) == str + 1);
+          result(ct.scan_not(STD ctype_base::alpha, str, str + size) == str + 4);
+          result(ct.scan_not(STD ctype_base::digit, str, str + size) == str + 0);
+          result(ct.scan_not(STD ctype_base::punct, str, str + size) == str + 0);
+          result(ct.scan_not(STD ctype_base::space, str, str + size) == str + 0);
+        }
+        break;
+      case '4':
+        {
+          facet f;
+          f.toupper('a');
+          char str[] = "aA1";
+          f.toupper(str, str + 3);
+        }
+        break;
+      case '5':
+        {
+          facet f;
+          f.tolower('a');
+          char str[] = "aA1";
+          f.tolower(str, str + 3);
+        }
+        break;
+      case '6':
+        {
+          facet f;
+          f.widen('a');
+          char str[] = "aA1";
+          f.widen(str, str + 3, str);
+        }
+        break;
+      case '7':
+        {
+          facet f;
+          f.narrow('a', 'd');
+          char str[] = "aA1";
+          f.narrow(str, str + 3, 'd', str);
+        }
+        break;
+      }
+
+    return 0;
+  }
+}
+
+simple_test "ctype<char> ctor" "0" {
+test OK
+test OK
+}
+
+simple_test "ctype<char> is()" "1" {
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+}
+
+simple_test "ctype<char> scan_is()" "2" {
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+}
+
+simple_test "ctype<char> scan_not()" "3" {
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+}
+
+simple_test "ctype<char> toupper()" "4" {
+test OK
+do_toupper(c)
+do_toupper(b, e)
+}
+
+simple_test "ctype<char> tolower()" "5" {
+test OK
+do_tolower(c)
+do_tolower(b, e)
+}
+
+simple_test "ctype<char> widen()" "6" {
+test OK
+do_widen(c)
+do_widen(b, e, t)
+}
+
+simple_test "ctype<char> narrow()" "7" {
+test OK
+do_narrow(c, d)
+do_narrow(b, e, d, t)
+}

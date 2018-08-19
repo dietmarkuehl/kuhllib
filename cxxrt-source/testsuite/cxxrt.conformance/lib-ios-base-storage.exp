@@ -1,0 +1,112 @@
+#!/usr/local/bin/expect
+# -*-C++-*- io-27-4-2-5.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  ios_base storage functions 
+# Version: $Id: lib-ios-base-storage.exp,v 1.1.1.1 2002/06/05 01:03:28 dietmar_kuehl Exp $
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <ios>
+  #include <cstdio>
+  #include <testio.hpp>
+
+  void result(bool rc)
+  {
+    char const msg_OK[] =   "test OK\n";
+    char const msg_fail[] = "test failed\n";
+    if (rc)
+      write(msg_OK);
+    else
+      write(msg_fail);
+  }
+
+  class my_ios: public STD basic_ios<char>
+  {
+  public:
+    my_ios() { init(0); }
+  };
+
+
+  int main(int ac, char *av[])
+  {
+    if (ac != 2)
+      {
+        char const oops[] = "wrong number of arguments\n";
+        write(oops);
+        return 1;
+      }
+
+    my_ios fmt;
+
+    int idx1 = STD ios_base::xalloc();
+    int idx2 = STD ios_base::xalloc();
+
+    switch (av[1][0])
+      {
+      case '0':
+        result(idx1 != idx2);
+        break;
+      case '1':
+        result(fmt.iword(idx1) == 0);
+        fmt.iword(idx1) = 17;
+        result(fmt.iword(idx1) == 17);
+        result(fmt.iword(idx2) == 0);
+        result(fmt.iword(idx1) == 17);
+        fmt.iword(idx2) = 42;
+        result(fmt.iword(idx1) == 17);
+        break;
+      case '2':
+        result(fmt.pword(idx1) == 0);
+        fmt.pword(idx1) = &idx1;
+        result(fmt.pword(idx1) == &idx1);
+        result(fmt.pword(idx2) == 0);
+        result(fmt.pword(idx1) == &idx1);
+        fmt.pword(idx2) = &idx2;
+        result(fmt.pword(idx1) == &idx1);
+        break;
+      }
+    return 0;
+  }
+}
+
+simple_test "ios_base::xalloc() index" "0" {
+test OK
+}
+
+simple_test "ios_base::iword()" "1" {
+test OK
+test OK
+test OK
+test OK
+test OK
+}
+
+simple_test "ios_base::pword()" "2" {
+test OK
+test OK
+test OK
+test OK
+test OK
+}

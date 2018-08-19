@@ -1,0 +1,114 @@
+#!/usr/local/bin/expect
+# -*-C++-*- lib-complex-synopsis.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  Header <complex> synopsis
+# Version: $Id: lib-complex-synopsis.exp,v 1.1.1.1 2002/06/05 01:02:58 dietmar_kuehl Exp $ 
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include "include/testtools.hpp"
+  #include <complex>
+
+  #if defined(_ESTD_STD)
+  #  define STD _ESTD_STD
+  #elif defined(_CXXRT_STD)
+  #  define STD _CXXRT_STD
+  #else
+  #  define STD ::std::
+  #endif
+
+  template <class T>
+    void test()
+    {
+      STD complex<T> c1;
+      use(c1);
+
+      check_fct_type< STD complex<T> (*)(STD complex<T> const&, STD complex<T> const&)>(STD operator+);
+      check_fct_type< STD complex<T> (*)(T const&, STD complex<T> const&)>(STD operator+);
+      check_fct_type< STD complex<T> (*)(STD complex<T> const&, T const&)>(STD operator+);
+
+      check_fct_type< STD complex<T> (*)(STD complex<T> const&, STD complex<T> const&)>(STD operator-);
+      check_fct_type< STD complex<T> (*)(T const&, STD complex<T> const&)>(STD operator-);
+      check_fct_type< STD complex<T> (*)(STD complex<T> const&, T const&)>(STD operator-);
+
+      check_fct_type< STD complex<T> (*)(STD complex<T> const&, STD complex<T> const&)>(STD operator*);
+      check_fct_type< STD complex<T> (*)(T const&, STD complex<T> const&)>(STD operator*);
+      check_fct_type< STD complex<T> (*)(STD complex<T> const&, T const&)>(STD operator*);
+
+      check_fct_type< STD complex<T> (*)(STD complex<T> const&, STD complex<T> const&)>(STD operator/);
+      check_fct_type< STD complex<T> (*)(T const&, STD complex<T> const&)>(STD operator/);
+      check_fct_type< STD complex<T> (*)(STD complex<T> const&, T const&)>(STD operator/);
+
+      check_fct_type< STD complex<T> (*)(STD complex<T> const&)>(STD operator+);
+      check_fct_type< STD complex<T> (*)(STD complex<T> const&)>(STD operator-);
+
+      check_fct_type<bool (*)(STD complex<T> const&, STD complex<T> const&)>(STD operator==);
+      check_fct_type<bool (*)(T const&, STD complex<T> const&)>(STD operator==);
+      check_fct_type<bool (*)(STD complex<T> const&, T const&)>(STD operator==);
+
+      check_fct_type<bool (*)(STD complex<T> const&, STD complex<T> const&)>(STD operator!=);
+      check_fct_type<bool (*)(T const&, STD complex<T> const&)>(STD operator!=);
+      check_fct_type<bool (*)(STD complex<T> const&, T const&)>(STD operator!=);
+
+      check_fct_type< STD basic_ostream<char> &(*)(STD basic_ostream<char>&, STD complex<T> const&)>(STD operator<<);
+      check_fct_type< STD basic_istream<char> &(*)(STD basic_istream<char>&, STD complex<T>&)>(STD operator>>);
+
+      check_fct_type<T (*)(STD complex<T> const&)>(STD real);
+      check_fct_type<T (*)(STD complex<T> const&)>(STD imag);
+
+      check_fct_type<T (*)(STD complex<T> const&)>(STD abs);
+      check_fct_type<T (*)(STD complex<T> const&)>(STD arg);
+      check_fct_type<T (*)(STD complex<T> const&)>(STD norm);
+
+      check_fct_type< STD complex<T> (*)(STD complex<T> const&)>(STD conj);
+      check_fct_type< STD complex<T> (*)(T const&, T const&)>(STD polar);
+
+      check_fct_type< STD complex<T> (*)(STD complex<T> const&)>(STD cos);
+      check_fct_type< STD complex<T> (*)(STD complex<T> const&)>(STD cosh);
+      check_fct_type< STD complex<T> (*)(STD complex<T> const&)>(STD exp);
+      check_fct_type< STD complex<T> (*)(STD complex<T> const&)>(STD log);
+      check_fct_type< STD complex<T> (*)(STD complex<T> const&)>(STD log10);
+
+      check_fct_type< STD complex<T> (*)(STD complex<T> const&, int)>(STD pow);
+      check_fct_type< STD complex<T> (*)(STD complex<T> const&, T const&)>(STD pow);
+      check_fct_type< STD complex<T> (*)(STD complex<T> const&, STD complex<T> const&)>(STD pow);
+      check_fct_type< STD complex<T> (*)(T const&, STD complex<T> const&)>(STD pow);
+
+      check_fct_type< STD complex<T> (*)(STD complex<T> const&)>(STD sin);
+      check_fct_type< STD complex<T> (*)(STD complex<T> const&)>(STD sinh);
+      check_fct_type< STD complex<T> (*)(STD complex<T> const&)>(STD sqrt);
+      check_fct_type< STD complex<T> (*)(STD complex<T> const&)>(STD tan);
+      check_fct_type< STD complex<T> (*)(STD complex<T> const&)>(STD tanh);
+    }
+
+  int main(int ac, char *av[])
+  {
+    test<float>();
+    test<double>();
+    test<long double>();
+
+    return 0;
+  }
+}

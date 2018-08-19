@@ -1,0 +1,186 @@
+#!/usr/local/bin/expect
+# -*-C++-*- io-27-6-2-4.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  basic_ostream seek members
+# Version: $Id: io-27-6-2-4.exp,v 1.1.1.1 2002/06/05 01:03:36 dietmar_kuehl Exp $ 
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <ostream>
+  #include <streambuf>
+  #include <iostream>
+  #if !defined(STD)
+  #  if !defined(_CXXRT_STD)
+  #    define STD std::
+  #  else
+  #    define STD _CXXRT_STD
+  #  endif
+  #endif
+
+  // ---------------------------------------------------------------------------
+  
+  template <class cT>
+    class seekbuf: public STD basic_streambuf<cT>
+    {
+    public:
+      seekbuf(): current(buffer), end(buffer) {}
+      cT const* str() const { *end = 0; return buffer; }
+
+    private:
+      typename STD char_traits<cT>::int_type overflow(typename STD char_traits<cT>::int_type c)
+        {
+          if (!STD char_traits<cT>::eq_int_type(c, STD char_traits<cT>::eof()))
+            {
+              if (current != end)
+                *current++ = STD char_traits<cT>::to_char_type(c);
+              else
+                {
+                  if (end == buffer + 1023)
+                    return STD char_traits<cT>::eof();
+                  else
+                    *current++ = *end++ = STD char_traits<cT>::to_char_type(c);
+                }
+            }
+          
+          return STD char_traits<cT>::not_eof(c);
+        }
+
+      typename STD char_traits<cT>::pos_type seekpos(typename STD char_traits<cT>::pos_type p,
+                                                     STD ios_base::openmode)
+        {
+          if (0 <= p && p <= end - buffer)
+            {
+              current = buffer + p;
+              return current - buffer;
+            }
+          else
+            return typename STD char_traits<cT>::pos_type(-1);
+        }
+
+      typename STD char_traits<cT>::pos_type seekoff(typename STD char_traits<cT>::off_type p,
+                                                     STD ios_base::seekdir dir,
+                                                     STD ios_base::openmode m)
+        {
+          switch (dir)
+            {
+            case STD ios_base::beg:
+              return seekpos(p, m);
+            case STD ios_base::end:
+              if (0 <= -p && -p <= end - buffer)
+                {
+                  current = end + p;
+                  return current - buffer;
+                }
+              else
+                return typename STD char_traits<cT>::pos_type(-1);
+            case STD ios_base::cur:
+              if (p < 0)
+                if (-p <= current - buffer)
+                  current += p;
+                else
+                  return -1;
+              else
+                if (p <= end - current)
+                  current += p;
+                else
+                  return -1;
+              return current - buffer;
+            }
+          return -1;
+        }
+
+      cT  buffer[1024];
+      cT* current;
+      cT* end;
+
+      seekbuf(seekbuf const&);
+      void operator= (seekbuf const&);
+    };
+
+  // ---------------------------------------------------------------------------
+
+  template <class cT>
+    struct init
+    {
+      static cT const* str1;
+      static cT const* str2;
+      static cT const* str3;
+    };
+
+  template <> char const* init<char>::str1 = "0123456789";
+  template <> char const* init<char>::str2 = "0123406789";
+  template <> char const* init<char>::str3 = "9123406789";
+
+  template <> wchar_t const* init<wchar_t>::str1 = L"0123456789";
+  template <> wchar_t const* init<wchar_t>::str2 = L"0123406789";
+  template <> wchar_t const* init<wchar_t>::str3 = L"9123406789";
+
+  // ---------------------------------------------------------------------------
+
+  template <class cT>
+    char const* test_seek()
+    {
+      STD basic_ostream<cT> out(new seekbuf<cT>);
+                                
+      out << init<cT>::str1;
+      if (out.tellp() != typename STD char_traits<cT>::pos_type(10))
+        return "error in test_seek(): tellp() != 10\n";
+
+      out.seekp(typename STD char_traits<cT>::pos_type(5));
+      if (out.tellp() != typename STD char_traits<cT>::pos_type(5))
+        return "error in test_seek(): tellp() != 5\n";
+
+      out << init<cT>::str1[0];
+
+      if (STD char_traits<cT>::compare(static_cast<seekbuf<cT>*>(out.rdbuf())->str(),
+                                       init<cT>::str2, 10) != 0)
+        return "error in test_seek(): string does not match\n";
+
+      out.seekp(typename STD char_traits<cT>::off_type(-6), STD ios_base::cur);
+      if (out.tellp() != typename STD char_traits<cT>::pos_type(0))
+        return "error in test_seek(): tellp() != 0\n";
+
+      out << init<cT>::str1[9];
+      if (STD char_traits<cT>::compare(static_cast<seekbuf<cT>*>(out.rdbuf())->str(),
+                                       init<cT>::str3, 10) != 0)
+        return "error in test_seek(): string does not match\n";
+
+      return "OK\n";
+    }
+
+  // ---------------------------------------------------------------------------
+
+  int main()
+  {
+    STD cout << test_seek<char>();
+    STD cout << test_seek<wchar_t>();
+    return 0;
+  }
+}
+
+simple_test "basic_ostream seeking" "" {
+OK
+OK
+}

@@ -1,0 +1,273 @@
+// -*-C++-*- cxxrtcf.h
+// -------------------------------------------------------------------------- 
+// Copyright (c) 2002 Dietmar Kuehl
+
+// Permission is hereby granted, free of charge, to any person obtaining
+// a copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to
+// permit persons to whom the Software is furnished to do so, subject
+// to the following conditions:
+
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+// KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+// WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+// -------------------------------------------------------------------------- 
+// Author:  Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+// Title:   Configuraton file to capture compiler and system differences
+// Version: $Id: cxxrtcf.hin.in,v 1.3 2003/04/13 19:35:59 dietmar_kuehl Exp $
+
+// -----------------------------------------------------------------------
+
+#if !defined(_CXXRTCF_H__)
+#define _CXXRTCF_H__
+
+// -----------------------------------------------------------------------
+// define this macro to reduce the size of statically linked libraries:
+
+#if 0
+#  define _CXXRT_USE_FACET_INSTALLS 1
+#endif
+
+// -----------------------------------------------------------------------
+// These macros are used to construct the name of the C-headers to be
+// included by the C++ wrappers:
+
+#define _CXXRT_C_ASSERT_H "/usr/include/assert.h"
+#define _CXXRT_C_CTYPE_H "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1/ctype.h"
+#define _CXXRT_C_ERRNO_H "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1/errno.h"
+#define _CXXRT_C_FLOAT_H "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1/float.h"
+#define _CXXRT_C_LIMITS_H "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1/limits.h"
+#define _CXXRT_C_LOCALE_H "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1/locale.h"
+#define _CXXRT_C_MATH_H "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1/math.h"
+#define _CXXRT_C_SETJMP_H "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1/setjmp.h"
+#define _CXXRT_C_SIGNAL_H "/usr/include/signal.h"
+#define _CXXRT_C_STDARG_H "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/9.1.0/include/stdarg.h"
+#define _CXXRT_C_STDDEF_H "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1/stddef.h"
+#define _CXXRT_C_STDIO_H "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1/stdio.h"
+#define _CXXRT_C_STDLIB_H "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1/stdlib.h"
+#define _CXXRT_C_STRING_H "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1/string.h"
+#define _CXXRT_C_TIME_H "/usr/include/time.h"
+#define _CXXRT_C_WCHAR_H "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1/wchar.h"
+#define _CXXRT_C_WCTYPE_H "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1/wctype.h"
+
+#if !defined(_CXXRT_EXCEPTION)
+#  define _CXXRT_EXCEPTION "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1/exception"
+#endif
+
+// -----------------------------------------------------------------------
+// for this bunch tests have to be written!
+
+#define _CXXRT_HAS_BOOL 1
+#define _CXXRT_HAS_LONG_LONG 0
+#define _CXXRT_HAS_DRAND48 0
+#define _CXXRT_HAS_EXCEPTION_SUPPORT 1
+#define _CXXRT_HAS_STATIC_TEMPLATE_MEMBER 1
+#define _CXXRT_HAS_PARTIAL_SPECIALIZATION 1
+#define _CXXRT_HAS_PARTIAL_SPECIALIZATION_SYNTAX 1
+#define _CXXRT_HAS_PARTIAL_ORDERING 1
+#define _CXXRT_HAS_MEMBER_TEMPLATE_CLASSES 1
+#define _CXXRT_HAS_PLACEMENT_NEW 0
+#define _CXXRT_HAS_NONTYPE_TEMPLATE_ARGS 1
+#define _CXXRT_HAS_ARROW_OPERATOR 1
+
+#define _CXXRT_HAS_WCHAR_T 0
+#define _CXXRT_HAS_CONST_EXPRESSION_MEMBER 0
+#define _CXXRT_HAS_FRIEND_TEMPLATES 0
+#define _CXXRT_HAS_TEMPLATE_ORDERING 0
+#define _CXXRT_HAS_MBSTATE_T 0
+#define _CXXRT_HAS_MBSTATE_T_COMPARE 0
+
+// -----------------------------------------------------------------------
+// tests for additional declarations necessary due to including headers
+// in namespace scope
+
+#define _CXXRT_HAS_ASSERT_FAIL 0
+#define _CXXRT_HAS_EPRINTF 0
+#define _CXXRT_HAS__ASSERT 0
+#define _CXXRT_HAS_ERRNO_LOCATION 0
+
+// -----------------------------------------------------------------------
+
+#if defined(__GNUG__)
+#  define _CXXRT_DEPRECATED(type,var) typedef bool type; type var;
+#else
+#  define _CXXRT_DEPRECATED(type,var)
+#endif
+
+// -----------------------------------------------------------------------
+
+#define _CXXRT_HAS_MEMBER_TEMPLATES 0
+#define _CXXRT_HAS_EXPLICIT_TEMPLATE_ARGS 0
+// currently, the test for the next one is missing in configure.in:
+#define _CXXRT_HAS_ITERATOR 0
+// once IOStreams are complete, the typedefs can be turned on:
+#define _CXXRT_IO_TYPEDEFS 1
+
+#define _CXXRT_HAS_NAMESPACES 0
+#if _CXXRT_HAS_NAMESPACES == 0
+#  define _CXXRT_STD_NAME
+#  define _CXXRT_STD
+#  define _CXXRT_USING_STD
+#  define _CXXRT_NAMESPACE_BEGIN
+#  define _CXXRT_NAMESPACE_END
+#else
+// of course, this should be: #  define _CXXRT_STD_NAME std
+#if !defined(_CXXRT_STD_NAME)
+#  define _CXXRT_STD_NAME std
+#  define _CXXRT_STD      ::_CXXRT_STD_NAME::
+#endif
+#  define _CXXRT_USING_STD using namespace _CXXRT_STD_NAME;
+#  define _CXXRT_NAMESPACE_BEGIN namespace _CXXRT_STD_NAME {
+#  define _CXXRT_NAMESPACE_END   }
+#endif
+
+#define _CXXRT_HAS_DYNAMIC_CAST 0
+#if _CXXRT_HAS_DYNAMIC_CAST == 0
+#  define _CXXRT_DYNAMIC_CAST(type,val) ((type)val)
+#else
+#  define _CXXRT_DYNAMIC_CAST(type,val) (dynamic_cast<type>(val))
+#endif
+
+#define _CXXRT_HAS_THROW_SPECS 0
+#if _CXXRT_HAS_THROW_SPECS == 0
+#  define _CXXRT_THROW_SPEC(spec)
+#else
+#  define _CXXRT_THROW_SPEC(spec) throw spec
+#endif
+
+#define _CXXRT_HAS_EXPLICIT 0
+#if _CXXRT_HAS_EXPLICIT == 0
+#  define _CXXRT_EXPLICIT
+#else
+#  define _CXXRT_EXPLICIT explicit
+#endif
+
+#define _CXXRT_HAS_TYPENAME 0
+#if _CXXRT_HAS_TYPENAME == 0
+#  define _CXXRT_TYPENAME
+#else
+#  define _CXXRT_TYPENAME typename
+#endif
+
+#define _CXXRT_HAS_FULL_SPECIALIZATION 0
+#if _CXXRT_HAS_FULL_SPECIALIZATION == 0
+#  define _CXXRT_FULL_SPECIALIZATION
+#else
+#  define _CXXRT_FULL_SPECIALIZATION template <>
+#endif
+
+#define _CXXRT_HAS_EXPORT 0
+#if _CXXRT_HAS_EXPORT == 0
+#  define _CXXRT_EXPORT inline
+#  define _CXXRT_EXTERN inline
+#else
+#  define _CXXRT_EXPORT export
+#  define _CXXRT_EXTERN extern
+#endif
+
+#define _CXXRT_HAS_RESTRICT 0
+#if _CXXRT_HAS_RESTRICT == 0
+#  define _CXXRT_RESTRICT
+#else
+#  define _CXXRT_RESTRICT restrict
+#endif
+
+#define _CXXRT_HAS_TEMPLATE_DEF_ARGS 0
+#if _CXXRT_HAS_TEMPLATE_DEF_ARGS == 0
+#  define _CXXRT_TEMPLATE_DEF_ARG(arg)
+#else
+#  define _CXXRT_TEMPLATE_DEF_ARG(arg) = arg
+#endif
+
+// -----------------------------------------------------------------------
+// The following is used for the trickery which reduces the executable
+// size if certain features of the standard library are not used.
+
+#define _CXXRT_HAS_WEAK_SYMBOLS 1
+#if _CXXRT_HAS_WEAK_SYMBOLS == 0
+#  define _CXXRT_WEAK_ATTRIBUTE
+#else
+#  define _CXXRT_WEAK_ATTRIBUTE __attribute__((weak))
+#endif
+#if defined(_CXXRT_USE_MINIMAL) || defined(_CXXRT_MIN_IO)
+#  define _CXXRT_WEAK _CXXRT_WEAK_ATTRIBUTE
+#else
+#  define _CXXRT_WEAK
+#endif
+
+// -----------------------------------------------------------------------
+// A macro to define the functions turning an enum class into a
+// bitmask class.
+
+#define _CXXRT_BITMASK(type,all)                                      \
+inline type  operator& (type m1,  type m2)                              \
+{                                                                       \
+  unsigned int i1(m1), i2(m2);                                          \
+  return type(i1 & i2);                                                 \
+}                                                                       \
+inline type  operator| (type m1,  type m2)                              \
+{                                                                       \
+  unsigned int i1(m1), i2(m2);                                          \
+  return type(i1 | i2);                                                 \
+}                                                                       \
+inline type  operator^ (type m1,  type m2)                              \
+{                                                                       \
+  unsigned int i1(m1), i2(m2);                                          \
+  return type(i1 ^ i2);                                                 \
+}                                                                       \
+inline type& operator&=(type &m1, type m2) { m1 = m1 & m2; return m1; } \
+inline type& operator|=(type &m1, type m2) { m1 = m1 | m2; return m1; } \
+inline type& operator^=(type &m1, type m2) { m1 = m1 ^ m2; return m1; } \
+inline type  operator~ (type m1) { return (all) ^ m1; }
+
+// -----------------------------------------------------------------------
+
+#if 0
+namespace _CS_swamp
+{
+  extern "C" {
+#endif
+    typedef unsigned int size_t;
+    typedef int          ptrdiff_t;
+#if 0
+  }
+}
+#endif
+
+_CXXRT_NAMESPACE_BEGIN
+  using ::size_t;
+  using ::ptrdiff_t;
+  typedef ptrdiff_t _CXXRT_off_t;
+  typedef ptrdiff_t streamsize;
+_CXXRT_NAMESPACE_END
+
+#if _CXXRT_HAS_WCHAR_T == 0
+namespace _CS_swamp {
+  extern "C" {
+    typedef unsigned short wchar_t;
+  }
+}
+using _CS_swamp::wchar_t;
+#endif
+
+// -----------------------------------------------------------------------
+
+#if !defined _CXXRT_TRACE
+#  define _CXXRT_TRACE(str)
+#endif
+#if !defined _CXXRT_PRINT
+#  define _CXXRT_PRINT(str)
+#endif
+
+// -----------------------------------------------------------------------
+
+#endif /* _CXXRTCF_H__ */

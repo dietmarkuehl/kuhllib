@@ -1,0 +1,63 @@
+#!/usr/local/bin/expect
+# -*-C++-*- cxxrt.conformance/lib-memory.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  Memory
+# Version: $Id: lib-memory.exp,v 1.1.1.1 2002/06/05 01:02:47 dietmar_kuehl Exp $ 
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <memory>
+  #if !defined(_CXXRT_STD)
+  #  define STD std::
+  using namespace std;
+  #else
+  #  define STD _CXXRT_STD
+  using STD ptrdiff_t;
+  #endif
+
+  template <class T> inline void test_type() {}
+  template <class T> inline void check_type(T const&) {}
+
+  int main()
+  {
+    test_type< STD allocator<int> >();
+    test_type< STD allocator<void> >();
+    check_type<bool>(STD allocator<int>() == STD allocator<double>());
+    check_type<bool>(STD allocator<int>() != STD allocator<double>());
+
+    test_type< STD raw_storage_iterator<int*, int> >();
+
+    check_type< STD pair<int*, ptrdiff_t> >(STD get_temporary_buffer<int>(ptrdiff_t(10)));
+    STD return_temporary_buffer(static_cast<int*>(0));
+
+    check_type<long*>(STD uninitialized_copy(static_cast<int*>(0), static_cast<int*>(0),
+					     static_cast<long*>(0)));
+    STD uninitialized_fill(static_cast<int*>(0), static_cast<int*>(0), 7);
+    STD uninitialized_fill_n(static_cast<int*>(0), 10, 7);
+    
+    test_type< STD auto_ptr<int> >();
+    return 0;
+  }
+}

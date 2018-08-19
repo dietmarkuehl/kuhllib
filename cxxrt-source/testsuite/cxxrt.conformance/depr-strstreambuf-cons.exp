@@ -1,0 +1,116 @@
+#!/usr/local/bin/expect
+# -*-C++-*- cxxrt.conformance/depr-strstreambuf-cons.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:   
+# Version: $Id: depr-strstreambuf-cons.exp,v 1.1.1.1 2002/06/05 01:03:09 dietmar_kuehl Exp $ 
+
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <strstream>
+  #include <iostream>
+  #include <string>
+  namespace my_std
+  {
+  #if !defined(_CXXRT_STD)
+  #  define STD std::
+  using namespace std;
+  #else
+  #  define STD _CXXRT_STD
+  using STD size_t;
+  #endif
+  }
+
+  char const*
+    test(STD strstreambuf& sb, STD string const& str)
+    {
+      sb.sputn("abcde", 6);
+      if (str != STD string(sb.str()))
+	{
+	  STD cout << sb.str() << "\n";
+	  return "wrong initialization\n";
+	}
+      sb.freeze(false);
+      return "OK\n";
+    }
+
+  void* tst_alloc(my_std::size_t size)
+    {
+      STD cout << "tst_alloc\n";
+      return new char[size];
+    }
+
+  void tst_free(void* ptr)
+    {
+      if (ptr != 0)
+	STD cout << "tst_free\n";
+      else
+	STD cout << "tst_free(null)\n";
+      delete[] static_cast<char*>(ptr);
+    }
+
+  int main()
+  {
+    {
+      STD strstreambuf sb;
+      STD cout << test(sb, "abcde");
+    }
+    {
+      STD strstreambuf sb(16);
+      STD cout << test(sb, "abcde");
+    }
+
+    {
+      STD strstreambuf sb(tst_alloc, tst_free);
+      STD cout << test(sb, "abcde");
+    }
+
+    {
+      STD strstreambuf sb("0123456789", 7);
+      STD cout << test(sb, "0123456789");
+    }
+    {
+      STD strstreambuf sb(reinterpret_cast<signed char const*>("0123456789"), 7);
+      STD cout << test(sb, "0123456789");
+    }
+    {
+      STD strstreambuf sb(reinterpret_cast<unsigned char const*>("0123456789"), 7);
+      STD cout << test(sb, "0123456789");
+    }
+    
+    return 0;
+  }
+}
+
+simple_test "strstreambuf ctor" "" {
+OK
+OK
+tst_alloc
+OK
+tst_free
+OK
+OK
+OK
+}

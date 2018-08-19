@@ -1,0 +1,261 @@
+#!/usr/local/bin/expect
+# -*-C++-*- io-27-6-2-5-4.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  Character inserter template functions
+# Version: $Id: io-27-6-2-5-4.exp,v 1.1.1.1 2002/06/05 01:03:17 dietmar_kuehl Exp $ 
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <ostream>
+  #include <iostream>
+  #include <streambuf>
+
+  #if !defined(STD)
+  #  if !defined(_CXXRT_STD)
+  #    define STD std::
+  #  else
+  #    define STD _CXXRT_STD
+  #  endif
+  #endif
+
+  // ---------------------------------------------------------------------------
+
+  template <class cT>
+    class tstbuf: public STD basic_streambuf<cT>
+    {
+    public:
+      tstbuf(): current(buffer) {}
+      cT const* str() const { *current = 0; return buffer; }
+      void      clear() { current = buffer; }
+
+    private:
+      typename STD char_traits<cT>::int_type overflow(typename STD char_traits<cT>::int_type i)
+        {
+          if (!STD char_traits<cT>::eq_int_type(i, STD char_traits<cT>::eof()))
+            if (current - buffer < 1023)
+              *current++ = STD char_traits<cT>::to_char_type(i);
+            else
+              return STD char_traits<cT>::eof();
+          return STD char_traits<cT>::not_eof(i);
+        }
+      cT  buffer[1024];
+      cT* current;
+
+      tstbuf(tstbuf const&);
+      void operator= (tstbuf const&);
+    };
+
+  // ---------------------------------------------------------------------------
+
+  template <class cT>
+    struct chars
+    {
+      static cT array[];
+      static cT const* str;
+    };
+
+  template <> char chars<char>::array[] = "abcd";
+  template <> char const* chars<char>::str = "0123456789";
+  template <> signed char chars<signed char>::array[] = "abcd";
+  template <> signed char const* chars<signed char>::str =
+    reinterpret_cast<signed char const*>("0123456789");
+  template <> unsigned char chars<unsigned char>::array[] = "abcd";
+  template <> unsigned char const* chars<unsigned char>::str =
+    reinterpret_cast<unsigned char const*>("0123456789");
+  template <> wchar_t chars<wchar_t>::array[] = L"abcd";
+  template <> wchar_t const* chars<wchar_t>::str = L"0123456789";
+
+  template <class cT>
+    struct strs
+    {
+      static cT const* str1;
+      static cT const* str2;
+      static cT const* str3;
+      static cT const* str4;
+
+      static cT const* str5;
+      static cT const* str6;
+      static cT const* str7;
+      static cT const* str8;
+    };
+
+  template <> char const* strs<char>::str1 = "a";
+  template <> char const* strs<char>::str2 = "b    ";
+  template <> char const* strs<char>::str3 = "    c";
+  template <> char const* strs<char>::str4 = "    d";
+
+  template <> char const* strs<char>::str5 = "0123456789";
+  template <> char const* strs<char>::str6 = "0123456789    ";
+  template <> char const* strs<char>::str7 = "    0123456789";
+  template <> char const* strs<char>::str8 = "    0123456789";
+
+  template <> wchar_t const* strs<wchar_t>::str1 = L"a";
+  template <> wchar_t const* strs<wchar_t>::str2 = L"b    ";
+  template <> wchar_t const* strs<wchar_t>::str3 = L"    c";
+  template <> wchar_t const* strs<wchar_t>::str4 = L"    d";
+
+  template <> wchar_t const* strs<wchar_t>::str5 = L"0123456789";
+  template <> wchar_t const* strs<wchar_t>::str6 = L"0123456789    ";
+  template <> wchar_t const* strs<wchar_t>::str7 = L"    0123456789";
+  template <> wchar_t const* strs<wchar_t>::str8 = L"    0123456789";
+
+  // ---------------------------------------------------------------------------
+
+  template <class cT, class scT>
+    char const* test_char_inserter()
+    {
+      tstbuf<cT>  buf;
+      STD basic_ostream<cT> out(&buf);
+
+      out << chars<scT>::array[0];
+      if (out.width() != 0)
+        return "error: width() != 0\n";
+      if (STD char_traits<cT>::compare(buf.str(), strs<cT>::str1, 1) != 0)
+        return "error: strings do not match\n";
+      buf.clear();
+          
+      out.width(5);
+      out.setf(STD ios_base::left, STD ios_base::adjustfield);
+      out << chars<scT>::array[1];
+      if (out.width() != 0)
+        return "error: width() != 0\n";
+      if (STD char_traits<cT>::compare(buf.str(), strs<cT>::str2, 5) != 0)
+        return "error: strings do not match\n";
+      buf.clear();
+          
+      out.width(5);
+      out.setf(STD ios_base::internal, STD ios_base::adjustfield);
+      out << chars<scT>::array[2];
+      if (out.width() != 0)
+        return "error: width() != 0\n";
+      if (STD char_traits<cT>::compare(buf.str(), strs<cT>::str3, 5) != 0)
+        return "error: strings do not match\n";
+      buf.clear();
+          
+      out.width(5);
+      out.setf(STD ios_base::right, STD ios_base::adjustfield);
+      out << chars<scT>::array[3];
+      if (out.width() != 0)
+        return "error: width() != 0\n";
+      if (STD char_traits<cT>::compare(buf.str(), strs<cT>::str4, 5) != 0)
+        return "error: strings do not match\n";
+      buf.clear();
+          
+      return "OK\n";
+    }
+
+  // ---------------------------------------------------------------------------
+
+  template <class cT, class scT>
+    char const* test_string_inserter()
+    {
+      tstbuf<cT>  buf;
+      STD basic_ostream<cT> out(&buf);
+
+      out << chars<scT>::str;
+      if (out.width() != 0)
+        return "error: width() != 0\n";
+      if (STD char_traits<cT>::compare(buf.str(), strs<cT>::str5, 10) != 0)
+        return "error: strings do not match\n";
+      buf.clear();
+
+      out.width(14);
+      out.setf(STD ios_base::left, STD ios_base::adjustfield);
+      out << chars<scT>::str;
+      if (out.width() != 0)
+        return "error: width() != 0\n";
+      if (STD char_traits<cT>::compare(buf.str(), strs<cT>::str6, 14) != 0)
+        return "error: strings do not match\n";
+      buf.clear();
+      
+      out.width(14);
+      out.setf(STD ios_base::internal, STD ios_base::adjustfield);
+      out << chars<scT>::str;
+      if (out.width() != 0)
+        return "error: width() != 0\n";
+      if (STD char_traits<cT>::compare(buf.str(), strs<cT>::str7, 14) != 0)
+        return "error: strings do not match\n";
+      buf.clear();
+      
+      out.width(14);
+      out.setf(STD ios_base::right, STD ios_base::adjustfield);
+      out << chars<scT>::str;
+      if (out.width() != 0)
+        return "error: width() != 0\n";
+      if (STD char_traits<cT>::compare(buf.str(), strs<cT>::str8, 14) != 0)
+        return "error: strings do not match\n";
+      buf.clear();
+      
+      return "OK\n";
+    }
+
+  // ---------------------------------------------------------------------------
+
+  int main(int ac, char *av[])
+  {
+    if (ac != 2)
+      {
+        STD cerr << "wrong number of arguments\n";
+        return 1;
+      }
+
+    switch (av[1][0])
+      {
+      case '0':
+        STD cout << test_char_inserter<char, char>();
+        STD cout << test_char_inserter<char, signed char>();
+        STD cout << test_char_inserter<char, unsigned char>();
+
+        STD cout << test_char_inserter<wchar_t, char>();
+        STD cout << test_char_inserter<wchar_t, wchar_t>();
+        break;
+      case '1':
+        STD cout << test_string_inserter<char, char>();
+        STD cout << test_string_inserter<char, signed char>();
+        STD cout << test_string_inserter<char, unsigned char>();
+
+        STD cout << test_string_inserter<wchar_t, char>();
+        STD cout << test_string_inserter<wchar_t, wchar_t>();
+        break;
+      }
+    return 0;
+  }
+}
+
+simple_test "basic_ostream::operator<< for character" "0" {
+OK
+OK
+OK
+OK
+OK
+}
+
+simple_test "basic_ostream::operator<< for C strings" "1" {
+OK
+OK
+OK
+OK
+OK
+}

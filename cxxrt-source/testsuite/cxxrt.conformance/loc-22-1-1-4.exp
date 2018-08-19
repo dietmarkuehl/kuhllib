@@ -1,0 +1,91 @@
+#!/usr/local/bin/expect
+# -*-C++-*- loc-22-1-1-4.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  Locale operators
+# Version: $Id: loc-22-1-1-4.exp,v 1.1.1.1 2002/06/05 01:02:44 dietmar_kuehl Exp $
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <locale>
+  #include <iostream>
+  #include <string>
+  #if !defined(_CXXRT_STD)
+  #  define STD std::
+  #else
+  #  define STD _CXXRT_STD
+  #endif
+
+  void result(bool rc)
+  {
+    STD cout << (rc? "test OK": "test failed") << "\n";
+  }
+
+  int main(int ac, char *av[])
+  {
+    if (ac != 2)
+      {
+        STD cerr << "wrong number of arguments\n";
+        return 1;
+      }
+
+    switch (av[1][0])
+      {
+      case '0':
+        {
+          STD locale l1(STD locale::classic(), new STD numpunct<char>);
+          STD locale l2(l1);
+
+          result(l1 == l1);
+          result(l1 == l2);
+          result(l1 != STD locale::classic());
+
+          STD locale l3(STD locale::classic(), "de_DE", STD locale::collate);
+          STD locale l4(l3, "de_DE", STD locale::ctype);
+          STD locale l5(STD locale::classic(), "de_DE", STD locale::collate | STD locale::ctype);
+
+          result(l3 != l4);
+          result(l5 == l4);
+
+        }
+        break;
+      case '1':
+        {
+          result(STD locale::classic()(STD string("Kuehl"), STD string("Kühl")));
+          result(STD locale("de_DE")(STD string("Kuehl"), STD string("Kühl")));
+        }
+        break;
+      }
+
+    return 0;
+  }
+}
+
+simple_test "locale operator==()" "0" {
+test OK
+test OK
+test OK
+test OK
+test OK
+}

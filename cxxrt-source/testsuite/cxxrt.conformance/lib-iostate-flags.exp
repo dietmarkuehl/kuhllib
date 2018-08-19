@@ -1,0 +1,229 @@
+#!/usr/local/bin/expect
+# -*-C++-*- io-27-4-5-3.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  basic_ios iostate flags functions 
+# Version: $Id: lib-iostate-flags.exp,v 1.1.1.1 2002/06/05 01:02:57 dietmar_kuehl Exp $
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <ios>
+  #include <streambuf>
+  #include <cstdio>
+  #include <testio.hpp>
+
+  void result(bool rc)
+  {
+    char const msg_OK[] =   "test OK\n";
+    char const msg_fail[] = "test failed\n";
+    if (rc)
+      write(msg_OK);
+    else
+      write(msg_fail);
+  }
+
+  template <class charT>
+  class my_streambuf: public STD basic_streambuf<charT>
+  {
+  };
+
+
+  int main(int ac, char *av[])
+  {
+    if (ac != 2)
+      {
+        char const oops[] = "wrong number of arguments\n";
+        write(oops);
+        return 1;
+      }
+
+    STD basic_streambuf<char> *sb = new my_streambuf<char>();
+    STD basic_ios<char> fmt(sb);
+
+    switch (av[1][0])
+      {
+      case '0':
+        {
+          void *v1 = fmt;
+          result(v1 != 0);
+
+          fmt.setstate(STD ios_base::failbit);
+          void *v2 = fmt;
+          result(v2 == 0);
+        }
+        break;
+      case '1':
+        {
+          result(!fmt);
+          fmt.setstate(STD ios_base::failbit);
+          result(!fmt);
+        }
+        break;
+      case '2':
+        {
+          result(fmt.rdstate() == STD ios_base::goodbit);
+          fmt.setstate(STD ios_base::failbit);
+          result(fmt.rdstate() == STD ios_base::failbit);
+          fmt.setstate(STD ios_base::eofbit);
+          result(fmt.rdstate() == STD ios_base::failbit | STD ios_base::eofbit);
+          fmt.clear(STD ios_base::eofbit);
+          result(fmt.rdstate() == STD ios_base::eofbit);
+          fmt.clear();
+          result(fmt.rdstate() == STD ios_base::goodbit);
+        }
+        break;
+      case '3':
+        {
+          fmt.exceptions(STD ios_base::failbit);
+          result(fmt.exceptions() == STD ios_base::failbit);
+
+          try
+            {
+              fmt.clear(STD ios_base::eofbit);
+            }
+          catch (STD ios_base::failure const &)
+            {
+              char const msg[] = "try block 1\n";
+              write(msg);
+            }
+          try
+            {
+              fmt.clear(STD ios_base::failbit);
+            }
+          catch (STD ios_base::failure const &)
+            {
+              char const msg[] = "try block 2\n";
+              write(msg);
+            }
+        }
+        break;
+      case '4':
+        {
+          char const nl[] = "\n";
+
+          result(fmt.good());
+          result(fmt.fail());
+          result(fmt.bad());
+          result(fmt.eof());
+          write(nl);
+
+          fmt.clear(STD ios_base::failbit);
+          result(fmt.good());
+          result(fmt.fail());
+          result(fmt.bad());
+          result(fmt.eof());
+          write(nl);
+
+          fmt.clear(STD ios_base::badbit);
+          result(fmt.good());
+          result(fmt.fail());
+          result(fmt.bad());
+          result(fmt.eof());
+          write(nl);
+
+          fmt.clear(STD ios_base::eofbit);
+          result(fmt.good());
+          result(fmt.fail());
+          result(fmt.bad());
+          result(fmt.eof());
+        }
+        break;
+      case '5':
+        {
+          fmt.clear(STD ios_base::failbit);
+
+          try
+            {
+              fmt.exceptions(STD ios_base::eofbit);
+            }
+          catch (STD ios_base::failure const &)
+            {
+              char const msg[] = "try block 1\n";
+              write(msg);
+            }
+          try
+            {
+              fmt.exceptions(STD ios_base::failbit);
+            }
+          catch (STD ios_base::failure const &)
+            {
+              char const msg[] = "try block 2\n";
+              write(msg);
+            }
+        }
+        break;
+      }
+
+    return 0;
+  }
+}
+
+simple_test "basic_ios operator void*()" "0" {
+test OK
+test OK
+}
+
+simple_test "basic_ios operator!()" "1" {
+test failed
+test OK
+}
+
+simple_test "basic_ios state access" "2" {
+test OK
+test OK
+test OK
+test OK
+test OK
+}
+
+simple_test "basic_ios clear() and exceptions()" "3" {
+test OK
+try block 2
+}
+
+simple_test "basic_ios good() and family" "4" {
+test OK
+test failed
+test failed
+test failed
+
+test failed
+test OK
+test failed
+test failed
+
+test failed
+test OK
+test OK
+test failed
+
+test failed
+test failed
+test failed
+test OK
+}
+
+simple_test "basic_ios exceptions() throwing" "5" {
+try block 2
+}

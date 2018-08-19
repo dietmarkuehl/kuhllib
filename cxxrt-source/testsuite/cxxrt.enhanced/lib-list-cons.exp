@@ -1,0 +1,180 @@
+#!/usr/local/bin/expect
+# -*-C++-*- lib-list-cons.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:   list constructors, copy, and assignment
+# Version: $Id: lib-list-cons.exp,v 1.1.1.1 2002/06/05 01:03:39 dietmar_kuehl Exp $ 
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <list>
+  #include "testalloc.hpp"
+  #include <iostream>
+  #include <algorithm>
+  #include <iterator>
+
+  #if defined(_ESTD_STD)
+  #  define STD _ESTD_STD
+  #elif defined(_CXXRT_STD)
+  #  define STD _CXXRT_STD
+  #else
+  #  define STD ::std::
+  #endif
+
+  struct foo { foo(int i): m_val(i) {}; int m_val; };
+  STD ostream& operator<< (STD ostream& os, foo const& f) { return os << f.m_val; }
+
+  void test_default_ctor()
+    {
+      STD list<foo, tst::allocator<foo> > lst(tst::allocator<foo>(true));
+      STD cout << "size: " << lst.size() << "\n";
+      lst.push_back(foo(1));
+    }
+
+  void test_copy_ctor()
+    {
+      foo f[] = { 1, 2, 3 };
+      STD list<foo, tst::allocator<foo> > lst1(f, f + 3, tst::allocator<foo>(true));
+      STD list<foo, tst::allocator<foo> > lst2(lst1);
+      STD copy(lst2.begin(), lst2.end(), STD ostream_iterator<foo>(STD cout, "-"));
+      STD cout << "\n";
+    }
+
+  void test_n_ctor()
+    {
+      STD list<foo, tst::allocator<foo> > lst(3, foo(17), tst::allocator<foo>(true));
+      STD copy(lst.begin(), lst.end(), STD ostream_iterator<foo>(STD cout, "-"));
+      STD cout << "\n";
+    }
+
+  void test_range_ctor()
+    {
+      foo f[] = { 1, 2, 3 };
+      STD list<foo, tst::allocator<foo> > lst(f, f + 3, tst::allocator<foo>(true));
+      STD copy(lst.begin(), lst.end(), STD ostream_iterator<foo>(STD cout, "-"));
+      STD cout << "\n";
+    }
+
+  void test_copy_assign()
+    {
+      foo f1[] = { 1, 2, 3 };
+      foo f2[] = { 4, 5, 6, 7 };
+      STD list<foo, tst::allocator<foo> > lst1(f1, f1 + 3, tst::allocator<foo>(true));
+      STD list<foo, tst::allocator<foo> > lst2(f2, f2 + 4);
+      lst2 = lst1;
+      STD copy(lst2.begin(), lst2.end(), STD ostream_iterator<foo>(STD cout, "-"));
+      STD cout << "\n";
+    }
+
+  void test_n_assign()
+    {
+      foo f[] = { 1, 2, 3 };
+      STD list<foo, tst::allocator<foo> > lst(f, f + 3, tst::allocator<foo>(true));
+      lst.assign(4, foo(17));
+      STD copy(lst.begin(), lst.end(), STD ostream_iterator<foo>(STD cout, "-"));
+      STD cout << "\n";
+    }
+
+  void test_range_assign()
+    {
+      foo f1[] = { 1, 2, 3 };
+      foo f2[] = { 4, 5, 6, 7 };
+      STD list<foo, tst::allocator<foo> > lst(f1, f1 + 3, tst::allocator<foo>(true));
+      lst.assign(f2, f2 + 4);
+      STD copy(lst.begin(), lst.end(), STD ostream_iterator<foo>(STD cout, "-"));
+      STD cout << "\n";
+    }
+
+  int main(int ac, char *av[])
+  {
+    if (ac != 2)
+      {
+        STD cout << "wrong number of arguments\n";
+        return 1;
+      }
+
+    switch (av[1][0])
+      {
+      case '0':
+	test_default_ctor();
+        break;
+      case '1':
+	test_copy_ctor();
+        break;
+      case '2':
+	test_n_ctor();
+        break;
+      case '3':
+	test_range_ctor();
+        break;
+      case '4':
+	test_copy_assign();
+        break;
+      case '5':
+	test_n_assign();
+        break;
+      case '6':
+	test_range_assign();
+        break;
+      }
+
+    tst::allocator<foo>::report();
+    return 0;
+  }
+}
+
+simple_test "list default ctor" "0" {
+size: 0
+allocator successfully used
+}
+
+simple_test "list copy ctor" "1" {
+1-2-3-
+allocator successfully used
+}
+
+simple_test "list n ctor" "2" {
+17-17-17-
+allocator successfully used
+}
+
+simple_test "list range ctor" "3" {
+1-2-3-
+allocator successfully used
+}
+
+simple_test "list copy assign" "4" {
+1-2-3-
+allocator successfully used
+}
+
+simple_test "list n assign" "5" {
+17-17-17-17-
+allocator successfully used
+}
+
+simple_test "list range assign" "6" {
+4-5-6-7-
+allocator successfully used
+}

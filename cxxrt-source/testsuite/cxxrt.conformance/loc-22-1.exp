@@ -1,0 +1,138 @@
+#!/usr/local/bin/expect
+# -*-C++-*- loc-22-1.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  Locales 
+# Version: $Id: loc-22-1.exp,v 1.1.1.1 2002/06/05 01:03:34 dietmar_kuehl Exp $
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <locale>
+  #if !defined(_CXXRT_STD)
+  #  define STD std::
+  using namespace std;
+  #else
+  #  define STD _CXXRT_STD
+  using namespace _CXXRT_STD_NAME;
+  #endif
+
+  template <class T> void check_type(T const&) {}
+  template <class T> void exist_type() {}
+
+  template <class Facet>
+  struct foobar
+  {
+    foobar()
+    {
+      locale l;
+    
+      if (has_facet<Facet>(l))
+        {
+          check_type<Facet>(use_facet<Facet>(l));
+        }
+    }
+  };
+
+  int main(int, char *[])
+  {
+    STD locale l;
+
+    check_type<bool>(STD isspace('a', l));
+    check_type<bool>(STD isspace(L'a', l));
+    check_type<bool>(STD isprint('a', l));
+    check_type<bool>(STD isprint(L'a', l));
+    check_type<bool>(STD iscntrl('a', l));
+    check_type<bool>(STD iscntrl(L'a', l));
+    check_type<bool>(STD isupper('a', l));
+    check_type<bool>(STD isupper(L'a', l));
+    check_type<bool>(STD islower('a', l));
+    check_type<bool>(STD islower(L'a', l));
+    check_type<bool>(STD isalpha('a', l));
+    check_type<bool>(STD isalpha(L'a', l));
+    check_type<bool>(STD isdigit('a', l));
+    check_type<bool>(STD isdigit(L'a', l));
+    check_type<bool>(STD ispunct('a', l));
+    check_type<bool>(STD ispunct(L'a', l));
+    check_type<bool>(STD isxdigit('a', l));
+    check_type<bool>(STD isxdigit(L'a', l));
+    check_type<bool>(STD isalnum('a', l));
+    check_type<bool>(STD isalnum(L'a', l));
+    check_type<bool>(STD isgraph('a', l));
+    check_type<bool>(STD isgraph(L'a', l));
+
+    check_type<char>(STD toupper('a', l));
+    check_type<wchar_t>(STD toupper(L'a', l));
+    check_type<char>(STD tolower('a', l));
+    check_type<wchar_t>(STD tolower(L'a', l));
+
+    foobar< STD ctype<char> >();
+    foobar< STD ctype<wchar_t> >();
+    exist_type< STD ctype_byname<char>    >();
+    exist_type< STD ctype_byname<wchar_t> >();
+
+    foobar< STD codecvt<char, char, mbstate_t> >();
+    foobar< STD codecvt<wchar_t, char, mbstate_t> >();
+    exist_type< STD codecvt<char, char, mbstate_t>    >();
+    exist_type< STD codecvt<wchar_t, char, mbstate_t> >();
+
+    foobar< STD num_get<char, STD istreambuf_iterator<char> > >();
+    foobar< STD num_get<wchar_t, STD istreambuf_iterator<wchar_t> > >();
+    foobar< STD num_put<char, STD ostreambuf_iterator<char> > >();
+    foobar< STD num_put<wchar_t, STD ostreambuf_iterator<wchar_t> > >();
+    foobar< STD numpunct<char> >();
+    foobar< STD numpunct<wchar_t> >();
+    exist_type< STD numpunct_byname<char>    >();
+    exist_type< STD numpunct_byname<wchar_t> >();
+
+    foobar< STD collate<char> >();
+    foobar< STD collate<wchar_t> >();
+    exist_type< STD collate_byname<char>    >();
+    exist_type< STD collate_byname<wchar_t> >();
+
+    foobar< STD time_get<char, STD istreambuf_iterator<char> > >();
+    foobar< STD time_get<wchar_t, STD istreambuf_iterator<wchar_t> > >();
+    foobar< STD time_put<char, STD ostreambuf_iterator<char> > >();
+    foobar< STD time_put<wchar_t, STD ostreambuf_iterator<wchar_t> > >();
+    exist_type< STD time_get_byname<char, STD istreambuf_iterator<char> > >();
+    exist_type< STD time_get_byname<wchar_t, STD istreambuf_iterator<wchar_t> > >();
+    exist_type< STD time_put_byname<char, STD ostreambuf_iterator<char> > >();
+    exist_type< STD time_put_byname<wchar_t, STD ostreambuf_iterator<wchar_t> > >();
+
+    foobar< STD money_get<char, STD istreambuf_iterator<char> > >();
+    foobar< STD money_get<wchar_t, STD istreambuf_iterator<wchar_t> > >();
+    foobar< STD money_put<char, STD ostreambuf_iterator<char> > >();
+    foobar< STD money_put<wchar_t, STD ostreambuf_iterator<wchar_t> > >();
+    foobar< STD moneypunct<char, true> >();
+    foobar< STD moneypunct<wchar_t, true> >();
+    exist_type< STD moneypunct_byname<char, true> >();
+    exist_type< STD moneypunct_byname<wchar_t, true> >();
+
+    foobar< STD messages<char> >();
+    foobar< STD messages<wchar_t> >();
+    exist_type< STD messages_byname<char> >();
+    exist_type< STD messages_byname<wchar_t> >();
+
+    return 0;
+  }
+}

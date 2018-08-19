@@ -1,0 +1,228 @@
+#!/usr/local/bin/expect
+# -*-C++-*- io-27-4-2-2.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  ios_base fmtflags state functions
+# Version: $Id: lib-fmtflags-state.exp,v 1.1.1.1 2002/06/05 01:03:05 dietmar_kuehl Exp $
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <ios>
+  #include <cstdio>
+  #include <testio.hpp>
+
+  void result(bool rc)
+  {
+    char const msg_OK[] =   "test OK\n";
+    char const msg_fail[] = "test failed\n";
+    if (rc)
+      write(msg_OK);
+    else
+      write(msg_fail);
+  }
+
+  bool test1(STD ios_base::fmtflags current, STD ios_base::fmtflags future, STD ios_base &fmt)
+    {
+      if (fmt.flags() != current)
+        return false;
+
+      if (fmt.setf(future) != current)
+        return false;
+
+      if (fmt.flags(future) != (current | future))
+        return false;
+
+      if (fmt.flags() != future)
+        return false;
+
+      return true;
+    }
+
+  bool test2(STD ios_base::fmtflags cur,
+             STD ios_base::fmtflags set,
+             STD ios_base::fmtflags mask,
+             STD ios_base &fmt)
+    {
+      if (fmt.setf(set, mask) != cur)
+        return false;
+
+  #if defined(_MSC_VER)
+      if (fmt.flags() != ((cur & ~static_cast<unsigned int>(mask)) | (set & mask)))
+  #else
+      if (fmt.flags() != ((cur & ~mask) | (set & mask)))
+  #endif
+        return false;
+
+      return true;
+    }
+
+  class my_ios: public STD basic_ios<char>
+  {
+  public:
+    my_ios() { init(0); }
+  };
+
+  int main(int ac, char *av[])
+  {
+    typedef STD ios_base ib;
+
+    char const  msg_OK[]   = "test OK\n";
+    my_ios fmt;
+
+    if (ac != 2)
+      {
+        char const oops[] = "wrong number of arguments\n";
+        write(oops);
+        return 1;
+      }
+
+    switch (av[1][0])
+      {
+      case '1':
+        {
+          fmt.flags(ib::fmtflags(0));
+
+          result(test1(ib::fmtflags(0), ib::boolalpha, fmt));
+          result(test1(ib::boolalpha, ib::dec, fmt));
+          result(test1(ib::dec, ib::fixed, fmt));
+          result(test1(ib::fixed, ib::hex, fmt));
+          result(test1(ib::hex, ib::internal, fmt));
+          result(test1(ib::internal, ib::left, fmt));
+          result(test1(ib::left, ib::oct, fmt));
+          result(test1(ib::oct, ib::right, fmt));
+          result(test1(ib::right, ib::scientific, fmt));
+          result(test1(ib::scientific, ib::showbase, fmt));
+          result(test1(ib::showbase, ib::showpoint, fmt));
+          result(test1(ib::showpoint, ib::showpos, fmt));
+          result(test1(ib::showpos, ib::skipws, fmt));
+          result(test1(ib::skipws, ib::unitbuf, fmt));
+          result(test1(ib::unitbuf, ib::uppercase, fmt));
+          result(test1(ib::uppercase, ib::adjustfield, fmt));
+          result(test1(ib::adjustfield, ib::basefield, fmt));
+          result(test1(ib::basefield, ib::floatfield, fmt));
+
+          break;
+        }
+      case '2':
+        {
+          fmt.flags(ib::uppercase);
+
+          result(test2(ib::uppercase, ib::dec | ib::unitbuf, ib::basefield, fmt));
+          result(test2(ib::uppercase | ib::dec, ib::hex | ib::unitbuf, ib::basefield, fmt));
+          result(test2(ib::uppercase | ib::hex, ib::oct | ib::unitbuf, ib::basefield, fmt));
+
+          fmt.flags(ib::uppercase);
+
+          result(test2(ib::uppercase, ib::left | ib::unitbuf, ib::adjustfield, fmt));
+          result(test2(ib::uppercase | ib::left, ib::internal | ib::unitbuf, ib::adjustfield, fmt));
+          result(test2(ib::uppercase | ib::internal, ib::right | ib::unitbuf, ib::adjustfield, fmt));
+
+          fmt.flags(ib::uppercase);
+
+          result(test2(ib::uppercase, ib::fixed | ib::unitbuf, ib::floatfield, fmt));
+          result(test2(ib::uppercase | ib::fixed, ib::scientific | ib::unitbuf, ib::floatfield, fmt));
+
+          break;
+        }
+      case '3':
+        {
+          fmt.flags(ib::uppercase | ib::fixed | ib::dec);
+          fmt.unsetf(ib::floatfield);
+          if (fmt.flags() == (ib::uppercase | ib::dec))
+            write(msg_OK);
+
+          break;
+        }
+      case '4':
+        {
+          fmt.precision(4);
+          if (fmt.precision(5) == 4)
+            write(msg_OK);
+          if (fmt.precision() == 5)
+            write(msg_OK);
+          break;
+        }
+      case '5':
+        {
+          fmt.width(4);
+          if (fmt.width(5) == 4)
+            write(msg_OK);
+          if (fmt.width() == 5)
+            write(msg_OK);
+          break;
+        }
+      default:
+        break;
+      }
+          
+    return 0;
+  }
+}
+
+
+simple_test "simple fmtflags" "1" {
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+}
+
+simple_test "fields in fmtflags" "2" {
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+}
+
+simple_test "clearing fmtflags" "3" {
+test OK
+}
+
+simple_test "precision" "4" {
+test OK
+test OK
+}
+
+simple_test "width" "5" {
+test OK
+test OK
+}

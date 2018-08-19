@@ -1,0 +1,175 @@
+#!/usr/local/bin/expect
+# -*-C++-*- cxxrt.conformance/lib-c-math.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  C library
+# Version: $Id: lib-c-math.exp,v 1.1.1.1 2002/06/05 01:02:57 dietmar_kuehl Exp $ 
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <cmath>
+  #if !defined(STD)
+  #  if !defined(_CXXRT_STD)
+  #    define STD std::
+  #  else
+  #    define STD _CXXRT_STD
+  #  endif
+  #endif
+
+  template <class T> void check_type(T const&) {};
+
+  #if !defined(HUGE_VAL)
+  #  error "HUGE_VAL is not defined"
+  #endif
+
+  int main()
+  {
+    check_type<float (*)(float)>(&STD acos);
+    check_type<float (*)(float)>(&STD asin);
+    check_type<float (*)(float)>(&STD atan);
+    check_type<float (*)(float, float)>(&STD atan2);
+    check_type<float (*)(float)>(&STD ceil);
+    check_type<float (*)(float)>(&STD cos);
+    check_type<float (*)(float)>(&STD cosh);
+    check_type<float (*)(float)>(&STD exp);
+    check_type<float (*)(float)>(&STD fabs);
+    check_type<float (*)(float)>(&STD floor);
+    check_type<float (*)(float, float)>(&STD fmod);
+    check_type<float (*)(float, int*)>(&STD frexp);
+    check_type<float (*)(float, int)>(&STD ldexp);
+    check_type<float (*)(float)>(&STD log);
+    check_type<float (*)(float)>(&STD log10);
+    check_type<float (*)(float, float*)>(&STD modf);
+    check_type<float (*)(float, float)>(&STD pow);
+    check_type<float (*)(float, int)>(&STD pow);
+    check_type<float (*)(float)>(&STD sin);
+    check_type<float (*)(float)>(&STD sinh);
+    check_type<float (*)(float)>(&STD sqrt);
+    check_type<float (*)(float)>(&STD tan);
+    check_type<float (*)(float)>(&STD tanh);
+
+    check_type<double (*)(double)>(&STD acos);
+    check_type<double (*)(double)>(&STD asin);
+    check_type<double (*)(double)>(&STD atan);
+    check_type<double (*)(double, double)>(&STD atan2);
+    check_type<double (*)(double)>(&STD ceil);
+    check_type<double (*)(double)>(&STD cos);
+    check_type<double (*)(double)>(&STD cosh);
+    check_type<double (*)(double)>(&STD exp);
+    check_type<double (*)(double)>(&STD fabs);
+    check_type<double (*)(double)>(&STD floor);
+    check_type<double (*)(double, double)>(&STD fmod);
+    check_type<double (*)(double, int*)>(&STD frexp);
+    check_type<double (*)(double, int)>(&STD ldexp);
+    check_type<double (*)(double)>(&STD log);
+    check_type<double (*)(double)>(&STD log10);
+    check_type<double (*)(double, double*)>(&STD modf);
+    check_type<double (*)(double, double)>(&STD pow);
+    check_type<double (*)(double, int)>(&STD pow);
+    check_type<double (*)(double)>(&STD sin);
+    check_type<double (*)(double)>(&STD sinh);
+    check_type<double (*)(double)>(&STD sqrt);
+    check_type<double (*)(double)>(&STD tan);
+    check_type<double (*)(double)>(&STD tanh);
+
+    check_type<long double (*)(long double)>(&STD acos);
+    check_type<long double (*)(long double)>(&STD asin);
+    check_type<long double (*)(long double)>(&STD atan);
+    check_type<long double (*)(long double, long double)>(&STD atan2);
+    check_type<long double (*)(long double)>(&STD ceil);
+    check_type<long double (*)(long double)>(&STD cos);
+    check_type<long double (*)(long double)>(&STD cosh);
+    check_type<long double (*)(long double)>(&STD exp);
+    check_type<long double (*)(long double)>(&STD fabs);
+    check_type<long double (*)(long double)>(&STD floor);
+    check_type<long double (*)(long double, long double)>(&STD fmod);
+    check_type<long double (*)(long double, int*)>(&STD frexp);
+    check_type<long double (*)(long double, int)>(&STD ldexp);
+    check_type<long double (*)(long double)>(&STD log);
+    check_type<long double (*)(long double)>(&STD log10);
+    check_type<long double (*)(long double, long double*)>(&STD modf);
+    check_type<long double (*)(long double, long double)>(&STD pow);
+    check_type<long double (*)(long double, int)>(&STD pow);
+    check_type<long double (*)(long double)>(&STD sin);
+    check_type<long double (*)(long double)>(&STD sinh);
+    check_type<long double (*)(long double)>(&STD sqrt);
+    check_type<long double (*)(long double)>(&STD tan);
+    check_type<long double (*)(long double)>(&STD tanh);
+
+    return 0;
+  }
+}
+
+inline_compile {
+  #include <cstdlib>
+  #if !defined(STD)
+  #  if !defined(_CXXRT_STD)
+  #    define STDNAME std;
+  #    define STD std::
+  #  else
+  #    define STDNAME _CXXRT_STD_NAME;
+  #    define STD _CXXRT_STD
+  #  endif
+  #endif
+
+  template <class T> void test_type() {};
+  template <class T> void check_type(T const&) {};
+
+  #if !defined(RAND_MAX)
+  #  error "RAND_MAX is not defined"
+  #endif
+
+  int main()
+  {
+    test_type< STD div_t>();
+    test_type< STD ldiv_t>();
+
+    check_type<int (*)(int)>(&STD abs);
+    check_type<long (*)(long)>(&STD abs);
+    check_type< STD div_t (*)(int, int)>(&STD div);
+    check_type< STD ldiv_t (*)(long, long)>(&STD div);
+    check_type<long (*)(long)>(&STD labs);
+    check_type< STD ldiv_t (*)(long, long)>(&STD ldiv);
+    check_type<void (*)(unsigned int)>(&STD srand);
+    check_type<int (*)()>(&STD rand);
+
+    {
+      using namespace STDNAME;
+
+      test_type<div_t>();
+      test_type<ldiv_t>();
+      
+      check_type<int (*)(int)>(&abs);
+      check_type<long (*)(long)>(&abs);
+      check_type<div_t (*)(int, int)>(&div);
+      check_type<ldiv_t (*)(long, long)>(&div);
+      check_type<long (*)(long)>(&labs);
+      check_type<ldiv_t (*)(long, long)>(&ldiv);
+      check_type<void (*)(unsigned int)>(&srand);
+      check_type<int (*)()>(&rand);
+    }
+
+    return 0;
+  }
+}

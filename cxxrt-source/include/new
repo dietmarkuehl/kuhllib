@@ -1,0 +1,75 @@
+// -*-C++-*- new
+// -------------------------------------------------------------------------- 
+// Copyright (c) 2002 Dietmar Kuehl
+
+// Permission is hereby granted, free of charge, to any person obtaining
+// a copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to
+// permit persons to whom the Software is furnished to do so, subject
+// to the following conditions:
+
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+// KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+// WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+// -------------------------------------------------------------------------- 
+// Author:  Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+// Title:   operator new() related stuff
+// Version: $Id: new,v 1.1.1.1 2002/06/05 01:00:44 dietmar_kuehl Exp $ 
+// -------------------------------------------------------------------------- 
+
+#if !defined(__CXXRT_NEW__)
+#define __CXXRT_NEW__ 1
+
+#include <cxxrtcf.h>
+#if defined(__EDG__)
+#  include <new.h>
+#  include <new.stdh>
+#else
+
+#include <cstddef>
+#include <exception>
+
+namespace _CXXRT_STD_NAME
+{
+  class bad_alloc: public std::exception {
+  public:
+    virtual char const* what() const throw()
+    {
+      return "bad_alloc exception";
+    }
+  };
+
+  struct nothrow_t {};
+  extern nothrow_t const nothrow;
+  typedef void (*new_handler)();
+  new_handler set_new_handler (new_handler);
+
+}
+
+void *operator new (_CXXRT_STD size_t) throw (_CXXRT_STD bad_alloc);
+void *operator new[] (_CXXRT_STD size_t) throw (_CXXRT_STD bad_alloc);
+void operator delete (void*) throw();
+void operator delete[] (void*) throw();
+void *operator new (_CXXRT_STD size_t, const _CXXRT_STD nothrow_t&) throw();
+void *operator new[] (_CXXRT_STD size_t, const _CXXRT_STD nothrow_t&) throw();
+void operator delete (void*, const _CXXRT_STD nothrow_t&) throw();
+void operator delete[] (void*, const _CXXRT_STD nothrow_t&) throw();
+
+#if _CXXRT_HAS_PLACEMENT_NEW == 0
+inline void *operator new(_CXXRT_STD size_t, void* _CS_loc) throw() { return _CS_loc; }
+inline void operator delete(void*, void*) throw() {}
+inline void *operator new[](_CXXRT_STD size_t, void* _CS_loc) throw() { return _CS_loc; }
+inline void operator delete[](void*, void*) throw() {}
+#endif
+
+#endif
+#endif /* __CXXRT_NEW__ */

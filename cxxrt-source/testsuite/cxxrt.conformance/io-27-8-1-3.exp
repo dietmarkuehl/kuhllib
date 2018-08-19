@@ -1,0 +1,139 @@
+#!/usr/local/bin/expect
+# -*-C++-*- io-27-8-1-3.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  Member functions
+# Version: $Id: io-27-8-1-3.exp,v 1.1.1.1 2002/06/05 01:03:33 dietmar_kuehl Exp $
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <fstream>
+  #include <cstdio>
+  namespace my_std
+  {
+  #if !defined(_CXXRT_STD)
+  #  define STD std::
+  using namespace std;
+  struct flush { ~flush() { fflush(0); } } dummy;
+  #else
+  #  define STD _CXXRT_STD
+  using STD printf;
+  using STD remove;
+  #endif
+  }
+
+  void write(char const* msg) { my_std::printf(msg); }
+  void result(bool rc)
+  {
+    char const msg_OK[] =   "test OK\n";
+    char const msg_fail[] = "test failed\n";
+    if (rc)
+      write(msg_OK);
+    else
+      write(msg_fail);
+  }
+
+  template <class charT, class traits>
+  void test_is_open(STD basic_filebuf<charT, traits> *)
+  {
+    char const *fname = "/tmp/bfilebuf.tst";
+
+    STD basic_filebuf<charT, traits> fb;
+    result(fb.is_open() == false);
+    result(fb.open(fname, STD ios_base::out) != 0);
+    result(fb.is_open() == true);
+    result(fb.close() != 0);
+    result(fb.is_open() == false);
+
+    my_std::remove(fname);
+  }
+
+  template <class charT, class traits>
+  void test_open(STD basic_filebuf<charT, traits> *)
+  {
+    char const *fname = "/tmp/bfilebuf.tst";
+
+    STD basic_filebuf<charT, traits> fb;
+    result(fb.open(fname, STD ios_base::in) == 0);
+    result(fb.open(fname, STD ios_base::out) == &fb);
+    result(fb.open(fname, STD ios_base::out) == 0);
+    result(fb.close() == &fb);
+    result(fb.open(fname, STD ios_base::in) == &fb);
+    result(fb.close() == &fb);
+
+    my_std::remove(fname);
+  }
+
+  int main(int ac, char *av[])
+  {
+    if (ac != 2)
+      {
+        char const oops[] = "wrong number of arguments\n";
+        write(oops);
+        return 1;
+      }
+
+    switch (av[1][0])
+      {
+      case '0':
+        test_is_open(static_cast< STD basic_filebuf<char> *>(0));
+        test_is_open(static_cast< STD basic_filebuf<wchar_t> *>(0));
+        break;
+      case '1':
+        test_open(static_cast< STD basic_filebuf<char> *>(0));
+        test_open(static_cast< STD basic_filebuf<wchar_t> *>(0));
+        break;
+      }
+
+    return 0;
+  }
+}
+
+simple_test "basic_filebuf is_open()" "0" {
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+}
+
+simple_test "basic_filebuf open()" "1" {
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+test OK
+}

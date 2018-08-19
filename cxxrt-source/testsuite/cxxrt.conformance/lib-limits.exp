@@ -1,0 +1,109 @@
+#!/usr/local/bin/expect
+# -*-C++-*- cxxrt.conformance/lib-limits.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  Numeric limits
+# Version: $Id: lib-limits.exp,v 1.1.1.1 2002/06/05 01:02:53 dietmar_kuehl Exp $ 
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <limits>
+  #if !defined(STD)
+  #  if !defined(_CXXRT_STD)
+  #    define STD std::
+  #  else
+  #    define STD _CXXRT_STD
+  #  endif
+  #endif
+
+  template <class T> inline void test_type() {}
+  template <class T> inline void check_type(T const&) {}
+
+  template <class T>
+    inline void test_common_limits()
+    {
+      check_type<bool>(STD numeric_limits<T>::is_specialized);
+      check_type<T>(STD numeric_limits<T>::min());
+      check_type<T>(STD numeric_limits<T>::max());
+
+      check_type<int>(STD numeric_limits<T>::digits);
+      check_type<int>(STD numeric_limits<T>::digits10);
+      check_type<bool>(STD numeric_limits<T>::is_signed);
+      check_type<bool>(STD numeric_limits<T>::is_integer);
+      check_type<bool>(STD numeric_limits<T>::is_exact);
+
+      check_type<int>(STD numeric_limits<T>::radix);
+      check_type<T>(STD numeric_limits<T>::epsilon());
+      check_type<T>(STD numeric_limits<T>::round_error());
+
+      check_type<int>(STD numeric_limits<T>::min_exponent);
+      check_type<int>(STD numeric_limits<T>::min_exponent10);
+      check_type<int>(STD numeric_limits<T>::max_exponent);
+      check_type<int>(STD numeric_limits<T>::max_exponent10);
+
+      check_type<bool>(STD numeric_limits<T>::has_infinity);
+      check_type<bool>(STD numeric_limits<T>::has_quiet_NaN);
+      check_type<bool>(STD numeric_limits<T>::has_signaling_NaN);
+      check_type< STD float_denorm_style>(STD numeric_limits<T>::has_denorm);
+      check_type<bool>(STD numeric_limits<T>::has_denorm_loss);
+      check_type<T>(STD numeric_limits<T>::infinity());
+      check_type<T>(STD numeric_limits<T>::quiet_NaN());
+      check_type<T>(STD numeric_limits<T>::signaling_NaN());
+      check_type<T>(STD numeric_limits<T>::denorm_min());
+
+      check_type<bool>(STD numeric_limits<T>::is_iec559);
+      check_type<bool>(STD numeric_limits<T>::is_bounded);
+      check_type<bool>(STD numeric_limits<T>::is_modulo);
+
+      check_type<bool>(STD numeric_limits<T>::traps);
+      check_type<bool>(STD numeric_limits<T>::tinyness_before);
+      check_type< STD float_round_style>(STD numeric_limits<T>::round_style);
+    }
+
+  int main(int ac, char *av[])
+  {
+    test_type< STD float_round_style>();
+    test_type< STD float_denorm_style>();
+
+    test_common_limits<bool>();
+
+    test_common_limits<char>();
+    test_common_limits<signed char>();
+    test_common_limits<unsigned char>();
+    test_common_limits<wchar_t>();
+
+    test_common_limits<short>();
+    test_common_limits<unsigned short>();
+    test_common_limits<int>();
+    test_common_limits<unsigned int>();
+    test_common_limits<long>();
+    test_common_limits<unsigned long>();
+
+    test_common_limits<float>();
+    test_common_limits<double>();
+    test_common_limits<long double>();
+
+    return 0;
+  }
+}

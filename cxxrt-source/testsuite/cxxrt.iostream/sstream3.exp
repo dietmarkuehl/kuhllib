@@ -1,0 +1,174 @@
+#!/usr/local/bin/expect
+# -*-C++-*- sstream3.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  Test of streambufs unget feature 
+# Version: $Id: sstream3.exp,v 1.1.1.1 2002/06/05 01:02:40 dietmar_kuehl Exp $
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <sstream>
+  #include <iostream>
+  #include <algorithm>
+  #include <iterator>
+
+  #if !defined(_CXXRT_STD_NAME)
+  #  define _CXXRT_STD_NAME std
+  #endif
+  using namespace _CXXRT_STD_NAME;
+
+  int main(int ac, char *av[])
+  {
+    typedef char_traits<char> traits;
+    basic_stringbuf<char> sbuf1("hello world", ios_base::in | ios_base::out);
+    basic_stringbuf<char> sbuf2("hello world", ios_base::in);
+    char buffer[64];
+
+    if (ac < 2)
+      return -1;
+      
+      switch (av[1][0])
+        {
+        case '1':
+          {
+            sbuf1.sgetn(buffer, 5);
+            sbuf1.snextc();
+            sbuf1.sungetc();
+            buffer[sbuf1.sgetn(buffer, 64)] = 0;
+            cout << "->" << buffer << "<-\n";
+          }
+        break;
+        case '2':
+          {
+            sbuf1.sgetn(buffer, 5);
+            sbuf1.snextc();
+            sbuf1.sputbackc(' ');
+            buffer[sbuf1.sgetn(buffer, 64)] = 0;
+            cout << "->" << buffer << "<-\n";
+          }
+        break;
+        case '3':
+          {
+            sbuf1.sgetn(buffer, 5);
+            sbuf1.snextc();
+            sbuf1.sputbackc('.');
+            buffer[sbuf1.sgetn(buffer, 64)] = 0;
+            cout << "->" << buffer << "<-\n";
+          }
+        break;
+        case '4':
+          {
+            sbuf2.sgetn(buffer, 5);
+            sbuf2.snextc();
+            sbuf2.sungetc();
+            buffer[sbuf2.sgetn(buffer, 64)] = 0;
+            cout << "->" << buffer << "<-\n";
+          }
+        break;
+        case '5':
+          {
+            sbuf2.sgetn(buffer, 5);
+            sbuf2.snextc();
+            sbuf2.sputbackc(' ');
+            buffer[sbuf2.sgetn(buffer, 64)] = 0;
+            cout << "->" << buffer << "<-\n";
+          }
+        break;
+        case '6':
+          {
+            sbuf2.sgetn(buffer, 5);
+            sbuf2.snextc();
+            sbuf2.sputbackc('.');
+            buffer[sbuf2.sgetn(buffer, 64)] = 0;
+            cout << "->" << buffer << "<-\n";
+          }
+        break;
+        case '7':
+          {
+            sbuf1.sgetn(buffer, 5);
+            sbuf1.snextc();
+            sbuf1.sputbackc('.');
+            sbuf1.sputbackc('.');
+            sbuf1.sputbackc('.');
+            buffer[sbuf1.sgetn(buffer, 64)] = 0;
+            cout << "->" << buffer << "<-\n";
+          }
+        break;
+        case '8':
+          {
+            sbuf1.sungetc();
+            buffer[sbuf1.sgetn(buffer, 64)] = 0;
+            cout << "->" << buffer << "<-\n";
+          }
+        break;
+        case '9':
+          {
+            sbuf1.sputbackc('.');
+            buffer[sbuf1.sgetn(buffer, 64)] = 0;
+            cout << "->" << buffer << "<-\n";
+          }
+        break;
+        default:
+          break;
+        }
+      
+      return 0;
+  }
+}
+
+simple_test "sungetc()" "1" {
+-> world<-
+}
+
+simple_test "sputbackc()" "2" {
+-> world<-
+}
+
+simple_test "sputbackc()" "3" {
+->.world<-
+}
+
+simple_test "sungetc() (read-only)" "4" {
+-> world<-
+}
+
+simple_test "sputbackc() (read-only)" "5" {
+-> world<-
+}
+
+simple_test "sputbackc() (read-only)" "6" {
+->world<-
+}
+
+simple_test "multiple sputbackc()" "7" {
+->...world<-
+}
+
+simple_test "sungetc() at the beginning" "8" {
+->hello world<-
+}
+
+simple_test "sputbackc() at the beginning" "9" {
+->hello world<-
+}

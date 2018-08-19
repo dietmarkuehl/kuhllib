@@ -1,0 +1,222 @@
+#!/usr/local/bin/expect
+# -*-C++-*- io-27-6-1-2-1.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  Common requirements
+# Version: $Id: io-27-6-1-2-1.exp,v 1.1.1.1 2002/06/05 01:03:14 dietmar_kuehl Exp $ 
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <istream>
+  #include <streambuf>
+  #include <iostream>
+  #if !defined(_CXXRT_STD)
+  #  define STD std::
+  #else
+  #  define STD _CXXRT_STD
+  #endif
+
+  class myexception
+  {
+  };
+
+  template <class cT>
+  class testbuf: public STD basic_streambuf<cT>
+  {
+  public:
+    testbuf(): buffer(0), size(0), idx(0) {}
+
+    typename STD basic_streambuf<cT>::int_type underflow()
+      {
+        if (idx < size)
+          return buffer[idx];
+        else
+          throw myexception();
+      }
+
+    typename STD basic_streambuf<cT>::int_type uflow()
+      {
+        if (idx < size)
+          return buffer[idx++];
+        else
+          throw myexception();
+      }
+
+    typename STD basic_streambuf<cT>::int_type pbackfail(typename STD basic_streambuf<cT>::int_type c)
+      {
+	--idx;
+	return buffer[idx];
+      }
+
+    typename STD basic_streambuf<cT>* setbuf(cT* buf, STD streamsize n)
+      {
+        buffer = buf;
+        size   = n;
+        idx    = 0;
+        return this;
+      }
+    
+    cT* buffer;
+    int size;
+    int idx;
+
+    testbuf(testbuf const&);
+    void operator= (testbuf const&);
+  };
+
+  template <class T> struct get_string;
+  template <> struct get_string<char>
+  {
+    static char* buffer() { static char rc[] = "  1"; return rc; }
+  };
+  template <> struct get_string<wchar_t>
+  {
+    static wchar_t* buffer() { static wchar_t rc[] = L"  1"; return rc; }
+  };
+
+  template <class T, class cT>
+  inline void test_extractor(STD basic_istream<cT, STD char_traits<cT> >& in)
+    {
+      T val;
+      in.clear();
+      in.exceptions(STD ios_base::badbit);
+      in.rdbuf()->pubsetbuf(get_string<cT>::buffer(), 3);
+
+      try
+        {
+          in >> val;
+        }
+      catch (myexception const&)
+        {
+          STD cout << "foo\n";
+        }
+      catch (std::exception const&)
+	{
+	  STD cout << "exception\n";
+	}
+      catch (...)
+        {
+          STD cout << "other\n";
+        }
+
+      if (in.rdstate() == STD ios_base::badbit)
+        STD cout << "state OK\n";
+      else
+	{
+	  STD cout << "eof():  " << in.eof() << "\n";
+	  STD cout << "fail(): " << in.fail() << "\n";
+	  STD cout << "bad():  " << in.bad() << "\n";
+	  STD cout << "good(): " << in.good() << "\n";
+	  STD cout << "state not OK\n";
+	}
+    }
+
+  template <class cT>
+    inline void test()
+    {
+      STD basic_istream<cT> in(new testbuf<cT>);
+      test_extractor<bool>(in);
+      test_extractor<short>(in);
+      test_extractor<unsigned short>(in);
+      test_extractor<int>(in);
+      test_extractor<unsigned int>(in);
+      test_extractor<long>(in);
+      test_extractor<unsigned long>(in);
+      test_extractor<float>(in);
+      test_extractor<double>(in);
+      test_extractor<long double>(in);
+      test_extractor<void*>(in);
+    }
+
+  int main(int ac, char *av[])
+  {
+    if (ac != 2)
+      {
+        STD cerr << "wrong number of arguments\n";
+        return 1;
+      }
+
+    switch (av[1][0])
+      {
+      case '0':
+        test<char>();
+        break;
+      case '1':
+        test<wchar_t>();
+        break;
+      }
+
+    return 0;
+  }
+}
+
+simple_test "basic_istream<char> common requirements" "0" {
+foo
+state OK
+foo
+state OK
+foo
+state OK
+foo
+state OK
+foo
+state OK
+foo
+state OK
+foo
+state OK
+foo
+state OK
+foo
+state OK
+foo
+state OK
+foo
+state OK
+}
+
+simple_test "basic_istream<wchar_t> common requirements" "1" {
+foo
+state OK
+foo
+state OK
+foo
+state OK
+foo
+state OK
+foo
+state OK
+foo
+state OK
+foo
+state OK
+foo
+state OK
+foo
+state OK
+foo
+state OK
+foo
+state OK
+}

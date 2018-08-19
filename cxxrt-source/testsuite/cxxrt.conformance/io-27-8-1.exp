@@ -1,0 +1,89 @@
+#!/usr/local/bin/expect
+# -*-C++-*- io-27-8-1.exp -- C++ is actually a lie but it helps
+# -------------------------------------------------------------------------- 
+# Copyright (c) 2002 Dietmar Kuehl
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject
+# to the following conditions:
+
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# -------------------------------------------------------------------------- 
+# Author: Dietmar Kuehl <http://www.dietmar-kuehl.de/>
+# Title:  File streams
+# Version: $Id: io-27-8-1.exp,v 1.1.1.1 2002/06/05 01:03:26 dietmar_kuehl Exp $
+# -------------------------------------------------------------------------- 
+
+inline_compile {
+  #include <fstream>
+  #if !defined(_CXXRT_STD)
+  #  define STD std::
+  #else
+  #  define STD _CXXRT_STD
+  #endif
+
+  template <class charT, class traits>
+  void tst_fb(STD basic_streambuf<charT, traits> *) {}
+  template <class charT, class traits>
+  void tst_if(STD basic_istream<charT, traits> *) {}
+  template <class charT, class traits>
+  void tst_of(STD basic_ostream<charT, traits> *) {}
+  template <class charT, class traits>
+  void tst_f(STD basic_iostream<charT, traits> *) {}
+
+  template <class T> void check_type(T const&) {}
+
+  int main(int, char *[])
+  {
+    STD basic_filebuf<char> *fb1 = 0;
+    check_type< STD basic_filebuf<char, STD char_traits<char> > *>(fb1);
+    check_type< STD filebuf*>(fb1);
+    tst_fb<char, STD char_traits<char> >(fb1);
+    STD basic_filebuf<wchar_t> *fb4 = 0;
+    check_type< STD basic_filebuf<wchar_t, STD char_traits<wchar_t> > *>(fb4);
+    check_type< STD wfilebuf*>(fb4);
+    tst_fb<wchar_t, STD char_traits<wchar_t> >(fb4);
+
+    STD basic_ifstream<char> *if1 = 0;
+    check_type< STD basic_ifstream<char, STD char_traits<char> > *>(if1);
+    check_type< STD ifstream*>(if1);
+    tst_if<char, STD char_traits<char> >(if1);
+    STD basic_ifstream<wchar_t> *if4 = 0;
+    check_type< STD basic_ifstream<wchar_t, STD char_traits<wchar_t> > *>(if4);
+    check_type< STD wifstream*>(if4);
+    tst_if<wchar_t, STD char_traits<wchar_t> >(if4);
+
+    STD basic_ofstream<char> *of1 = 0;
+    check_type< STD basic_ofstream<char, STD char_traits<char> > *>(of1);
+    check_type< STD ofstream*>(of1);
+    tst_of<char, STD char_traits<char> >(of1);
+    STD basic_ofstream<wchar_t> *of4 = 0;
+    check_type< STD basic_ofstream<wchar_t, STD char_traits<wchar_t> > *>(of4);
+    check_type< STD wofstream*>(of4);
+    tst_of<wchar_t, STD char_traits<wchar_t> >(of4);
+
+    STD basic_fstream<char> *f1 = 0;
+    check_type< STD basic_fstream<char, STD char_traits<char> > *>(f1);
+    check_type< STD fstream*>(f1);
+    tst_f<char, STD char_traits<char> >(f1);
+    STD basic_fstream<wchar_t> * f4 = 0;
+    check_type< STD basic_fstream<wchar_t, STD char_traits<wchar_t> > *>(f4);
+    check_type< STD wfstream*>(f4);
+    tst_f<wchar_t, STD char_traits<wchar_t> >(f4);
+
+    return 0;
+  }
+}
