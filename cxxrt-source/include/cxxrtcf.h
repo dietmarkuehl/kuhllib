@@ -1,5 +1,6 @@
+/* include/cxxrtcf.h.  Generated automatically by configure.  */
 // -*-C++-*- cxxrtcf.h
-// -------------------------------------------------------------------------- 
+// --------------------------------------------------------------------------
 // Copyright (c) 2002 Dietmar Kuehl
 
 // Permission is hereby granted, free of charge, to any person obtaining
@@ -20,7 +21,7 @@
 // LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-// -------------------------------------------------------------------------- 
+// --------------------------------------------------------------------------
 // Author:  Dietmar Kuehl <http://www.dietmar-kuehl.de/>
 // Title:   Configuraton file to capture compiler and system differences
 // Version: $Id: cxxrtcf.hin.in,v 1.3 2003/04/13 19:35:59 dietmar_kuehl Exp $
@@ -79,11 +80,11 @@
 #define _CXXRT_HAS_NONTYPE_TEMPLATE_ARGS 1
 #define _CXXRT_HAS_ARROW_OPERATOR 1
 
-#define _CXXRT_HAS_WCHAR_T 0
-#define _CXXRT_HAS_CONST_EXPRESSION_MEMBER 0
-#define _CXXRT_HAS_FRIEND_TEMPLATES 0
-#define _CXXRT_HAS_TEMPLATE_ORDERING 0
-#define _CXXRT_HAS_MBSTATE_T 0
+#define _CXXRT_HAS_WCHAR_T 1
+#define _CXXRT_HAS_CONST_EXPRESSION_MEMBER 1
+#define _CXXRT_HAS_FRIEND_TEMPLATES 1
+#define _CXXRT_HAS_TEMPLATE_ORDERING 1
+#define _CXXRT_HAS_MBSTATE_T 1
 #define _CXXRT_HAS_MBSTATE_T_COMPARE 0
 
 // -----------------------------------------------------------------------
@@ -105,14 +106,14 @@
 
 // -----------------------------------------------------------------------
 
-#define _CXXRT_HAS_MEMBER_TEMPLATES 0
-#define _CXXRT_HAS_EXPLICIT_TEMPLATE_ARGS 0
+#define _CXXRT_HAS_MEMBER_TEMPLATES 1
+#define _CXXRT_HAS_EXPLICIT_TEMPLATE_ARGS 1
 // currently, the test for the next one is missing in configure.in:
 #define _CXXRT_HAS_ITERATOR 0
 // once IOStreams are complete, the typedefs can be turned on:
 #define _CXXRT_IO_TYPEDEFS 1
 
-#define _CXXRT_HAS_NAMESPACES 0
+#define _CXXRT_HAS_NAMESPACES 1
 #if _CXXRT_HAS_NAMESPACES == 0
 #  define _CXXRT_STD_NAME
 #  define _CXXRT_STD
@@ -130,35 +131,35 @@
 #  define _CXXRT_NAMESPACE_END   }
 #endif
 
-#define _CXXRT_HAS_DYNAMIC_CAST 0
+#define _CXXRT_HAS_DYNAMIC_CAST 1
 #if _CXXRT_HAS_DYNAMIC_CAST == 0
 #  define _CXXRT_DYNAMIC_CAST(type,val) ((type)val)
 #else
 #  define _CXXRT_DYNAMIC_CAST(type,val) (dynamic_cast<type>(val))
 #endif
 
-#define _CXXRT_HAS_THROW_SPECS 0
+#define _CXXRT_HAS_THROW_SPECS 1
 #if _CXXRT_HAS_THROW_SPECS == 0
 #  define _CXXRT_THROW_SPEC(spec)
 #else
 #  define _CXXRT_THROW_SPEC(spec) throw spec
 #endif
 
-#define _CXXRT_HAS_EXPLICIT 0
+#define _CXXRT_HAS_EXPLICIT 1
 #if _CXXRT_HAS_EXPLICIT == 0
 #  define _CXXRT_EXPLICIT
 #else
 #  define _CXXRT_EXPLICIT explicit
 #endif
 
-#define _CXXRT_HAS_TYPENAME 0
+#define _CXXRT_HAS_TYPENAME 1
 #if _CXXRT_HAS_TYPENAME == 0
 #  define _CXXRT_TYPENAME
 #else
 #  define _CXXRT_TYPENAME typename
 #endif
 
-#define _CXXRT_HAS_FULL_SPECIALIZATION 0
+#define _CXXRT_HAS_FULL_SPECIALIZATION 1
 #if _CXXRT_HAS_FULL_SPECIALIZATION == 0
 #  define _CXXRT_FULL_SPECIALIZATION
 #else
@@ -181,7 +182,7 @@
 #  define _CXXRT_RESTRICT restrict
 #endif
 
-#define _CXXRT_HAS_TEMPLATE_DEF_ARGS 0
+#define _CXXRT_HAS_TEMPLATE_DEF_ARGS 1
 #if _CXXRT_HAS_TEMPLATE_DEF_ARGS == 0
 #  define _CXXRT_TEMPLATE_DEF_ARG(arg)
 #else
@@ -236,8 +237,12 @@ namespace _CS_swamp
 {
   extern "C" {
 #endif
+#if 1
+#include <stddef.h>
+#else
     typedef unsigned int size_t;
     typedef int          ptrdiff_t;
+#endif
 #if 0
   }
 }

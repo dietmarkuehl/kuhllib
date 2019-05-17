@@ -41,26 +41,26 @@
 // These macros are used to construct the name of the C-headers to be
 // included by the C++ wrappers:
 
-#define _CXXRT_C_ASSERT_H "@CXXRT_ASSERT_H@"
-#define _CXXRT_C_CTYPE_H "@CXXRT_CTYPE_H@"
-#define _CXXRT_C_ERRNO_H "@CXXRT_ERRNO_H@"
-#define _CXXRT_C_FLOAT_H "@CXXRT_FLOAT_H@"
-#define _CXXRT_C_LIMITS_H "@CXXRT_LIMITS_H@"
-#define _CXXRT_C_LOCALE_H "@CXXRT_LOCALE_H@"
-#define _CXXRT_C_MATH_H "@CXXRT_MATH_H@"
-#define _CXXRT_C_SETJMP_H "@CXXRT_SETJMP_H@"
-#define _CXXRT_C_SIGNAL_H "@CXXRT_SIGNAL_H@"
-#define _CXXRT_C_STDARG_H "@CXXRT_STDARG_H@"
-#define _CXXRT_C_STDDEF_H "@CXXRT_STDDEF_H@"
-#define _CXXRT_C_STDIO_H "@CXXRT_STDIO_H@"
-#define _CXXRT_C_STDLIB_H "@CXXRT_STDLIB_H@"
-#define _CXXRT_C_STRING_H "@CXXRT_STRING_H@"
-#define _CXXRT_C_TIME_H "@CXXRT_TIME_H@"
-#define _CXXRT_C_WCHAR_H "@CXXRT_WCHAR_H@"
-#define _CXXRT_C_WCTYPE_H "@CXXRT_WCTYPE_H@"
+#define _CXXRT_C_ASSERT_H "/usr/include/assert.h"
+#define _CXXRT_C_CTYPE_H "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1/ctype.h"
+#define _CXXRT_C_ERRNO_H "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1/errno.h"
+#define _CXXRT_C_FLOAT_H "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1/float.h"
+#define _CXXRT_C_LIMITS_H "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1/limits.h"
+#define _CXXRT_C_LOCALE_H "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1/locale.h"
+#define _CXXRT_C_MATH_H "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1/math.h"
+#define _CXXRT_C_SETJMP_H "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1/setjmp.h"
+#define _CXXRT_C_SIGNAL_H "/usr/include/signal.h"
+#define _CXXRT_C_STDARG_H "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/9.1.0/include/stdarg.h"
+#define _CXXRT_C_STDDEF_H "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1/stddef.h"
+#define _CXXRT_C_STDIO_H "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1/stdio.h"
+#define _CXXRT_C_STDLIB_H "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1/stdlib.h"
+#define _CXXRT_C_STRING_H "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1/string.h"
+#define _CXXRT_C_TIME_H "/usr/include/time.h"
+#define _CXXRT_C_WCHAR_H "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1/wchar.h"
+#define _CXXRT_C_WCTYPE_H "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1/wctype.h"
 
 #if !defined(_CXXRT_EXCEPTION)
-#  define _CXXRT_EXCEPTION "@CXXRT_EXCEPTION@"
+#  define _CXXRT_EXCEPTION "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1/exception"
 #endif
 
 // -----------------------------------------------------------------------
@@ -236,8 +236,12 @@ namespace _CS_swamp
 {
   extern "C" {
 #endif
+#if 1
+#include <stddef.h>
+#else
     typedef unsigned int size_t;
     typedef int          ptrdiff_t;
+#endif
 #if 0
   }
 }
