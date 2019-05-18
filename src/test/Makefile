@@ -31,6 +31,7 @@ NAME = cbt/bidirectionaliterator
 NAME = cbt/testequal
 NAME = cbt/equalitycomparable
 NAME = demo
+NAME = inclusive_scan
 
 ALL  = \
    cbt/destructible \
