@@ -38,6 +38,7 @@
 #include <execution/set_error.hpp>
 #include <execution/set_value.hpp>
 #include <execution/start.hpp>
+#include <execution/submit.hpp>
 #include <execution/typed_sender.hpp>
 
 #include <stdexcept>
@@ -53,14 +54,6 @@ namespace cxxrt::execution
 
     namespace customization
     {
-        // --------------------------------------------------------------------
-
-        void submit();
-        struct submit_t
-        {
-        };
-        inline constexpr submit_t submit_cp{};
-
         // --------------------------------------------------------------------
 
         void schedule();
@@ -82,7 +75,6 @@ namespace cxxrt::execution
     }
     inline namespace customization_points
     {
-        inline constexpr auto submit       = customization::submit_cp;
         inline constexpr auto schedule     = customization::schedule_cp;
         inline constexpr auto bulk_execute = customization::bulk_execute_cp;
     }

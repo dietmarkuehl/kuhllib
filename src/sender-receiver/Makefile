@@ -42,6 +42,7 @@ COMPONENTS = \
 	execution/set_error        \
 	execution/set_value        \
 	execution/start            \
+	execution/submit           \
 	execution/typed_sender     \
 
 CXXFILES = src/$(NAME).cpp $(COMPONENTS:%=src/%.cpp)
