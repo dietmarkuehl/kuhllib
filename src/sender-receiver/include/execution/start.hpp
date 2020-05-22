@@ -1,4 +1,4 @@
-// include/execution/connect.hpp                                      -*-C++-*-
+// include/execution/start.hpp                                        -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2020 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,11 +23,8 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_EXECUTION_CONNECT
-#define INCLUDED_EXECUTION_CONNECT
-
-#include <execution/operation_state.hpp>
-#include <execution/sender.hpp>
+#ifndef INCLUDED_EXECUTION_START
+#define INCLUDED_EXECUTION_START
 
 #include <utility>
 
@@ -39,52 +36,47 @@ namespace cxxrt::execution
     {
         // --------------------------------------------------------------------
 
-        template <typename S, typename R>
-        concept has_member_connect
-            =  requires(S&& s, R&& r){ std::forward<S>(s).connect(std::forward<R>(r)); }
+        template <typename O>
+        concept has_member_start
+            = requires(O&& o) { std::forward<O>(o).start(); }
             ;
-        template <typename S, typename R>
-        concept has_connect
-            =  !has_member_connect<S, R>
-            && requires(S&& s, R&& r){ connect(std::forward<S>(s), std::forward<R>(r)); }
+
+        template <typename O>
+        concept has_start
+            =  !has_member_start<O>
+            && requires(O&& o) { start(std::forward<O>(o)); }
             ;
 
         // --------------------------------------------------------------------
 
-        void connect();
-        struct connect_t
+        void start();
+        struct start_t
         {
-            template <typename S, typename R>
-                requires has_member_connect<S, R>
-                      && execution::sender<S>
-                      && execution::operation_state<decltype(std::declval<S>().connect(std::declval<R>()))>
-            constexpr auto operator()(S&& s, R&& r) const
-                noexcept(noexcept(std::forward<S>(s).connect(std::forward<R>(r))))
+            template <typename O>
+                requires has_member_start<O>
+            constexpr auto operator()(O&& o) const
+                noexcept(noexcept(std::forward<O>(o).start()))
             {
-                return std::forward<S>(s).connect(std::forward<R>(r));
+                return std::forward<O>(o).start();
             }
-            template <typename S, typename R>
-                requires has_connect<S, R>
-                      && execution::sender<S>
-                      && execution::operation_state<decltype(connect(std::declval<S>(), std::declval<R>()))>
-            constexpr auto operator()(S&& s, R&& r) const
-                noexcept(noexcept(connect(std::forward<S>(s), std::forward<R>(r))))
+            template <typename O>
+                requires has_start<O>
+            constexpr auto operator()(O&& o) const
+                noexcept(noexcept(start(std::forward<O>(o))))
             {
-                return connect(std::forward<S>(s), std::forward<R>(r));
+                return start(std::forward<O>(o));
             }
-            //-dk:TODO deal with the as-operation/as-invocable stuff
-            template <typename S, typename R>
-            constexpr auto operator()(S&& has_no_suitable_connect, R&& r) const = delete;
+            template <typename O>
+            constexpr auto operator()(O&& has_no_suitable_start) const = delete;
         };
-        inline constexpr connect_t connect_cp{};
+        inline constexpr start_t start_cp{};
 
         // --------------------------------------------------------------------
-
     }
 
     inline namespace customization_points
     {
-        inline constexpr auto connect      = customization::connect_cp;
+        inline constexpr auto start        = customization::start_cp;
     }
 }
 

@@ -26,10 +26,14 @@
 LIB        = sender
 NAME       = basic
 COMPONENTS = \
-	execution/connect   \
-	execution/set_done  \
-	execution/set_error \
-	execution/set_value \
+	execution/connect         \
+	execution/operation_state \
+	execution/sender          \
+	execution/sender_traits   \
+	execution/set_done        \
+	execution/set_error       \
+	execution/set_value       \
+	execution/start           \
 
 CXXFILES = src/$(NAME).cpp $(COMPONENTS:%=src/%.cpp)
 
@@ -105,7 +109,7 @@ libunifex:
 .PHONY: $(NAME)
 $(NAME): $(BUILD)/$(NAME)
 
-$(BUILD)/$(NAME): $(BUILD)/$(NAME).o $(BUILD)/lib$(LIB).a
+$(BUILD)/$(NAME): $(BUILD)/lib$(LIB).a $(BUILD)/$(NAME).o
 	$(CXX) $(LDFLAGS) -o $@ $@.o $(BUILD)/lib$(LIB).a $(LDLIBS)
 
 $(BUILD)/lib$(LIB).a: $(COMPONENTS:%=$(BUILD)/%.o)

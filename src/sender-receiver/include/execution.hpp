@@ -27,9 +27,13 @@
 #define INCLUDED_CXXRT_EXECUTION
 
 #include <execution/connect.hpp>
+#include <execution/operation_state.hpp>
+#include <execution/sender.hpp>
+#include <execution/sender_traits.hpp>
 #include <execution/set_done.hpp>
 #include <execution/set_error.hpp>
 #include <execution/set_value.hpp>
+#include <execution/start.hpp>
 
 #include <stdexcept>
 #include <utility>
@@ -51,14 +55,6 @@ namespace cxxrt::execution
         {
         };
         inline constexpr execute_t execute_cp{};
-
-        // --------------------------------------------------------------------
-
-        void start();
-        struct start_t
-        {
-        };
-        inline constexpr start_t start_cp{};
 
         // --------------------------------------------------------------------
 
@@ -90,7 +86,6 @@ namespace cxxrt::execution
     inline namespace customization_points
     {
         inline constexpr auto execute      = customization::execute_cp;
-        inline constexpr auto start        = customization::start_cp;
         inline constexpr auto submit       = customization::submit_cp;
         inline constexpr auto schedule     = customization::schedule_cp;
         inline constexpr auto bulk_execute = customization::bulk_execute_cp;
@@ -111,12 +106,6 @@ namespace cxxrt::execution
         receiver_of<R, An...> &&
         is_nothrow_invocable_v<decltype(set_value), R, An...>;
 
-    template<class O>
-    concept operation_state = see-below;
-
-    template<class S>
-    concept sender = see-below;
-
     template<class S>
     concept typed_sender = see-below;
 
@@ -135,8 +124,6 @@ namespace cxxrt::execution
 
     namespace execution_detail { struct sender_base {}; }
     using execution_detail::sender_base;
-
-    template<class S> struct sender_traits;
 
     struct context_t {};
     constexpr context_t context;
