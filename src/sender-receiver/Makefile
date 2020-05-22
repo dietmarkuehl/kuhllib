@@ -26,15 +26,18 @@
 LIB        = sender
 NAME       = basic
 COMPONENTS = \
-	execution/connect         \
-	execution/operation_state \
-	execution/sender          \
-	execution/sender_base     \
-	execution/sender_traits   \
-	execution/set_done        \
-	execution/set_error       \
-	execution/set_value       \
-	execution/start           \
+	execution/as_invocable     \
+	execution/connect          \
+	execution/execute          \
+	execution/executor_of_impl \
+	execution/operation_state  \
+	execution/sender           \
+	execution/sender_base      \
+	execution/sender_traits    \
+	execution/set_done         \
+	execution/set_error        \
+	execution/set_value        \
+	execution/start            \
 
 CXXFILES = src/$(NAME).cpp $(COMPONENTS:%=src/%.cpp)
 

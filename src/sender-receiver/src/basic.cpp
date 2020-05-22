@@ -78,7 +78,7 @@ namespace
         template <template <typename...> class V>
         using error_types = V<std::exception_ptr, int>;
 
-        staticconstexpr bool sends_done = false;
+        static constexpr bool sends_done = false;
 
         template <typename R>
         struct state

@@ -27,6 +27,7 @@
 #define INCLUDED_CXXRT_EXECUTION
 
 #include <execution/connect.hpp>
+#include <execution/execute.hpp>
 #include <execution/operation_state.hpp>
 #include <execution/sender.hpp>
 #include <execution/sender_traits.hpp>
@@ -48,14 +49,6 @@ namespace cxxrt::execution
 
     namespace customization
     {
-        // --------------------------------------------------------------------
-
-        void execute();
-        struct execute_t
-        {
-        };
-        inline constexpr execute_t execute_cp{};
-
         // --------------------------------------------------------------------
 
         void submit();
@@ -85,7 +78,6 @@ namespace cxxrt::execution
     }
     inline namespace customization_points
     {
-        inline constexpr auto execute      = customization::execute_cp;
         inline constexpr auto submit       = customization::submit_cp;
         inline constexpr auto schedule     = customization::schedule_cp;
         inline constexpr auto bulk_execute = customization::bulk_execute_cp;

@@ -28,6 +28,8 @@
 
 #include <execution/sender_base.hpp>
 
+#include <concepts>
+#include <exception>
 #include <type_traits>
 
 // ----------------------------------------------------------------------------
@@ -38,8 +40,8 @@ namespace cxxrt::execution
     {
         // --------------------------------------------------------------------
 
-        template <template <template <typename...> class V,
-                            template <typename...> class T> class>
+        template <template <template <typename...> class T,
+                            template <typename...> class V> class>
         struct has_value_types;
         template <template <template <typename...> class V> class>
         struct has_error_types;
@@ -52,6 +54,15 @@ namespace cxxrt::execution
                 typename std::bool_constant<S::sends_done>;
             }
             ;
+
+        // --------------------------------------------------------------------
+
+        struct void_receiver
+        {
+            void set_value() noexcept;
+            void set_error(std::exception_ptr) noexcept;
+            void set_done() noexcept;
+        };
 
         // --------------------------------------------------------------------
 
