@@ -99,6 +99,37 @@ namespace nstd
 // ----------------------------------------------------------------------------
 
 namespace {
+    template <typename Algo>
+    static void benchmark(benchmark::State& state, Algo algo) {
+        std::vector<unsigned long long> input;
+        std::generate_n(std::back_inserter(input), size, [i = 0]()mutable { return ++i; });
+        std::vector<unsigned long long> output(input.size());
+        for (auto _: state) {
+            benchmark::DoNotOptimize(algo(input, output));
+        }
+    }
+
+    BENCHMARK_CAPTURE(bench, std_partial_sum,
+                      [](const auto& input, const auto& output) {
+                          return std::partial_sum(input.begin(), input.end(), output.begin(), std::plus<>());
+                      });
+    BENCHMARK_CAPTURE(bench, nstd_partial_sum,
+                      [](const auto& input, const auto& output) {
+                          return nstd::partial_sum(input.begin(), input.end(), output.begin(), std::plus<>());
+                      });
+    BENCHMARK_CAPTURE(bench, std_inclusive_scan_par,
+                      [](const auto& input, const auto& output) {
+                          return nstd::inclusive_scan(std::execution::par, input.begin(), input.end(), output.begin(), std::plus<>());
+                      });
+    BENCHMARK_CAPTURE(bench, nstd_inclusive_scan_par_unseq,
+                      [](const auto& input, const auto& output) {
+                          return nstd::inclusive_scan(std::execution::par_unseq, input.begin(), input.end(), output.begin(), std::plus<>());
+                      });
+}
+
+// ----------------------------------------------------------------------------
+
+namespace {
     template <typename Range, typename Algo>
     void test_range(Range const& input, Algo algo) {
         std::vector<int> result1(input.size());
