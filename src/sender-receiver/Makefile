@@ -68,7 +68,7 @@ endif
 
 CPPFLAGS += -Iinclude
 CXXFLAGS += $(CPPFLAGS)
-BUILD    = bin/build-$(COMPILER)-$(VERSION)
+BUILD    = bin/$(COMPILER)-$(VERSION)
 
 #  ----------------------------------------------------------------------------
 
@@ -132,6 +132,6 @@ clean:
 .PHONY: depend
 depend $(BUILD)/make.depend:
 	@mkdir -p $(BUILD)
-	$(CXX) $(CPPFLAGS) -M $(CXXFILES) | sed -e 's@\(.*\.o:\)@$(BUILD)/\1@' > $(BUILD)/make.depend
+	$(CXX) $(CPPFLAGS) -M $(CXXFILES) | sed -e 's@.*\.o: *\(src/\(.*\)\.cpp\)@$(BUILD)/\2.o: \1@' > $(BUILD)/make.depend
 
 include $(BUILD)/make.depend
