@@ -26,20 +26,91 @@
 #ifndef INCLUDED_INCLUDE_EXECUTION_SENDER_TRAITS
 #define INCLUDED_INCLUDE_EXECUTION_SENDER_TRAITS
 
+#include <execution/sender_base.hpp>
+
+#include <type_traits>
+
 // ----------------------------------------------------------------------------
 
 namespace cxxrt::execution
 {
+    namespace sender_traits_detail
+    {
+        // --------------------------------------------------------------------
+
+        template <template <template <typename...> class V,
+                            template <typename...> class T> class>
+        struct has_value_types;
+        template <template <template <typename...> class V> class>
+        struct has_error_types;
+
+        template <typename S>
+        concept has_sender_types
+            = requires {
+                typename has_value_types<S::template value_types>;
+                typename has_error_types<S::template error_types>;
+                typename std::bool_constant<S::sends_done>;
+            }
+            ;
+
+        // --------------------------------------------------------------------
+
+        template <typename S,
+                  bool = has_sender_types<S>,
+                  bool = std::derived_from<S, sender_base>>
+        struct base;
+
+        template <typename S, bool B>
+        struct base<S, true, B>;
+
+        template <typename S>
+        struct base<S, false, true>;
+
+        // --------------------------------------------------------------------
+    }
+
     template<class S>
     struct sender_traits;
 }
 
 // ----------------------------------------------------------------------------
+// the primary template, indicating that it didn't get specialized.
 
-template<class S>
-struct sender_traits
+template <typename, bool, bool>
+struct cxxrt::execution::sender_traits_detail::base
 {
     using __unspecialized = void;
+};
+
+// ----------------------------------------------------------------------------
+// The sender has nested value and error types defined
+
+template <typename S, bool B>
+struct cxxrt::execution::sender_traits_detail::base<S, true, B>
+{
+    template <template <typename...> class T,
+              template <typename...> class V>
+    using value_types = typename S::template value_types<T, V>;
+    template <template <typename...> class V>
+    using error_types = typename S::template error_types<V>;
+
+    static constexpr bool sends_done = S::sends_done;
+};
+
+// ----------------------------------------------------------------------------
+// The sender is derived from sender_base.
+
+template <typename S>
+struct cxxrt::execution::sender_traits_detail::base<S, false, true>
+{
+};
+
+// ----------------------------------------------------------------------------
+
+template<class S>
+struct cxxrt::execution::sender_traits
+    : cxxrt::execution::sender_traits_detail::base<S>
+{
 };
 
 // ----------------------------------------------------------------------------

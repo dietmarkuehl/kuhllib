@@ -122,9 +122,6 @@ namespace cxxrt::execution
     concept executor_of = see-below;
 #endif
 
-    namespace execution_detail { struct sender_base {}; }
-    using execution_detail::sender_base;
-
     struct context_t {};
     constexpr context_t context;
 

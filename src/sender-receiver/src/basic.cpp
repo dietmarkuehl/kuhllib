@@ -25,6 +25,8 @@
 
 #include "execution.hpp"
 #include <iostream>
+#include <type_traits>
+#include <utility>
 
 namespace EX = cxxrt::execution;
 
@@ -42,6 +44,59 @@ namespace
     bool set_value(receiver, bool b, bool) { return b; }
     bool set_done(receiver&&) { return true; }
     bool set_error(receiver, std::exception_ptr const&) { return true; }
+
+    struct sender_
+    {
+        template <typename R>
+        struct state
+        {
+            R d_receiver;
+            void start() noexcept { EX::set_done(this->d_receiver); }
+        };
+        template <typename R>
+        state<std::remove_cvref_t<R>> connect(R&& r) { return { std::forward<R>(r) }; }
+    };
+
+    struct sender
+        : EX::sender_base
+    {
+        template <typename R>
+        struct state
+        {
+            R d_receiver;
+            void start() noexcept { EX::set_done(this->d_receiver); }
+        };
+        template <typename R>
+        state<std::remove_cvref_t<R>> connect(R&& r) { return { std::forward<R>(r) }; }
+    };
+
+    struct typed_sender
+    {
+        template <template <typename...> class V,
+                  template <typename...> class T>
+        using value_types = V<T<int>, T<int, bool>>;
+        template <template <typename...> class V>
+        using error_types = V<std::exception_ptr, int>;
+
+        staticconstexpr bool sends_done = false;
+
+        template <typename R>
+        struct state
+        {
+            R d_receiver;
+            void start() noexcept { EX::set_done(this->d_receiver); }
+        };
+        template <typename R>
+        state<std::remove_cvref_t<R>> connect(R&& r) { return { std::forward<R>(r) }; }
+    };
+}
+
+namespace cxxrt::execution
+{
+    template <>
+    struct sender_traits<sender_>
+    {
+    };
 }
 
 // ----------------------------------------------------------------------------
@@ -63,4 +118,19 @@ int main()
 
     EX::set_error(r, 1);
     EX::set_error(r, std::exception_ptr());
+
+    {
+        auto o = EX::connect(sender_(), receiver());
+        EX::start(o);
+    }
+
+    {
+        auto o = EX::connect(sender(), receiver());
+        EX::start(o);
+    }
+
+    {
+        auto o = EX::connect(typed_sender(), receiver());
+        EX::start(o);
+    }
 }

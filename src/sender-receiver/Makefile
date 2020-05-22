@@ -29,6 +29,7 @@ COMPONENTS = \
 	execution/connect         \
 	execution/operation_state \
 	execution/sender          \
+	execution/sender_base     \
 	execution/sender_traits   \
 	execution/set_done        \
 	execution/set_error       \
