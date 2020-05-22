@@ -32,11 +32,13 @@
 #include <execution/receiver.hpp>
 #include <execution/receiver_of.hpp>
 #include <execution/sender.hpp>
+#include <execution/sender_to.hpp>
 #include <execution/sender_traits.hpp>
 #include <execution/set_done.hpp>
 #include <execution/set_error.hpp>
 #include <execution/set_value.hpp>
 #include <execution/start.hpp>
+#include <execution/typed_sender.hpp>
 
 #include <stdexcept>
 #include <utility>
@@ -85,21 +87,7 @@ namespace cxxrt::execution
         inline constexpr auto bulk_execute = customization::bulk_execute_cp;
     }
 
-    //-dk:TODO template<class S, class R>
-    //-dk:TODO using connect_result_t = invoke_result_t<decltype(connect), S, R>;
-
 #if 0
-    template<class R, class... An>
-    inline constexpr bool is_nothrow_receiver_of_v =
-        receiver_of<R, An...> &&
-        is_nothrow_invocable_v<decltype(set_value), R, An...>;
-
-    template<class S>
-    concept typed_sender = see-below;
-
-    template<class S, class R>
-    concept sender_to = see-below;
-
     template<class S>
     concept scheduler = see-below;
 

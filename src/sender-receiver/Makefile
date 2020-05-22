@@ -30,16 +30,19 @@ COMPONENTS = \
 	execution/connect          \
 	execution/execute          \
 	execution/executor_of_impl \
+	execution/has_sender_types \
 	execution/operation_state  \
 	execution/receiver         \
 	execution/receiver_of      \
 	execution/sender           \
 	execution/sender_base      \
+	execution/sender_to        \
 	execution/sender_traits    \
 	execution/set_done         \
 	execution/set_error        \
 	execution/set_value        \
 	execution/start            \
+	execution/typed_sender     \
 
 CXXFILES = src/$(NAME).cpp $(COMPONENTS:%=src/%.cpp)
 

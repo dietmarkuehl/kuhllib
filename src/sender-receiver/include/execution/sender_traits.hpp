@@ -28,6 +28,7 @@
 
 #include <execution/as_invocable.hpp>
 #include <execution/executor_of_impl.hpp>
+#include <execution/has_sender_types.hpp>
 #include <execution/sender_base.hpp>
 
 #include <concepts>
@@ -42,23 +43,6 @@ namespace cxxrt::execution
     {
         // --------------------------------------------------------------------
 
-        template <template <template <typename...> class T,
-                            template <typename...> class V> class>
-        struct has_value_types;
-        template <template <template <typename...> class V> class>
-        struct has_error_types;
-
-        template <typename S>
-        concept has_sender_types
-            = requires {
-                typename has_value_types<S::template value_types>;
-                typename has_error_types<S::template error_types>;
-                typename std::bool_constant<S::sends_done>;
-            }
-            ;
-
-        // --------------------------------------------------------------------
-
         struct void_receiver
         {
             void set_value() noexcept;
@@ -69,7 +53,7 @@ namespace cxxrt::execution
         // --------------------------------------------------------------------
 
         template <typename S,
-                  bool = has_sender_types<S>,
+                  bool = detail::has_sender_types<S>,
                   bool = execution::detail::executor_of_impl<S, execution::detail::as_invocable<void_receiver, S>>,
                   bool = std::derived_from<S, sender_base>>
         struct base;

@@ -110,6 +110,10 @@ namespace cxxrt::execution
     {
         inline constexpr auto connect      = customization::connect_cp;
     }
+
+    template<class S, class R>
+    using connect_result_t = std::invoke_result_t<decltype(connect), S, R>;
+
 }
 
 // ----------------------------------------------------------------------------

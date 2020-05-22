@@ -1,4 +1,4 @@
-// include/execution/receiver_of.hpp                                  -*-C++-*-
+// include/execution/has_sender_types.hpp                             -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2020 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,32 +23,37 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_EXECUTION_RECEIVER_OF
-#define INCLUDED_EXECUTION_RECEIVER_OF
-
-#include <execution/receiver.hpp>
-#include <execution/set_value.hpp>
+#ifndef INCLUDED_EXECUTION_HAS_SENDER_TYPES
+#define INCLUDED_EXECUTION_HAS_SENDER_TYPES
 
 #include <type_traits>
-#include <utility>
 
 // ----------------------------------------------------------------------------
 
-namespace cxxrt::execution
+namespace cxxrt::execution::detail
 {
-    template<typename R, typename... A>
-    concept receiver_of
-        =  receiver<R>
-        && requires(std::remove_cvref_t<R>&& r, A&&... a)
-           {
-               execution::set_value(std::move(r), std::forward<A>(a)...);
-           }
+    // ------------------------------------------------------------------------
+
+    template <template <template <typename...> class T,
+                        template <typename...> class V> class>
+    struct has_value_types;
+
+    template <template <template <typename...> class V> class>
+    struct has_error_types;
+
+    // ------------------------------------------------------------------------
+
+    template <typename S>
+    concept has_sender_types
+    =   requires
+        {
+            typename has_value_types<S::template value_types>;
+            typename has_error_types<S::template error_types>;
+            typename std::bool_constant<S::sends_done>;
+        }
         ;
 
-    template<typename R, typename... A>
-    inline constexpr bool is_nothrow_receiver_of_v =
-        receiver_of<R, A...> &&
-        std::is_nothrow_invocable_v<decltype(set_value), R, A...>;
+    // ------------------------------------------------------------------------
 }
 
 // ----------------------------------------------------------------------------

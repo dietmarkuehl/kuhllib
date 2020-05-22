@@ -1,4 +1,4 @@
-// include/execution/receiver_of.hpp                                  -*-C++-*-
+// include/execution/sender_to.hpp                                    -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2020 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,32 +23,28 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_EXECUTION_RECEIVER_OF
-#define INCLUDED_EXECUTION_RECEIVER_OF
+#ifndef INCLUDED_EXECUTION_SENDER_TO
+#define INCLUDED_EXECUTION_SENDER_TO
 
+#include <execution/connect.hpp>
 #include <execution/receiver.hpp>
-#include <execution/set_value.hpp>
+#include <execution/sender.hpp>
 
-#include <type_traits>
 #include <utility>
 
 // ----------------------------------------------------------------------------
 
 namespace cxxrt::execution
 {
-    template<typename R, typename... A>
-    concept receiver_of
-        =  receiver<R>
-        && requires(std::remove_cvref_t<R>&& r, A&&... a)
+    template<typename S, typename R>
+    concept sender_to
+        =  sender<S>
+        && receiver<R>
+        && requires(S&& s, R&& r)
            {
-               execution::set_value(std::move(r), std::forward<A>(a)...);
+               execution::connect(std::forward<S>(s), std::forward<R>(r));
            }
         ;
-
-    template<typename R, typename... A>
-    inline constexpr bool is_nothrow_receiver_of_v =
-        receiver_of<R, A...> &&
-        std::is_nothrow_invocable_v<decltype(set_value), R, A...>;
 }
 
 // ----------------------------------------------------------------------------
