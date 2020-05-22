@@ -29,6 +29,8 @@
 #include <execution/connect.hpp>
 #include <execution/execute.hpp>
 #include <execution/operation_state.hpp>
+#include <execution/receiver.hpp>
+#include <execution/receiver_of.hpp>
 #include <execution/sender.hpp>
 #include <execution/sender_traits.hpp>
 #include <execution/set_done.hpp>
@@ -87,12 +89,6 @@ namespace cxxrt::execution
     //-dk:TODO using connect_result_t = invoke_result_t<decltype(connect), S, R>;
 
 #if 0
-    template<class T, class E = exception_ptr>
-    concept receiver = see-below;
-
-    template<class T, class... An>
-    concept receiver_of = see-below;
-
     template<class R, class... An>
     inline constexpr bool is_nothrow_receiver_of_v =
         receiver_of<R, An...> &&

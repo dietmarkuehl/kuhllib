@@ -31,6 +31,8 @@ COMPONENTS = \
 	execution/execute          \
 	execution/executor_of_impl \
 	execution/operation_state  \
+	execution/receiver         \
+	execution/receiver_of      \
 	execution/sender           \
 	execution/sender_base      \
 	execution/sender_traits    \

@@ -26,10 +26,14 @@
 #ifndef INCLUDED_EXECUTION_CONNECT
 #define INCLUDED_EXECUTION_CONNECT
 
+#include <execution/as_invocable.hpp>
+#include <execution/executor_of_impl.hpp>
 #include <execution/operation_state.hpp>
+#include <execution/receiver_of.hpp>
 #include <execution/sender.hpp>
 
 #include <utility>
+#include <type_traits>
 
 // ----------------------------------------------------------------------------
 
@@ -37,6 +41,17 @@ namespace cxxrt::execution
 {
     namespace customization
     {
+        // --------------------------------------------------------------------
+
+        template <typename S, typename R>
+        struct as_operation
+        {
+            std::remove_cvref_t<S> d_s;
+            std::remove_cvref_t<R> d_r;
+
+            void start() noexcept;
+        };
+
         // --------------------------------------------------------------------
 
         template <typename S, typename R>
@@ -72,7 +87,16 @@ namespace cxxrt::execution
             {
                 return connect(std::forward<S>(s), std::forward<R>(r));
             }
-            //-dk:TODO deal with the as-operation/as-invocable stuff
+            template <typename S, typename R>
+                requires receiver_of<R>
+                      && execution::detail::executor_of_impl<std::remove_cvref_t<S>,
+                                                             execution::detail::as_invocable<std::remove_cvref_t<R>, S>>
+            constexpr auto operator()(S&& s, R&& r) const
+                noexcept(noexcept(as_operation{std::forward<S>(s), std::forward<R>(r)}))
+            {
+                return as_operation{std::forward<S>(s), std::forward<R>(r)};
+            }
+
             template <typename S, typename R>
             constexpr auto operator()(S&& has_no_suitable_connect, R&& r) const = delete;
         };

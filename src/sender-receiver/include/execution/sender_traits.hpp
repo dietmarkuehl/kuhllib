@@ -115,7 +115,7 @@ struct cxxrt::execution::sender_traits_detail::base<S, true, E, B>
 };
 
 // ----------------------------------------------------------------------------
-// The sender is derived from sender_base.
+// The sender can use an invocable
 
 template <typename S, bool B>
 struct cxxrt::execution::sender_traits_detail::base<S, false, true, B>
