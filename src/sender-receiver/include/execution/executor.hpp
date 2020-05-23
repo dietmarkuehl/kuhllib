@@ -28,11 +28,14 @@
 
 #include <execution/executor_of_impl.hpp>
 
+#include <concepts>
+
 // ----------------------------------------------------------------------------
 
 namespace cxxrt::execution
 {
     using invocable_archetype = decltype([]{});
+    static_assert(std::invocable<invocable_archetype&>);
 
     template<typename E>
     concept executor

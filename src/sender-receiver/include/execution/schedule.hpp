@@ -26,9 +26,12 @@
 #ifndef INCLUDED_EXECUTION_SCHEDULE
 #define INCLUDED_EXECUTION_SCHEDULE
 
+#include <execution/connect.hpp>
 #include <execution/executor.hpp>
+#include <execution/receiver_of.hpp>
 #include <execution/sender.hpp>
 
+#include <exception>
 #include <type_traits>
 #include <utility>
 
@@ -59,35 +62,37 @@ namespace cxxrt::execution
             ;
 
         // --------------------------------------------------------------------
-#if 0
-Otherwise, as-sender<remove_cvref_t<S>>{s} if S satisfies executor, where as-sender is an implementation-defined class template equivalent to
 
-  template<class E>
-  struct as-sender {
-  private:
-    E ex_;
-  public:
-    template<template<class...> class Tuple, template<class...> class Variant>
-      using value_types = Variant<Tuple<>>;
-    template<template<class...> class Variant>
-      using error_types = Variant<std::exception_ptr>;
-    static constexpr bool sends_done = true;
+        template<typename E>
+        struct as_sender {
+        private:
+            E d_e;
+        public:
+            template<template<typename...> class T,
+                     template<typename...> class V>
+            using value_types = V<T<>>;
+            template<template<typename...> class V>
+            using error_types = V<std::exception_ptr>;
+            static constexpr bool sends_done = true;
 
-    explicit as-sender(E e) noexcept
-      : ex_((E&&) e) {}
-    template<class R>
-      requires receiver_of<R>
-    connect_result_t<E, R> connect(R&& r) && {
-      return execution::connect((E&&) ex_, (R&&) r);
-    }
-    template<class R>
-      requires receiver_of<R>
-    connect_result_t<const E &, R> connect(R&& r) const & {
-      return execution::connect(ex_, (R&&) r);
-    }
-  };
+            explicit as_sender(E e) noexcept
+                : d_e(std::forward<E>(e))
+            {
+            }
+            template<typename R>
+                requires execution::receiver_of<R>
+            execution::connect_result_t<E, R> connect(R&& r) &&
+            {
+                return execution::connect(std::forward<E>(d_e), std::forward<R>(r));
+            }
+            template<typename R>
+            requires receiver_of<R>
+            execution::connect_result_t<E const&, R> connect(R&& r) const&
+            {
+                return execution::connect(d_e, std::forward<R>(r));
+            }
+        };
 
-#endif
         // --------------------------------------------------------------------
 
         void schedule();
@@ -108,7 +113,15 @@ Otherwise, as-sender<remove_cvref_t<S>>{s} if S satisfies executor, where as-sen
             {
                 return schedule(std::forward<S>(s));
             }
-            //-dk:TODO add the as-sender schedule
+
+            template <typename S>
+            requires (!has_member_schedule<S>)
+                  && (!has_schedule<S>)
+                  && execution::executor<S>
+            constexpr auto operator()(S&& s) const
+            {
+                return as_sender<std::remove_cvref_t<S>>{s};
+            }
 
             template <typename S>
             constexpr void operator()(S&&) const = delete;
