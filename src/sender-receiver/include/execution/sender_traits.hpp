@@ -119,7 +119,6 @@ struct cxxrt::execution::sender_traits_detail::base<S, false, true, B>
 template <typename S>
 struct cxxrt::execution::sender_traits_detail::base<S, false, false, true>
 {
-    static constexpr bool sends_done = true; //-dk:TODO remove
 };
 
 // ----------------------------------------------------------------------------

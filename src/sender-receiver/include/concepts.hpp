@@ -30,42 +30,92 @@
 #    include <concepts>
 #else
 
+#include <functional>
+#include <type_traits>
+#include <utility>
+
 // ----------------------------------------------------------------------------
 
 namespace std
 {
+    template <typename F, typename T>
+    concept convertible_to
+        =  std::is_convertible_v<F, T>
+        && requires(std::add_rvalue_reference_t<F>(&f)())
+           {
+               static_cast<T>(f());
+           }
+        ;
+
     template <typename D, typename B>
     concept derived_from
-        = true //-dk:TODO derived_from
+        =  std::is_base_of_v<B, D>
+        && is_convertible_v<D const volatile*, B const volatile*>
         ;
 
     template <typename F, typename... A>
     concept invocable
-        = true //-dk:TODO invocable
-        ;
-
-    template <typename t>
-    concept destructible
-        = true //-dk:TODO destructible
-        ;
-    template <typename T, typename... A>
-    concept constructible_from
-        = true //-dk:TODO constructible_from
+        =  requires(F&& f, A&&... a)
+           {
+               std::invoke(std::forward<F>(f), std::forward<A>(a)...);
+           }
         ;
 
     template <typename T>
-    concept copy_constructible
-        = true //-dk:TODO copy_constructible
+    concept destructible
+        =  std::is_nothrow_destructible_v<T>
+        ;
+    template <typename T, typename... A>
+    concept constructible_from
+        =  destructible<T>
+        && std::is_constructible_v<T, A...>;
         ;
 
     template <typename T>
     concept move_constructible
-        = true //-dk:TODO move_constructible
+        =  constructible_from<T, T>
+        && convertible_to<T, T>
         ;
 
     template <typename T>
+    concept copy_constructible
+        =  move_constructible<T>
+        && constructible_from<T, T&>
+        && convertible_to<T&, T>
+        && constructible_from<T, T const&>
+        && convertible_to<T const&, T>
+        && constructible_from<T, T const>
+        && convertible_to<T const, T>
+        ;
+
+    template <typename T>
+    concept boolean_testable_impl
+        = convertible_to<T, bool>
+        ;
+
+    template <typename T>
+    concept boolean_testable
+        =  boolean_testable_impl<T>
+        && requires(T&& t)
+           {
+               { !std::forward<T>(t) } -> boolean_testable_impl;
+           }
+        ;
+
+    template <typename S, typename T>
+    concept weakly_equality_comparable_with
+        =  requires(std::remove_reference<S> const& s,
+                    std::remove_reference<T> const& t)
+           {
+               { s == t } -> boolean_testable;
+               { s != t } -> boolean_testable;
+               { t == s } -> boolean_testable;
+               { t != s } -> boolean_testable;
+           }
+        ;
+    template <typename T>
     concept equality_comparable
-        = true //-dk:TODO equality_comparable
+        =  weakly_equality_comparable_with<T, T>
         ;
 }
 
