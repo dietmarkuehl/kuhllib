@@ -31,7 +31,7 @@
 #include <execution/has_sender_types.hpp>
 #include <execution/sender_base.hpp>
 
-#include <concepts>
+#include <concepts.hpp>
 #include <exception>
 #include <type_traits>
 
@@ -55,7 +55,7 @@ namespace cxxrt::execution
         template <typename S,
                   bool = detail::has_sender_types<S>,
                   bool = execution::detail::executor_of_impl<S, execution::detail::as_invocable<void_receiver, S>>,
-                  bool = std::derived_from<S, sender_base>>
+                  bool = std::derived_from<S, execution::sender_base>>
         struct base;
 
         template <typename S, bool E, bool B>
@@ -119,6 +119,7 @@ struct cxxrt::execution::sender_traits_detail::base<S, false, true, B>
 template <typename S>
 struct cxxrt::execution::sender_traits_detail::base<S, false, false, true>
 {
+    static constexpr bool sends_done = true; //-dk:TODO remove
 };
 
 // ----------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-// include/execution/sender.hpp                                       -*-C++-*-
+// src/concepts.cpp                                                   -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2020 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,25 +23,8 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_EXECUTION_SENDER
-#define INCLUDED_EXECUTION_SENDER
-
-#include <execution/sender_traits.hpp>
-
 #include <concepts.hpp>
-#include <type_traits>
 
 // ----------------------------------------------------------------------------
 
-namespace cxxrt::execution
-{
-    template<class S>
-    concept sender
-        =  std::move_constructible<std::remove_cvref_t<S>>
-        && !requires { typename sender_traits<std::remove_cvref_t<S>>::__unspecialized; }
-        ;
-}
-
-// ----------------------------------------------------------------------------
-
-#endif
+int concepts = 0;

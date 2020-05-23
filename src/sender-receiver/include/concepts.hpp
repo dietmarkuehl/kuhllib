@@ -1,4 +1,4 @@
-// include/execution/sender.hpp                                       -*-C++-*-
+// include/concepts.hpp                                               -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2020 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,25 +23,53 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_EXECUTION_SENDER
-#define INCLUDED_EXECUTION_SENDER
+#ifndef INCLUDED_CONCEPTS
+#define INCLUDED_CONCEPTS
 
-#include <execution/sender_traits.hpp>
-
-#include <concepts.hpp>
-#include <type_traits>
+#if !defined(__clang__)
+#    include <concepts>
+#else
 
 // ----------------------------------------------------------------------------
 
-namespace cxxrt::execution
+namespace std
 {
-    template<class S>
-    concept sender
-        =  std::move_constructible<std::remove_cvref_t<S>>
-        && !requires { typename sender_traits<std::remove_cvref_t<S>>::__unspecialized; }
+    template <typename D, typename B>
+    concept derived_from
+        = true //-dk:TODO derived_from
+        ;
+
+    template <typename F, typename... A>
+    concept invocable
+        = true //-dk:TODO invocable
+        ;
+
+    template <typename t>
+    concept destructible
+        = true //-dk:TODO destructible
+        ;
+    template <typename T, typename... A>
+    concept constructible_from
+        = true //-dk:TODO constructible_from
+        ;
+
+    template <typename T>
+    concept copy_constructible
+        = true //-dk:TODO copy_constructible
+        ;
+
+    template <typename T>
+    concept move_constructible
+        = true //-dk:TODO move_constructible
+        ;
+
+    template <typename T>
+    concept equality_comparable
+        = true //-dk:TODO equality_comparable
         ;
 }
 
 // ----------------------------------------------------------------------------
 
+#endif
 #endif

@@ -26,6 +26,8 @@
 LIB        = sender
 NAME       = basic
 COMPONENTS =                                \
+	concepts                            \
+	execution                           \
 	execution/as_invocable              \
 	execution/bulk_execute              \
 	execution/connect                   \
@@ -87,6 +89,9 @@ BUILD    = bin/$(COMPILER)-$(VERSION)
 .PHONY: default
 default: $(BUILD)/$(NAME)
 	$(BUILD)/$(NAME)
+
+%:
+	$(MAKE) NAME=$@
 
 .PHONY: install
 install: build

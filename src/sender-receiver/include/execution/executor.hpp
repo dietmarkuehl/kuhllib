@@ -28,13 +28,17 @@
 
 #include <execution/executor_of_impl.hpp>
 
-#include <concepts>
+#include <concepts.hpp>
 
 // ----------------------------------------------------------------------------
 
 namespace cxxrt::execution
 {
-    using invocable_archetype = decltype([]{});
+    // clang doesn't like that, yet: using invocable_archetype = decltype([]{});
+    struct invocable_archetype
+    {
+        constexpr void operator()() const noexcept {}
+    };
     static_assert(std::invocable<invocable_archetype&>);
 
     template<typename E>
