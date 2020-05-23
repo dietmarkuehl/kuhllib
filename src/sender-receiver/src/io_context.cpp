@@ -1,4 +1,4 @@
-// src/timer.cpp                                                      -*-C++-*-
+// src/io_context.cpp                                                 -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2020 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,9 +23,40 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include <timer.hpp>
+#include <io_context.hpp>
+
+#include <iostream> //-dk:TOOD remove
+#include <limits>
 
 // ----------------------------------------------------------------------------
 
-int timer = 0;
+int io_context = 0;
 
+// ----------------------------------------------------------------------------
+
+cxxrt::net::io_context::io_context()
+{
+}
+
+// ----------------------------------------------------------------------------
+
+cxxrt::net::io_context::count_type
+cxxrt::net::io_context::run()
+{
+    count_type n{};
+    while (this->run_one())
+    {
+        if (n != std::numeric_limits<count_type>::max()) {
+            ++n;
+        }
+    }
+    return n;
+}
+
+cxxrt::net::io_context::count_type
+cxxrt::net::io_context::run_one()
+{
+    std::cout << "*** WARNING: io_context is still on strike and doesn't do any work\n";
+    //-dk:TODO execute some work
+    return 0u;
+}

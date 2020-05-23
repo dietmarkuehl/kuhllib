@@ -23,8 +23,10 @@
 #   OTHER DEALINGS IN THE SOFTWARE. 
 #  ----------------------------------------------------------------------------
 
-LIB        = sender
 NAME       = basic
+NAME       = run-timer
+
+LIB        = sender
 COMPONENTS =                                \
 	concepts                            \
 	execution                           \
@@ -52,6 +54,10 @@ COMPONENTS =                                \
 	execution/start                     \
 	execution/submit                    \
 	execution/typed_sender              \
+	executor                            \
+	executor/execution_context          \
+	io_context                          \
+	timer                               \
 
 CXXFILES = src/$(NAME).cpp $(COMPONENTS:%=src/%.cpp)
 
@@ -61,13 +67,13 @@ ifeq ($(COMPILER),gcc)
    VERSION = 10.1.0
    PREFIX   = /opt/gcc-$(VERSION)
    CPPFLAGS = -std=c++2a
-   CXXFLAGS = -O3
+   CXXFLAGS = -O3 -W -Wall
    CXX      = $(PREFIX)/bin/g++
    CC       = $(PREFIX)/bin/gcc
 endif
 ifeq ($(COMPILER),clang)
    CPPFLAGS = -std=c++2a
-   CXXFLAGS = -O3
+   CXXFLAGS = -O3 -W -Wall
    CXX      = /opt/llvm-10.0.0/bin/clang++
 endif
 ifeq ($(COMPILER),intel)

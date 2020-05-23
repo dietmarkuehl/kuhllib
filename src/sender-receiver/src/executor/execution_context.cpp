@@ -1,4 +1,4 @@
-// src/timer.cpp                                                      -*-C++-*-
+// src/executor/execution_context.cpp                                 -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2020 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,9 +23,47 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include <timer.hpp>
+#include <executor/execution_context.hpp>
 
 // ----------------------------------------------------------------------------
 
-int timer = 0;
+int executor_execution_context = 0;
 
+// ----------------------------------------------------------------------------
+
+cxxrt::net::execution_context::execution_context()
+{
+}
+
+cxxrt::net::execution_context::~execution_context()
+{
+    this->shutdown();
+    this->destroy();
+}
+
+// ----------------------------------------------------------------------------
+
+void cxxrt::net::execution_context::shutdown() noexcept
+{
+    //-dk:TODO shutdown the services
+}
+
+void cxxrt::net::execution_context::destroy() noexcept
+{
+    //-dk:TODO destroy the services
+}
+
+// ----------------------------------------------------------------------------
+
+cxxrt::net::execution_context::service::service(execution_context& owner)
+    : d_owner(owner)
+{
+}
+
+cxxrt::net::execution_context::service::~service()
+{
+}
+
+void cxxrt::net::execution_context::service::notify_fork(fork_event)
+{
+}

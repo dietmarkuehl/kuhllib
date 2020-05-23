@@ -1,4 +1,4 @@
-// src/timer.cpp                                                      -*-C++-*-
+// src/run-timer.cpp                                                  -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2020 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,9 +23,41 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
+#include <execution.hpp>
+#include <io_context.hpp>
 #include <timer.hpp>
+
+#include <chrono>
+#include <exception>
+#include <functional>
+#include <iostream>
+#include <vector>
+
+namespace EX = cxxrt::execution;
+namespace NET = cxxrt::net;
 
 // ----------------------------------------------------------------------------
 
-int timer = 0;
+namespace
+{
+    struct receiver
+    {
+        void set_value() { std::cout << "set_value\n"; }
+        void set_error(std::exception_ptr) { std::cout << "set_error\n"; }
+        void set_done() { std::cout << "set_done\n"; }
+    };
+}
 
+// ----------------------------------------------------------------------------
+
+int main()
+{
+    using namespace std::literals::chrono_literals;
+
+    NET::io_context c;
+    NET::steady_timer t(c, 5s);
+    auto state = EX::connect(t.sender_wait(), receiver());
+    state.start();
+
+    c.run();
+}

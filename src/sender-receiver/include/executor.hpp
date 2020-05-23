@@ -1,4 +1,4 @@
-// src/timer.cpp                                                      -*-C++-*-
+// include/executor.hpp                                               -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2020 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,9 +23,13 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include <timer.hpp>
+#ifndef INCLUDED_EXECUTOR
+#define INCLUDED_EXECUTOR
 
 // ----------------------------------------------------------------------------
 
-int timer = 0;
+#include <executor/execution_context.hpp>
 
+// ----------------------------------------------------------------------------
+
+#endif
