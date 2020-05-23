@@ -25,30 +25,31 @@
 
 LIB        = sender
 NAME       = basic
-COMPONENTS = \
-	execution/as_invocable     \
-	execution/bulk_execute     \
-	execution/connect          \
-	execution/execute          \
-	execution/executor         \
-	execution/executor_of      \
-	execution/executor_of_impl \
-	execution/has_sender_types \
-	execution/operation_state  \
-	execution/receiver         \
-	execution/receiver_of      \
-	execution/schedule         \
-	execution/scheduler        \
-	execution/sender           \
-	execution/sender_base      \
-	execution/sender_to        \
-	execution/sender_traits    \
-	execution/set_done         \
-	execution/set_error        \
-	execution/set_value        \
-	execution/start            \
-	execution/submit           \
-	execution/typed_sender     \
+COMPONENTS =                                \
+	execution/as_invocable              \
+	execution/bulk_execute              \
+	execution/connect                   \
+	execution/execute                   \
+	execution/executor                  \
+	execution/executor_of               \
+	execution/executor_of_impl          \
+	execution/has_sender_types          \
+	execution/operation_state           \
+	execution/receiver                  \
+	execution/receiver_invocation_error \
+	execution/receiver_of               \
+	execution/schedule                  \
+	execution/scheduler                 \
+	execution/sender                    \
+	execution/sender_base               \
+	execution/sender_to                 \
+	execution/sender_traits             \
+	execution/set_done                  \
+	execution/set_error                 \
+	execution/set_value                 \
+	execution/start                     \
+	execution/submit                    \
+	execution/typed_sender              \
 
 CXXFILES = src/$(NAME).cpp $(COMPONENTS:%=src/%.cpp)
 
@@ -63,9 +64,9 @@ ifeq ($(COMPILER),gcc)
    CC       = $(PREFIX)/bin/gcc
 endif
 ifeq ($(COMPILER),clang)
-   CPPFLAGS = -std=c++17
+   CPPFLAGS = -std=c++2a
    CXXFLAGS = -O3
-   CXX      = /usr/bin/clang++
+   CXX      = /opt/llvm-10.0.0/bin/clang++
 endif
 ifeq ($(COMPILER),intel)
    CXXFLAGS  = -std=c++17 -O2

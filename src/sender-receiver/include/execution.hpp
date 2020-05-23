@@ -33,6 +33,7 @@
 #include <execution/executor_of.hpp>
 #include <execution/operation_state.hpp>
 #include <execution/receiver.hpp>
+#include <execution/receiver_invocation_error.hpp>
 #include <execution/receiver_of.hpp>
 #include <execution/schedule.hpp>
 #include <execution/scheduler.hpp>
@@ -46,15 +47,10 @@
 #include <execution/submit.hpp>
 #include <execution/typed_sender.hpp>
 
-#include <stdexcept>
-#include <utility>
-
 // ----------------------------------------------------------------------------
 
 namespace cxxrt::execution
 {
-    struct receiver_invocation_error;
-
     struct context_t {};
     constexpr context_t context;
 
@@ -93,19 +89,6 @@ namespace cxxrt::execution
     template<typename Property> struct prefer_only;
 
 } // namespace cxxrt::execution
-
-// ----------------------------------------------------------------------------
-
-struct cxxrt::execution::receiver_invocation_error
-    : std::runtime_error
-    , std::nested_exception
-{
-    receiver_invocation_error() noexcept
-        : std::runtime_error("invocation error")
-        , std::nested_exception()
-    {
-    }
-};
 
 // ----------------------------------------------------------------------------
 
