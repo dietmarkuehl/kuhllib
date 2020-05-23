@@ -23,8 +23,8 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_INCLUDE_EXECUTION_SENDER_TRAITS
-#define INCLUDED_INCLUDE_EXECUTION_SENDER_TRAITS
+#ifndef INCLUDED_EXECUTION_SENDER_TRAITS
+#define INCLUDED_EXECUTION_SENDER_TRAITS
 
 #include <execution/as_invocable.hpp>
 #include <execution/executor_of_impl.hpp>

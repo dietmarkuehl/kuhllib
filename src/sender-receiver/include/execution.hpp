@@ -26,11 +26,16 @@
 #ifndef INCLUDED_CXXRT_EXECUTION
 #define INCLUDED_CXXRT_EXECUTION
 
+#include <execution/bulk_execute.hpp>
 #include <execution/connect.hpp>
 #include <execution/execute.hpp>
+#include <execution/executor.hpp>
+#include <execution/executor_of.hpp>
 #include <execution/operation_state.hpp>
 #include <execution/receiver.hpp>
 #include <execution/receiver_of.hpp>
+#include <execution/schedule.hpp>
+#include <execution/scheduler.hpp>
 #include <execution/sender.hpp>
 #include <execution/sender_to.hpp>
 #include <execution/sender_traits.hpp>
@@ -49,46 +54,6 @@
 namespace cxxrt::execution
 {
     struct receiver_invocation_error;
-
-    //-dk:TODO using invocable_archetype = unspecified;
-
-    namespace customization
-    {
-        // --------------------------------------------------------------------
-
-        void schedule();
-        struct schedule_t
-        {
-        };
-        inline constexpr schedule_t schedule_cp{};
-
-        // --------------------------------------------------------------------
-
-        void bulk_execute();
-        struct bulk_execute_t
-        {
-        };
-        inline constexpr bulk_execute_t bulk_execute_cp{};
-
-        // --------------------------------------------------------------------
-
-    }
-    inline namespace customization_points
-    {
-        inline constexpr auto schedule     = customization::schedule_cp;
-        inline constexpr auto bulk_execute = customization::bulk_execute_cp;
-    }
-
-#if 0
-    template<class S>
-    concept scheduler = see-below;
-
-    template<class E>
-    concept executor = see-below;
-
-    template<class E, class F>
-    concept executor_of = see-below;
-#endif
 
     struct context_t {};
     constexpr context_t context;
@@ -115,17 +80,17 @@ namespace cxxrt::execution
     struct allocator_t {};
     constexpr allocator_t<void> allocator;
 
-    template<class Executor> struct executor_shape;
-    template<class Executor> struct executor_index;
+    template<typename Executor> struct executor_shape;
+    template<typename Executor> struct executor_index;
 
-    template<class Executor> using executor_shape_t = typename executor_shape<Executor>::type;
-    template<class Executor> using executor_index_t = typename executor_index<Executor>::type;
+    template<typename Executor> using executor_shape_t = typename executor_shape<Executor>::type;
+    template<typename Executor> using executor_index_t = typename executor_index<Executor>::type;
 
     class bad_executor;
     
-    template <class... SupportableProperties> class any_executor;
+    template <typename... SupportableProperties> class any_executor;
 
-    template<class Property> struct prefer_only;
+    template<typename Property> struct prefer_only;
 
 } // namespace cxxrt::execution
 

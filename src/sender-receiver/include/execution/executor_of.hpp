@@ -1,4 +1,4 @@
-// include/execution/receiver.hpp                                     -*-C++-*-
+// include/execution/executor_of.hpp                                  -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2020 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,32 +23,19 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_EXECUTION_RECEIVER
-#define INCLUDED_EXECUTION_RECEIVER
+#ifndef INCLUDED_EXECUTION_EXECUTOR_OF
+#define INCLUDED_EXECUTION_EXECUTOR_OF
 
-#include <execution/set_done.hpp>
-#include <execution/set_error.hpp>
-
-#include <concepts>
-#include <exception>
-#include <type_traits>
-#include <utility>
+#include <execution/executor_of_impl.hpp>
 
 // ----------------------------------------------------------------------------
 
 namespace cxxrt::execution
 {
-    template <typename R, typename E = std::exception_ptr>
-    concept receiver
-        =  std::move_constructible<std::remove_cvref_t<R>>
-        && std::constructible_from<std::remove_cvref_t<R>, R>
-        && requires(std::remove_cvref_t<R>&& r, E&& e)
-           {
-               { execution::set_done(std::move(r)) } noexcept;
-               { execution::set_error(std::move(r), std::forward<E>(e)) } noexcept;
-           }
+    template<typename E, typename F>
+    concept executor_of
+        = execution::detail::executor_of_impl<E, F>
         ;
-    
 }
 
 // ----------------------------------------------------------------------------

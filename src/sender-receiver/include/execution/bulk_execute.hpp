@@ -1,4 +1,4 @@
-// include/execution/receiver.hpp                                     -*-C++-*-
+// include/execution/bulk_execute.hpp                                 -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2020 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,32 +23,31 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_EXECUTION_RECEIVER
-#define INCLUDED_EXECUTION_RECEIVER
-
-#include <execution/set_done.hpp>
-#include <execution/set_error.hpp>
-
-#include <concepts>
-#include <exception>
-#include <type_traits>
-#include <utility>
+#ifndef INCLUDED_EXECUTION_BULK_EXECUTE
+#define INCLUDED_EXECUTION_BULK_EXECUTE
 
 // ----------------------------------------------------------------------------
 
 namespace cxxrt::execution
 {
-    template <typename R, typename E = std::exception_ptr>
-    concept receiver
-        =  std::move_constructible<std::remove_cvref_t<R>>
-        && std::constructible_from<std::remove_cvref_t<R>, R>
-        && requires(std::remove_cvref_t<R>&& r, E&& e)
-           {
-               { execution::set_done(std::move(r)) } noexcept;
-               { execution::set_error(std::move(r), std::forward<E>(e)) } noexcept;
-           }
-        ;
-    
+    namespace customization
+    {
+        // --------------------------------------------------------------------
+
+        void bulk_execute(); //-dk:TODO
+        struct bulk_execute_t
+        {
+        };
+        inline constexpr bulk_execute_t bulk_execute_cp{};
+
+        // --------------------------------------------------------------------
+
+    }
+    inline namespace customization_points
+    {
+        inline constexpr auto bulk_execute = customization::bulk_execute_cp;
+    }
+
 }
 
 // ----------------------------------------------------------------------------

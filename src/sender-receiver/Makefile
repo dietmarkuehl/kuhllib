@@ -27,13 +27,18 @@ LIB        = sender
 NAME       = basic
 COMPONENTS = \
 	execution/as_invocable     \
+	execution/bulk_execute     \
 	execution/connect          \
 	execution/execute          \
+	execution/executor         \
+	execution/executor_of      \
 	execution/executor_of_impl \
 	execution/has_sender_types \
 	execution/operation_state  \
 	execution/receiver         \
 	execution/receiver_of      \
+	execution/schedule         \
+	execution/scheduler        \
 	execution/sender           \
 	execution/sender_base      \
 	execution/sender_to        \
