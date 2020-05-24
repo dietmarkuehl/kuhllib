@@ -40,7 +40,7 @@ namespace cxxrt::execution
     concept scheduler
         =  std::copy_constructible<std::remove_cvref_t<S>>
         && std::equality_comparable<std::remove_cvref_t<S>>
-        && requires(S&& s) //-dk:TODO report typo E vs. S
+        && requires(S&& s)
            {
                execution::schedule(std::forward<S>(s));
            }
