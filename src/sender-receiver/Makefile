@@ -67,28 +67,40 @@ ifeq ($(COMPILER),gcc)
    VERSION = 10.1.0
    PREFIX   = /opt/gcc-$(VERSION)
    CPPFLAGS = -std=c++2a
-   CXXFLAGS = -O3 -W -Wall
+   CXXFLAGS = -W -Wall
+   OPTFLAGS = -O3
    CXX      = $(PREFIX)/bin/g++
    CC       = $(PREFIX)/bin/gcc
 endif
 ifeq ($(COMPILER),clang)
    CPPFLAGS = -std=c++2a
-   CXXFLAGS = -O3 -W -Wall
+   CXXFLAGS = -W -Wall
+   OPTFLAGS = -O3
    CXX      = /opt/llvm-10.0.0/bin/clang++
 endif
 ifeq ($(COMPILER),intel)
-   CXXFLAGS  = -std=c++17 -O2
+   CXXFLAGS  = -std=c++17
+   OPTFLAGS  = -O2
    #LDFLAGS   = -stdlib=libstdc++
    CXX       = /opt/intel/bin/icc
 endif
 ifeq ($(COMPILER),edg)
-   CXXFLAGS  = --c++20  -O2
+   CXXFLAGS  = --c++20
+   OPTFLAGS  = -O2
    CXX       = /opt/edg/bin/eccp
+endif
+
+ifeq ($(DEBUG),)
+    CXXFLAGS += $(OPTFLAGS)
+    SUFFIX   = opt
+else
+    CXXFLAGS += -g
+    SUFFIX   = dbg
 endif
 
 CPPFLAGS += -Iinclude
 CXXFLAGS += $(CPPFLAGS)
-BUILD    = bin/$(COMPILER)-$(VERSION)
+BUILD    = bin/$(COMPILER)-$(VERSION)-$(SUFFIX)
 
 #  ----------------------------------------------------------------------------
 

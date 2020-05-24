@@ -124,7 +124,7 @@ public:
     static constexpr bool sends_done = true;
 
     template <typename R>
-    struct state
+    struct state final
         : cxxrt::net::io_context::timer_base
     {
     private:

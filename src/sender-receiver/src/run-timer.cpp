@@ -58,11 +58,11 @@ int main()
     using namespace std::literals::chrono_literals;
 
     NET::io_context c;
-    std::deque<NET::steady_timer> timers;
+    auto& timers = *new std::deque<NET::steady_timer>;
     using state_t = decltype(EX::connect(timers.back().sender_wait(), receiver(0)));
     std::deque<state_t> states;
 
-    for (int i = 0; i != 10; ++i)
+    for (int i = 0; i != 3; ++i)
     {
         timers.emplace_back(c, std::chrono::seconds(i));
         states.emplace_back(EX::connect(timers.back().sender_wait(), receiver(i)));

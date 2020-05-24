@@ -55,6 +55,11 @@ private:
     using time_point = std::chrono::steady_clock::time_point;
     struct timer_entry
     {
+        timer_entry(time_point const& t, timer_base* b)
+            : d_time(t)
+            , d_timer(b)
+        {
+        }
         time_point  d_time;
         timer_base* d_timer;
         int timeout() const;
