@@ -31,7 +31,7 @@
 #include <exception>
 #include <functional>
 #include <iostream>
-#include <vector>
+#include <deque>
 
 namespace EX = cxxrt::execution;
 namespace NET = cxxrt::net;
@@ -42,9 +42,11 @@ namespace
 {
     struct receiver
     {
-        void set_value() { std::cout << "set_value\n"; }
-        void set_error(std::exception_ptr) { std::cout << "set_error\n"; }
-        void set_done() { std::cout << "set_done\n"; }
+        int index;
+        explicit receiver(int i): index(i) {}
+        void set_value() { std::cout << "receiver(" << this->index << "):set_value\n"; }
+        void set_error(std::exception_ptr) { std::cout << "receiver(" << this->index << "):set_error\n"; }
+        void set_done() { std::cout << "receiver(" << this->index << "):set_done\n"; }
     };
 }
 
@@ -52,12 +54,20 @@ namespace
 
 int main()
 {
+    std::cout << std::unitbuf;
     using namespace std::literals::chrono_literals;
 
     NET::io_context c;
-    NET::steady_timer t(c, 5s);
-    auto state = EX::connect(t.sender_wait(), receiver());
-    state.start();
+    std::deque<NET::steady_timer> timers;
+    using state_t = decltype(EX::connect(timers.back().sender_wait(), receiver(0)));
+    std::deque<state_t> states;
+
+    for (int i = 0; i != 10; ++i)
+    {
+        timers.emplace_back(c, std::chrono::seconds(i));
+        states.emplace_back(EX::connect(timers.back().sender_wait(), receiver(i)));
+        states.back().start();
+    }
 
     c.run();
 }

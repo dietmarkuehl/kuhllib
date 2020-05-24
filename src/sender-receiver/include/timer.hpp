@@ -71,16 +71,19 @@ public:
     using duration      = typename clock_type::duration;
     using time_point    = typename clock_type::time_point;
     using traits_type   = WaitTraits;
-
-    struct state_base;
+    using timer_base    = io_context::timer_base;
     struct sender;
 
 private:
     cxxrt::net::io_context* d_context;
     time_point              d_expiry;
-    std::deque<state_base*> d_waiting; //-dk:TODO use an intrusive list?
+    // std::deque<timer_base*> d_waiting; //-dk:TODO use an intrusive list?
 
-    void add(state_base* s) { this->d_waiting.push_back(s); }
+    void add(timer_base* s)
+    {
+        // this->d_waiting.push_back(s);
+        this->d_context->add(this->d_expiry, s);
+    }
 
 public:
     explicit basic_waitable_timer(io_context& c);
@@ -100,7 +103,6 @@ public:
     std::size_t expires_at(time_point const& t);
     std::size_t expires_after(duration const& d);
 
-    struct sender;
     sender sender_wait();
     
     void wait();
@@ -109,13 +111,6 @@ public:
 };
 
 // ----------------------------------------------------------------------------
-
-template<typename C, typename W>
-struct cxxrt::net::basic_waitable_timer<C, W>::state_base
-{
-    virtual void notify() = 0;
-    virtual void cancel() = 0;
-};
 
 template<typename C, typename W>
 struct cxxrt::net::basic_waitable_timer<C, W>::sender
@@ -130,7 +125,7 @@ public:
 
     template <typename R>
     struct state
-        : state_base
+        : cxxrt::net::io_context::timer_base
     {
     private:
         basic_waitable_timer* d_timer;
@@ -169,20 +164,22 @@ public:
     explicit sender(basic_waitable_timer* t): d_timer(t) {}
 
     template <typename R>
-    state<R> connect(R&& r) { return { this->d_timer, std::move(r) }; }
+    auto connect(R&& r) { return state<R> { this->d_timer, std::move(r) }; }
 };
 
 // ----------------------------------------------------------------------------
 
 template<typename Clock>
 inline auto
-cxxrt::net::wait_traits<Clock>::to_wait_duration(duration const& d) -> duration
+cxxrt::net::wait_traits<Clock>::to_wait_duration(duration const& d)
+    -> duration
 {
     return d;
 }
 template<typename Clock>
 inline auto
-cxxrt::net::wait_traits<Clock>::to_wait_duration(time_point const& t) -> duration
+cxxrt::net::wait_traits<Clock>::to_wait_duration(time_point const& t)
+    -> duration
 {
     //-dk:TODO deal with duration boundary conditions
     auto now = Clock::now();
@@ -215,22 +212,23 @@ cxxrt::net::basic_waitable_timer<C, W>::basic_waitable_timer(io_context&     c,
 // ----------------------------------------------------------------------------
 
 template<typename C, typename W>
-auto cxxrt::net::basic_waitable_timer<C, W>::expiry() const -> time_point
+auto cxxrt::net::basic_waitable_timer<C, W>::expiry() const
+    -> time_point
 {
     return this->d_expiry;
 }
 
 template<typename C, typename W>
-std::size_t
-cxxrt::net::basic_waitable_timer<C, W>::cancel_one()
+auto cxxrt::net::basic_waitable_timer<C, W>::cancel_one()
+    -> std::size_t
 {
     //-dk:TODO cancel waiting operations
     return 0u;
 }
 
 template<typename C, typename W>
-std::size_t
-cxxrt::net::basic_waitable_timer<C, W>::cancel()
+auto cxxrt::net::basic_waitable_timer<C, W>::cancel()
+    -> std::size_t
 {
     std::size_t n{};
     while (auto c = this->cancel_one())
@@ -241,8 +239,8 @@ cxxrt::net::basic_waitable_timer<C, W>::cancel()
 }
 
 template<typename C, typename W>
-std::size_t
-cxxrt::net::basic_waitable_timer<C, W>::expires_at(time_point const& t)
+auto cxxrt::net::basic_waitable_timer<C, W>::expires_at(time_point const& t)
+    -> std::size_t
 {
     std::size_t n{this->cancel()};
     this->d_expiry = t;
@@ -250,8 +248,8 @@ cxxrt::net::basic_waitable_timer<C, W>::expires_at(time_point const& t)
 }
 
 template<typename C, typename W>
-std::size_t
-cxxrt::net::basic_waitable_timer<C, W>::expires_after(duration const& d)
+auto cxxrt::net::basic_waitable_timer<C, W>::expires_after(duration const& d)
+    -> std::size_t
 {
     return this->expires_at(clock_type::now() + d);
 }
@@ -259,8 +257,8 @@ cxxrt::net::basic_waitable_timer<C, W>::expires_after(duration const& d)
 // ----------------------------------------------------------------------------
 
 template<typename C, typename W>
-cxxrt::net::basic_waitable_timer<C, W>::sender
-cxxrt::net::basic_waitable_timer<C, W>::sender_wait()
+auto cxxrt::net::basic_waitable_timer<C, W>::sender_wait()
+    -> sender
 {
     return sender(this);
 }

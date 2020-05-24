@@ -29,7 +29,10 @@
 #include <executor.hpp>
 
 #include <chrono>
+#include <queue>
+#include <vector>
 #include <cstddef>
+#include <poll.h>
 
 // ----------------------------------------------------------------------------
 
@@ -45,12 +48,31 @@ class cxxrt::net::io_context
 {
 public:
     class executor_type;
+    struct timer_base;
     using count_type = std::size_t;
 
+private:
+    using time_point = std::chrono::steady_clock::time_point;
+    struct timer_entry
+    {
+        time_point  d_time;
+        timer_base* d_timer;
+        int timeout() const;
+        friend bool operator< (timer_entry const& e1, timer_entry const& e2)
+        {
+            return e2.d_time < e1.d_time;
+        }
+    };
+    std::priority_queue<timer_entry> d_timers;
+    std::vector<pollfd>              d_watch;
+    int                              d_notify;
+    
+public:
     io_context();
     explicit io_context(int concurrency_hint);
     io_context(io_context const&) = delete;
     io_context& operator=(io_context const&) = delete;
+    ~io_context();
 
     executor_type get_executor() noexcept;
 
@@ -72,6 +94,17 @@ public:
     void stop();
     bool stopped() const noexcept;
     void restart();
+
+    // custom
+    void add(time_point const& time, timer_base* timer);
+};
+
+// ----------------------------------------------------------------------------
+
+struct cxxrt::net::io_context::timer_base
+{
+    virtual void notify() = 0;
+    virtual void cancel() = 0;
 };
 
 // ----------------------------------------------------------------------------
