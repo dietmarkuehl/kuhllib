@@ -26,6 +26,7 @@
 #ifndef INCLUDED_TIMER
 #define INCLUDED_TIMER
 
+#include <netfwd.hpp>
 #include <io_context.hpp>
 
 #include <chrono>
@@ -39,9 +40,7 @@
 namespace cxxrt::net
 {
     template<typename> struct wait_traits;
-    template<typename Clock, typename = wait_traits<Clock>>
-
-    class basic_waitable_timer;
+    template<typename, typename> class basic_waitable_timer;
 
     using system_timer = basic_waitable_timer<std::chrono::system_clock>;
     using steady_timer = basic_waitable_timer<std::chrono::steady_clock>;

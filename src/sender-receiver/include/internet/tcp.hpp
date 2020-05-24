@@ -1,4 +1,4 @@
-// include/executor/execution_context.hpp                             -*-C++-*-
+// include/internet/tcp.hpp                                           -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2020 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,81 +23,39 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_EXECUTOR_EXECUTION_CONTEXT
-#define INCLUDED_EXECUTOR_EXECUTION_CONTEXT
+#ifndef INCLUDED_INTERNET_TCP
+#define INCLUDED_INTERNET_TCP
 
 #include <netfwd.hpp>
-#include <stdexcept>
 
 // ----------------------------------------------------------------------------
 
-namespace cxxrt::net
+namespace cxxrt::net::ip
 {
-    enum class fork_event {};
-    class execution_context;
-
-    class service_already_exists;
-
-    template<typename Service>
-    typename Service::key_type& use_service(execution_context& ctx);
-    template<typename Service, typename... Args>
-    Service& make_service(execution_context& ctx, Args&&... args);
-    template<typename Service>
-    bool has_service(execution_context const& ctx) noexcept;
+    class tcp;
 }
 
 // ----------------------------------------------------------------------------
 
-class cxxrt::net::service_already_exists
-    : public std::logic_error
-{
-};
-
-// ----------------------------------------------------------------------------
-
-class cxxrt::net::execution_context
+class cxxrt::net::ip::tcp
 {
 public:
-    class service;
+    using endpoint = cxxrt::net::ip::basic_endpoint<tcp>;
+    using resolver = cxxrt::net::ip::basic_resolver<tcp>;
 
-    execution_context();
-    execution_context(execution_context const&) = delete;
-    execution_context& operator=(execution_context const&) = delete;
-    virtual ~execution_context();
+    using socket   = cxxrt::net::basic_stream_socket<tcp>;
+    using acceptor = cxxrt::net::basic_socket_acceptor<tcp>;
+    using iostream = cxxrt::net::basic_socket_iostream<tcp>;
 
-    void notify_fork(cxxrt::net::fork_event);
+    class no_delay;
 
-protected:
-    void shutdown() noexcept;
-    void destroy() noexcept;
+    static constexpr tcp v4() noexcept;
+    static constexpr tcp v6() noexcept;
+
+    tcp() = delete;
+
+    friend constexpr bool operator==(const tcp& a, const tcp& b) noexcept;
 };
-
-// ----------------------------------------------------------------------------
-
-class cxxrt::net::execution_context::service
-{
-private:
-    execution_context& d_owner;
-    
-    virtual void shutdown() noexcept = 0;
-    virtual void notify_fork(fork_event e);
-
-protected:
-    explicit service(execution_context& owner);
-    service(service const&) = delete;
-    service& operator=(service const&) = delete;
-    virtual ~service();
-
-    execution_context& context() noexcept;
-};
-
-// ----------------------------------------------------------------------------
-
-inline cxxrt::net::execution_context&
-cxxrt::net::execution_context::service::context() noexcept
-{
-    return this->d_owner;
-}
 
 // ----------------------------------------------------------------------------
 

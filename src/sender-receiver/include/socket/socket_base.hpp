@@ -1,4 +1,4 @@
-// include/executor/execution_context.hpp                             -*-C++-*-
+// include/socket/socket_base.hpp                                     -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2020 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,81 +23,56 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_EXECUTOR_EXECUTION_CONTEXT
-#define INCLUDED_EXECUTOR_EXECUTION_CONTEXT
+#ifndef INCLUDED_SOCKET_SOCKET_BASE
+#define INCLUDED_SOCKET_SOCKET_BASE
 
 #include <netfwd.hpp>
-#include <stdexcept>
 
 // ----------------------------------------------------------------------------
 
 namespace cxxrt::net
 {
-    enum class fork_event {};
-    class execution_context;
-
-    class service_already_exists;
-
-    template<typename Service>
-    typename Service::key_type& use_service(execution_context& ctx);
-    template<typename Service, typename... Args>
-    Service& make_service(execution_context& ctx, Args&&... args);
-    template<typename Service>
-    bool has_service(execution_context const& ctx) noexcept;
+    class socket_base;
 }
 
 // ----------------------------------------------------------------------------
 
-class cxxrt::net::service_already_exists
-    : public std::logic_error
-{
-};
-
-// ----------------------------------------------------------------------------
-
-class cxxrt::net::execution_context
+class cxxrt::net::socket_base
 {
 public:
-    class service;
+    class broadcast;
+    class debug;
+    class do_not_route;
+    class keep_alive;
+    class linger;
+    class out_of_band_inline;
+    class receive_buffer_size;
+    class receive_low_watermark;
+    class reuse_address;
+    class send_buffer_size;
+    class send_low_watermark;
 
-    execution_context();
-    execution_context(execution_context const&) = delete;
-    execution_context& operator=(execution_context const&) = delete;
-    virtual ~execution_context();
+    using shutdown_type = int; //-dk:TODO 
+    //-dk:TODO static constexpr shutdown_type shutdown_receive;
+    //-dk:TODO static constexpr shutdown_type shutdown_send;
+    //-dk:TODO static constexpr shutdown_type shutdown_both;
 
-    void notify_fork(cxxrt::net::fork_event);
+    using wait_type = int; //-dk:TODO 
+    //-dk:TODO static constexpr wait_type wait_read;
+    //-dk:TODO static constexpr wait_type wait_write;
+    //-dk:TODO static constexpr wait_type wait_error;
+
+    using message_flags = int; //-dk:TODO
+    //-dk:TODO static constexpr message_flags message_peek;
+    //-dk:TODO static constexpr message_flags message_out_of_band;
+    //-dk:TODO static constexpr message_flags message_do_not_route;
+
+    static const int max_listen_connections;
 
 protected:
-    void shutdown() noexcept;
-    void destroy() noexcept;
+    socket_base();
+    ~socket_base() = default;
 };
-
-// ----------------------------------------------------------------------------
-
-class cxxrt::net::execution_context::service
-{
-private:
-    execution_context& d_owner;
-    
-    virtual void shutdown() noexcept = 0;
-    virtual void notify_fork(fork_event e);
-
-protected:
-    explicit service(execution_context& owner);
-    service(service const&) = delete;
-    service& operator=(service const&) = delete;
-    virtual ~service();
-
-    execution_context& context() noexcept;
-};
-
-// ----------------------------------------------------------------------------
-
-inline cxxrt::net::execution_context&
-cxxrt::net::execution_context::service::context() noexcept
-{
-    return this->d_owner;
-}
 
 // ----------------------------------------------------------------------------
 

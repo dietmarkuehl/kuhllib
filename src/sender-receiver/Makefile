@@ -25,6 +25,8 @@
 
 NAME       = basic
 NAME       = run-timer
+NAME       = telnet
+ARGS       = 127.0.0.1 8100
 
 LIB        = sender
 COMPONENTS =                                \
@@ -56,7 +58,17 @@ COMPONENTS =                                \
 	execution/typed_sender              \
 	executor                            \
 	executor/execution_context          \
+	internet                            \
+	internet/address                    \
+	internet/address_v4                 \
+	internet/endpoint                   \
+	internet/tcp                        \
 	io_context                          \
+	netfwd                              \
+	socket                              \
+	socket/socket                       \
+	socket/socket_base                  \
+	socket/stream_socket                \
 	timer                               \
 
 CXXFILES = src/$(NAME).cpp $(COMPONENTS:%=src/%.cpp)
@@ -106,7 +118,7 @@ BUILD    = bin/$(COMPILER)-$(VERSION)-$(SUFFIX)
 
 .PHONY: default
 default: $(BUILD)/$(NAME)
-	$(BUILD)/$(NAME)
+	$(BUILD)/$(NAME) $(ARGS)
 
 %:
 	$(MAKE) NAME=$@

@@ -26,6 +26,7 @@
 #ifndef INCLUDED_IO_CONTEXT
 #define INCLUDED_IO_CONTEXT
 
+#include <netfwd.hpp>
 #include <executor.hpp>
 
 #include <chrono>

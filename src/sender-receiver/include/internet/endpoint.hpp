@@ -1,4 +1,4 @@
-// include/executor/execution_context.hpp                             -*-C++-*-
+// include/internet/endpoint.hpp                                      -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2020 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,80 +23,67 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_EXECUTOR_EXECUTION_CONTEXT
-#define INCLUDED_EXECUTOR_EXECUTION_CONTEXT
+#ifndef INCLUDED_INTERNET_ENDPOINT
+#define INCLUDED_INTERNET_ENDPOINT
 
 #include <netfwd.hpp>
-#include <stdexcept>
+#include <internet/address.hpp>
+
+#include <ostream>
+#include <cstdint>
 
 // ----------------------------------------------------------------------------
 
-namespace cxxrt::net
+namespace cxxrt::net::ip
 {
-    enum class fork_event {};
-    class execution_context;
-
-    class service_already_exists;
-
-    template<typename Service>
-    typename Service::key_type& use_service(execution_context& ctx);
-    template<typename Service, typename... Args>
-    Service& make_service(execution_context& ctx, Args&&... args);
-    template<typename Service>
-    bool has_service(execution_context const& ctx) noexcept;
+    using port_type = std::uint_least16_t;
+    template <typename> class basic_endpoint;
 }
 
 // ----------------------------------------------------------------------------
 
-class cxxrt::net::service_already_exists
-    : public std::logic_error
-{
-};
-
-// ----------------------------------------------------------------------------
-
-class cxxrt::net::execution_context
+template<class InternetProtocol>
+class cxxrt::net::ip::basic_endpoint
 {
 public:
-    class service;
+    using protocol_type = InternetProtocol;
 
-    execution_context();
-    execution_context(execution_context const&) = delete;
-    execution_context& operator=(execution_context const&) = delete;
-    virtual ~execution_context();
-
-    void notify_fork(cxxrt::net::fork_event);
-
-protected:
-    void shutdown() noexcept;
-    void destroy() noexcept;
-};
-
-// ----------------------------------------------------------------------------
-
-class cxxrt::net::execution_context::service
-{
 private:
-    execution_context& d_owner;
-    
-    virtual void shutdown() noexcept = 0;
-    virtual void notify_fork(fork_event e);
+    cxxrt::net::ip::address d_address;
+    port_type               d_port;
 
-protected:
-    explicit service(execution_context& owner);
-    service(service const&) = delete;
-    service& operator=(service const&) = delete;
-    virtual ~service();
+public:
+    constexpr basic_endpoint() noexcept;
+    constexpr basic_endpoint(protocol_type const& proto,
+                             port_type port_num) noexcept;
+    constexpr basic_endpoint(cxxrt::net::ip::address const& addr,
+                             port_type port_num) noexcept;
 
-    execution_context& context() noexcept;
+    constexpr protocol_type protocol() const noexcept;
+    constexpr ip::address address() const noexcept { return this->d_address; }
+    void address(cxxrt::net::ip::address const& addr) noexcept;
+    constexpr port_type port() const noexcept { return this->d_port; }
+    void port(port_type port_num) noexcept;
+
+    bool operator== (basic_endpoint const&) const;
+    bool operator<  (basic_endpoint const&) const;
+    template <typename cT, typename Traits>
+    friend std::basic_ostream<cT, Traits>&
+    operator<< (std::basic_ostream<cT, Traits>& out, basic_endpoint const& e)
+    {
+        return out << e.address() << ':' << e.port();
+    }
 };
 
 // ----------------------------------------------------------------------------
 
-inline cxxrt::net::execution_context&
-cxxrt::net::execution_context::service::context() noexcept
+template<class IP>
+constexpr
+cxxrt::net::ip::basic_endpoint<IP>::basic_endpoint(cxxrt::net::ip::address const& address,
+                                                   port_type                      port) noexcept
+    : d_address(address)
+    , d_port(port)
 {
-    return this->d_owner;
 }
 
 // ----------------------------------------------------------------------------
