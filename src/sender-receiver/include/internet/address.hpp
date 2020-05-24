@@ -60,9 +60,9 @@ public:
     address& operator=(address_v4 const& a) noexcept;
     address& operator=(address_v6 const& a) noexcept;
 
-    constexpr bool is_v4() const noexcept;
-    constexpr bool is_v6() const noexcept;
-    constexpr address_v4 to_v4() const;
+    constexpr bool is_v4() const noexcept { return this->d_addr.index() == 1; }
+    constexpr bool is_v6() const noexcept { return this->d_addr.index() == 2; }
+    constexpr address_v4 to_v4() const { return std::get<1>(this->d_addr); }
     constexpr address_v6 to_v6() const;
     constexpr bool is_unspecified() const noexcept;
     constexpr bool is_loopback() const noexcept;

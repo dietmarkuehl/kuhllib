@@ -32,6 +32,9 @@
 #include <ostream>
 #include <cstdint>
 
+#include <arpa/inet.h>
+#include <netinet/in.h>
+
 // ----------------------------------------------------------------------------
 
 namespace cxxrt::net::ip
@@ -49,8 +52,10 @@ public:
     using protocol_type = InternetProtocol;
 
 private:
+    //-dk:TODO decompose/compose d_address/d_port
     cxxrt::net::ip::address d_address;
     port_type               d_port;
+    mutable sockaddr_in     d_sockaddr; //-dk:TODO construct when setting address
 
 public:
     constexpr basic_endpoint() noexcept;
@@ -73,6 +78,9 @@ public:
     {
         return out << e.address() << ':' << e.port();
     }
+
+    sockaddr const* data() const;
+    socklen_t       size() const { return sizeof(sockaddr_in); }
 };
 
 // ----------------------------------------------------------------------------
@@ -84,6 +92,27 @@ cxxrt::net::ip::basic_endpoint<IP>::basic_endpoint(cxxrt::net::ip::address const
     : d_address(address)
     , d_port(port)
 {
+}
+
+// ----------------------------------------------------------------------------
+
+template<class IP>
+constexpr auto
+cxxrt::net::ip::basic_endpoint<IP>::protocol() const noexcept -> protocol_type
+{
+    return this->address().is_v6() ? protocol_type::v6() : protocol_type::v4();
+}
+
+// ----------------------------------------------------------------------------
+
+template<class IP>
+sockaddr const*
+cxxrt::net::ip::basic_endpoint<IP>::data() const
+{
+    this->d_sockaddr.sin_family      = AF_INET;
+    this->d_sockaddr.sin_port        = htons(this->d_port);
+    this->d_sockaddr.sin_addr.s_addr = this->d_address.to_v4().to_uint();
+    return reinterpret_cast<sockaddr const*>(&this->d_sockaddr);
 }
 
 // ----------------------------------------------------------------------------

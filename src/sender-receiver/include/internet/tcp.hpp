@@ -27,6 +27,7 @@
 #define INCLUDED_INTERNET_TCP
 
 #include <netfwd.hpp>
+#include <arpa/inet.h>
 
 // ----------------------------------------------------------------------------
 
@@ -39,6 +40,12 @@ namespace cxxrt::net::ip
 
 class cxxrt::net::ip::tcp
 {
+private:
+    int d_af;
+    int d_pf;
+    
+    constexpr tcp(int af): d_af(af), d_pf() {}
+
 public:
     using endpoint = cxxrt::net::ip::basic_endpoint<tcp>;
     using resolver = cxxrt::net::ip::basic_resolver<tcp>;
@@ -49,10 +56,13 @@ public:
 
     class no_delay;
 
-    static constexpr tcp v4() noexcept;
-    static constexpr tcp v6() noexcept;
+    static constexpr tcp v4() noexcept { return tcp(AF_INET); }
+    static constexpr tcp v6() noexcept { return tcp(AF_INET6); } 
 
     tcp() = delete;
+
+    constexpr int domain()   const noexcept { return this->d_af; }
+    constexpr int protocol() const noexcept { return this->d_pf; }
 
     friend constexpr bool operator==(const tcp& a, const tcp& b) noexcept;
 };

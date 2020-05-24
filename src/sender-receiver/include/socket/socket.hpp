@@ -29,11 +29,19 @@
 #include <netfwd.hpp>
 #include <io_context.hpp>
 #include <socket/socket_base.hpp>
+#include <execution/set_value.hpp>
+#include <execution/set_error.hpp>
 
 #include <memory>
 #include <system_error>
+#include <cerrno>
 
+#include <fcntl.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+
+#include <iostream> //-dk:TODO remove
 
 // ----------------------------------------------------------------------------
 
@@ -70,7 +78,7 @@ public:
                 std::error_code& ec);
     native_handle_type release(); // see 18.2.3
     native_handle_type release(std::error_code& ec); // see 18.2.3
-    bool is_open() const noexcept;
+    bool is_open() const noexcept { return this->d_fd != -1; }
     void close();
     void close(std::error_code& ec);
     void cancel();
@@ -152,6 +160,117 @@ cxxrt::net::basic_socket<Protocol>::~basic_socket()
     {
         ::close(this->d_fd);
     }
+}
+
+// ----------------------------------------------------------------------------
+
+template <typename Protocol>
+void cxxrt::net::basic_socket<Protocol>::open(protocol_type const& protocol,
+                                              std::error_code& ec)
+{
+    this->d_fd = ::socket(protocol.domain(), SOCK_STREAM, protocol.protocol());
+    if (this->d_fd == -1)
+    {
+        ec.assign(errno, std::system_category());
+    }
+    else if (::fcntl(this->d_fd, F_SETFL, O_NONBLOCK) == -1)
+    {
+        ec.assign(errno, std::system_category());
+        ::close(this->d_fd);
+        this->d_fd = -1;
+    }
+}
+
+// ----------------------------------------------------------------------------
+
+template <typename Protocol>
+struct cxxrt::net::basic_socket<Protocol>::connect_sender
+{
+private:
+    friend class basic_socket;
+
+    basic_socket* d_socket;
+    endpoint_type d_endpoint;
+    connect_sender(basic_socket* s, endpoint_type const& e): d_socket(s), d_endpoint(e) {}
+
+public:
+    template <template <typename...> class T,
+              template <typename...> class V>
+    using value_types = V<T<>>;
+    template <template <typename...> class V>
+    using error_types = V<std::error_code, std::exception_ptr>;
+
+    static constexpr bool sends_done = false;
+
+    template <typename R>
+    struct state
+    {
+    private:
+        basic_socket* d_socket;
+        endpoint_type d_endpoint;
+        R             d_r;
+
+    public:
+        state(basic_socket* s, endpoint_type e, R r)
+            : d_socket(s)
+            , d_endpoint(std::move(e))
+            , d_r(std::forward<R>(r))
+        {
+        }
+        void operator= (state&&) = delete;
+        void start() noexcept try
+        {
+            if (!this->d_socket->is_open())
+            {
+                std::error_code ec;
+                this->d_socket->open(this->d_endpoint.protocol(), ec);
+                if (ec)
+                {
+                    execution::set_error(std::move(this->d_r), ec);
+                    return;
+                }
+            }
+            std::cout << "running connect\n" << std::flush;
+            if (::connect(this->d_socket->native_handle(),
+                          this->d_endpoint.data(),
+                          this->d_endpoint.size()) == -1)
+            {
+                if (errno != EINTR && errno != EINPROGRESS)
+                {
+                    std::cout << "connect error\n" << std::flush;
+                    execution::set_error(std::move(this->d_r),
+                                         std::error_code(errno,
+                                                         std::system_category()));
+                    return;
+                }
+                std::cout << "connect initiated\n" << std::flush;
+                //-dk:TODO add task to io_context
+            }
+            else
+            {
+                std::cout << "connect completed\n" << std::flush;
+                execution::set_value(std::move(this->d_r));
+            }
+        }
+        catch (...)
+        {
+            execution::set_error(std::move(this->d_r), std::current_exception());
+        }
+    };
+
+    template <typename R>
+    state<R> connect(R&& r) {
+        return state<R>(this->d_socket,
+                     std::move(this->d_endpoint),
+                     std::forward<R>(r));
+    }
+};
+
+template <typename Protocol>
+auto cxxrt::net::basic_socket<Protocol>::sender_connect(endpoint_type const& endpoint)
+    -> connect_sender
+{
+    return connect_sender{this, endpoint};
 }
 
 // ----------------------------------------------------------------------------

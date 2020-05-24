@@ -26,12 +26,28 @@
 #include <internet.hpp>
 #include <io_context.hpp>
 #include <socket.hpp>
+#include <execution.hpp>
 
 #include <iostream>
 #include <string>
 #include <cstdlib>
+#include <system_error>
 
 namespace NET = cxxrt::net;
+namespace EX  = cxxrt::execution;
+
+// ----------------------------------------------------------------------------
+
+namespace
+{
+    struct connect_receiver
+    {
+        void set_value() { std::cout << "connected\n"; }
+        void set_error(std::error_code const&) { std::cout << "connect failure\n"; }
+        void set_error(std::exception_ptr const&) { std::cout << "connect threw\n"; }
+        void set_done() { std::cout << "connect canceled\n"; }
+    };
+}
 
 // ----------------------------------------------------------------------------
 
@@ -52,11 +68,15 @@ int main(int ac, char* av[])
     // should really resolve the address
     std::cout << "connecting to " << ep << '\n'; 
 
-    //auto sender = sock.sender_connect(ep);
+    auto state = EX::connect(sock.sender_connect(ep),
+                             connect_receiver());
+    
     //     | then([](auto const& ep){
     //               std::cout << "connected ep=" << ep << "\n";
     //            })
     //     ;
+
+    state.start();
 
     std::cout << "running context\n";
     context.run();

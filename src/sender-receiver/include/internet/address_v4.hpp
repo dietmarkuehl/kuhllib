@@ -81,7 +81,7 @@ public:
     constexpr bool is_loopback() const noexcept;
     constexpr bool is_multicast() const noexcept;
     constexpr bytes_type to_bytes() const noexcept;
-    constexpr uint_type to_uint() const noexcept;
+    constexpr uint_type to_uint() const noexcept { return this->d_addr; }
     template<typename Allocator = std::allocator<char>>
     std::basic_string<char, std::char_traits<char>, Allocator>
     to_string(Allocator const& a = Allocator()) const;
