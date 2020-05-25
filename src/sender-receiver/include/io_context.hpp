@@ -147,8 +147,8 @@ protected:
     virtual void do_cancel() = 0;
 
 public:
-    void notify() { this->notify(); }
-    void cancel() { this->cancel(); }
+    void notify() { this->do_notify(); }
+    void cancel() { this->do_cancel(); }
 };
 
 // ----------------------------------------------------------------------------
