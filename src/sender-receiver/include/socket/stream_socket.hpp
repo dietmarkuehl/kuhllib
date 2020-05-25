@@ -29,6 +29,7 @@
 #include <netfwd.hpp>
 #include <io_context.hpp>
 #include <socket/socket.hpp>
+#include <execution/sender_base.hpp>
 
 #include <system_error>
 
@@ -77,6 +78,21 @@ public:
     template<typename MutableBufferSequence>
     size_t receive(MutableBufferSequence const& buffers,
                    socket_base::message_flags flags, std::error_code& ec);
+
+    template <typename MutableBufferSequence>
+    struct receive_sender;
+    template <typename MutableBufferSequence>
+    receive_sender<MutableBufferSequence> async_receive(MutableBufferSequence const& buffers);
+    struct async_receive_object
+    {
+        basic_stream_socket* d_s;
+        template <typename MutableBufferSequence>
+        receive_sender<MutableBufferSequence> operator()(MutableBufferSequence const& buffers)
+        {
+            return this->d_s->async_receive(buffers);
+        }
+    };
+    friend async_receive_object async_receive(basic_stream_socket& s) { return {&s}; }
     //-dk:TODO template<typename MutableBufferSequence, typename CompletionToken>
     //-dk:TODO DEDUCED async_receive(MutableBufferSequence const& buffers,
     //-dk:TODO                       CompletionToken&& token);
@@ -94,6 +110,22 @@ public:
     template<typename ConstBufferSequence>
     size_t send(ConstBufferSequence const& buffers,
                 socket_base::message_flags flags, std::error_code& ec);
+
+    template <typename ConstBufferSequence>
+    struct send_sender;
+    template <typename ConstBufferSequence>
+    send_sender<ConstBufferSequence> async_send(ConstBufferSequence const& buffers);
+    struct async_send_object
+    {
+        basic_stream_socket* d_s;
+        template <typename ConstBufferSequence>
+        send_sender<ConstBufferSequence> operator()(ConstBufferSequence const& buffers)
+        {
+            return this->d_s->async_send(buffers);
+        }
+    };
+    friend async_send_object async_send(basic_stream_socket& s) { return {&s}; }
+    
     //-dk:TODO template<typename ConstBufferSequence, typename CompletionToken>
     //-dk:TODO DEDUCED async_send(ConstBufferSequence const& buffers,
     //-dk:TODO                    CompletionToken&& token);
@@ -126,6 +158,88 @@ cxxrt::net::basic_stream_socket<Protocol>::basic_stream_socket(cxxrt::net::io_co
     : cxxrt::net::basic_socket<Protocol>(ctx)
 {
 }
+
+// ----------------------------------------------------------------------------
+
+template <typename Protocol>
+template <typename ConstBufferSequence>
+struct cxxrt::net::basic_stream_socket<Protocol>::send_sender
+    : cxxrt::execution::sender_base
+{
+private:
+    friend class basic_stream_socket;
+
+    basic_stream_socket*       d_socket;
+    ConstBufferSequence const& d_buffers;
+    send_sender(basic_stream_socket* s, ConstBufferSequence const& b)
+        : d_socket(s),
+          d_buffers(b)
+    {
+    }
+
+public:
+    //-dk:TODO report amount write?
+    template <template <typename...> class T,
+              template <typename...> class V>
+    using value_types = V<T<>>;
+    template <template <typename...> class V>
+    using error_types = V<std::error_code, std::exception_ptr>;
+
+    static constexpr bool sends_done = false;
+
+    template <typename R>
+    struct state
+        : cxxrt::net::detail::waiter
+    {
+    private:
+        basic_stream_socket*       d_socket;
+        ConstBufferSequence const& d_buffers;
+        R                          d_r;
+
+        bool do_notify(int fd, short events) override
+        {
+            if (events & POLLOUT)
+            {
+                //-dk:TODO write some and signal upon done/error
+            }
+            return true;
+        }
+
+    public:
+        state(basic_stream_socket* s, ConstBufferSequence const& b, R r)
+            : d_socket(s)
+            , d_buffers(b)
+            , d_r(std::forward<R>(r))
+        {
+        }
+        void operator= (state&&) = delete;
+        void start() noexcept
+        {
+            //-dk:TODO 
+            if (!this->d_socket->is_open())
+            {
+                std::error_code ec;
+                execution::set_error(std::move(this->d_r), ec);
+                return;
+            }
+            this->d_socket->context()->add(this->d_socket->native_handle(), POLLOUT, this);
+        }
+    };
+
+    template <typename R>
+    state<R> connect(R&& r) {
+        return state<R>(this->d_socket, this->d_buffers, std::forward<R>(r));
+    }
+};
+
+template <typename Protocol>
+template <typename ConstBufferSequence>
+auto cxxrt::net::basic_stream_socket<Protocol>::async_send(ConstBufferSequence const& b)
+    -> send_sender<ConstBufferSequence>
+{
+    return send_sender<ConstBufferSequence>{this, b};
+}
+
 
 // ----------------------------------------------------------------------------
 

@@ -116,7 +116,7 @@ public:
     void connect(endpoint_type const& endpoint, std::error_code& ec);
 
     struct connect_sender;
-    connect_sender sender_connect(endpoint_type const& endpoint);
+    connect_sender async_connect(endpoint_type const& endpoint);
     //-dk:TODO template<typename CompletionToken>
     //-dk:TODO DEDUCED async_connect(endpoint_type const& endpoint,
     //-dk:TODO                       CompletionToken&& token);
@@ -124,6 +124,17 @@ public:
     void wait(wait_type w, std::error_code& ec);
     //-dk:TODO template<typename CompletionToken>
     //-dk:TODO DEDUCED async_wait(wait_type w, CompletionToken&& token);
+
+    struct async_connect_object
+    {
+        basic_socket* d_s;
+        connect_sender operator()(); //-dk:TODO remove; needed to compile?!?*/ }
+        connect_sender operator()(endpoint_type const& endpoint)
+        {
+            return this->d_s->async_connect(endpoint);
+        }
+    };
+    friend async_connect_object async_connect(basic_socket& s) { return {&s}; }
 
 protected:
     explicit basic_socket(cxxrt::net::io_context& ctx);
@@ -198,6 +209,7 @@ private:
     connect_sender(basic_socket* s, endpoint_type const& e): d_socket(s), d_endpoint(e) {}
 
 public:
+    //-dk:TODO report back the other side endpoint
     template <template <typename...> class T,
               template <typename...> class V>
     using value_types = V<T<>>;
@@ -302,7 +314,7 @@ public:
 };
 
 template <typename Protocol>
-auto cxxrt::net::basic_socket<Protocol>::sender_connect(endpoint_type const& endpoint)
+auto cxxrt::net::basic_socket<Protocol>::async_connect(endpoint_type const& endpoint)
     -> connect_sender
 {
     return connect_sender{this, endpoint};

@@ -1,4 +1,4 @@
-// include/sender.hpp                                                 -*-C++-*-
+// src/sender/sender_to_sender.cpp                                    -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2020 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,15 +23,8 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_SENDER
-#define INCLUDED_SENDER
-
-// ----------------------------------------------------------------------------
-
-#include <sender/just.hpp>
-#include <sender/then.hpp>
 #include <sender/sender_to_sender.hpp>
 
 // ----------------------------------------------------------------------------
 
-#endif
+int sender_sender_to_sender = 0;

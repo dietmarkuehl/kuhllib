@@ -68,6 +68,7 @@ COMPONENTS =                                \
 	sender                              \
 	sender/just                         \
 	sender/then                         \
+	sender/sender_to_sender             \
 	socket                              \
 	socket/socket                       \
 	socket/socket_base                  \

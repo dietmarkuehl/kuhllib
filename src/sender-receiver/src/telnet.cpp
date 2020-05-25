@@ -64,6 +64,7 @@ namespace
         void set_done() noexcept { std::cout << "connect canceled\n"; }
     };
     static_assert(EX::receiver<connect_receiver>);
+    static_assert(EX::receiver<connect_receiver, std::error_code>);
 }
 
 // ----------------------------------------------------------------------------
@@ -82,35 +83,25 @@ int main(int ac, char* av[])
 
     NET::io_context context;
     socket          sock(context);
-    endpoint        ep(NET::ip::make_address_v4(av[1]), std::stoi(av[2]));
+    endpoint        addr(NET::ip::make_address_v4(av[1]), std::stoi(av[2]));
 
-    auto state = EX::connect(
-          EX::just(ep)
+    char const hello[] = { 'h', 'e', 'l', 'l', 'o', '\n' };
+    auto s0
+        = EX::just(addr) // this should really resolve
+#if 0
         | EX::then([](auto&& ep){
                 std::cout << "resolved(" << ep << ")\n";
                 return std::move(ep);
             })
-        | EX::then([&](auto&& ep){
-                std::cout << "connecting to " << ep << '\n' << std::flush;
-            })
-        //-dk:TODO | sock.sender_connect(ep);
-        | EX::then([]{ std::cout << "connected\n"; })
-        , connect_receiver());
-    state.start();
-#if 0
-    // should really resolve the address
-    std::cout << "connecting to " << ep << '\n'; 
-
-    auto state = EX::connect(sock.sender_connect(ep),
-                             connect_receiver());
-    
-    //     | then([](auto const& ep){
-    //               std::cout << "connected ep=" << ep << "\n";
-    //            })
-    //     ;
-
-    state.start();
 #endif
+        // | async_connect(sock)
+        | EX::then([](auto&&...){})
+        //| sock.async_send(hello)
+        ;
+
+    //auto s1 = EX::connect(s0, sock.async_send(hello));
+    auto st = EX::connect(s0, connect_receiver());
+    st.start();
 
     std::cout << "running context\n";
     context.run();
