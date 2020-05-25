@@ -137,7 +137,7 @@ public:
             , d_r(std::forward<S>(r))
         {
         }
-        void notify() override try
+        void do_notify() override try
         {
             std::move(this->d_r).set_value();
         }
@@ -145,7 +145,7 @@ public:
         {
             std::move(this->d_r).set_error(std::current_exception());
         }
-        void cancel() override { std::move(this->d_r).set_done(); }
+        void do_cancel() override { std::move(this->d_r).set_done(); }
         void start() noexcept try
         {
             this->d_timer->add(this);

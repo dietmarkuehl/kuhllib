@@ -39,19 +39,46 @@
 
 namespace cxxrt::net
 {
+    namespace detail
+    {
+        class waiter;
+    }
     class io_context;
 }
 
 // ----------------------------------------------------------------------------
 
+class cxxrt::net::detail::waiter
+{
+protected:
+    // The argument is the revents for thie corresponding file descriptor.
+    // The function returns true if the entry is done and should be remove.
+    virtual bool do_notify(int fd, short revents) = 0;
+
+public:
+    bool notify(int fd, short revents) { return this->do_notify(fd, revents); }
+};
+
+// ----------------------------------------------------------------------------
+
 class cxxrt::net::io_context
     : public cxxrt::net::execution_context
+    , private cxxrt::net::detail::waiter
 {
 public:
     class executor_type;
-    struct timer_base;
+    class timer_base;
     using count_type = std::size_t;
 
+    struct format_poll
+    {
+        short events;
+        static std::ostream& print(std::ostream& out, short e);
+        friend std::ostream& operator<< (std::ostream& out, format_poll f)
+        {
+            return print(out, f.events);
+        }
+    };
 private:
     using time_point = std::chrono::steady_clock::time_point;
     struct timer_entry
@@ -71,8 +98,13 @@ private:
     };
     std::priority_queue<timer_entry> d_timers;
     std::vector<pollfd>              d_watch;
-    int                              d_notify;
+    std::vector<detail::waiter*>     d_waiters; // matches d_watch
+    int                              d_notify_fd;
     
+protected:
+    void wake_up();
+    bool do_notify(int fd, short revents) override;
+
 public:
     io_context();
     explicit io_context(int concurrency_hint);
@@ -103,14 +135,20 @@ public:
 
     // custom
     void add(time_point const& time, timer_base* timer);
+    void add(int fd, short events, cxxrt::net::detail::waiter* w);
 };
 
 // ----------------------------------------------------------------------------
 
-struct cxxrt::net::io_context::timer_base
+class cxxrt::net::io_context::timer_base
 {
-    virtual void notify() = 0;
-    virtual void cancel() = 0;
+protected:
+    virtual void do_notify() = 0;
+    virtual void do_cancel() = 0;
+
+public:
+    void notify() { this->notify(); }
+    void cancel() { this->cancel(); }
 };
 
 // ----------------------------------------------------------------------------

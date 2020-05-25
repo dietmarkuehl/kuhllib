@@ -69,5 +69,7 @@ int main()
         states.back().start();
     }
 
+    std::cout << "running context\n";
     c.run();
+    std::cout << "done running context\n";
 }

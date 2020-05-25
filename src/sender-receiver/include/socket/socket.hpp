@@ -41,8 +41,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
-#include <iostream> //-dk:TODO remove
-
 // ----------------------------------------------------------------------------
 
 namespace cxxrt::net
@@ -66,6 +64,7 @@ public:
     using protocol_type      = Protocol;
     using endpoint_type      = typename protocol_type::endpoint;
 
+    cxxrt::net::io_context* context() noexcept { return this->d_context; } //-dk:TODO remove
     executor_type      get_executor() noexcept;
     native_handle_type native_handle() { return this->d_fd; }
 
@@ -173,11 +172,16 @@ void cxxrt::net::basic_socket<Protocol>::open(protocol_type const& protocol,
     {
         ec.assign(errno, std::system_category());
     }
-    else if (::fcntl(this->d_fd, F_SETFL, O_NONBLOCK) == -1)
+    else
     {
-        ec.assign(errno, std::system_category());
-        ::close(this->d_fd);
-        this->d_fd = -1;
+        int flags(::fcntl(this->d_fd, F_GETFL, 0));
+        if (flags == 1
+            || ::fcntl(this->d_fd, F_SETFL, flags | O_NONBLOCK) == -1)
+        {
+            ec.assign(errno, std::system_category());
+            ::close(this->d_fd);
+            this->d_fd = -1;
+        }
     }
 }
 
@@ -204,11 +208,46 @@ public:
 
     template <typename R>
     struct state
+        : cxxrt::net::detail::waiter
     {
     private:
         basic_socket* d_socket;
         endpoint_type d_endpoint;
         R             d_r;
+
+        bool do_notify(int fd, short events) override
+        {
+            if (events & POLLOUT)
+            {
+                try
+                {
+                    cxxrt::execution::set_value(std::move(this->d_r));
+                }
+                catch (...)
+                {
+                    cxxrt::execution::set_error(std::move(this->d_r),
+                                                std::current_exception());
+                }
+            }
+            else
+            {
+                int err = 0;
+                socklen_t size(sizeof(err));
+                if (::getsockopt(fd, SOL_SOCKET, SO_ERROR, &err, &size) == -1)
+                {
+                    cxxrt::execution::set_error(std::move(this->d_r),
+                                                std::error_code(errno,
+                                                                std::system_category()));
+                }
+                else
+                {
+                    cxxrt::execution::set_error(std::move(this->d_r),
+                                                std::error_code(err,
+                                                                std::system_category()));
+                }
+            }
+            return true;
+        }
 
     public:
         state(basic_socket* s, endpoint_type e, R r)
@@ -230,25 +269,21 @@ public:
                     return;
                 }
             }
-            std::cout << "running connect\n" << std::flush;
             if (::connect(this->d_socket->native_handle(),
                           this->d_endpoint.data(),
                           this->d_endpoint.size()) == -1)
             {
                 if (errno != EINTR && errno != EINPROGRESS)
                 {
-                    std::cout << "connect error\n" << std::flush;
                     execution::set_error(std::move(this->d_r),
                                          std::error_code(errno,
                                                          std::system_category()));
                     return;
                 }
-                std::cout << "connect initiated\n" << std::flush;
-                //-dk:TODO add task to io_context
+                this->d_socket->context()->add(this->d_socket->native_handle(), POLLOUT, this);
             }
             else
             {
-                std::cout << "connect completed\n" << std::flush;
                 execution::set_value(std::move(this->d_r));
             }
         }

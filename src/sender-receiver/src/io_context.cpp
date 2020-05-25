@@ -25,10 +25,28 @@
 
 #include <io_context.hpp>
 
-#include <iostream> //-dk:TOOD remove
+#include <ostream>
 #include <limits>
 #include <stdexcept>
 #include <unistd.h>
+
+// ----------------------------------------------------------------------------
+
+std::ostream& cxxrt::net::io_context::format_poll::print(std::ostream& out, short e)
+{
+    out << "POLL(";
+    (e & POLLIN) && out << "IN(" << POLLIN << ") ";
+    (e & POLLPRI) && out << "PRI(" << POLLPRI << ") ";
+    (e & POLLOUT) && out << "OUT(" << POLLOUT << ") ";
+    (e & POLLERR) && out << "ERR(" << POLLERR << ") ";
+    (e & POLLHUP) && out << "HUP(" << POLLHUP << ") ";
+    (e & POLLNVAL) && out << "NVAL(" << POLLNVAL << ") ";
+    (e & POLLRDNORM) && out << "RDNORM(" << POLLRDNORM << ") ";
+    (e & POLLRDBAND) && out << "RDBAND(" << POLLRDBAND << ") ";
+    (e & POLLWRNORM) && out << "WRNORM(" << POLLWRNORM << ") ";
+    (e & POLLWRBAND) && out << "WRBAND(" << POLLWRBAND << ") ";
+    return out << ')';
+}
 
 // ----------------------------------------------------------------------------
 
@@ -47,22 +65,38 @@ int cxxrt::net::io_context::timer_entry::timeout() const
 
 // ----------------------------------------------------------------------------
 
+void cxxrt::net::io_context::wake_up()
+{
+    ::write(this->d_notify_fd, "", 1);
+}
+
+bool cxxrt::net::io_context::do_notify(int fd, short events)
+{
+    // The pipe was signaled to wake this thread up: extract some bytes.
+    if (events & POLLIN)
+    {
+        char buffer[1000];
+        ::read(fd, buffer, sizeof(buffer));
+    }
+    return false;
+}
+
+// ----------------------------------------------------------------------------
+
 cxxrt::net::io_context::io_context()
 {
     int fds[2];
     if (::pipe(fds)) {
         throw std::runtime_error("failed to construct io_context");
     }
-    this->d_watch.emplace_back();
-    this->d_watch.back().fd     = fds[0];
-    this->d_watch.back().events = POLLIN;
-    this->d_notify = fds[1];
+    this->d_notify_fd = fds[1];
+    this->add(fds[0], POLLIN, this);
 }
 
 cxxrt::net::io_context::~io_context()
 {
     ::close(this->d_watch.front().fd);
-    ::close(this->d_notify);
+    ::close(this->d_notify_fd);
 }
 
 // ----------------------------------------------------------------------------
@@ -86,7 +120,7 @@ cxxrt::net::io_context::run_one()
     while (!this->d_timers.empty() || this->d_watch.size() != 1u)
     {
         int timeout = this->d_timers.empty()? -1: this->d_timers.top().timeout();
-        int rc = ::poll(this->d_watch.data(), this->d_timers.size(), timeout);
+        int rc = ::poll(this->d_watch.data(), this->d_watch.size(), timeout);
 
         if (!this->d_timers.empty()
             && this->d_timers.top().d_time <= std::chrono::steady_clock::now())
@@ -99,19 +133,29 @@ cxxrt::net::io_context::run_one()
 
         if (0 < rc)
         {
-            if (this->d_watch[0].revents & POLLIN)
+            for (auto it = this->d_watch.begin();
+                 this->d_watch.end() != (it = std::find_if(it, this->d_watch.end(),
+                                                         [](auto const& p)->bool{ return p.revents; })); )
             {
-                char buffer[1000];
-                ::read(this->d_watch[0].fd, buffer, sizeof(buffer));
-            }
-            auto it = std::find_if(this->d_watch.begin() + 1, this->d_watch.end(),
-                                   [](auto const& p)->bool{ return p.revents; });
-            if (it != this->d_watch.end())
-            {
-                it->revents = 0;
-                //-dk:TODO trigger notification
-                std::cout << "*** WARNING: io_context is still somewhat on strike and doesn't do any work\n";
-                return 1u;
+                std::size_t index(it - this->d_watch.begin());
+                if (this->d_waiters[index]->notify(it->fd, it->revents))
+                {
+                    if (index + 1 != this->d_waiters.size())
+                    {
+                        *it = this->d_watch.back();
+                        this->d_waiters[index] = this->d_waiters.back();
+                    }
+                    this->d_waiters.pop_back();
+                    this->d_watch.pop_back();
+                }
+                else
+                {
+                    it->revents = 0;
+                }
+                if (index != 0u)
+                {
+                    return 1u;
+                }
             }
         }
     }
@@ -127,6 +171,23 @@ void cxxrt::net::io_context::add(time_point const& time, timer_base* timer)
     this->d_timers.emplace(time, timer);
     if (schedule)
     {
-        std::cout << "schedule timer\n" << std::flush;
+        this->wake_up();
     }
+}
+
+void cxxrt::net::io_context::add(int fd, short events, cxxrt::net::detail::waiter* w)
+{
+    this->d_watch.emplace_back();
+    this->d_watch.back().fd     = fd;
+    this->d_watch.back().events = events;
+    try
+    {
+        this->d_waiters.emplace_back(w);
+    }
+    catch (...)
+    {
+        this->d_watch.pop_back();
+        throw;
+    }
+    this->wake_up();
 }

@@ -30,6 +30,7 @@
 
 #include <iostream>
 #include <string>
+#include <cstring>
 #include <cstdlib>
 #include <system_error>
 
@@ -43,7 +44,10 @@ namespace
     struct connect_receiver
     {
         void set_value() { std::cout << "connected\n"; }
-        void set_error(std::error_code const&) { std::cout << "connect failure\n"; }
+        void set_error(std::error_code const& ec)
+        {
+            std::cout << "connect failure: " << std::strerror(ec.value()) << "\n";
+        }
         void set_error(std::exception_ptr const&) { std::cout << "connect threw\n"; }
         void set_done() { std::cout << "connect canceled\n"; }
     };
@@ -53,6 +57,7 @@ namespace
 
 int main(int ac, char* av[])
 {
+    std::cout << std::unitbuf;
     using endpoint = NET::ip::basic_endpoint<NET::ip::tcp>;
     using socket   = NET::basic_stream_socket<NET::ip::tcp>;
 
@@ -80,5 +85,6 @@ int main(int ac, char* av[])
 
     std::cout << "running context\n";
     context.run();
+    std::cout << "done running context\n";
 }
 
