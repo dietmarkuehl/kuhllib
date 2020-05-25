@@ -27,6 +27,7 @@
 #include <io_context.hpp>
 #include <socket.hpp>
 #include <execution.hpp>
+#include <sender.hpp>
 
 #include <iostream>
 #include <string>
@@ -41,16 +42,28 @@ namespace EX  = cxxrt::execution;
 
 namespace
 {
+    struct resolve_receiver
+    {
+        template <typename P>
+        void set_value(NET::ip::basic_endpoint<P> const& e)
+        {
+            std::cout << "resolved(" << e << ")\n";
+        }
+        void set_error(std::exception_ptr const&){ std::cout << "resolve threw\n"; }
+        void set_done() { std::cout << "resolve canceled\n"; }
+    };
+
     struct connect_receiver
     {
-        void set_value() { std::cout << "connected\n"; }
-        void set_error(std::error_code const& ec)
+        void set_value() { std::cout << "connect_receiver::connected\n"; }
+        void set_error(std::error_code const& ec) noexcept
         {
             std::cout << "connect failure: " << std::strerror(ec.value()) << "\n";
         }
-        void set_error(std::exception_ptr const&) { std::cout << "connect threw\n"; }
-        void set_done() { std::cout << "connect canceled\n"; }
+        void set_error(std::exception_ptr const&) noexcept { std::cout << "connect threw\n"; }
+        void set_done() noexcept { std::cout << "connect canceled\n"; }
     };
+    static_assert(EX::receiver<connect_receiver>);
 }
 
 // ----------------------------------------------------------------------------
@@ -70,6 +83,21 @@ int main(int ac, char* av[])
     NET::io_context context;
     socket          sock(context);
     endpoint        ep(NET::ip::make_address_v4(av[1]), std::stoi(av[2]));
+
+    auto state = EX::connect(
+          EX::just(ep)
+        | EX::then([](auto&& ep){
+                std::cout << "resolved(" << ep << ")\n";
+                return std::move(ep);
+            })
+        | EX::then([&](auto&& ep){
+                std::cout << "connecting to " << ep << '\n' << std::flush;
+            })
+        //-dk:TODO | sock.sender_connect(ep);
+        | EX::then([]{ std::cout << "connected\n"; })
+        , connect_receiver());
+    state.start();
+#if 0
     // should really resolve the address
     std::cout << "connecting to " << ep << '\n'; 
 
@@ -82,6 +110,7 @@ int main(int ac, char* av[])
     //     ;
 
     state.start();
+#endif
 
     std::cout << "running context\n";
     context.run();

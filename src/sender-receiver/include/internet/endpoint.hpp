@@ -45,7 +45,7 @@ namespace cxxrt::net::ip
 
 // ----------------------------------------------------------------------------
 
-template<class InternetProtocol>
+template<typename InternetProtocol>
 class cxxrt::net::ip::basic_endpoint
 {
 public:
@@ -85,7 +85,7 @@ public:
 
 // ----------------------------------------------------------------------------
 
-template<class IP>
+template<typename IP>
 constexpr
 cxxrt::net::ip::basic_endpoint<IP>::basic_endpoint(cxxrt::net::ip::address const& address,
                                                    port_type                      port) noexcept
@@ -96,7 +96,7 @@ cxxrt::net::ip::basic_endpoint<IP>::basic_endpoint(cxxrt::net::ip::address const
 
 // ----------------------------------------------------------------------------
 
-template<class IP>
+template<typename IP>
 constexpr auto
 cxxrt::net::ip::basic_endpoint<IP>::protocol() const noexcept -> protocol_type
 {
@@ -105,7 +105,7 @@ cxxrt::net::ip::basic_endpoint<IP>::protocol() const noexcept -> protocol_type
 
 // ----------------------------------------------------------------------------
 
-template<class IP>
+template<typename IP>
 sockaddr const*
 cxxrt::net::ip::basic_endpoint<IP>::data() const
 {

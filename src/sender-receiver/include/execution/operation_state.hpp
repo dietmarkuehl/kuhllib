@@ -33,7 +33,7 @@
 
 namespace cxxrt::execution
 {
-    template<class O>
+    template<typename O>
     concept operation_state
         =  std::destructible<O>
         && std::is_object_v<O>

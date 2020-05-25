@@ -70,7 +70,7 @@ namespace cxxrt::execution
         // --------------------------------------------------------------------
     }
 
-    template<class S>
+    template<typename S>
     struct sender_traits;
 }
 
@@ -123,7 +123,7 @@ struct cxxrt::execution::sender_traits_detail::base<S, false, false, true>
 
 // ----------------------------------------------------------------------------
 
-template<class S>
+template <typename S>
 struct cxxrt::execution::sender_traits
     : cxxrt::execution::sender_traits_detail::base<S>
 {

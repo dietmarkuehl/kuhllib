@@ -65,6 +65,9 @@ COMPONENTS =                                \
 	internet/tcp                        \
 	io_context                          \
 	netfwd                              \
+	sender                              \
+	sender/just                         \
+	sender/then                         \
 	socket                              \
 	socket/socket                       \
 	socket/socket_base                  \

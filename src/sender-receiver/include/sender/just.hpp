@@ -1,4 +1,4 @@
-// include/execution/sender.hpp                                       -*-C++-*-
+// include/sender/just.hpp                                            -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2020 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,24 +23,73 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_EXECUTION_SENDER
-#define INCLUDED_EXECUTION_SENDER
+#ifndef INCLUDED_SENDER_JUST
+#define INCLUDED_SENDER_JUST
 
-#include <execution/sender_traits.hpp>
+#include <execution/set_value.hpp>
+#include <execution/set_error.hpp>
 
-#include <concepts.hpp>
+#include <exception>
 #include <type_traits>
+#include <utility>
 
 // ----------------------------------------------------------------------------
 
 namespace cxxrt::execution
 {
-    template<typename S>
-    concept sender
-        =  std::move_constructible<std::remove_cvref_t<S>>
-        && !requires { typename sender_traits<std::remove_cvref_t<S>>::__unspecialized; }
-        ;
+    template <typename> class just;
 }
+
+// ----------------------------------------------------------------------------
+
+template <typename V>
+class cxxrt::execution::just
+{
+private:
+    std::remove_cvref_t<V> d_v;
+
+public:
+    template <template <typename...> class T,
+              template <typename...> class Var>
+    using value_types = Var<T<V>>;
+    template <template <typename...> class Var>
+    using error_types = Var<std::exception_ptr>;
+    static constexpr bool sends_done = false;
+
+    template <typename R>
+    class state
+    {
+    private:
+        V d_v;
+        R d_r;
+
+    public:
+        template <typename T>
+        state(T&& v, R&& r)
+            : d_v(std::forward<T>(v))
+            , d_r(std::forward<R>(r))
+        {
+        }
+        void start() noexcept try
+        {
+            cxxrt::execution::set_value(std::move(this->d_r),
+                                        std::move(this->d_v));
+        }
+        catch (...)
+        {
+            cxxrt::execution::set_error(std::move(this->d_r),
+                                        std::current_exception());
+        }
+    };
+
+    explicit just(V v): d_v(std::forward<V>(v)) {}
+
+    template <typename R>
+    state<R> connect(R&& r)
+    {
+        return state<R>{std::move(this->d_v), std::forward<R>(r)};
+    }
+};
 
 // ----------------------------------------------------------------------------
 
