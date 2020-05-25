@@ -164,7 +164,7 @@ $(BUILD)/$(NAME): $(BUILD)/lib$(LIB).a $(BUILD)/$(NAME).o
 	$(CXX) $(LDFLAGS) -o $@ $@.o $(BUILD)/lib$(LIB).a $(LDLIBS)
 
 $(BUILD)/lib$(LIB).a: $(COMPONENTS:%=$(BUILD)/%.o)
-	ar rcu $@ $(COMPONENTS:%=$(BUILD)/%.o)
+	ar rc $@ $(COMPONENTS:%=$(BUILD)/%.o)
 	ranlib $@
 
 $(BUILD)/%.o: src/%.cpp
