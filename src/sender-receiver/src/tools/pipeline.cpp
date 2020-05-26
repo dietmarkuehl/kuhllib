@@ -60,6 +60,9 @@ namespace
 
 int main()
 {
+    auto x = EX::then(EX::just("foo"), [](std::string_view msg){ std::cout << "then(1)=" << msg; return msg; });
+    EX::connect(std::move(x), receiver());
+
     sync_wait(EX::just("hello, world\n")
               | EX::then([](std::string_view msg){ std::cout << "then(1)=" << msg; return msg; })
               | EX::then([](std::string_view msg){ std::cout << "then(2)=" << msg; })

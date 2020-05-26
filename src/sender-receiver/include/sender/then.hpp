@@ -42,33 +42,37 @@
 
 namespace cxxrt::execution
 {
-    //-dk:TODO it may be reasonable to have both a one argument and a two
-    //-dk:TODO argument then().
-    template <typename> class then;
+    template <typename, typename> class then_receiver;
+    template <typename, typename> class then_sender;
+    template <typename> class then_fun;
+
+    template <typename Fun>
+    then_fun<std::remove_cvref_t<Fun>> then(Fun&&);
+
+    template <typename Sender, typename Fun>
+    then_sender<std::remove_cvref_t<Sender>, std::remove_cvref_t<Fun>>
+    then(Sender&&, Fun&&);
 }
 
 // ----------------------------------------------------------------------------
 
 template <typename Fun>
-class cxxrt::execution::then
+class cxxrt::execution::then_fun
 {
 private:
     Fun d_fun;
 
 public:
-    template <typename> class receiver;
-    template <typename> class sender;
-
-    then(Fun);
+    template <typename F>
+    then_fun(F&&);
     template <typename Sender>
-    then<Fun>::sender<std::remove_cvref_t<Sender>> operator()(Sender&&);
+    then_sender<std::remove_cvref_t<Sender>, Fun> operator()(Sender&&);
 };
 
 // ----------------------------------------------------------------------------
 
-template <typename Fun>
-template <typename Receiver>
-class cxxrt::execution::then<Fun>::receiver
+template <typename Receiver, typename Fun>
+class cxxrt::execution::then_receiver
 {
 private:
     Receiver d_receiver;
@@ -76,7 +80,7 @@ private:
 
 public:
     template <typename R, typename F>
-    receiver(R&& r, F&& f)
+    then_receiver(R&& r, F&& f)
         : d_receiver(std::forward<R>(r))
         , d_fun(std::forward<F>(f))
     {
@@ -118,13 +122,11 @@ public:
 
 // ----------------------------------------------------------------------------
 
-template <typename Fun>
-template <typename Sender>
-class cxxrt::execution::then<Fun>::sender
+template <typename Sender, typename Fun>
+class cxxrt::execution::then_sender
     : public cxxrt::execution::sender_base
 {
-public:
-    template <typename> friend class then;
+private:
     Sender d_sender;
     Fun    d_fun;
 
@@ -132,29 +134,53 @@ public:
     //-dk:TODO can this be a typed sender declaring value_types, error_types?
     //-dk:TODO the declaration can probably be leveraged from Sender
 
+    template <typename S, typename F>
+    then_sender(S&& sender, F&& fun)
+        : d_sender(std::forward<S>(sender))
+        , d_fun(std::forward<F>(fun))
+    {
+    }
     template <typename R>
     auto connect(R&& r) &&
     {
         return cxxrt::execution::connect(std::move(this->d_sender),
-                                         receiver<R>{ std::forward<R>(r),
-                                                      std::move(this->d_fun) });
+                                         then_receiver<R, Fun>{ std::forward<R>(r),
+                                                                std::move(this->d_fun) });
     }
 };
 
 // ----------------------------------------------------------------------------
 
 template <typename Fun>
-cxxrt::execution::then<Fun>::then(Fun fun)
-    : d_fun(fun)
+    template <typename F>
+cxxrt::execution::then_fun<Fun>::then_fun(F&& fun)
+    : d_fun(std::forward<F>(fun))
 {
 }
 
 template <typename Fun>
     template <typename Sender>
-typename cxxrt::execution::then<Fun>::template sender<std::remove_cvref_t<Sender>>
-cxxrt::execution::then<Fun>::operator()(Sender&& sender)
+typename cxxrt::execution::then_sender<std::remove_cvref_t<Sender>, Fun>
+cxxrt::execution::then_fun<Fun>::operator()(Sender&& sender)
 {
-    return { {}, std::forward<Sender>(sender), std::move(this->d_fun) };
+    return { std::forward<Sender>(sender), std::move(this->d_fun) };
+}
+
+// ----------------------------------------------------------------------------
+
+template <typename Fun>
+cxxrt::execution::then_fun<std::remove_cvref_t<Fun>>
+cxxrt::execution::then(Fun&& fun)
+{
+    // return cxxrt::execution::then_fun<std::remove_cvref_t<Fun>>(std::forward<Fun>(fun));
+    return { std::forward<Fun>(fun) };
+}
+
+template <typename Sender, typename Fun>
+cxxrt::execution::then_sender<std::remove_cvref_t<Sender>, std::remove_cvref_t<Fun>>
+cxxrt::execution::then(Sender&& sender, Fun&& fun)
+{
+    return { std::forward<Sender>(sender), std::forward<Fun>(fun) };
 }
 
 // ----------------------------------------------------------------------------
