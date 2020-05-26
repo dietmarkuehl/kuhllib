@@ -28,6 +28,7 @@
 
 #include <netfwd.hpp>
 #include <io_context.hpp>
+#include <io_operation.hpp>
 #include <socket/socket_base.hpp>
 #include <execution/set_value.hpp>
 #include <execution/set_error.hpp>
@@ -48,6 +49,7 @@
 namespace cxxrt::net
 {
     template <typename> class basic_socket;
+    template <typename...> class connect_operation;
 }
 
 // ----------------------------------------------------------------------------
@@ -129,60 +131,9 @@ public:
     //-dk:TODO template<typename CompletionToken>
     //-dk:TODO DEDUCED async_wait(wait_type w, CompletionToken&& token);
 
-    struct async_connect_object
-    {
-        template <typename R>
-        struct receiver
-        {
-            R             d_receiver;
-            basic_socket* d_s;
-
-            void set_value(endpoint_type const& ep) noexcept
-            {
-                std::cout << "got an endpoint => kick off connection\n";
-                this->d_s->async_connect(ep, std::move(this->d_receiver));
-            }
-            template <typename E>
-            void set_error(E&& e) noexcept
-            {
-                std::cout << "got an error instead of an endpoint\n";
-                cxxrt::execution::set_error(std::move(this->d_receiver),
-                                            std::forward<E>(e));
-            }
-            void set_done() noexcept
-            {
-                std::cout << "got cancelled\n";
-                cxxrt::execution::set_done(std::move(this->d_receiver));
-            }
-        };
-        template <typename Sender>
-        struct sender
-            : cxxrt::execution::sender_base
-        {
-            Sender        d_sender;
-            basic_socket* d_s;
-
-            template <typename R>
-            auto connect(R&& r) &&
-            {
-                return cxxrt::execution::connect(std::move(this->d_sender),
-                                                 receiver<std::remove_cvref_t<R>>
-                                                 {
-                                                     std::forward<R>(r),
-                                                         this->d_s
-                                                 });
-            }
-        };
-
-        basic_socket* d_s;
-        template <typename S>
-        sender<std::remove_cvref_t<S>> operator()(S&& s)
-        {
-            static_assert(cxxrt::execution::sender<sender<std::remove_cvref_t<S>>>);
-            return { {}, std::forward<S>(s), this->d_s };
-        }
-    };
-    friend async_connect_object async_connect(basic_socket& s) { return {&s}; }
+    struct async_connect_object;
+    async_connect_object async_connect() { return {this}; }
+    friend async_connect_object async_connect(basic_socket& s) { return s.async_connect(); }
     
 
 protected:
@@ -247,6 +198,107 @@ void cxxrt::net::basic_socket<Protocol>::open(protocol_type const& protocol,
 
 // ----------------------------------------------------------------------------
 
+template <typename... A>
+class cxxrt::net::connect_operation
+    : public cxxrt::net::io_operation_base<A...>
+{
+protected:
+    bool do_notify(int fd, short events) override
+    {
+        if (events & POLLOUT)
+        {
+            this->set_value();
+        }
+        else
+        {
+            socklen_t size(sizeof(int));
+            int err(0), rc(::getsockopt(fd, SOL_SOCKET, SO_ERROR, &err, &size));
+            this->set_error(std::error_code(rc == -1? errno: err,
+                                            std::system_category()));
+        }
+        return true;
+    }
+
+    template <typename S, typename P>
+    bool open(S* sock, P const& protocol)
+    {
+        if (sock->is_open())
+        {
+            return true;
+        }
+        std::error_code ec;
+        sock->open(protocol, ec);
+        return ec? this->set_error(ec), false: true;
+    }
+
+public:
+    template <typename S, typename E>
+    void connect(S* sock, E const& ep)
+    {
+        if (!this->open(sock, ep.protocol()))
+        {
+            return;
+        }
+        if (::connect(sock->native_handle(), ep.data(), ep.size()) == -1)
+        {
+            if (errno != EINTR && errno != EINPROGRESS)
+            {
+                this->set_error(std::error_code(errno, std::system_category()));
+                return;
+            }
+            sock->context()->add(sock->native_handle(), POLLOUT, this);
+        }
+        else
+        {
+            this->set_value();
+        }
+    }
+};
+
+// ----------------------------------------------------------------------------
+
+template <typename Protocol>
+struct cxxrt::net::basic_socket<Protocol>::async_connect_object
+{
+    template <typename R>
+    struct receiver
+    {
+        cxxrt::net::io_operation<R, cxxrt::net::connect_operation> d_op;
+        basic_socket* d_s;
+
+        void set_value(auto&& ep) noexcept { this->d_op.connect(this->d_s, ep); }
+        void set_error(auto&& e)  noexcept { this->d_op.set_error(e); }
+        void set_done()           noexcept { this->d_op.set_done(); }
+    };
+    template <typename Sender>
+    struct sender
+        : cxxrt::execution::sender_base
+    {
+        Sender        d_sender;
+        basic_socket* d_s;
+        
+        template <typename R>
+        auto connect(R&& r) &&
+        {
+            return cxxrt::execution::connect(std::move(this->d_sender),
+                                             receiver<std::remove_cvref_t<R>>
+                                             {
+                                                 std::forward<R>(r),
+                                                 this->d_s
+                                              });
+        }
+    };
+
+    basic_socket* d_s;
+    template <typename S>
+    sender<std::remove_cvref_t<S>> operator()(S&& s)
+    {
+        return { {}, std::forward<S>(s), this->d_s };
+    }
+};
+
+// ----------------------------------------------------------------------------
+
 template <typename Protocol>
 struct cxxrt::net::basic_socket<Protocol>::connect_sender
 {
@@ -269,88 +321,23 @@ public:
 
     template <typename R>
     struct state
-        : cxxrt::net::detail::waiter
+        : cxxrt::net::io_operation<R, cxxrt::net::connect_operation>
     {
     private:
         basic_socket* d_socket;
         endpoint_type d_endpoint;
-        R             d_r;
-
-        bool do_notify(int fd, short events) override
-        {
-            if (events & POLLOUT)
-            {
-                try
-                {
-                    cxxrt::execution::set_value(std::move(this->d_r));
-                }
-                catch (...)
-                {
-                    cxxrt::execution::set_error(std::move(this->d_r),
-                                                std::current_exception());
-                }
-            }
-            else
-            {
-                int err = 0;
-                socklen_t size(sizeof(err));
-                if (::getsockopt(fd, SOL_SOCKET, SO_ERROR, &err, &size) == -1)
-                {
-                    cxxrt::execution::set_error(std::move(this->d_r),
-                                                std::error_code(errno,
-                                                                std::system_category()));
-                }
-                else
-                {
-                    cxxrt::execution::set_error(std::move(this->d_r),
-                                                std::error_code(err,
-                                                                std::system_category()));
-                }
-            }
-            return true;
-        }
 
     public:
         state(basic_socket* s, endpoint_type e, R r)
-            : d_socket(s)
+            : io_operation<R, cxxrt::net::connect_operation>(std::forward<R>(r))
+            , d_socket(s)
             , d_endpoint(std::move(e))
-            , d_r(std::forward<R>(r))
         {
         }
         void operator= (state&&) = delete;
-        void start() noexcept try
+        void start() noexcept
         {
-            if (!this->d_socket->is_open())
-            {
-                std::error_code ec;
-                this->d_socket->open(this->d_endpoint.protocol(), ec);
-                if (ec)
-                {
-                    execution::set_error(std::move(this->d_r), ec);
-                    return;
-                }
-            }
-            if (::connect(this->d_socket->native_handle(),
-                          this->d_endpoint.data(),
-                          this->d_endpoint.size()) == -1)
-            {
-                if (errno != EINTR && errno != EINPROGRESS)
-                {
-                    execution::set_error(std::move(this->d_r),
-                                         std::error_code(errno,
-                                                         std::system_category()));
-                    return;
-                }
-                this->d_socket->context()->add(this->d_socket->native_handle(), POLLOUT, this);
-            }
-            else
-            {
-                execution::set_value(std::move(this->d_r));
-            }
-        }
-        catch (...)
-        {
-            execution::set_error(std::move(this->d_r), std::current_exception());
+            this->connect(this->d_socket, this->d_endpoint);
         }
     };
 

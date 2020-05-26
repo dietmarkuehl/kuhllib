@@ -25,6 +25,7 @@
 
 #include <internet.hpp>
 #include <io_context.hpp>
+#include <io_operation.hpp>
 #include <socket.hpp>
 #include <execution.hpp>
 #include <sender.hpp>
@@ -37,6 +38,20 @@
 
 namespace NET = cxxrt::net;
 namespace EX  = cxxrt::execution;
+
+// ----------------------------------------------------------------------------
+
+// ----------------------------------------------------------------------------
+
+
+template <typename Protocol, typename Receiver>
+void async_connect(NET::basic_stream_socket<Protocol>*      socket,
+                   NET::ip::basic_endpoint<Protocol> const& ep,
+                   Receiver&&                               receiver)
+{
+    cxxrt::net::io_operation<Receiver, cxxrt::net::connect_operation> op(std::forward<Receiver>(receiver));
+    op.connect(socket, ep);
+}
 
 // ----------------------------------------------------------------------------
 
@@ -90,21 +105,15 @@ int main(int ac, char* av[])
     //char const hello[] = { 'h', 'e', 'l', 'l', 'o', '\n' };
     auto s0
         = EX::just(addr) // this should really resolve
-#if 0
         | EX::then([](auto&& ep){
                 std::cout << "resolved(" << ep << ")\n";
                 return std::move(ep);
             })
-#endif
         | async_connect(sock)
-        //| EX::then([](auto&&...){})
         //| sock.async_send(hello)
         ;
-
-    //auto s1 = EX::connect(s0, sock.async_send(hello));
     auto st = EX::connect(std::move(s0), connect_receiver());
     st.start();
-    (void)s0;
 
     std::cout << "running context\n";
     context.run();

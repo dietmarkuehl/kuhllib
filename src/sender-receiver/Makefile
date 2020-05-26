@@ -66,6 +66,7 @@ COMPONENTS =                                \
 	internet/endpoint                   \
 	internet/tcp                        \
 	io_context                          \
+	io_operation                        \
 	netfwd                              \
 	sender                              \
 	sender/just                         \

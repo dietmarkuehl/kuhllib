@@ -196,7 +196,7 @@ public:
         ConstBufferSequence const& d_buffers;
         R                          d_r;
 
-        bool do_notify(int fd, short events) override
+        bool do_notify(int, short events) override
         {
             if (events & POLLOUT)
             {
