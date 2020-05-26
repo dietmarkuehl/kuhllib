@@ -42,95 +42,120 @@
 
 namespace cxxrt::execution
 {
-    template <typename Sender, typename Fun> class then_sender;
-    template <typename Fun> class then;
+    //-dk:TODO it may be reasonable to have both a one argument and a two
+    //-dk:TODO argument then().
+    template <typename> class then;
 }
 
 // ----------------------------------------------------------------------------
 
-template <typename Sender, typename Fun>
-class cxxrt::execution::then_sender
-    : public cxxrt::execution::sender_base
+template <typename Fun>
+class cxxrt::execution::then
 {
 private:
-    Sender d_s;
-    Fun    d_f;
+    Fun d_fun;
 
 public:
-    template <typename R>
-    class receiver
-    {
-    private:
-        R   d_r;
-        Fun d_f;
+    template <typename> class receiver;
+    template <typename> class sender;
 
-    public:
-        template <typename T>
-        receiver(T r, Fun&& f): d_r(std::move(r)), d_f(f) {}
+    then(Fun);
+    template <typename Sender>
+    then<Fun>::sender<std::remove_cvref_t<Sender>> operator()(Sender&&);
+};
 
-        template <typename... A>
-            requires cxxrt::execution::receiver_of<R&&, std::invoke_result_t<Fun, A...>>
-        void set_value(A&&... a) try
-        {
-            cxxrt::execution::set_value(std::move(this->d_r),
-                                        std::invoke(std::move(this->d_f), std::forward<A>(a)...));
-        }
-        catch (...)
-        {
-            cxxrt::execution::set_error(std::move(this->d_r), std::current_exception());
-            
-        }
-        template <typename... A>
-            requires (!cxxrt::execution::receiver_of<R, std::invoke_result_t<Fun, A...>>)
-        void set_value(A&&... a) try
-        {
-            std::invoke(std::move(this->d_f), std::forward<A>(a)...);
-            cxxrt::execution::set_value(std::move(this->d_r));
-        }
-        catch (...)
-        {
-            cxxrt::execution::set_error(std::move(this->d_r), std::current_exception());
-            
-        }
-        template <typename E>
-        void set_error(E&& e) noexcept
-        {
-            cxxrt::execution::set_error(std::move(this->d_r), std::forward<E>(e));
-        }
-        void set_done() noexcept { cxxrt::execution::set_done(std::move(this->d_r)); }
-    };
+// ----------------------------------------------------------------------------
 
-    then_sender(Sender s, Fun f)
-        : d_s(std::move(s))
-        , d_f(std::move(f))
+template <typename Fun>
+template <typename Receiver>
+class cxxrt::execution::then<Fun>::receiver
+{
+private:
+    Receiver d_receiver;
+    Fun      d_fun;
+
+public:
+    template <typename R, typename F>
+    receiver(R&& r, F&& f)
+        : d_receiver(std::forward<R>(r))
+        , d_fun(std::forward<F>(f))
     {
     }
-
-    template <typename R>
-    auto connect(R&& r) {
-        return cxxrt::execution::connect(std::move(this->d_s),
-                                         receiver<R>(std::forward<R>(r),
-                                                     std::move(this->d_f)));
+                  
+    void set_value() && noexcept = delete; //-dk:TODO why is that needed?
+    template <typename... A>
+        requires cxxrt::execution::receiver_of<Receiver, std::invoke_result_t<Fun, A...>>
+    void set_value(A&&... a) && noexcept try
+    {
+        cxxrt::execution::set_value(std::move(this->d_receiver),
+                                    std::invoke(std::move(this->d_fun), std::forward<A>(a)...));
+    }
+    catch (...)
+    {
+        cxxrt::execution::set_error(std::move(this->d_receiver), std::current_exception());
+    }
+    template <typename... A>
+        requires (!cxxrt::execution::receiver_of<Receiver, std::invoke_result_t<Fun, A...>>)
+    void set_value(A&&... a) && noexcept try
+    {
+        std::invoke(std::move(this->d_fun), std::forward<A>(a)...);
+        cxxrt::execution::set_value(std::move(this->d_receiver));
+    }
+    catch (...)
+    {
+        cxxrt::execution::set_error(std::move(this->d_receiver), std::current_exception());
+    }
+    template <typename E>
+    void set_error(E&& e) && noexcept
+    {
+        cxxrt::execution::set_error(std::move(this->d_receiver), std::forward<E>(e));
+    }
+    void set_done() && noexcept
+    {
+        cxxrt::execution::set_done(std::move(this->d_receiver));
     }
 };
 
 // ----------------------------------------------------------------------------
 
-template <typename F>
-class cxxrt::execution::then
+template <typename Fun>
+template <typename Sender>
+class cxxrt::execution::then<Fun>::sender
+    : public cxxrt::execution::sender_base
 {
-private:
-    F d_f;
+public:
+    template <typename> friend class then;
+    Sender d_sender;
+    Fun    d_fun;
 
 public:
-    then(F f): d_f(std::forward<F>(f)) {}
+    //-dk:TODO can this be a typed sender declaring value_types, error_types?
+    //-dk:TODO the declaration can probably be leveraged from Sender
 
-    template <typename Sender>
-    friend then_sender<Sender, F> operator| (Sender s, then c)
+    template <typename R>
+    auto connect(R&& r) &&
     {
-        return { std::move(s), std::move(c.d_f) };
+        return cxxrt::execution::connect(std::move(this->d_sender),
+                                         receiver<R>{ std::forward<R>(r),
+                                                      std::move(this->d_fun) });
     }
 };
+
+// ----------------------------------------------------------------------------
+
+template <typename Fun>
+cxxrt::execution::then<Fun>::then(Fun fun)
+    : d_fun(fun)
+{
+}
+
+template <typename Fun>
+    template <typename Sender>
+typename cxxrt::execution::then<Fun>::template sender<std::remove_cvref_t<Sender>>
+cxxrt::execution::then<Fun>::operator()(Sender&& sender)
+{
+    return { {}, std::forward<Sender>(sender), std::move(this->d_fun) };
+}
 
 // ----------------------------------------------------------------------------
 

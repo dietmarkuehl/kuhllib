@@ -28,6 +28,7 @@
 
 #include <execution/set_value.hpp>
 #include <execution/set_error.hpp>
+#include <execution/sender_base.hpp>
 
 #include <exception>
 #include <type_traits>
@@ -44,6 +45,7 @@ namespace cxxrt::execution
 
 template <typename V>
 class cxxrt::execution::just
+    : public cxxrt::execution::sender_base
 {
 private:
     std::remove_cvref_t<V> d_v;

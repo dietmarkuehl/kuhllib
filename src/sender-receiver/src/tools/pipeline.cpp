@@ -1,4 +1,4 @@
-// include/sender.hpp                                                 -*-C++-*-
+// src/tools/pipeline.cpp                                             -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2020 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,15 +23,45 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_SENDER
-#define INCLUDED_SENDER
-
-// ----------------------------------------------------------------------------
-
 #include <sender/just.hpp>
 #include <sender/pipeline.hpp>
 #include <sender/then.hpp>
+#include <execution.hpp>
+
+#include <iostream>
+#include <functional>
+#include <string>
+#include <utility>
+
+namespace EX = cxxrt::execution;
 
 // ----------------------------------------------------------------------------
 
-#endif
+namespace
+{
+    struct receiver
+    {
+        template <typename... A>
+        void set_value(A&&...) noexcept { std::cout << "success\n"; }
+        template <typename E>
+        void set_error(E&&) noexcept { std::cout << "error\n"; }
+        void set_done() noexcept { std::cout << "canceled\n"; }
+            
+    };
+    template <typename Sender>
+    void sync_wait(Sender&& s)
+    {
+        auto operation = EX::connect(std::forward<Sender>(s), receiver());
+        operation.start();
+    }
+}
+
+// ----------------------------------------------------------------------------
+
+int main()
+{
+    sync_wait(EX::just("hello, world\n")
+              | EX::then([](std::string_view msg){ std::cout << "then(1)=" << msg; return msg; })
+              | EX::then([](std::string_view msg){ std::cout << "then(2)=" << msg; })
+              );
+}

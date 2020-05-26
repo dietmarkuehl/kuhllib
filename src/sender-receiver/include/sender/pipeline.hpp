@@ -1,4 +1,4 @@
-// include/sender.hpp                                                 -*-C++-*-
+// include/sender/pipeline.hpp                                        -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2020 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,14 +23,33 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_SENDER
-#define INCLUDED_SENDER
+#ifndef INCLUDED_SENDER_PIPELINE
+#define INCLUDED_SENDER_PIPELINE
+
+#include <execution/sender.hpp>
+#include <utility>
 
 // ----------------------------------------------------------------------------
 
-#include <sender/just.hpp>
-#include <sender/pipeline.hpp>
-#include <sender/then.hpp>
+namespace cxxrt::execution
+{
+    // ------------------------------------------------------------------------
+    // For creating a pipeline of senders the | operator can be used:
+    // - the LHS is sender
+    // - the RHS is a function taking a sender as parameter (the LHS) and
+    //   returning a sender
+    // See cxxrt::execution::then as an example. Thanks to Kirk Shoop for
+    // pointing out the relationship between the two arguments.
+
+    template <typename Sender, typename Fun>
+        requires cxxrt::execution::sender<Sender>
+    auto operator|(Sender&& sender, Fun&& fun)
+    {
+        return std::forward<Fun>(fun)(std::forward<Sender>(sender));
+    }
+
+    // ------------------------------------------------------------------------
+}
 
 // ----------------------------------------------------------------------------
 

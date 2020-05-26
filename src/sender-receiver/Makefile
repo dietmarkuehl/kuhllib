@@ -28,6 +28,8 @@ NAME       = run-timer
 NAME       = telnet
 ARGS       = 127.0.0.1 8100
 
+NAME       = tools/pipeline
+
 LIB        = sender
 COMPONENTS =                                \
 	concepts                            \
@@ -68,7 +70,7 @@ COMPONENTS =                                \
 	sender                              \
 	sender/just                         \
 	sender/then                         \
-	sender/sender_to_sender             \
+	sender/pipeline                     \
 	socket                              \
 	socket/socket                       \
 	socket/socket_base                  \

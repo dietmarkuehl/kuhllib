@@ -1,4 +1,4 @@
-// src/sender/sender_to_sender.cpp                                    -*-C++-*-
+// src/sender/pipeline.cpp                                            -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2020 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,8 +23,8 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include <sender/sender_to_sender.hpp>
+#include <sender/pipeline.hpp>
 
 // ----------------------------------------------------------------------------
 
-int sender_sender_to_sender = 0;
+int sender_pipeline = 0;
