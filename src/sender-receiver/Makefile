@@ -28,7 +28,7 @@ NAME       = run-timer
 NAME       = telnet
 ARGS       = 127.0.0.1 8100
 
-NAME       = tools/pipeline
+# NAME       = tools/pipeline
 
 LIB        = sender
 COMPONENTS =                                \

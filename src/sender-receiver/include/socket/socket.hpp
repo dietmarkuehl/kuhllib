@@ -31,10 +31,12 @@
 #include <socket/socket_base.hpp>
 #include <execution/set_value.hpp>
 #include <execution/set_error.hpp>
+#include <sender/then.hpp>
 
 #include <memory>
 #include <system_error>
 #include <cerrno>
+#include <iostream> //-dk:TODO remove
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -117,6 +119,8 @@ public:
 
     struct connect_sender;
     connect_sender async_connect(endpoint_type const& endpoint);
+    template<cxxrt::execution::receiver R>
+    void async_connect(endpoint_type const& endpoint, R&& r);
     //-dk:TODO template<typename CompletionToken>
     //-dk:TODO DEDUCED async_connect(endpoint_type const& endpoint,
     //-dk:TODO                       CompletionToken&& token);
@@ -127,14 +131,59 @@ public:
 
     struct async_connect_object
     {
-        basic_socket* d_s;
-        connect_sender operator()(); //-dk:TODO remove; needed to compile?!?*/ }
-        connect_sender operator()(endpoint_type const& endpoint)
+        template <typename R>
+        struct receiver
         {
-            return this->d_s->async_connect(endpoint);
+            R             d_receiver;
+            basic_socket* d_s;
+
+            void set_value(endpoint_type const& ep) noexcept
+            {
+                std::cout << "got an endpoint => kick off connection\n";
+                this->d_s->async_connect(ep, std::move(this->d_receiver));
+            }
+            template <typename E>
+            void set_error(E&& e) noexcept
+            {
+                std::cout << "got an error instead of an endpoint\n";
+                cxxrt::execution::set_error(std::move(this->d_receiver),
+                                            std::forward<E>(e));
+            }
+            void set_done() noexcept
+            {
+                std::cout << "got cancelled\n";
+                cxxrt::execution::set_done(std::move(this->d_receiver));
+            }
+        };
+        template <typename Sender>
+        struct sender
+            : cxxrt::execution::sender_base
+        {
+            Sender        d_sender;
+            basic_socket* d_s;
+
+            template <typename R>
+            auto connect(R&& r) &&
+            {
+                return cxxrt::execution::connect(std::move(this->d_sender),
+                                                 receiver<std::remove_cvref_t<R>>
+                                                 {
+                                                     std::forward<R>(r),
+                                                         this->d_s
+                                                 });
+            }
+        };
+
+        basic_socket* d_s;
+        template <typename S>
+        sender<std::remove_cvref_t<S>> operator()(S&& s)
+        {
+            static_assert(cxxrt::execution::sender<sender<std::remove_cvref_t<S>>>);
+            return { {}, std::forward<S>(s), this->d_s };
         }
     };
     friend async_connect_object async_connect(basic_socket& s) { return {&s}; }
+    
 
 protected:
     explicit basic_socket(cxxrt::net::io_context& ctx);

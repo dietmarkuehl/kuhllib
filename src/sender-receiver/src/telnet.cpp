@@ -55,6 +55,8 @@ namespace
 
     struct connect_receiver
     {
+        template <typename... A>
+        void set_value(A&&...) { std::cout << "connect_receiver::connected XXX\n"; }
         void set_value() { std::cout << "connect_receiver::connected\n"; }
         void set_error(std::error_code const& ec) noexcept
         {
@@ -85,7 +87,7 @@ int main(int ac, char* av[])
     socket          sock(context);
     endpoint        addr(NET::ip::make_address_v4(av[1]), std::stoi(av[2]));
 
-    char const hello[] = { 'h', 'e', 'l', 'l', 'o', '\n' };
+    //char const hello[] = { 'h', 'e', 'l', 'l', 'o', '\n' };
     auto s0
         = EX::just(addr) // this should really resolve
 #if 0
@@ -94,14 +96,15 @@ int main(int ac, char* av[])
                 return std::move(ep);
             })
 #endif
-        // | async_connect(sock)
-        | EX::then([](auto&&...){})
+        | async_connect(sock)
+        //| EX::then([](auto&&...){})
         //| sock.async_send(hello)
         ;
 
     //auto s1 = EX::connect(s0, sock.async_send(hello));
-    auto st = EX::connect(s0, connect_receiver());
+    auto st = EX::connect(std::move(s0), connect_receiver());
     st.start();
+    (void)s0;
 
     std::cout << "running context\n";
     context.run();
