@@ -72,7 +72,6 @@ namespace
     {
         template <typename... A>
         void set_value(A&&...) { std::cout << "connect_receiver::connected XXX\n"; }
-        void set_value() { std::cout << "connect_receiver::connected\n"; }
         void set_error(std::error_code const& ec) noexcept
         {
             std::cout << "connect failure: " << std::strerror(ec.value()) << "\n";
@@ -102,14 +101,17 @@ int main(int ac, char* av[])
     endpoint        addr(NET::ip::make_address_v4(av[1]), std::stoi(av[2]));
     //char const hello[] = { 'h', 'e', 'l', 'l', 'o', '\n' };
 
+
     socket sock1(context);
     auto   s0
         = EX::just(addr) // this should really resolve
+#if 0
         | EX::then([](auto&& ep){
                 std::cout << "resolved(" << ep << ")\n";
                 return std::move(ep);
             })
         | async_connect(sock1)
+#endif
         //| sock.async_send(hello)
         ;
     auto st1 = EX::connect(std::move(s0), connect_receiver());
@@ -118,7 +120,7 @@ int main(int ac, char* av[])
     socket sock2(context);
     auto   st2 = EX::connect(sock2.async_connect(addr), connect_receiver());
     st2.start();
-    
+
 
     std::cout << "running context\n";
     context.run();

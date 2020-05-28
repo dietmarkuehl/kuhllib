@@ -56,13 +56,18 @@ namespace cxxrt::execution
 
         template <typename S, typename R>
         concept has_member_connect
-            =  requires(S&& s, R&& r){ std::forward<S>(s).connect(std::forward<R>(r)); }
+            =  execution::sender<S>
+            && requires(S&& s, R&& r){ std::forward<S>(s).connect(std::forward<R>(r)); }
+            && execution::operation_state<decltype(std::declval<S>().connect(std::declval<R>()))>
             ;
         template <typename S, typename R>
         concept has_connect
-            =  !has_member_connect<S, R>
+            =  (!has_member_connect<S, R>)
+            && execution::sender<S>
             && requires(S&& s, R&& r){ connect(std::forward<S>(s), std::forward<R>(r)); }
+            && execution::operation_state<decltype(connect(std::declval<S>(), std::declval<R>()))>
             ;
+
 
         // --------------------------------------------------------------------
 
@@ -71,8 +76,6 @@ namespace cxxrt::execution
         {
             template <typename S, typename R>
                 requires has_member_connect<S, R>
-                      && execution::sender<S>
-                      && execution::operation_state<decltype(std::declval<S>().connect(std::declval<R>()))>
             constexpr auto operator()(S&& s, R&& r) const
                 noexcept(noexcept(std::forward<S>(s).connect(std::forward<R>(r))))
             {
@@ -80,15 +83,15 @@ namespace cxxrt::execution
             }
             template <typename S, typename R>
                 requires has_connect<S, R>
-                      && execution::sender<S>
-                      && execution::operation_state<decltype(connect(std::declval<S>(), std::declval<R>()))>
             constexpr auto operator()(S&& s, R&& r) const
                 noexcept(noexcept(connect(std::forward<S>(s), std::forward<R>(r))))
             {
                 return connect(std::forward<S>(s), std::forward<R>(r));
             }
             template <typename S, typename R>
-                requires receiver_of<R>
+                requires (!has_member_connect<S, R>)
+                      && (!has_connect<S, R>)
+                      && receiver_of<R>
                       && execution::detail::executor_of_impl<std::remove_cvref_t<S>,
                                                              execution::detail::as_invocable<std::remove_cvref_t<R>, S>>
             constexpr auto operator()(S&& s, R&& r) const

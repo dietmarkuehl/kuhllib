@@ -45,7 +45,6 @@ namespace cxxrt::execution
 
         struct void_receiver
         {
-            //-dk:TODO why not...template <typename... A> void set_value(A&&...) noexcept;
             void set_value() noexcept;
             void set_error(std::exception_ptr) noexcept;
             void set_done() noexcept;

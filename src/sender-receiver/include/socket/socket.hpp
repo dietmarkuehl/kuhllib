@@ -120,22 +120,24 @@ public:
     void connect(endpoint_type const& endpoint);
     void connect(endpoint_type const& endpoint, std::error_code& ec);
 
-    template<cxxrt::execution::receiver R>
-    void async_connect(endpoint_type const& endpoint, R&& r);
-    //-dk:TODO template<typename CompletionToken>
-    //-dk:TODO DEDUCED async_connect(endpoint_type const& endpoint,
-    //-dk:TODO                       CompletionToken&& token);
-    void wait(wait_type w);
-    void wait(wait_type w, std::error_code& ec);
-    //-dk:TODO template<typename CompletionToken>
-    //-dk:TODO DEDUCED async_wait(wait_type w, CompletionToken&& token);
-
     class async_connect_object;
     friend async_connect_object async_connect(basic_socket& s) { return {&s}; }
     auto async_connect(endpoint_type const& endpoint)
     {
-        return cxxrt::execution::just(endpoint) | async_connect_object{this};
+        // return cxxrt::execution::just(endpoint) | async_connect_object{this};
+        return async_connect_object{this}(cxxrt::execution::just(endpoint));
     }
+
+    //-dk:TODO remove? template<cxxrt::execution::receiver R>
+    //-dk:TODO remove? void async_connect(endpoint_type const& endpoint, R&& r);
+    //-dk:TODO template<typename CompletionToken>
+    //-dk:TODO DEDUCED async_connect(endpoint_type const& endpoint,
+    //-dk:TODO                       CompletionToken&& token);
+
+    void wait(wait_type w);
+    void wait(wait_type w, std::error_code& ec);
+    //-dk:TODO template<typename CompletionToken>
+    //-dk:TODO DEDUCED async_wait(wait_type w, CompletionToken&& token);
 
 protected:
     explicit basic_socket(cxxrt::net::io_context& ctx);
@@ -266,7 +268,8 @@ public:
     class receiver
     {
     private:
-        cxxrt::net::io_operation<R, cxxrt::net::connect_operation> d_op;
+        using Operation = cxxrt::net::io_operation<R, cxxrt::net::connect_operation>;
+        Operation     d_op;
         basic_socket* d_s;
     public:
         template <typename Q>
@@ -276,9 +279,10 @@ public:
         {
         }
 
-        void set_value() noexcept; //-dk:TODO why is this needed?
         template <typename... A>
-        void set_value(A&&... a) noexcept { this->d_op.start(this->d_s, std::forward<A>(a)...); }
+        void set_value(A&&... a) noexcept {
+            this->d_op.start(this->d_s, std::forward<A>(a)...);
+        }
         void set_error(auto&& e)  noexcept { this->d_op.set_error(e); }
         void set_done()           noexcept { this->d_op.set_done(); }
     };
