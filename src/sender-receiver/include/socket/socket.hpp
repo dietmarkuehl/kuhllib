@@ -32,6 +32,7 @@
 #include <socket/socket_base.hpp>
 #include <execution/set_value.hpp>
 #include <execution/set_error.hpp>
+#include <sender/just.hpp>
 #include <sender/then.hpp>
 
 #include <memory>
@@ -119,8 +120,6 @@ public:
     void connect(endpoint_type const& endpoint);
     void connect(endpoint_type const& endpoint, std::error_code& ec);
 
-    struct connect_sender;
-    connect_sender async_connect(endpoint_type const& endpoint);
     template<cxxrt::execution::receiver R>
     void async_connect(endpoint_type const& endpoint, R&& r);
     //-dk:TODO template<typename CompletionToken>
@@ -131,10 +130,12 @@ public:
     //-dk:TODO template<typename CompletionToken>
     //-dk:TODO DEDUCED async_wait(wait_type w, CompletionToken&& token);
 
-    struct async_connect_object;
-    async_connect_object async_connect() { return {this}; }
-    friend async_connect_object async_connect(basic_socket& s) { return s.async_connect(); }
-    
+    class async_connect_object;
+    friend async_connect_object async_connect(basic_socket& s) { return {&s}; }
+    auto async_connect(endpoint_type const& endpoint)
+    {
+        return cxxrt::execution::just(endpoint) | async_connect_object{this};
+    }
 
 protected:
     explicit basic_socket(cxxrt::net::io_context& ctx);
@@ -258,35 +259,50 @@ public:
 // ----------------------------------------------------------------------------
 
 template<typename Protocol>
-struct cxxrt::net::basic_socket<Protocol>::async_connect_object
+class cxxrt::net::basic_socket<Protocol>::async_connect_object
 {
+public:
     template<typename R>
-    struct receiver
+    class receiver
     {
+    private:
         cxxrt::net::io_operation<R, cxxrt::net::connect_operation> d_op;
         basic_socket* d_s;
+    public:
+        template <typename Q>
+        receiver(Q&& r, basic_socket* s)
+            : d_op(std::forward<Q>(r))
+            , d_s(s)
+        {
+        }
 
         void set_value(auto&& ep) noexcept { this->d_op.connect(this->d_s, ep); }
         void set_error(auto&& e)  noexcept { this->d_op.set_error(e); }
         void set_done()           noexcept { this->d_op.set_done(); }
     };
     template<typename Sender>
-    struct sender
-        : cxxrt::execution::sender_base
+    class sender
+        : public cxxrt::execution::sender_base
     {
     public:
         template<template<typename...> class T, template<typename...> class V>
         using value_types = V<T<>>; //-dk:TODO provide other side endpoint?
         template<template<typename...> class V>
         using error_types = V<std::error_code, std::exception_ptr>;
-
         //-dk:TODO conditionally define static constexpr bool sends_done = Sender::sends_done;
 
-    public:
+    private:
         Sender        d_sender;
         basic_socket* d_s;
         
     public:
+        template <typename S>
+        sender(S&& sender, basic_socket* sock)
+            : d_sender(std::forward<S>(sender))
+            , d_s(sock)
+        {
+        }
+
         template<typename R>
         auto connect(R&& r) &&
         {
@@ -296,72 +312,18 @@ struct cxxrt::net::basic_socket<Protocol>::async_connect_object
         }
     };
 
+private:
     basic_socket* d_s;
+
+public:
+    async_connect_object(basic_socket* s): d_s(s) {}
+
     template<typename S>
     sender<std::remove_cvref_t<S>> operator()(S&& s)
     {
-        return { {}, std::forward<S>(s), this->d_s };
+        return {std::forward<S>(s), this->d_s};
     }
 };
-
-// ----------------------------------------------------------------------------
-
-template<typename Protocol>
-struct cxxrt::net::basic_socket<Protocol>::connect_sender
-{
-private:
-    friend class basic_socket;
-
-    basic_socket* d_socket;
-    endpoint_type d_endpoint;
-    connect_sender(basic_socket* s, endpoint_type const& e): d_socket(s), d_endpoint(e) {}
-
-public:
-    //-dk:TODO report back the other side endpoint
-    template<template<typename...> class T,
-              template<typename...> class V>
-    using value_types = V<T<>>;
-    template<template<typename...> class V>
-    using error_types = V<std::error_code, std::exception_ptr>;
-
-    static constexpr bool sends_done = false;
-
-    template<typename R>
-    struct state
-        : cxxrt::net::io_operation<R, cxxrt::net::connect_operation>
-    {
-    private:
-        basic_socket* d_socket;
-        endpoint_type d_endpoint;
-
-    public:
-        state(basic_socket* s, endpoint_type e, R r)
-            : io_operation<R, cxxrt::net::connect_operation>(std::forward<R>(r))
-            , d_socket(s)
-            , d_endpoint(std::move(e))
-        {
-        }
-        void operator= (state&&) = delete;
-        void start() noexcept
-        {
-            this->connect(this->d_socket, this->d_endpoint);
-        }
-    };
-
-    template<typename R>
-    state<R> connect(R&& r) {
-        return state<R>(this->d_socket,
-                     std::move(this->d_endpoint),
-                     std::forward<R>(r));
-    }
-};
-
-template<typename Protocol>
-auto cxxrt::net::basic_socket<Protocol>::async_connect(endpoint_type const& endpoint)
-    -> connect_sender
-{
-    return connect_sender{this, endpoint};
-}
 
 // ----------------------------------------------------------------------------
 
