@@ -38,27 +38,25 @@
 
 namespace cxxrt::execution
 {
-    template <typename> class just;
+    template<typename> class just;
 }
 
 // ----------------------------------------------------------------------------
 
-template <typename V>
+template<typename V>
 class cxxrt::execution::just
-    : public cxxrt::execution::sender_base
 {
 private:
     std::remove_cvref_t<V> d_v;
 
 public:
-    template <template <typename...> class T,
-              template <typename...> class Var>
+    template<template<typename...> class T, template<typename...> class Var>
     using value_types = Var<T<V>>;
-    template <template <typename...> class Var>
+    template<template<typename...> class Var>
     using error_types = Var<std::exception_ptr>;
     static constexpr bool sends_done = false;
 
-    template <typename R>
+    template<typename R>
     class state
     {
     private:
@@ -66,7 +64,7 @@ public:
         R d_r;
 
     public:
-        template <typename T>
+        template<typename T>
         state(T&& v, R&& r)
             : d_v(std::forward<T>(v))
             , d_r(std::forward<R>(r))
@@ -86,7 +84,7 @@ public:
 
     explicit just(V v): d_v(std::forward<V>(v)) {}
 
-    template <typename R>
+    template<typename R>
     state<R> connect(R&& r)
     {
         return state<R>{std::move(this->d_v), std::forward<R>(r)};

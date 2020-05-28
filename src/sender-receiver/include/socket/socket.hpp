@@ -234,7 +234,7 @@ protected:
 
 public:
     template<typename S, typename E>
-    void connect(S* sock, E const& ep)
+    void start(S* sock, E const& ep)
     {
         if (!this->open(sock, ep.protocol()))
         {
@@ -276,7 +276,9 @@ public:
         {
         }
 
-        void set_value(auto&& ep) noexcept { this->d_op.connect(this->d_s, ep); }
+        void set_value() noexcept; //-dk:TODO why is this needed?
+        template <typename... A>
+        void set_value(A&&... a) noexcept { this->d_op.start(this->d_s, std::forward<A>(a)...); }
         void set_error(auto&& e)  noexcept { this->d_op.set_error(e); }
         void set_done()           noexcept { this->d_op.set_done(); }
     };

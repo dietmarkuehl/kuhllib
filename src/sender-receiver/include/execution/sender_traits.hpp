@@ -45,6 +45,7 @@ namespace cxxrt::execution
 
         struct void_receiver
         {
+            //-dk:TODO why not...template <typename... A> void set_value(A&&...) noexcept;
             void set_value() noexcept;
             void set_error(std::exception_ptr) noexcept;
             void set_done() noexcept;
@@ -54,7 +55,7 @@ namespace cxxrt::execution
 
         template <typename S,
                   bool = detail::has_sender_types<S>,
-                  bool = execution::detail::executor_of_impl<S, execution::detail::as_invocable<void_receiver, S>>,
+                  bool = false && execution::detail::executor_of_impl<S, execution::detail::as_invocable<void_receiver, S>>,
                   bool = std::derived_from<S, execution::sender_base>>
         struct base;
 
