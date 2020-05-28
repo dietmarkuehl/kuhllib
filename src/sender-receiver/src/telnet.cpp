@@ -99,21 +99,26 @@ int main(int ac, char* av[])
     }
 
     NET::io_context context;
-    socket          sock(context);
     endpoint        addr(NET::ip::make_address_v4(av[1]), std::stoi(av[2]));
-
     //char const hello[] = { 'h', 'e', 'l', 'l', 'o', '\n' };
-    auto s0
+
+    socket sock1(context);
+    auto   s0
         = EX::just(addr) // this should really resolve
         | EX::then([](auto&& ep){
                 std::cout << "resolved(" << ep << ")\n";
                 return std::move(ep);
             })
-        | async_connect(sock)
+        | async_connect(sock1)
         //| sock.async_send(hello)
         ;
-    auto st = EX::connect(std::move(s0), connect_receiver());
-    st.start();
+    auto st1 = EX::connect(std::move(s0), connect_receiver());
+    st1.start();
+
+    socket sock2(context);
+    auto   st2 = EX::connect(sock2.async_connect(addr), connect_receiver());
+    st2.start();
+    
 
     std::cout << "running context\n";
     context.run();
