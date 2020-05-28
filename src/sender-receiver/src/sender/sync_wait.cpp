@@ -1,4 +1,4 @@
-// include/sender.hpp                                                 -*-C++-*-
+// src/sender/sync_wait.cpp                                           -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2020 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,16 +23,8 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_SENDER
-#define INCLUDED_SENDER
-
-// ----------------------------------------------------------------------------
-
-#include <sender/just.hpp>
-#include <sender/pipeline.hpp>
-#include <sender/then.hpp>
 #include <sender/sync_wait.hpp>
 
 // ----------------------------------------------------------------------------
 
-#endif
+int sender_sync_wait = 0;

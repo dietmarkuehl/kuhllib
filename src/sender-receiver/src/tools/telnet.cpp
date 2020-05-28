@@ -41,20 +41,6 @@ namespace EX  = cxxrt::execution;
 
 // ----------------------------------------------------------------------------
 
-// ----------------------------------------------------------------------------
-
-
-template <typename Protocol, typename Receiver>
-void async_connect(NET::basic_stream_socket<Protocol>*      socket,
-                   NET::ip::basic_endpoint<Protocol> const& ep,
-                   Receiver&&                               receiver)
-{
-    cxxrt::net::io_operation<Receiver, cxxrt::net::connect_operation> op(std::forward<Receiver>(receiver));
-    op.connect(socket, ep);
-}
-
-// ----------------------------------------------------------------------------
-
 namespace
 {
     struct resolve_receiver
@@ -103,19 +89,17 @@ int main(int ac, char* av[])
 
 
     socket sock1(context);
-    auto   s0
-        = EX::just(addr) // this should really resolve
+    EX::sync_wait(
+            EX::just(addr) // this should really resolve
 #if 0
-        | EX::then([](auto&& ep){
+          | EX::then([](auto&& ep){
                 std::cout << "resolved(" << ep << ")\n";
                 return std::move(ep);
             })
-        | async_connect(sock1)
+          | async_connect(sock1)
 #endif
         //| sock.async_send(hello)
-        ;
-    auto st1 = EX::connect(std::move(s0), connect_receiver());
-    st1.start();
+          , context);
 
     socket sock2(context);
     auto   st2 = EX::connect(sock2.async_connect(addr), connect_receiver());

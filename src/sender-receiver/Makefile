@@ -23,15 +23,15 @@
 #   OTHER DEALINGS IN THE SOFTWARE. 
 #  ----------------------------------------------------------------------------
 
-NAME       = basic
-NAME       = run-timer
-NAME       = telnet
-NAME       = io_uring
-NAME       = cat_io_uring
+NAME       = tools/telnet
 ARGS       = 127.0.0.1 8100
 ARGS       = test
 
-# NAME       = tools/pipeline
+TOOLS =                 \
+	tools/basic     \
+	tools/timer     \
+	tools/pipeline  \
+	tools/telnet    \
 
 LIB        = sender
 COMPONENTS =                                \
@@ -75,6 +75,7 @@ COMPONENTS =                                \
 	sender/just                         \
 	sender/then                         \
 	sender/pipeline                     \
+	sender/sync_wait                    \
 	socket                              \
 	socket/socket                       \
 	socket/socket_base                  \
@@ -130,6 +131,9 @@ BUILD    = bin/$(COMPILER)-$(VERSION)-$(SUFFIX)
 default: $(BUILD)/$(NAME)
 	$(BUILD)/$(NAME) $(ARGS)
 
+.PHONY: all
+all: $(TOOLS:%=$(BUILD)/%)
+
 %:
 	$(MAKE) NAME=$@
 
@@ -170,7 +174,7 @@ libunifex:
 .PHONY: $(NAME)
 $(NAME): $(BUILD)/$(NAME)
 
-$(BUILD)/$(NAME): $(BUILD)/lib$(LIB).a $(BUILD)/$(NAME).o
+$(BUILD)/%: $(BUILD)/lib$(LIB).a $(BUILD)/%.o
 	$(CXX) $(LDFLAGS) -o $@ $@.o $(BUILD)/lib$(LIB).a $(LDLIBS)
 
 $(BUILD)/lib$(LIB).a: $(COMPONENTS:%=$(BUILD)/%.o)

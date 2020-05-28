@@ -1,4 +1,4 @@
-// include/sender.hpp                                                 -*-C++-*-
+// include/sender/sync_wait.hpp                                       -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2020 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,15 +23,62 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_SENDER
-#define INCLUDED_SENDER
+#ifndef INCLUDED_SENDER_SYNC_WAIT
+#define INCLUDED_SENDER_SYNC_WAIT
+
+#include <execution/connect.hpp>
+#include <atomic>
+#include <iostream>
+#include <utility>
 
 // ----------------------------------------------------------------------------
 
-#include <sender/just.hpp>
-#include <sender/pipeline.hpp>
-#include <sender/then.hpp>
-#include <sender/sync_wait.hpp>
+namespace cxxrt::execution
+{
+    namespace detail { struct receiver; }
+    template <typename Sender, typename Context>
+    void sync_wait(Sender&&, Context&);
+}
+    
+// ----------------------------------------------------------------------------
+
+struct cxxrt::execution::detail::receiver
+{
+    std::atomic<bool>& d_done;
+    
+    template <typename... A>
+    void set_value(A&&...) noexcept
+    {
+        std::cout << "async_wait: success\n";
+        this->d_done = true;
+    }
+    template <typename E>
+    void set_error(E&&) noexcept
+    {
+        std::cout << "async_wait: error\n";
+        this->d_done = true;
+    }
+    void set_done() noexcept
+    {
+        std::cout << "async_wait: canceled\n";
+        this->d_done = true;
+    }
+};
+
+// ----------------------------------------------------------------------------
+
+template <typename Sender, typename Context>
+void cxxrt::execution::sync_wait(Sender&& s, Context& context)
+{
+    std::atomic<bool> done(false);
+    auto operation = cxxrt::execution::connect(std::forward<Sender>(s),
+                                               detail::receiver{done});
+    operation.start();
+    while (!done)
+    {
+        context.run_one();
+    }
+}
 
 // ----------------------------------------------------------------------------
 
