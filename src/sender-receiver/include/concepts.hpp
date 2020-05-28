@@ -26,9 +26,10 @@
 #ifndef INCLUDED_CONCEPTS
 #define INCLUDED_CONCEPTS
 
-#if !defined(__clang__)
+namespace cxxrt::dummy{}
+#  if !defined(__clang__)
 #    include <concepts>
-#else
+#  else
 
 #include <functional>
 #include <type_traits>
@@ -121,5 +122,5 @@ namespace std
 
 // ----------------------------------------------------------------------------
 
-#endif
+#  endif
 #endif

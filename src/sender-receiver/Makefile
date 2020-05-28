@@ -137,6 +137,12 @@ all: $(TOOLS:%=$(BUILD)/%)
 %:
 	$(MAKE) NAME=$@
 
+.PHONY: unit
+unit:
+	scripts/comp-deps.py $(COMPONENTS) | \
+	tsort | \
+	scripts/generate.py > include/unit.hpp
+
 .PHONY: install
 install: build
 	cd $(BUILD); sudo cp source/libunifex.a $(PREFIX)/lib
