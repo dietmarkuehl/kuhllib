@@ -40,8 +40,6 @@
 #include <type_traits>
 #include <poll.h>
 #include <cstddef>
-#include <deque>
-#include <iostream>
 #include <string>
 #include <variant>
 #include <memory>
@@ -2007,18 +2005,16 @@ struct cxxrt::execution::detail::receiver
     template <typename... A>
     void set_value(A&&...) noexcept
     {
-        std::cout << "async_wait: success\n";
         this->d_done = true;
     }
     template <typename E>
     void set_error(E&&) noexcept
     {
-        std::cout << "async_wait: error\n";
+        //-dk:TODO do something with the error!
         this->d_done = true;
     }
     void set_done() noexcept
     {
-        std::cout << "async_wait: canceled\n";
         this->d_done = true;
     }
 };
@@ -2676,11 +2672,9 @@ public:
 private:
     cxxrt::net::io_context* d_context;
     time_point              d_expiry;
-    // std::deque<timer_base*> d_waiting; //-dk:TODO use an intrusive list?
 
     void add(timer_base* s)
     {
-        // this->d_waiting.push_back(s);
         this->d_context->add(this->d_expiry, s);
     }
 

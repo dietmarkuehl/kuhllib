@@ -30,7 +30,6 @@
 #include <io_context.hpp>
 
 #include <chrono>
-#include <deque>
 #include <exception>
 #include <memory>
 #include <system_error>
@@ -76,11 +75,9 @@ public:
 private:
     cxxrt::net::io_context* d_context;
     time_point              d_expiry;
-    // std::deque<timer_base*> d_waiting; //-dk:TODO use an intrusive list?
 
     void add(timer_base* s)
     {
-        // this->d_waiting.push_back(s);
         this->d_context->add(this->d_expiry, s);
     }
 

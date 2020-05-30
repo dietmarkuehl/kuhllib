@@ -28,7 +28,6 @@
 
 #include <execution/connect.hpp>
 #include <atomic>
-#include <iostream>
 #include <utility>
 
 // ----------------------------------------------------------------------------
@@ -49,18 +48,16 @@ struct cxxrt::execution::detail::receiver
     template <typename... A>
     void set_value(A&&...) noexcept
     {
-        std::cout << "async_wait: success\n";
         this->d_done = true;
     }
     template <typename E>
     void set_error(E&&) noexcept
     {
-        std::cout << "async_wait: error\n";
+        //-dk:TODO do something with the error!
         this->d_done = true;
     }
     void set_done() noexcept
     {
-        std::cout << "async_wait: canceled\n";
         this->d_done = true;
     }
 };

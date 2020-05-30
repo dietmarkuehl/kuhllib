@@ -38,7 +38,6 @@
 #include <memory>
 #include <system_error>
 #include <cerrno>
-#include <iostream> //-dk:TODO remove
 
 #include <fcntl.h>
 #include <unistd.h>
