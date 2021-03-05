@@ -26,7 +26,10 @@
 NAME       = basic
 NAME       = run-timer
 NAME       = telnet
+NAME       = io_uring
+NAME       = cat_io_uring
 ARGS       = 127.0.0.1 8100
+ARGS       = test
 
 # NAME       = tools/pipeline
 
