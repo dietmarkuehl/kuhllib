@@ -29,6 +29,7 @@
 #include <execution/connect.hpp>
 #include <atomic>
 #include <utility>
+#include <iostream>
 
 // ----------------------------------------------------------------------------
 
@@ -53,6 +54,7 @@ struct cxxrt::execution::detail::receiver
     template <typename E>
     void set_error(E&&) noexcept
     {
+        std::cout << "ERROR reported to sync_wait receiver\n";
         //-dk:TODO do something with the error!
         this->d_done = true;
     }

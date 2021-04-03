@@ -43,6 +43,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <iostream> //-dk:TODO remove
 
 // ----------------------------------------------------------------------------
 
@@ -205,18 +206,16 @@ class cxxrt::net::connect_operation
     : public cxxrt::net::io_operation_base<A...>
 {
 protected:
-    bool do_notify(int fd, short events) override
+    bool do_notify(int fd, short) override
     {
-        if (events & POLLOUT)
-        {
-            this->set_value();
-        }
-        else
-        {
-            socklen_t size(sizeof(int));
-            int err(0), rc(::getsockopt(fd, SOL_SOCKET, SO_ERROR, &err, &size));
+        socklen_t size(sizeof(int));
+        int err(0), rc(::getsockopt(fd, SOL_SOCKET, SO_ERROR, &err, &size));
+        if (rc == -1 || err != 0) {
             this->set_error(std::error_code(rc == -1? errno: err,
                                             std::system_category()));
+        }
+        else {
+            this->set_value();
         }
         return true;
     }

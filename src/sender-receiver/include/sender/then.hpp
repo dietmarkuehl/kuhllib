@@ -86,7 +86,13 @@ public:
     {
     }
                   
-    void set_value() && noexcept = delete; //-dk:TODO why is that needed?
+    void set_value() && noexcept try {
+        std::invoke(std::move(this->d_fun));
+        cxxrt::execution::set_value(std::move(this->d_receiver));
+    }
+    catch (...) {
+        cxxrt::execution::set_error(std::move(this->d_receiver), std::current_exception());
+    }
     template <typename... A>
         requires cxxrt::execution::receiver_of<Receiver, std::invoke_result_t<Fun, A...>>
     void set_value(A&&... a) && noexcept try
