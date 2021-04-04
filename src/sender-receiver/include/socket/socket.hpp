@@ -171,7 +171,7 @@ cxxrt::net::basic_socket<Protocol>::~basic_socket()
 {
     if (this->d_fd != -1)
     {
-        ::close(this->d_fd);
+        this->close();
     }
 }
 
@@ -196,6 +196,24 @@ void cxxrt::net::basic_socket<Protocol>::open(protocol_type const& protocol,
             ::close(this->d_fd);
             this->d_fd = -1;
         }
+    }
+}
+
+template<typename Protocol>
+void cxxrt::net::basic_socket<Protocol>::close(std::error_code& ec)
+{ 
+    if (::close(this->d_fd) < 0) {
+        ec.assign(errno, std::system_category());
+    }
+}
+
+template<typename Protocol>
+void cxxrt::net::basic_socket<Protocol>::close()
+{ 
+    std::error_code ec;
+    this->close(ec);
+    if (ec) {
+        throw ec;
     }
 }
 

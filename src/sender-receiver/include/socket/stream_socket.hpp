@@ -33,6 +33,8 @@
 
 #include <system_error>
 
+#include <iostream> //-dk:TODO remove
+
 // ----------------------------------------------------------------------------
 
 namespace cxxrt::net
@@ -82,7 +84,12 @@ public:
     template <typename MutableBufferSequence>
     struct receive_sender;
     template <typename MutableBufferSequence>
-    receive_sender<MutableBufferSequence> async_receive(MutableBufferSequence const& buffers);
+    receive_sender<MutableBufferSequence>
+    async_receive(MutableBufferSequence const& buffers);
+    template <typename MutableBufferSequence>
+    receive_sender<MutableBufferSequence>
+    async_receive(MutableBufferSequence const& buffers,
+                  socket_base::message_flags);
     struct async_receive_object
     {
         basic_stream_socket* d_s;
@@ -93,6 +100,19 @@ public:
         }
     };
     friend async_receive_object async_receive(basic_stream_socket& s) { return {&s}; }
+    template <typename MutableBufferSequence>
+    friend receive_sender<MutableBufferSequence>
+    async_receive(basic_stream_socket& s,
+                  MutableBufferSequence const& buffers,
+                  socket_base::message_flags flags) {
+        return {&s, buffers, flags};
+    }
+    template <typename MutableBufferSequence>
+    friend receive_sender<MutableBufferSequence>
+    async_receive(basic_stream_socket& s,
+                  MutableBufferSequence const& buffers) {
+        return {&s, buffers, socket_base::message_flags()};
+    }
     //-dk:TODO template<typename MutableBufferSequence, typename CompletionToken>
     //-dk:TODO DEDUCED async_receive(MutableBufferSequence const& buffers,
     //-dk:TODO                       CompletionToken&& token);
@@ -240,6 +260,109 @@ auto cxxrt::net::basic_stream_socket<Protocol>::async_send(ConstBufferSequence c
     return send_sender<ConstBufferSequence>{this, b};
 }
 
+
+// ----------------------------------------------------------------------------
+
+template <typename Protocol>
+template <typename MutableBufferSequence>
+struct cxxrt::net::basic_stream_socket<Protocol>::receive_sender
+    : cxxrt::execution::sender_base
+{
+private:
+    friend class basic_stream_socket;
+
+    basic_stream_socket*         d_socket;
+    MutableBufferSequence const& d_buffers;
+    socket_base::message_flags   d_flags;
+
+public:
+    receive_sender(basic_stream_socket*         stream,
+                   MutableBufferSequence const& buffers,
+                   socket_base::message_flags   flags)
+        : d_socket(stream)
+        , d_buffers(buffers)
+        , d_flags(flags)
+    {
+    }
+
+    template <typename R>
+    struct state
+        : cxxrt::net::detail::waiter
+    {
+    private:
+        basic_stream_socket*         d_socket;
+        MutableBufferSequence const& d_buffers;
+        socket_base::message_flags   d_flags;
+        R                            d_r;
+
+        bool do_notify(int, short events) override
+        {
+            std::cout << "receiver_sender::state::do_notify (" << bool(events & POLLIN) << ")\n";
+            if (events & POLLIN) //-dk:TODO is that actually needed?
+            {
+                int rc = ::recv(this->d_socket->native_handle(),
+                                this->d_buffers.data(),
+                                this->d_buffers.size(),
+                                0);
+                std::cout << "recv=" << rc << "\n";
+                if (0 < rc) {
+                    execution::set_value(std::move(this->d_r), std::size_t(rc));
+                }
+                else if (rc == 0) {
+                    std::error_code ec;
+                    this->d_socket->close(ec);
+                    if (ec) {
+                        execution::set_error(std::move(this->d_r), ec);
+                    }
+                    else {
+                        execution::set_value(std::move(this->d_r), std::size_t(rc));
+                    }
+                }
+                else {
+                    execution::set_error(std::move(this->d_r), rc);
+                }
+            }
+            return true;
+        }
+
+    public:
+        state(basic_stream_socket* s, MutableBufferSequence const& b, R r)
+            : d_socket(s)
+            , d_buffers(b)
+            , d_r(std::forward<R>(r))
+        {
+            std::cout << "receiver_sender::state::state()\n";
+        }
+        void operator= (state&&) = delete;
+        void start() noexcept
+        {
+            std::cout << "receiver_sender::state::start()\n";
+            //-dk:TODO 
+            if (!this->d_socket->is_open())
+            {
+                std::error_code ec;
+                execution::set_error(std::move(this->d_r), ec);
+                return;
+            }
+            this->d_socket->context()->add(this->d_socket->native_handle(), POLLIN, this);
+        }
+    };
+
+    template <typename R>
+    state<R> connect(R&& r) &&
+    {
+        std::cout << "receiver_sender::connect()\n";
+        return state<R>(this->d_socket, this->d_buffers, std::forward<R>(r));
+    }
+};
+
+template <typename Protocol>
+template <typename MutableBufferSequence>
+cxxrt::net::basic_stream_socket<Protocol>::receive_sender<MutableBufferSequence>
+cxxrt::net::basic_stream_socket<Protocol>::async_receive(MutableBufferSequence const& buffers)
+{
+    return { this, buffers };
+}
 
 // ----------------------------------------------------------------------------
 

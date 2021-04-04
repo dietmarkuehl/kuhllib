@@ -35,6 +35,8 @@ TOOLS =                 \
 
 LIB        = sender
 COMPONENTS =                                \
+	buffer                              \
+	buffer/mutable_buffer               \
 	concepts                            \
 	execution                           \
 	execution/as_invocable              \
