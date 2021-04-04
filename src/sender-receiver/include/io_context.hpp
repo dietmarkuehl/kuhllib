@@ -51,7 +51,7 @@ namespace cxxrt::net
 class cxxrt::net::detail::waiter
 {
 protected:
-    // The argument is the revents for thie corresponding file descriptor.
+    // The argument is the revents for the corresponding file descriptor.
     // The function returns true if the entry is done and should be remove.
     virtual bool do_notify(int fd, short revents) = 0;
 

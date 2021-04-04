@@ -298,53 +298,56 @@ public:
         bool do_notify(int, short events) override
         {
             std::cout << "receiver_sender::state::do_notify (" << bool(events & POLLIN) << ")\n";
-            if (events & POLLIN) //-dk:TODO is that actually needed?
-            {
-                int rc = ::recv(this->d_socket->native_handle(),
-                                this->d_buffers.data(),
-                                this->d_buffers.size(),
-                                0);
-                std::cout << "recv=" << rc << "\n";
-                if (0 < rc) {
-                    execution::set_value(std::move(this->d_r), std::size_t(rc));
-                }
-                else if (rc == 0) {
-                    std::error_code ec;
-                    this->d_socket->close(ec);
-                    if (ec) {
-                        execution::set_error(std::move(this->d_r), ec);
-                    }
-                    else {
-                        execution::set_value(std::move(this->d_r), std::size_t(rc));
-                    }
+            int rc = ::recv(this->d_socket->native_handle(),
+                            this->d_buffers.data(),
+                            this->d_buffers.size(),
+                            0);
+            if (0 < rc) {
+                execution::set_value(std::move(this->d_r), std::size_t(rc));
+            }
+            else if (rc == 0) {
+                std::error_code ec;
+                this->d_socket->close(ec);
+                if (ec) {
+                    execution::set_error(std::move(this->d_r), ec);
                 }
                 else {
-                    execution::set_error(std::move(this->d_r), rc);
+                    execution::set_value(std::move(this->d_r), std::size_t(rc));
                 }
+            }
+            else {
+                execution::set_error(std::move(this->d_r),
+                                     std::error_code(errno,
+                                                     std::system_category()));
             }
             return true;
         }
 
     public:
-        state(basic_stream_socket* s, MutableBufferSequence const& b, R r)
+        state(basic_stream_socket*         s,
+              MutableBufferSequence const& b,
+              socket_base::message_flags   flags,
+              R                            r)
             : d_socket(s)
             , d_buffers(b)
+            , d_flags(flags)
             , d_r(std::forward<R>(r))
         {
-            std::cout << "receiver_sender::state::state()\n";
         }
         void operator= (state&&) = delete;
         void start() noexcept
         {
-            std::cout << "receiver_sender::state::start()\n";
-            //-dk:TODO 
             if (!this->d_socket->is_open())
             {
-                std::error_code ec;
-                execution::set_error(std::move(this->d_r), ec);
-                return;
+                execution::set_error(std::move(this->d_r),
+                                     std::error_code(EINVAL,
+                                                     std::system_category()));
             }
-            this->d_socket->context()->add(this->d_socket->native_handle(), POLLIN, this);
+            else {
+                this->d_socket->context()->add(this->d_socket->native_handle(),
+                                               POLLIN,
+                                               this);
+            }
         }
     };
 
@@ -352,7 +355,7 @@ public:
     state<R> connect(R&& r) &&
     {
         std::cout << "receiver_sender::connect()\n";
-        return state<R>(this->d_socket, this->d_buffers, std::forward<R>(r));
+        return state<R>(this->d_socket, this->d_buffers, this->d_flags, std::forward<R>(r));
     }
 };
 
