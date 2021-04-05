@@ -78,6 +78,7 @@ COMPONENTS =                                \
 	sender/then                         \
 	sender/pipeline                     \
 	sender/sync_wait                    \
+	sender/when_all                     \
 	socket                              \
 	socket/socket                       \
 	socket/socket_base                  \

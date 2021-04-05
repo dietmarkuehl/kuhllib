@@ -1,6 +1,6 @@
-// include/sender.hpp                                                 -*-C++-*-
+// sender/when_all.cpp                                                -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2020 Dietmar Kuehl http://www.dietmar-kuehl.de         
+//  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
 //  Permission is hereby granted, free of charge, to any person          
 //  obtaining a copy of this software and associated documentation       
@@ -23,17 +23,11 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_SENDER
-#define INCLUDED_SENDER
-
-// ----------------------------------------------------------------------------
-
-#include <sender/just.hpp>
-#include <sender/pipeline.hpp>
-#include <sender/then.hpp>
-#include <sender/sync_wait.hpp>
 #include <sender/when_all.hpp>
 
-// ----------------------------------------------------------------------------
+namespace cxxrt::execution
+{
+    int sender_when_all_dummy = 0;
+}
 
-#endif
+// ----------------------------------------------------------------------------
