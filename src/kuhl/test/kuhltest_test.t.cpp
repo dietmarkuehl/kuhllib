@@ -268,7 +268,4 @@ static kuhl::test::testcase const tests[] = {
         }),
 };
 
-int main(int ac, char* av[])
-{
-    return kuhl::test::run_tests("kuhl::test::run_tests", ac, av, ::tests);
-}
+static KT::add_tests suite("kuhl::test::run_tests", ::tests);

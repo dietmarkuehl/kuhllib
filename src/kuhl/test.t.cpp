@@ -1,4 +1,4 @@
-// test/kuhltest_test.cpp                                             -*-C++-*-
+// test.t.cpp                                                         -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,38 +23,16 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "kuhl/test/kuhltest_test.hpp"
+#include "kuhl/test.hpp"
 
-namespace KT = kuhl::test;
-
-// ----------------------------------------------------------------------------
-
-constexpr int kuehltest_test_dummy = 0;
+namespace KT = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
 
-std::vector<kuhl::test::add_tests::suite>&
-kuhl::test::add_tests::suites()
-{
-    static std::vector<suite> rc;
-    return rc;
-}
+static KT::testcase const tests[] = {
+    KT::expect_failure("placeholder", [](KT::context&)->bool{
+           return false;
+        }),
+};
 
-int kuhl::test::add_tests::run(int ac, char* av[])
-{
-    int rc(EXIT_SUCCESS);
-    for (auto[name, begin, end]: suites())
-    {
-        if (KT::run_tests(name, ac, av, begin, end)) {
-            rc = EXIT_FAILURE;
-        }
-    }
-    return rc;
-}
-
-// ----------------------------------------------------------------------------
-
-int main(int ac, char* av[])
-{
-    return kuhl::test::add_tests::run(ac, av);
-}
+static KT::add_tests suite("kuhl::test", ::tests);

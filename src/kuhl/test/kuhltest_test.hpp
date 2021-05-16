@@ -29,6 +29,7 @@
 #include "kuhl/test/context.hpp"
 #include <iostream>
 #include <iomanip>
+#include <vector>
 #include <cstdlib>
 
 // ----------------------------------------------------------------------------
@@ -38,6 +39,7 @@ namespace kuhl
     namespace test
     {
         class testcase;
+        class add_tests;
 
         kuhl::test::testcase
         expect_success(char const*, bool(*)());
@@ -101,6 +103,27 @@ public:
     testcase(Exception*, char const*, bool (*)(kuhl::test::context&));
 
     bool run(std::ostream&, std::size_t, char const*) const;
+};
+
+// ----------------------------------------------------------------------------
+
+class kuhl::test::add_tests
+{
+private:
+    struct suite
+    {
+        char const*                 name;
+        kuhl::test::testcase const* begin;
+        kuhl::test::testcase const* end;
+    };
+    static std::vector<suite>& suites();
+
+public:
+    template <std::size_t NoTests>
+    add_tests(char const* name, kuhl::test::testcase const (&tests)[NoTests]) {
+        suites().emplace_back(name, tests, tests + NoTests);
+    }
+    static int run(int ac, char* av[]);
 };
 
 // ----------------------------------------------------------------------------
