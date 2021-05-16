@@ -1,7 +1,7 @@
 # Execution
 
 The header `"nstd/execution.hpp"` (`<execution>` ) defines facilities
-relating to exeuction policies. Execution policies are used to
+relating to execution policies. Execution policies are used to
 specify what amount of concurrency an algorithm can employ.
 
 ## Execution Policy as Executor
@@ -24,6 +24,3 @@ The following operations are used with an execution policy `ep`:
     covering the entire range by multiple calls. Although `fun()`
     needs to be called with the entire range it may be called with
     different subranges from different threads.
-
-
-    

@@ -1,0 +1,100 @@
+cmake_minimum_required(VERSION 3.0.0)
+project(kuhllib VERSION 0.1.0)
+
+if(CMAKE_COMPILER_IS_GNUCXX)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Werror -std=c++2a")
+endif()
+
+include_directories(src)
+
+add_library(kuhltest STATIC
+    src/kuhl/test/assertions.cpp
+    src/kuhl/test/context.cpp
+    src/kuhl/test/kuhltest_test.cpp
+    src/kuhl/test.cpp
+    )
+
+add_library(kuhllib STATIC
+    src/nstd/algorithm/all_of.cpp
+    src/nstd/algorithm/any_of.cpp
+    src/nstd/algorithm/distance.cpp
+    src/nstd/algorithm/find.cpp
+    src/nstd/algorithm/find_end.cpp
+    src/nstd/algorithm/find_if.cpp
+    src/nstd/algorithm/find_if_not.cpp
+    src/nstd/algorithm/for_each.cpp
+    src/nstd/algorithm/mismatch.cpp
+    src/nstd/algorithm/none_of.cpp
+    src/nstd/algorithm/search.cpp
+    src/nstd/atomic/atomic.cpp
+    src/nstd/cursor/array.cpp
+    src/nstd/cursor/category.cpp
+    src/nstd/cursor/model_key.cpp
+    src/nstd/cursor/model_single_pass.cpp
+    src/nstd/cursor/single_pass.cpp
+    src/nstd/endian/big_to_native.cpp
+    src/nstd/endian/literals.cpp
+    src/nstd/endian/type.cpp
+    src/nstd/execution/execution.cpp
+    src/nstd/execution/is_execution_policy.cpp
+    src/nstd/execution/parallel_policy.cpp
+    src/nstd/execution/parallel_unsequenced_policy.cpp
+    src/nstd/execution/sequenced_policy.cpp
+    src/nstd/functional/bind.cpp
+    src/nstd/functional/equal_to.cpp
+    src/nstd/functional/invoke.cpp
+    src/nstd/functional/is_bind_expression.cpp
+    src/nstd/functional/mem_fn.cpp
+    src/nstd/functional/model_predicate.cpp
+    src/nstd/functional/not_.cpp
+    src/nstd/functional/placeholders.cpp
+    src/nstd/functional/reference_wrapper.cpp
+    src/nstd/functional/tuple_invoke.cpp
+    src/nstd/iterator/bidirectional_iterator.cpp
+    src/nstd/iterator/bidirectional_iterator_tag.cpp
+    src/nstd/iterator/forward_iterator.cpp
+    src/nstd/iterator/forward_iterator_tag.cpp
+    src/nstd/iterator/iterator_traits.cpp
+    src/nstd/memory/addressof.cpp
+    src/nstd/memory/uninitialized_default_construct.cpp
+    src/nstd/new/new.cpp
+    src/nstd/operators/equality.cpp
+    src/nstd/operators/relational.cpp
+    src/nstd/projection/identity.cpp
+    src/nstd/projection/model_readable.cpp
+    src/nstd/projection/model_value.cpp
+    src/nstd/type_traits/add_lvalue_reference.cpp
+    src/nstd/type_traits/add_rvalue_reference.cpp
+    src/nstd/type_traits/choose_type.cpp
+    src/nstd/type_traits/condition.cpp
+    src/nstd/type_traits/decay.cpp
+    src/nstd/type_traits/declval.cpp
+    src/nstd/type_traits/enable_if.cpp
+    src/nstd/type_traits/integral_constant.cpp
+    src/nstd/type_traits/is_array.cpp
+    src/nstd/type_traits/is_assignable.cpp
+    src/nstd/type_traits/is_constructible.cpp
+    src/nstd/type_traits/is_convertible.cpp
+    src/nstd/type_traits/is_function.cpp
+    src/nstd/type_traits/is_member_function_pointer.cpp
+    src/nstd/type_traits/is_member_object_pointer.cpp
+    src/nstd/type_traits/is_member_pointer.cpp
+    src/nstd/type_traits/is_move_assignable.cpp
+    src/nstd/type_traits/is_nothrow_constructible.cpp
+    src/nstd/type_traits/is_nothrow_move_assignable.cpp
+    src/nstd/type_traits/is_nothrow_move_constructible.cpp
+    src/nstd/type_traits/is_same.cpp
+    src/nstd/type_traits/is_void.cpp
+    src/nstd/type_traits/remove_const.cpp
+    src/nstd/type_traits/remove_cv.cpp
+    src/nstd/type_traits/remove_extent.cpp
+    src/nstd/type_traits/remove_reference.cpp
+    src/nstd/type_traits/remove_volatile.cpp
+    src/nstd/type_traits/result_of.cpp
+    src/nstd/utility/equality_comparable.cpp
+    src/nstd/utility/forward.cpp
+    src/nstd/utility/integer_sequence.cpp
+    src/nstd/utility/move.cpp
+    src/nstd/utility/pair.cpp
+    src/nstd/utility/swap.cpp
+    )
