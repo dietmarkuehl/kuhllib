@@ -38,7 +38,7 @@ default: check
 .PHONY: cmake
 cmake:
 	@mkdir -p $(BUILDDIR)
-	cd $(BUILDDIR); cmake $(CMAKE_CXX_ARG) ../src
+	cd $(BUILDDIR); cmake $(CMAKE_CXX_ARG) ..
 
 .PHONY: build
 build: cmake
