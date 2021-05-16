@@ -27,4 +27,4 @@
 
 // ----------------------------------------------------------------------------
 
-constexpr int model_predicate_dummy = 0;
+int model_predicate_dummy = 0;

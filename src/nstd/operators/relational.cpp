@@ -27,4 +27,4 @@
 
 // ----------------------------------------------------------------------------
 
-constexpr int relational_dummy = 0;
+int relational_dummy = 0;

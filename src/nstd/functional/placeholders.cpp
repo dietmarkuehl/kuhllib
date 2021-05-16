@@ -27,4 +27,4 @@
 
 // ----------------------------------------------------------------------------
 
-constexpr int placeholders_dummy = 0;
+int placeholders_dummy = 0;

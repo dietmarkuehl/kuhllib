@@ -27,4 +27,4 @@
 
 // ----------------------------------------------------------------------------
 
-constexpr int sequenced_policy_dummy = 0;
+int sequenced_policy_dummy = 0;

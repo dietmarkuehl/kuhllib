@@ -27,4 +27,4 @@
 
 // ----------------------------------------------------------------------------
 
-constexpr int reference_wrapper_dummy = 0;
+int reference_wrapper_dummy = 0;

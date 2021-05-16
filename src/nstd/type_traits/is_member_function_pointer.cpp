@@ -27,4 +27,4 @@
 
 // ----------------------------------------------------------------------------
 
-constexpr int is_member_function_pointer_dummy = 0;
+int is_member_function_pointer_dummy = 0;

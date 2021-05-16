@@ -27,4 +27,4 @@
 
 // ----------------------------------------------------------------------------
 
-constexpr int parallel_policy_dummy = 0;
+int parallel_policy_dummy = 0;

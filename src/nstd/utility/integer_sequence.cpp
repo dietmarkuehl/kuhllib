@@ -27,4 +27,4 @@
 
 // ----------------------------------------------------------------------------
 
-constexpr int integer_sequence_dummy = 0;
+int integer_sequence_dummy = 0;

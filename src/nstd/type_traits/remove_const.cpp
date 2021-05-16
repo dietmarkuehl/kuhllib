@@ -27,4 +27,4 @@
 
 // ----------------------------------------------------------------------------
 
-constexpr int remove_const_dummy = 0;
+int remove_const_dummy = 0;

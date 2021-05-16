@@ -27,4 +27,4 @@
 
 // ----------------------------------------------------------------------------
 
-constexpr int is_nothrow_move_assignable_dummy = 0;
+int is_nothrow_move_assignable_dummy = 0;

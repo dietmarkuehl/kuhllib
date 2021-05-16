@@ -27,4 +27,4 @@
 
 // ----------------------------------------------------------------------------
 
-constexpr int add_rvalue_reference_dummy = 0;
+int add_rvalue_reference_dummy = 0;

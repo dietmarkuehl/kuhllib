@@ -27,4 +27,4 @@
 
 // ----------------------------------------------------------------------------
 
-constexpr int tuple_invoke_dummy = 0;
+int tuple_invoke_dummy = 0;

@@ -27,4 +27,4 @@
 
 // ----------------------------------------------------------------------------
 
-constexpr int uninitialized_default_construct_dummy = 0;
+int uninitialized_default_construct_dummy = 0;

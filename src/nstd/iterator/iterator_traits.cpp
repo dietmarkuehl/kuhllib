@@ -27,4 +27,4 @@
 
 // ----------------------------------------------------------------------------
 
-constexpr int iterator_traits_dummy = 0;
+int iterator_traits_dummy = 0;

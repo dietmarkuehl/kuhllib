@@ -27,4 +27,4 @@
 
 // ----------------------------------------------------------------------------
 
-constexpr int remove_volatile_dummy = 0;
+int remove_volatile_dummy = 0;

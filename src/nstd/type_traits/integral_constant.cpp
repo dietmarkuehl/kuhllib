@@ -27,4 +27,4 @@
 
 // ----------------------------------------------------------------------------
 
-constexpr int integral_constant_dummy = 0;
+int integral_constant_dummy = 0;

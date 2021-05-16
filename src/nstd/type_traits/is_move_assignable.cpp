@@ -27,4 +27,4 @@
 
 // ----------------------------------------------------------------------------
 
-constexpr int is_move_assignable_dummy = 0;
+int is_move_assignable_dummy = 0;

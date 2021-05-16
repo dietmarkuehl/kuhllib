@@ -27,4 +27,4 @@
 
 // ----------------------------------------------------------------------------
 
-constexpr int forward_iterator_dummy = 0;
+int forward_iterator_dummy = 0;

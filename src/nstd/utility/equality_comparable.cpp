@@ -27,4 +27,4 @@
 
 // ----------------------------------------------------------------------------
 
-constexpr int equality_comparable_dummy = 0;
+int equality_comparable_dummy = 0;

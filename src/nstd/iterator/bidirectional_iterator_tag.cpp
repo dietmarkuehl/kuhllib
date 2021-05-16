@@ -27,4 +27,4 @@
 
 // ----------------------------------------------------------------------------
 
-constexpr int bidirectional_iterator_tag_dummy = 0;
+int bidirectional_iterator_tag_dummy = 0;

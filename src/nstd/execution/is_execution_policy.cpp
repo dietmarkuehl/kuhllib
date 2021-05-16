@@ -27,4 +27,4 @@
 
 // ----------------------------------------------------------------------------
 
-constexpr int is_execution_policy_dummy = 0;
+int is_execution_policy_dummy = 0;

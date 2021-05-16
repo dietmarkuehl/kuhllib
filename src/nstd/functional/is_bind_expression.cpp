@@ -27,4 +27,4 @@
 
 // ----------------------------------------------------------------------------
 
-constexpr int is_bind_expression_dummy = 0;
+int is_bind_expression_dummy = 0;

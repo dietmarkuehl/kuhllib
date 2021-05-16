@@ -26,7 +26,6 @@
 #ifndef INCLUDED_NSTD_TYPE_TRAITS_IS_CONSTRUCTIBLE
 #define INCLUDED_NSTD_TYPE_TRAITS_IS_CONSTRUCTIBLE
 
-#include "nstd/type_traits/add_rvalue_reference.hpp"
 #include "nstd/type_traits/declval.hpp"
 #include "nstd/type_traits/integral_constant.hpp"
 
@@ -35,33 +34,18 @@
 namespace nstd
 {
     namespace type_traits {
-        namespace detail {
-            template <typename... Args> struct is_constructible;
-        }
         template <typename, typename...> struct is_constructible;
         template <typename T, typename...Args>
-        constexpr bool is_constructible_v
+        inline constexpr bool is_constructible_v
             = ::nstd::type_traits::is_constructible<T, Args...>::value;
     }
 }
 
 // ----------------------------------------------------------------------------
 
-template <typename... Args>
-struct nstd::type_traits::detail::is_constructible {
-    template <typename T>
-    static auto create() -> nstd::type_traits::add_rvalue_reference_t<T>;
-    template <typename T, typename = decltype(T(create<Args>()...))>
-    static auto test(int) -> nstd::type_traits::true_type;
-    template <typename T>
-    static auto test(...) -> nstd::type_traits::false_type;
-};
-            
-// ----------------------------------------------------------------------------
-
 template <typename T, typename... Args>
 struct nstd::type_traits::is_constructible
-    : decltype(nstd::type_traits::detail::is_constructible<Args...>::template test<T>(0))
+    : ::nstd::type_traits::integral_constant<bool, requires{ T(::nstd::type_traits::declval<Args>()...); }>
 {
 };
 

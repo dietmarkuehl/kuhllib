@@ -27,4 +27,4 @@
 
 // ----------------------------------------------------------------------------
 
-constexpr int model_single_pass_dummy = 0;
+int model_single_pass_dummy = 0;

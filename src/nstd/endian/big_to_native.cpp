@@ -27,4 +27,4 @@
 
 // ----------------------------------------------------------------------------
 
-constexpr int big_to_native_dummy = 0;
+int big_to_native_dummy = 0;

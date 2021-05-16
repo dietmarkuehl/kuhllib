@@ -29,10 +29,6 @@ namespace KT = kuhl::test;
 
 // ----------------------------------------------------------------------------
 
-constexpr int kuehltest_test_dummy = 0;
-
-// ----------------------------------------------------------------------------
-
 std::vector<kuhl::test::add_tests::suite>&
 kuhl::test::add_tests::suites()
 {

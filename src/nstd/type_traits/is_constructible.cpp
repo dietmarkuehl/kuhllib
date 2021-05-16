@@ -27,4 +27,4 @@
 
 // ----------------------------------------------------------------------------
 
-constexpr int is_constructible_dummy = 0;
+int is_constructible_dummy = 0;

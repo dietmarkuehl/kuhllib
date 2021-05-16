@@ -27,4 +27,4 @@
 
 // ----------------------------------------------------------------------------
 
-constexpr int is_convertible_dummy = 0;
+int is_convertible_dummy = 0;
