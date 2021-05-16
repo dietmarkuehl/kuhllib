@@ -32,13 +32,10 @@ namespace KT = kuhl::test;
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
-    KT::expect_failure("placeholder", [](KT::context& c)->bool{
+    KT::expect_failure("placeholder", [](KT::context& )->bool{
             //-dk:TODO create actual tests!
            return true;
         }),
 };
 
-int main(int ac, char* av[])
-{
-    return KT::run_tests("algorithm::find_end", ac, av, ::tests);
-}
+static KT::add_tests suite("algorithm::find_end", ::tests);

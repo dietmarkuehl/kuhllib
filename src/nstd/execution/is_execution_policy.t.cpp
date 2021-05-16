@@ -60,7 +60,4 @@ static KT::testcase const tests[] = {
         }),
 };
 
-int main(int ac, char* av[])
-{
-    return KT::run_tests("execution::is_execution-policy", ac, av, ::tests);
-}
+static KT::add_tests suite("execution::is_execution_policy", ::tests);

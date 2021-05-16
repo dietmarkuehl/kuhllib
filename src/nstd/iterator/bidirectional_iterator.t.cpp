@@ -78,7 +78,4 @@ static KT::testcase const tests[] = {
         }),
 };
 
-int main(int ac, char* av[])
-{
-    return KT::run_tests("test bidirectional iterator wrapper", ac, av, ::tests);
-}
+static KT::add_tests suite("bidrectional iterator wrapper", ::tests);

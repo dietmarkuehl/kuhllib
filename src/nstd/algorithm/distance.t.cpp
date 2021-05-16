@@ -85,7 +85,4 @@ static KT::testcase const tests[] = {
         }),
 };
 
-int main(int ac, char* av[])
-{
-    return KT::run_tests("algorithm::distance", ac, av, ::tests);
-}
+static KT::add_tests suite("algorithm::distance", ::tests);

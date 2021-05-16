@@ -36,7 +36,7 @@ namespace KT = ::kuhl::test;
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
-    KT::expect_exception<std::runtime_error>("uint8 exception", [](KT::context& c)->bool{
+    KT::expect_exception<std::runtime_error>("uint8 exception", [](KT::context& )->bool{
             using NE::literals::operator"" _eu;
             char const array0[] = { char(0x00) };
             return NE::big_to_native<8_eu>(array0, array0 + 0).second ==  array0 + 0
@@ -58,7 +58,7 @@ static KT::testcase const tests[] = {
                 && KT::assert_true(c, "255 it", array255 + 1 == NE::big_to_native<8_eu>(array255, array255 + 1).second)
                 ;
         }),
-    KT::expect_exception<std::runtime_error>("uint16 exception", [](KT::context& c)->bool{
+    KT::expect_exception<std::runtime_error>("uint16 exception", [](KT::context& )->bool{
             using NE::literals::operator"" _eu;
             char const array0[] = { char(0x00) };
             return NE::big_to_native<16_eu>(array0, array0 + 1).second ==  array0 + 1
@@ -83,7 +83,7 @@ static KT::testcase const tests[] = {
                 && KT::assert_true(c, "0x1234 it", array3 + 2 == NE::big_to_native<16_eu>(array3, array3 + 2).second)
                 ;
         }),
-    KT::expect_exception<std::runtime_error>("uint32 exception", [](KT::context& c)->bool{
+    KT::expect_exception<std::runtime_error>("uint32 exception", [](KT::context& )->bool{
             using NE::literals::operator"" _eu;
             char const array0[] = { char(0x00), char(0x00), char(0x00) };
             return NE::big_to_native<32_eu>(array0, array0 + 3).second ==  array0 + 3
@@ -108,7 +108,7 @@ static KT::testcase const tests[] = {
                 && KT::assert_true(c, "3 it", array3 + 4 == NE::big_to_native<32_eu>(array3, array3 + 4).second)
                 ;
         }),
-    KT::expect_exception<std::runtime_error>("uint64 exception", [](KT::context& c)->bool{
+    KT::expect_exception<std::runtime_error>("uint64 exception", [](KT::context& )->bool{
             using NE::literals::operator"" _eu;
             char const array0[] = { char(0x00), char(0x00), char(0x00), char(0x00), char(0x00), char(0x00), char(0x00) };
             return NE::big_to_native<64_eu>(array0, array0 + 7).second ==  array0 + 7
@@ -146,7 +146,7 @@ static KT::testcase const tests[] = {
                 ;
         }),
 
-    KT::expect_exception<std::runtime_error>("int8 exception", [](KT::context& c)->bool{
+    KT::expect_exception<std::runtime_error>("int8 exception", [](KT::context& )->bool{
             using NE::literals::operator"" _es;
             char const array0[] = { char(0x00) };
             return NE::big_to_native<8_es>(array0, array0 + 0).second ==  array0 + 0
@@ -168,7 +168,7 @@ static KT::testcase const tests[] = {
                 && KT::assert_true(c, "2 it", array2 + 1 == NE::big_to_native<8_es>(array2, array2 + 1).second)
                 ;
         }),
-    KT::expect_exception<std::runtime_error>("int16 exception", [](KT::context& c)->bool{
+    KT::expect_exception<std::runtime_error>("int16 exception", [](KT::context& )->bool{
             using NE::literals::operator"" _es;
             char const array0[] = { char(0x00) };
             return NE::big_to_native<16_es>(array0, array0 + 1).second ==  array0 + 1
@@ -193,7 +193,7 @@ static KT::testcase const tests[] = {
                 && KT::assert_true(c, "0x1234 it", array3 + 2 == NE::big_to_native<16_es>(array3, array3 + 2).second)
                 ;
         }),
-    KT::expect_exception<std::runtime_error>("int32 exception", [](KT::context& c)->bool{
+    KT::expect_exception<std::runtime_error>("int32 exception", [](KT::context& )->bool{
             using NE::literals::operator"" _es;
             char const array0[] = { char(0x00), char(0x00), char(0x00) };
             return NE::big_to_native<32_es>(array0, array0 + 3).second ==  array0 + 3
@@ -218,7 +218,7 @@ static KT::testcase const tests[] = {
                 && KT::assert_true(c, "3 it", array3 + 4 == NE::big_to_native<32_es>(array3, array3 + 4).second)
                 ;
         }),
-    KT::expect_exception<std::runtime_error>("int64 exception", [](KT::context& c)->bool{
+    KT::expect_exception<std::runtime_error>("int64 exception", [](KT::context& )->bool{
             using NE::literals::operator"" _es;
             char const array0[] = { char(0x00), char(0x00), char(0x00), char(0x00), char(0x00), char(0x00), char(0x00) };
             return NE::big_to_native<64_es>(array0, array0 + 7).second ==  array0 + 7
@@ -256,7 +256,7 @@ static KT::testcase const tests[] = {
                 ;
         }),
 
-    KT::expect_exception<std::runtime_error>("float32 exception", [](KT::context& c)->bool{
+    KT::expect_exception<std::runtime_error>("float32 exception", [](KT::context& )->bool{
             using NE::literals::operator"" _ef;
             char const array0[] = { char(0x00), char(0x00), char(0x00) };
             return NE::big_to_native<32_ef>(array0, array0 + 3).second ==  array0 + 3
@@ -271,7 +271,7 @@ static KT::testcase const tests[] = {
                 && KT::assert_true(c, "0 it", array0 + 4 == NE::big_to_native<32_ef>(array0, array0 + 4).second)
                 ;
         }),
-    KT::expect_exception<std::runtime_error>("float64 exception", [](KT::context& c)->bool{
+    KT::expect_exception<std::runtime_error>("float64 exception", [](KT::context& )->bool{
             using NE::literals::operator"" _ef;
             char const array0[] = { char(0x00), char(0x00), char(0x00), char(0x00), char(0x00), char(0x00), char(0x00) };
             return NE::big_to_native<64_ef>(array0, array0 + 7).second ==  array0 + 7
@@ -303,13 +303,10 @@ static KT::testcase const tests[] = {
                          ;
         }),
 #if 0
-    KT::expect_failure("placeholder", [](KT::context& c)->bool{
+    KT::expect_failure("placeholder", [](KT::context& )->bool{
            return false;
         }),
 #endif
 };
 
-int main(int ac, char* av[])
-{
-    return KT::run_tests("endian::big_to_native", ac, av, ::tests);
-}
+static KT::add_tests suite("endian::big_to_native", ::tests);

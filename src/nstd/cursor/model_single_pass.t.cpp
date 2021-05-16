@@ -32,6 +32,7 @@
 
 namespace NC = nstd::cursor;
 namespace NT = nstd::type_traits;
+namespace KT = kuhl::test;
 
 // ----------------------------------------------------------------------------
 
@@ -76,7 +77,4 @@ static kuhl::test::testcase const tests[] = {
         }),
 };
 
-int main(int ac, char* av[])
-{
-    return kuhl::test::run_tests("cursor::model_single_pass", ac, av, ::tests);
-}
+static KT::add_tests suite("cursor::model_single_pass", ::tests);

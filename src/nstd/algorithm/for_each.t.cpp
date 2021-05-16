@@ -212,7 +212,4 @@ static KT::testcase const tests[] = {
         }),
 };
 
-int main(int ac, char* av[])
-{
-    return KT::run_tests("algorithm::for_each", ac, av, ::tests);
-}
+static KT::add_tests suite("algorithm::for_each", ::tests);

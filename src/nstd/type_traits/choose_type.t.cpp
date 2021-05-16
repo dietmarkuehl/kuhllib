@@ -28,6 +28,7 @@
 #include "kuhl/test.hpp"
 
 namespace NT = nstd::type_traits;
+namespace KT = kuhl::test;
 
 // ----------------------------------------------------------------------------
 
@@ -104,7 +105,4 @@ static kuhl::test::testcase const tests[] = {
         }),
 };
 
-int main(int ac, char* av[])
-{
-    return kuhl::test::run_tests("TODO", ac, av, ::tests);
-}
+static KT::add_tests suite("type_traits::choose_type", ::tests);

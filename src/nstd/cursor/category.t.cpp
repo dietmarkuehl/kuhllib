@@ -29,6 +29,7 @@
 
 namespace NC = nstd::cursor;
 namespace NT = nstd::type_traits;
+namespace KT = kuhl::test;
 
 // ----------------------------------------------------------------------------
 
@@ -71,7 +72,4 @@ static kuhl::test::testcase const tests[] = {
         //-dk:TODO detect cursor categories from iterator traits
 };
 
-int main(int ac, char* av[])
-{
-    return kuhl::test::run_tests("TODO", ac, av, ::tests);
-}
+static KT::add_tests suite("category", ::tests);

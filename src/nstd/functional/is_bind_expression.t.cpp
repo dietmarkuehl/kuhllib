@@ -62,7 +62,4 @@ static KT::testcase const tests[] = {
         }),
 };
 
-int main(int ac, char* av[])
-{
-    return KT::run_tests("functional::is_bind_expression", ac, av, ::tests);
-}
+static KT::add_tests suite("functional::is_bind_expression", ::tests);

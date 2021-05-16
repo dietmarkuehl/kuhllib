@@ -118,7 +118,4 @@ static KT::testcase const tests[] = {
         }),
 };
 
-int main(int ac, char* av[])
-{
-    return KT::run_tests("utility::swap", ac, av, ::tests);
-}
+static KT::add_tests suite("utility::swap", ::tests);

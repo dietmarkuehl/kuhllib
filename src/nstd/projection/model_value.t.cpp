@@ -44,7 +44,4 @@ static KT::testcase const tests[] = {
         }),
 };
 
-int main(int ac, char* av[])
-{
-    return KT::run_tests("property::model_value", ac, av, ::tests);
-}
+static KT::add_tests suite("projection::model_value", ::tests);

@@ -112,7 +112,7 @@ namespace {
     };
 
     struct function_object {
-        auto operator()(int  const& v0, NP::model_value<long> const& v1) const
+        auto operator()(int  const& , NP::model_value<long> const& ) const
             -> bool {
             return true;
         }
@@ -137,7 +137,7 @@ static KT::testcase const tests[] = {
                 && KT::assert_true(c, "f.omem2(10, 11)", std::make_tuple(0, 10, 11) == f.omem2(10, 11))
                 ;
         }),
-    KT::expect_success("bind predicate", [](KT::context& c)->bool{
+    KT::expect_success("bind predicate", [](KT::context& )->bool{
             namespace NF = nstd::functional;
             namespace NFP = NF::placeholders;
             auto fpred(NF::bind(function_object(), NFP::_1, NP::model_value<long>(3l)));
@@ -244,7 +244,4 @@ static KT::testcase const tests[] = {
         }),
 };
 
-int main(int ac, char* av[])
-{
-    return KT::run_tests("functional::bind", ac, av, ::tests);
-}
+static KT::add_tests suite("functional::bind", ::tests);

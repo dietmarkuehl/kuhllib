@@ -92,7 +92,4 @@ static KT::testcase const tests[] = {
     //-dk:TODO verify that the appropriate number of increments and tests are used
 };
 
-int main(int ac, char* av[])
-{
-    return KT::run_tests("algorithm::find_if", ac, av, ::tests);
-}
+static KT::add_tests suite("algorithm::find_if", ::tests);

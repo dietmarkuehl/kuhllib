@@ -1,6 +1,6 @@
-// nstd/execution/parallel_unsequenced_policy.t.cpp                   -*-C++-*-
+// nstd/memory/addressof.t.cpp                                        -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2017 Dietmar Kuehl http://www.dietmar-kuehl.de         
+//  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
 //  Permission is hereby granted, free of charge, to any person          
 //  obtaining a copy of this software and associated documentation       
@@ -23,8 +23,6 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/execution/parallel_unsequenced_policy.hpp"
-#include "nstd/execution/is_execution_policy.hpp"
 #include "kuhl/test.hpp"
 
 namespace KT = ::kuhl::test;
@@ -32,19 +30,9 @@ namespace KT = ::kuhl::test;
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
-    KT::expect_success("parallel_unsequenced_policy is an execution policy",
-                       [](KT::context& c)->bool{
-        return KT::assert_constexpr_true<nstd::is_execution_policy<nstd::execution::parallel_unsequenced_policy>::value>(
-                  c, "is_execution_policy<parallel_unsequenced_policy>::value")
-            && KT::assert_constexpr_true<nstd::is_execution_policy_v<nstd::execution::parallel_unsequenced_policy>>(
-                  c, "is_execution_policy_v<parallel_unsequenced_policy>")
-            ;
-                       }),
-    KT::expect_success("par_unseq is an object of type parallel_unsequenced_policy",
-                       [](KT::context& c)->bool{
-        return KT::assert_type<nstd::execution::parallel_unsequenced_policy>(c, nstd::execution::par_unseq, "par_unseq")
-            ;
-                       }),
+    KT::expect_failure("placeholder", [](KT::context& )->bool{
+           return false;
+        }),
 };
 
-static KT::add_tests suite("execution::parallel_unsequenced_policy", ::tests);
+static KT::add_tests suite("addressof", ::tests);

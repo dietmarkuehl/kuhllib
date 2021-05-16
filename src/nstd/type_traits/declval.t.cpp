@@ -86,7 +86,4 @@ static KT::testcase const tests[] = {
         }),
 };
 
-int main(int ac, char* av[])
-{
-    return KT::run_tests("type_traits::declval()", ac, av, ::tests);
-}
+static KT::add_tests suite("type_traits::declval()", ::tests);

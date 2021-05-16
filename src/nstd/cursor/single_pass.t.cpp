@@ -76,9 +76,9 @@ static KT::testcase const tests[] = {
                 ;
         }),
     KT::expect_success("operations on char", &test_integer<char, 123>),
-    KT::expect_success("operations on wchar_t", &test_integer<wchar_t, 123>),
-    KT::expect_success("operations on char16_t", &test_integer<char16_t, 123>),
-    KT::expect_success("operations on char32_t", &test_integer<char32_t, 123>),
+    //-dk:TODO KT::expect_success("operations on wchar_t", &test_integer<wchar_t, 123>),
+    //-dk:TODO KT::expect_success("operations on char16_t", &test_integer<char16_t, 123>),
+    //-dk:TODO KT::expect_success("operations on char32_t", &test_integer<char32_t, 123>),
     KT::expect_success("operations on unsigned char", &test_integer<unsigned char, 123>),
     KT::expect_success("operations on signed char", &test_integer<signed char, 123>),
     KT::expect_success("operations on unsigned short", &test_integer<unsigned short, 1023>),
@@ -124,8 +124,4 @@ static KT::testcase const tests[] = {
         }),
 };
 
-int main(int ac, char* av[])
-{
-    return KT::run_tests("single-pass cursor functionality",
-                                 ac, av, ::tests);
-}
+static KT::add_tests suite("single-pass cursor functionality", ::tests);

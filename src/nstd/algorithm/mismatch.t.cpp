@@ -193,7 +193,4 @@ static KT::testcase const tests[] = {
         }),
 };
 
-int main(int ac, char* av[])
-{
-    return KT::run_tests("algorithm::mismatch", ac, av, ::tests);
-}
+static KT::add_tests suite("algorithm::mismatch", ::tests);

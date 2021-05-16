@@ -58,7 +58,4 @@ static KT::testcase const tests[] = {
         }),
 };
 
-int main(int ac, char* av[])
-{
-    return KT::run_tests("type_traits::is_void", ac, av, ::tests);
-}
+static KT::add_tests suite("type_traits::is_void", ::tests);

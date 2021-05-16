@@ -72,7 +72,4 @@ static kuhl::test::testcase const tests[] = {
         }),
 };
 
-int main(int ac, char* av[])
-{
-    return kuhl::test::run_tests("type_traits::add_rvalue_reference", ac, av, ::tests);
-}
+static KT::add_tests suite("type_traits::add_rvalue_reference", ::tests);

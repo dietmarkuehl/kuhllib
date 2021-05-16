@@ -68,7 +68,4 @@ static KT::testcase const tests[] = {
         }),
 };
 
-int main(int ac, char* av[])
-{
-    return KT::run_tests("test forward iterator wrapper", ac, av, ::tests);
-}
+static KT::add_tests suite("forward iterator wrapper", ::tests);

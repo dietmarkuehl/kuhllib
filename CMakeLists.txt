@@ -112,4 +112,8 @@ target_link_libraries(kuhltest_test PUBLIC kuhltest)
 add_test(NAME kuhltest_test COMMAND $<TARGET_FILE:kuhltest_test>)
 
 list(TRANSFORM kuhllib_components APPEND ${KUHLLIB_SOURCE_SUFFIX} OUTPUT_VARIABLE kuhllib_libfiles)
+list(TRANSFORM kuhllib_components APPEND ${KUHLLIB_TEST_SUFFIX}   OUTPUT_VARIABLE kuhllib_tstfiles)
 add_library(kuhllib STATIC ${kuhllib_libfiles})
+add_executable(kuhllib_test ${kuhllib_tstfiles})
+target_link_libraries(kuhllib_test PUBLIC kuhllib kuhltest)
+add_test(NAME kuhllib_test COMMAND $<TARGET_FILE:kuhllib_test>)

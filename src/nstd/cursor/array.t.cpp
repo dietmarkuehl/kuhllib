@@ -28,6 +28,7 @@
 #include "nstd/type_traits/is_same.hpp"
 
 namespace NT = nstd::type_traits;
+namespace KT = kuhl::test;
 
 // ----------------------------------------------------------------------------
 
@@ -79,7 +80,4 @@ static kuhl::test::testcase const tests[] = {
         }),
 };
 
-int main(int ac, char* av[])
-{
-    return kuhl::test::run_tests("array tools", ac, av, ::tests);
-}
+static KT::add_tests suite("array tools", ::tests);

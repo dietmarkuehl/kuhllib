@@ -46,7 +46,4 @@ static KT::testcase const tests[] = {
         }),
 };
 
-int main(int ac, char* av[])
-{
-    return KT::run_tests("projection::model_readable", ac, av, ::tests);
-}
+static KT::add_tests suite("projection::model_readable", ::tests);
