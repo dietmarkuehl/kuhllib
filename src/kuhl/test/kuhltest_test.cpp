@@ -54,6 +54,68 @@ int kuhl::test::add_tests::run(int ac, char* av[])
 
 // ----------------------------------------------------------------------------
 
+bool
+kuhl::test::testcase::run(std::ostream& out,
+                         std::size_t index,
+                         char const* name) const
+{
+    out << std::right << std::setfill(' ') << std::setw(3) << index << ": "
+        << std::left  << std::setw(30) << name
+        << std::setw(40) << this->d_name;
+    kuhl::test::context context;
+    return (this->*(this->d_run_test))(out, context);
+}
+
+// ----------------------------------------------------------------------------
+//-dk:TODO: run_tests() should reside in a library
+//-dk:TODO: run_tests() should evaluate its argument to decide what to do
+
+int
+kuhl::test::run_tests(char const* name, int ac, char *av[],
+                     kuhl::test::testcase const* begin,
+                     kuhl::test::testcase const* end)
+{
+    std::ptrdiff_t success(0);
+    int count(0);
+    if (ac == 1) {
+        count = end - begin;
+        for (kuhl::test::testcase const* it(begin); it != end; ++it) {
+            std::ostringstream out;
+            if (it->run(out, it - begin + 1, name)) {
+                ++success;
+            }
+            else {
+                std::cout << out.str();
+            }
+        }
+    }
+    else {
+        for (int i(1); i != ac; ++i) {
+            int idx(atoi(av[i]));
+            if (0 < idx && idx <= std::distance(begin, end)) {
+                ++count;
+                if (false/*verbose*/) {
+                    (begin + idx - 1)->run(std::cout, idx, name) && ++success;
+                }
+                else {
+                    std::ostringstream out;
+                    if ((begin + idx - 1)->run(out, idx, name)) {
+                        ++success;
+                    }
+                    else {
+                        std::cout << out.str();
+                    }
+                }
+            }
+        }
+    }
+    std::cout << name << ": "
+              << success << "/" << count << " succeeded\n";
+    return success == (end - begin)? EXIT_SUCCESS: EXIT_FAILURE;
+}
+
+// ----------------------------------------------------------------------------
+
 int main(int ac, char* av[])
 {
     return kuhl::test::add_tests::run(ac, av);

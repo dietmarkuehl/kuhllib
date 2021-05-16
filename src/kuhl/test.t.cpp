@@ -30,8 +30,8 @@ namespace KT = ::kuhl::test;
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
-    KT::expect_failure("placeholder", [](KT::context&)->bool{
-           return false;
+    KT::expect_failure("none", [](KT::context&)->bool{
+           return true;
         }),
 };
 

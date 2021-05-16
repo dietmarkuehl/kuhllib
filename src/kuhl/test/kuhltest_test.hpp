@@ -292,21 +292,6 @@ kuhl::test::testcase::expect_exception_without_context(
 // ----------------------------------------------------------------------------
 
 inline
-bool
-kuhl::test::testcase::run(std::ostream& out,
-                         std::size_t index,
-                         char const* name) const
-{
-    out << std::right << std::setfill(' ') << std::setw(3) << index << ": "
-        << std::left  << std::setw(30) << name
-        << std::setw(40) << this->d_name;
-    kuhl::test::context context;
-    return (this->*(this->d_run_test))(out, context);
-}
-
-// ----------------------------------------------------------------------------
-
-inline
 kuhl::test::testcase
 kuhl::test::expect_success(char const* name, bool (*test)())
 {
@@ -346,38 +331,6 @@ kuhl::test::testcase
 kuhl::test::expect_exception(char const* name, bool(*test)(kuhl::test::context&))
 {
     return kuhl::test::testcase(static_cast<Exception*>(0), name, test);
-}
-
-// ----------------------------------------------------------------------------
-//-dk:TODO: run_tests() should reside in a library
-//-dk:TODO: run_tests() should evaluate its argument to decide what to do
-
-inline
-int
-kuhl::test::run_tests(char const* name, int ac, char *av[],
-                     kuhl::test::testcase const* begin,
-                     kuhl::test::testcase const* end)
-{
-    std::ptrdiff_t success(0);
-    int count(0);
-    if (ac == 1) {
-        count = end - begin;
-        for (kuhl::test::testcase const* it(begin); it != end; ++it) {
-            it->run(std::cout, it - begin + 1, name) && ++success;
-        }
-    }
-    else {
-        for (int i(1); i != ac; ++i) {
-            int idx(atoi(av[i]));
-            if (0 < idx && idx <= std::distance(begin, end)) {
-                ++count;
-                (begin + idx - 1)->run(std::cout, idx, name) && ++success;
-            }
-        }
-    }
-    std::cout << name << ": "
-              << success << "/" << count << " succeeded\n";
-    return success == (end - begin)? EXIT_SUCCESS: EXIT_FAILURE;
 }
 
 template <std::size_t NoTests>
