@@ -121,7 +121,7 @@ private:
 public:
     template <std::size_t NoTests>
     add_tests(char const* name, kuhl::test::testcase const (&tests)[NoTests]) {
-        suites().emplace_back(name, tests, tests + NoTests);
+        suites().push_back(suite{name, +tests, +tests + NoTests});
     }
     static int run(int ac, char* av[]);
 };

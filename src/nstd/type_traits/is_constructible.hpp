@@ -39,6 +39,9 @@ namespace nstd
             template <typename... Args> struct is_constructible;
         }
         template <typename, typename...> struct is_constructible;
+        template <typename T, typename...Args>
+        constexpr bool is_constructible_v
+            = ::nstd::type_traits::is_constructible<T, Args...>::value;
     }
 }
 
@@ -58,8 +61,7 @@ struct nstd::type_traits::detail::is_constructible {
 
 template <typename T, typename... Args>
 struct nstd::type_traits::is_constructible
-    : nstd::type_traits::integral_constant<bool,
-        decltype(nstd::type_traits::detail::is_constructible<Args...>::template test<T>(0))::value>
+    : decltype(nstd::type_traits::detail::is_constructible<Args...>::template test<T>(0))
 {
 };
 
