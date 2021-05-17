@@ -23,6 +23,7 @@ list(APPEND kuhllib_test_components
     )
 
 list(APPEND kuhllib_components
+    src/nstd/net/netfwd
     src/nstd/algorithm/all_of
     src/nstd/algorithm/any_of
     src/nstd/algorithm/distance

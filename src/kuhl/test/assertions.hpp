@@ -82,6 +82,17 @@ namespace kuhl
         auto assert_type(kuhl::test::context& context, T1, char const* message) -> bool;
         template <typename T>
         auto assert_no_nested_type(kuhl::test::context& context, char const* message) -> bool;
+
+        template <typename>
+        inline constexpr bool assert_type_exists = true;
+        template <template <typename...> class T, typename... A>
+        inline constexpr bool assert_template_exists = assert_type_exists<T<A...>>;
+
+        template <typename> struct type_t {};
+        template <typename T>
+        inline constexpr type_t<T> type;
+        template <typename T0, typename T1> bool operator== (type_t<T0>, type_t<T1>) { return false; }
+        template <typename T>               bool operator== (type_t<T>, type_t<T>) { return true; }
     }
 
 }
