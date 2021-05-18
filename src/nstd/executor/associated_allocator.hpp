@@ -1,6 +1,6 @@
-// nstd/type_traits/declval.hpp                                       -*-C++-*-
+// nstd/executor/associated_allocator.hpp                             -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
+//  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
 //  Permission is hereby granted, free of charge, to any person          
 //  obtaining a copy of this software and associated documentation       
@@ -23,17 +23,26 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_TYPE_TRAITS_DECLVAL
-#define INCLUDED_NSTD_TYPE_TRAITS_DECLVAL
+#ifndef INCLUDED_NSTD_EXECUTOR_ASSOCIATED_ALLOCATOR
+#define INCLUDED_NSTD_EXECUTOR_ASSOCIATED_ALLOCATOR
 
-#include "nstd/type_traits/add_rvalue_reference.hpp"
+#include <memory>
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::type_traits
-{
+namespace nstd::inline executor {
+    template <typename T, class ProtoAllocator = ::std::allocator<void>>
+    struct associated_allocator;
+
+    template <typename T, class ProtoAllocator = ::std::allocator<void>>
+    using associated_allocator_t = typename ::nstd::executor::associated_allocator<T, ProtoAllocator>::type;
+
     template <typename T>
-    auto declval() noexcept(true) -> nstd::type_traits::add_rvalue_reference_t<T>;
+    auto get_associated_allocator(T const&) noexcept
+        -> ::nstd::executor::associated_allocator_t<T>;
+    template <typename T, typename ProtoAllocator>
+    auto get_associated_allocator(T const&, ProtoAllocator const&) noexcept
+        -> ::nstd::executor::associated_allocator_t<T>;
 }
 
 // ----------------------------------------------------------------------------

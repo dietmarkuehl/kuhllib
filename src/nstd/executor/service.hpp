@@ -1,6 +1,6 @@
-// nstd/type_traits/declval.hpp                                       -*-C++-*-
+// nstd/executor/service.hpp                                          -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
+//  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
 //  Permission is hereby granted, free of charge, to any person          
 //  obtaining a copy of this software and associated documentation       
@@ -23,17 +23,25 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_TYPE_TRAITS_DECLVAL
-#define INCLUDED_NSTD_TYPE_TRAITS_DECLVAL
+#ifndef INCLUDED_NSTD_EXECUTOR_SERVICE
+#define INCLUDED_NSTD_EXECUTOR_SERVICE
 
-#include "nstd/type_traits/add_rvalue_reference.hpp"
+#include "nstd/executor/execution_context.hpp"
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::type_traits
-{
-    template <typename T>
-    auto declval() noexcept(true) -> nstd::type_traits::add_rvalue_reference_t<T>;
+namespace nstd::inline executor {
+    class service_already_exists;
+
+    template<typename Service>
+    auto use_service(::nstd::executor::execution_context&)
+        -> Service&;
+    template<typename Service, typename... Args>
+    auto make_service(::nstd::executor::execution_context&, Args&&...)
+        -> Service&;
+    template<typename Service>
+    auto has_service(::nstd::executor::execution_context&)
+        -> bool;
 }
 
 // ----------------------------------------------------------------------------

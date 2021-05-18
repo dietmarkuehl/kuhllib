@@ -1,6 +1,6 @@
-// nstd/type_traits/declval.hpp                                       -*-C++-*-
+// nstd/executor/async_completion.t.cpp                               -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
+//  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
 //  Permission is hereby granted, free of charge, to any person          
 //  obtaining a copy of this software and associated documentation       
@@ -23,19 +23,16 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_TYPE_TRAITS_DECLVAL
-#define INCLUDED_NSTD_TYPE_TRAITS_DECLVAL
+#include "kuhl/test.hpp"
 
-#include "nstd/type_traits/add_rvalue_reference.hpp"
-
-// ----------------------------------------------------------------------------
-
-namespace nstd::type_traits
-{
-    template <typename T>
-    auto declval() noexcept(true) -> nstd::type_traits::add_rvalue_reference_t<T>;
-}
+namespace KT = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
 
-#endif
+static KT::testcase const tests[] = {
+    KT::expect_failure("placeholder", [](KT::context& )->bool{
+           return false;
+        }),
+};
+
+static KT::add_tests suite("async_completion", ::tests);

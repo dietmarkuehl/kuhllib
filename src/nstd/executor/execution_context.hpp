@@ -1,6 +1,6 @@
-// nstd/type_traits/declval.hpp                                       -*-C++-*-
+// nstd/executor/execution_context.hpp                                -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
+//  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
 //  Permission is hereby granted, free of charge, to any person          
 //  obtaining a copy of this software and associated documentation       
@@ -23,17 +23,13 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_TYPE_TRAITS_DECLVAL
-#define INCLUDED_NSTD_TYPE_TRAITS_DECLVAL
-
-#include "nstd/type_traits/add_rvalue_reference.hpp"
+#ifndef INCLUDED_NSTD_EXECUTOR_EXECUTION_CONTEXT
+#define INCLUDED_NSTD_EXECUTOR_EXECUTION_CONTEXT
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::type_traits
-{
-    template <typename T>
-    auto declval() noexcept(true) -> nstd::type_traits::add_rvalue_reference_t<T>;
+namespace nstd::inline executor {
+    class execution_context;
 }
 
 // ----------------------------------------------------------------------------

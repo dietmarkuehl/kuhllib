@@ -27,6 +27,8 @@
 #define INCLUDED_KUHL_TEST_ASSERTIONS
 
 #include "kuhl/test/context.hpp"
+#include <source_location>
+#include <source_location>
 #include <utility>
 #include <cstring>
 
@@ -91,8 +93,10 @@ namespace kuhl
         template <typename> struct type_t {};
         template <typename T>
         inline constexpr type_t<T> type;
-        template <typename T0, typename T1> bool operator== (type_t<T0>, type_t<T1>) { return false; }
+        template <typename T0, typename T1>
+        bool operator== (type_t<T0>, type_t<T1>);
         template <typename T>               bool operator== (type_t<T>, type_t<T>) { return true; }
+        template <typename T> type_t<T> get_type(T&&) { return {}; }
     }
 
 }

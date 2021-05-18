@@ -1,6 +1,6 @@
-// nstd/type_traits/declval.hpp                                       -*-C++-*-
+// nstd/executor/executor.hpp                                         -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
+//  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
 //  Permission is hereby granted, free of charge, to any person          
 //  obtaining a copy of this software and associated documentation       
@@ -23,18 +23,17 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_TYPE_TRAITS_DECLVAL
-#define INCLUDED_NSTD_TYPE_TRAITS_DECLVAL
-
-#include "nstd/type_traits/add_rvalue_reference.hpp"
+#ifndef INCLUDED_NSTD_EXECUTOR_EXECUTOR
+#define INCLUDED_NSTD_EXECUTOR_EXECUTOR
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::type_traits
-{
-    template <typename T>
-    auto declval() noexcept(true) -> nstd::type_traits::add_rvalue_reference_t<T>;
-}
+#include "nstd/executor/async_result.hpp"
+#include "nstd/executor/async_completion.hpp"
+#include "nstd/executor/associated_allocator.hpp"
+#include "nstd/executor/fork_event.hpp"
+#include "nstd/executor/execution_context.hpp"
+#include "nstd/executor/service.hpp"
 
 // ----------------------------------------------------------------------------
 
