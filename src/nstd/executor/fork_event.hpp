@@ -28,7 +28,7 @@
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::inline executor {
+namespace nstd::inline net {
     enum class fork_event {
         prepare,
         parent,

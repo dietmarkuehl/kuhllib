@@ -28,7 +28,7 @@
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::inline executor {
+namespace nstd::inline net {
         template <typename CompletionToken, typename Signature>
         class async_completion;
 }

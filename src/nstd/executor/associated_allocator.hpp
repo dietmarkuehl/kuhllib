@@ -30,19 +30,19 @@
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::inline executor {
+namespace nstd::inline net {
     template <typename T, class ProtoAllocator = ::std::allocator<void>>
     struct associated_allocator;
 
     template <typename T, class ProtoAllocator = ::std::allocator<void>>
-    using associated_allocator_t = typename ::nstd::executor::associated_allocator<T, ProtoAllocator>::type;
+    using associated_allocator_t = typename ::nstd::net::associated_allocator<T, ProtoAllocator>::type;
 
     template <typename T>
     auto get_associated_allocator(T const&) noexcept
-        -> ::nstd::executor::associated_allocator_t<T>;
+        -> ::nstd::net::associated_allocator_t<T>;
     template <typename T, typename ProtoAllocator>
     auto get_associated_allocator(T const&, ProtoAllocator const&) noexcept
-        -> ::nstd::executor::associated_allocator_t<T>;
+        -> ::nstd::net::associated_allocator_t<T>;
 }
 
 // ----------------------------------------------------------------------------

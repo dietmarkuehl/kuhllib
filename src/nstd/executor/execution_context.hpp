@@ -28,7 +28,7 @@
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::inline executor {
+namespace nstd::inline net {
     class execution_context;
 }
 

@@ -30,17 +30,17 @@
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::inline executor {
+namespace nstd::inline net {
     class service_already_exists;
 
     template<typename Service>
-    auto use_service(::nstd::executor::execution_context&)
+    auto use_service(::nstd::net::execution_context&)
         -> Service&;
     template<typename Service, typename... Args>
-    auto make_service(::nstd::executor::execution_context&, Args&&...)
+    auto make_service(::nstd::net::execution_context&, Args&&...)
         -> Service&;
     template<typename Service>
-    auto has_service(::nstd::executor::execution_context&)
+    auto has_service(::nstd::net::execution_context&)
         -> bool;
 }
 

@@ -1,4 +1,4 @@
-// nstd/executor/async_result.hpp                                     -*-C++-*-
+// nstd/executor/system_executor.t.cpp                                -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,16 +23,16 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_EXECUTOR_ASYNC_RESULT
-#define INCLUDED_NSTD_EXECUTOR_ASYNC_RESULT
+#include "kuhl/test.hpp"
+
+namespace KT = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::inline net {
-    template <typename CompletionToken, typename Signature>
-    class async_result;
-}
+static KT::testcase const tests[] = {
+    KT::expect_failure("placeholder", [](KT::context& )->bool{
+           return false;
+        }),
+};
 
-// ----------------------------------------------------------------------------
-
-#endif
+static KT::add_tests suite("system_executor", ::tests);

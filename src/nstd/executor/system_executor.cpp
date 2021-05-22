@@ -1,4 +1,4 @@
-// nstd/executor/async_result.hpp                                     -*-C++-*-
+// nstd/executor/system_executor.cpp                                  -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,16 +23,8 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_EXECUTOR_ASYNC_RESULT
-#define INCLUDED_NSTD_EXECUTOR_ASYNC_RESULT
+#include "nstd/executor/system_executor.hpp"
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::inline net {
-    template <typename CompletionToken, typename Signature>
-    class async_result;
-}
-
-// ----------------------------------------------------------------------------
-
-#endif
+int system_executor_dummy = 0;

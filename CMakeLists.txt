@@ -23,6 +23,13 @@ list(APPEND kuhllib_test_components
     )
 
 list(APPEND kuhllib_components
+    src/nstd/executor/associated_allocator
+    src/nstd/executor/associated_executor
+    src/nstd/executor/async_completion
+    src/nstd/executor/execution_context
+    src/nstd/executor/executor_binder
+    src/nstd/executor/fork_event
+    src/nstd/executor/system_executor
     src/nstd/executor/executor
     src/nstd/net/netfwd
     src/nstd/algorithm/all_of

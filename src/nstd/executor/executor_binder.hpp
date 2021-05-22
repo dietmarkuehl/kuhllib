@@ -1,4 +1,4 @@
-// nstd/executor/async_result.hpp                                     -*-C++-*-
+// nstd/executor/executor_binder.hpp                                  -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,14 +23,35 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_EXECUTOR_ASYNC_RESULT
-#define INCLUDED_NSTD_EXECUTOR_ASYNC_RESULT
+#ifndef INCLUDED_NSTD_EXECUTOR_EXECUTOR_BINDER
+#define INCLUDED_NSTD_EXECUTOR_EXECUTOR_BINDER
+
+#include "nstd/executor/async_result.hpp"
+#include "nstd/executor/associated_allocator.hpp"
+#include "nstd/executor/associated_executor.hpp"
+#include "nstd/type_traits/decay.hpp"
 
 // ----------------------------------------------------------------------------
 
 namespace nstd::inline net {
-    template <typename CompletionToken, typename Signature>
-    class async_result;
+    template <typename, typename> class executor_binder;
+
+    template <typename T, typename Executor, typename Signature>
+    class async_result< ::nstd::net::executor_binder<T, Executor>, Signature>;
+
+    template <typename T, typename Executor, typename ProtoAllocator>
+    class associated_allocator< ::nstd::net::executor_binder<T, Executor>, ProtoAllocator>;
+
+    template <typename T, typename Executor, typename ExecutorArg>
+    class associated_executor< ::nstd::net::executor_binder<T, Executor>, ExecutorArg>;
+
+    template <typename Executor, typename T>
+        auto bind_executor(Executor const&, T&&)
+            -> ::nstd::net::executor_binder<::nstd::type_traits::decay_t<T>, Executor>;
+    template <typename ExecutionContext, typename T>
+        //-dk:TODO constraint the overload?
+        auto bind_executor(ExecutionContext&, T&&)
+            -> ::nstd::net::executor_binder<::nstd::type_traits::decay_t<T>, typename ExecutionContext::executor_type>;
 }
 
 // ----------------------------------------------------------------------------

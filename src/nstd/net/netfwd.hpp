@@ -26,12 +26,15 @@
 #ifndef INCLUDED_NSTD_NET_NETFWD
 #define INCLUDED_NSTD_NET_NETFWD
 
+#include "nstd/executor/executor.hpp"
 #include <chrono> //-dk:TODO
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::net
+namespace nstd::inline net
 {
+#if 0
+    //-dk:TODO remove declarations
     class execution_context;
     template<typename T, typename Executor>
         class executor_binder;
@@ -41,6 +44,7 @@ namespace nstd::net
     class executor;
     template<typename Executor>
         class strand;
+#endif
     class io_context;
 
     template<typename Clock>
