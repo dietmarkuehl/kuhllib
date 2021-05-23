@@ -33,7 +33,7 @@
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::inline net {
+namespace nstd::net {
     template <typename, typename> class executor_binder;
 
     template <typename T, typename Executor, typename Signature>

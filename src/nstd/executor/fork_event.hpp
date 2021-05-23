@@ -28,13 +28,17 @@
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::inline net {
-    enum class fork_event {
-        prepare,
-        parent,
-        child
-    };
+namespace nstd::net {
+    enum class fork_event;
 }
+
+// ----------------------------------------------------------------------------
+
+enum class nstd::net::fork_event {
+    prepare,
+    parent,
+    child
+};
 
 // ----------------------------------------------------------------------------
 

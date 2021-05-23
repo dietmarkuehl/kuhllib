@@ -35,15 +35,15 @@
 #include "nstd/executor/fork_event.hpp"
 #include "nstd/executor/execution_context.hpp"
 #include "nstd/executor/executor_binder.hpp"
-#include "nstd/executor/service.hpp"
+#include "nstd/executor/service_already_exists.hpp"
 #include "nstd/executor/system_executor.hpp"
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::inline net {
+namespace nstd::net {
     template <typename> struct is_executor;
     template <typename T>
-    inline constexpr bool is_executor_v = ::nstd::is_executor<T>::value;
+    inline constexpr bool is_executor_v = ::nstd::net::is_executor<T>::value;
 
     struct executor_arg_t { explicit executor_arg_t() = default; };
     inline constexpr executor_arg_t executor_arg{};

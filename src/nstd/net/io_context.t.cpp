@@ -1,4 +1,4 @@
-// nstd/executor/execution_context.cpp                                -*-C++-*-
+// nstd/net/io_context.t.cpp                                          -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,62 +23,26 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/executor/execution_context.hpp"
-#include <atomic>
+#include "nstd/net/io_context.hpp"
+#include <type_traits>
+#include "kuhl/test.hpp"
 
 namespace NET = ::nstd::net;
+namespace TT  = ::nstd::type_traits;
+namespace KT  = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
 
-NET::execution_context::execution_context() = default;
+static KT::testcase const tests[] = {
+    KT::expect_success("io_context derives from exection_context", [](KT::context&)->bool {
+            NET::io_context*        io_ctxt{nullptr};
+            NET::execution_context* ex_ctxt{io_ctxt};
+            KT::use(ex_ctxt);
+            return ::std::is_base_of_v<NET::execution_context, NET::io_context>;
+        }),
+    KT::expect_failure("placeholder", [](KT::context& )->bool{
+           return false;
+        }),
+};
 
-NET::execution_context::~execution_context()
-{
-    this->shutdown();
-    this->destroy();
-}
-
-// ----------------------------------------------------------------------------
-
-auto NET::execution_context::notify_fork(NET::fork_event) -> void
-{
-}
-
-// ----------------------------------------------------------------------------
-
-auto NET::execution_context::shutdown() noexcept -> void
-{
-
-}
-
-auto NET::execution_context::destroy() noexcept -> void
-{
-
-}
-
-auto NET::execution_context::next_key() -> ::std::size_t
-{
-    static ::std::atomic<::std::size_t> rc{0};
-    return rc++;
-}
-
-// ----------------------------------------------------------------------------
-
-NET::execution_context::service::service(NET::execution_context& ctxt)
-    : d_context(ctxt)
-{
-}
-
-NET::execution_context::service::~service() = default;
-
-// ----------------------------------------------------------------------------
-
-auto NET::execution_context::service::context() noexcept
-    -> NET::execution_context&
-{
-    return this->d_context;
-}
-
-auto NET::execution_context::service::notify_fork(NET::fork_event) -> void
-{
-}
+static KT::add_tests suite("io_context", ::tests);

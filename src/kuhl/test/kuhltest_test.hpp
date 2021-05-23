@@ -38,6 +38,12 @@ namespace kuhl
 {
     namespace test
     {
+        namespace detail {
+            template <typename, typename> struct is_same_type { static constexpr bool value{false}; };
+            template <typename T> struct is_same_type<T, T> { static constexpr bool value{true}; };
+            template <typename T0, typename T1>
+            inline constexpr bool is_same_type_v{is_same_type<T0, T1>::value};
+        }
         class testcase;
         class add_tests;
 
@@ -57,6 +63,10 @@ namespace kuhl
         template <typename Exception>
         kuhl::test::testcase
         expect_exception(char const*, bool(*)(kuhl::test::context&));
+
+        template <typename E, typename... M>
+        kuhl::test::testcase
+        check_enum(char const*, M&&...);
 
         int run_tests(char const*, int, char*[],
                       kuhl::test::testcase const*, kuhl::test::testcase const*);
@@ -331,6 +341,15 @@ kuhl::test::testcase
 kuhl::test::expect_exception(char const* name, bool(*test)(kuhl::test::context&))
 {
     return kuhl::test::testcase(static_cast<Exception*>(0), name, test);
+}
+
+template <typename E, typename... M>
+kuhl::test::testcase
+kuhl::test::check_enum(char const* name, M&&...)
+{
+    return kuhl::test::testcase(true, name,[]{
+            return (kuhl::test::detail::is_same_type_v<E, M> && ...);
+    });
 }
 
 template <std::size_t NoTests>

@@ -1,4 +1,4 @@
-// nstd/executor/service.t.cpp                                        -*-C++-*-
+// nstd/executor/service_already_exists.hpp                           -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,16 +23,23 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "kuhl/test.hpp"
+#ifndef INCLUDED_NSTD_EXECUTOR_SERVICE_ALREADY_EXISTS
+#define INCLUDED_NSTD_EXECUTOR_SERVICE_ALREADY_EXISTS
 
-namespace KT = ::kuhl::test;
+#include <stdexcept>
 
 // ----------------------------------------------------------------------------
 
-static KT::testcase const tests[] = {
-    KT::expect_failure("placeholder", [](KT::context& )->bool{
-           return false;
-        }),
+namespace nstd::net {
+    class service_already_exists;
+}
+
+// ----------------------------------------------------------------------------
+
+class nstd::net::service_already_exists
+    : public ::std::logic_error
+{
 };
 
-static KT::add_tests suite("service", ::tests);
+// ----------------------------------------------------------------------------
+#endif

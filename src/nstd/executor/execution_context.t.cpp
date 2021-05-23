@@ -23,15 +23,51 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
+#include "nstd/executor/execution_context.hpp"
+#include "nstd/executor/fork_event.hpp"
+#include "nstd/type_traits/declval.hpp"
 #include "kuhl/test.hpp"
 
+namespace NET = ::nstd::net;
+namespace TT = ::nstd::type_traits;
 namespace KT = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
-    KT::expect_failure("placeholder", [](KT::context& )->bool{
-           return false;
+    KT::expect_success("execution_context members", []{
+            struct context
+                : NET::execution_context
+            {
+                    using NET::execution_context::shutdown;
+                    using NET::execution_context::destroy;
+            };
+            NET::execution_context ctxt;
+            ctxt.notify_fork(NET::fork_event::prepare);
+
+            return KT::assert_type_exists<NET::execution_context::service>
+                && KT::type<void> == KT::type<decltype(ctxt.notify_fork(NET::fork_event::prepare))>
+                && KT::type<void> == KT::type<decltype(TT::declval<context&>().shutdown())>
+                && KT::type<void> == KT::type<decltype(TT::declval<context&>().destroy())>
+                ;
+        }),
+    KT::expect_success("execution_context::service members", []{
+            struct service
+                : NET::execution_context::service 
+            {
+                service(NET::execution_context& ctxt)
+                    : NET::execution_context::service(ctxt) {
+
+                }
+                using NET::execution_context::service::context;
+                auto shutdown() noexcept -> void override {}
+                auto notify_fork(NET::fork_event) -> void override {}
+            };
+            NET::execution_context ctxt;
+            service                svc(ctxt);
+            return KT::type<NET::execution_context&> == KT::type<decltype(svc.context())>
+                && &ctxt == &svc.context()
+                ;
         }),
 };
 

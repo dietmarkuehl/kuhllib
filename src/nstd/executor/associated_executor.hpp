@@ -30,7 +30,7 @@
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::inline net {
+namespace nstd::net {
     template <typename, class = ::nstd::net::system_executor>
     struct associated_executor;
     template <typename T, class Executor = ::nstd::net::system_executor>

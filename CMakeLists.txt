@@ -30,8 +30,10 @@ list(APPEND kuhllib_components
     src/nstd/executor/executor_binder
     src/nstd/executor/fork_event
     src/nstd/executor/system_executor
+    src/nstd/executor/service_already_exists
     src/nstd/executor/executor
     src/nstd/net/netfwd
+    src/nstd/net/io_context
     src/nstd/algorithm/all_of
     src/nstd/algorithm/any_of
     src/nstd/algorithm/distance

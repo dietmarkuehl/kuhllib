@@ -28,7 +28,7 @@
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::inline net {
+namespace nstd::net {
     class system_executor;
     class system_context;
 

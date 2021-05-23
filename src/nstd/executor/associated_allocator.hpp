@@ -30,7 +30,7 @@
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::inline net {
+namespace nstd::net {
     template <typename T, class ProtoAllocator = ::std::allocator<void>>
     struct associated_allocator;
 

@@ -39,7 +39,8 @@ namespace test_declarations
 {
     struct completion_token;
     struct example_type;
-    struct service;
+    struct service: NET::execution_context::service { using key_type = service; };
+    struct concrete_service: service {};
     struct executor {};
     struct execution_context { using executor_type = executor; };
 }
@@ -83,9 +84,9 @@ static KT::testcase const tests[] = {
                && KT::type<NET::fork_event> == KT::type<decltype(NET::fork_event::child)>
                && KT::assert_type_exists<NET::execution_context>
                && KT::assert_type_exists<NET::service_already_exists>
-               && KT::type<TD::service&> == KT::type<decltype(NET::use_service<TD::service>(TT::declval<NET::execution_context&>()))>
-               && KT::type<TD::service&> == KT::type<decltype(NET::make_service<TD::service>(TT::declval<NET::execution_context&>()))>
-               && KT::type<bool> == KT::type<decltype(NET::has_service<TD::service>(TT::declval<NET::execution_context&>()))>
+               && KT::type<TD::service&> == KT::type<decltype(NET::use_service<TD::concrete_service>(TT::declval<NET::execution_context&>()))>
+               && KT::type<TD::concrete_service&> == KT::type<decltype(NET::make_service<TD::concrete_service>(TT::declval<NET::execution_context&>()))>
+               && KT::type<bool> == KT::type<decltype(NET::has_service<TD::concrete_service>(TT::declval<NET::execution_context&>()))>
                && KT::assert_template_exists<NET::is_executor, int>
                //-dk:TODO && KT::type<bool const> == KT::type<decltype(NET::is_executor_v<int>)>
                && KT::assert_type_exists<NET::executor_arg_t>

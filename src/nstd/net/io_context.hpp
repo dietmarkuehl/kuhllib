@@ -1,4 +1,4 @@
-// nstd/executor/execution_context.cpp                                -*-C++-*-
+// nstd/net/io_context.hpp                                            -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,62 +23,24 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/executor/execution_context.hpp"
-#include <atomic>
+#ifndef INCLUDED_NSTD_NET_IO_CONTEXT
+#define INCLUDED_NSTD_NET_IO_CONTEXT
 
-namespace NET = ::nstd::net;
+#include "nstd/net/netfwd.hpp"
 
 // ----------------------------------------------------------------------------
 
-NET::execution_context::execution_context() = default;
-
-NET::execution_context::~execution_context()
-{
-    this->shutdown();
-    this->destroy();
+namespace nstd::net {
+    class io_context;
 }
 
 // ----------------------------------------------------------------------------
 
-auto NET::execution_context::notify_fork(NET::fork_event) -> void
+class nstd::net::io_context
+    : public nstd::net::execution_context
 {
-}
+};
 
 // ----------------------------------------------------------------------------
 
-auto NET::execution_context::shutdown() noexcept -> void
-{
-
-}
-
-auto NET::execution_context::destroy() noexcept -> void
-{
-
-}
-
-auto NET::execution_context::next_key() -> ::std::size_t
-{
-    static ::std::atomic<::std::size_t> rc{0};
-    return rc++;
-}
-
-// ----------------------------------------------------------------------------
-
-NET::execution_context::service::service(NET::execution_context& ctxt)
-    : d_context(ctxt)
-{
-}
-
-NET::execution_context::service::~service() = default;
-
-// ----------------------------------------------------------------------------
-
-auto NET::execution_context::service::context() noexcept
-    -> NET::execution_context&
-{
-    return this->d_context;
-}
-
-auto NET::execution_context::service::notify_fork(NET::fork_event) -> void
-{
-}
+#endif

@@ -31,7 +31,7 @@
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::inline net
+namespace nstd::net
 {
 #if 0
     //-dk:TODO remove declarations

@@ -1,4 +1,4 @@
-// nstd/executor/service.hpp                                          -*-C++-*-
+// nstd/executor/service_already_exists.t.cpp                         -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,27 +23,20 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_EXECUTOR_SERVICE
-#define INCLUDED_NSTD_EXECUTOR_SERVICE
+#include "nstd/executor/service_already_exists.hpp"
+#include "kuhl/test.hpp"
+#include <type_traits>
 
-#include "nstd/executor/execution_context.hpp"
-
-// ----------------------------------------------------------------------------
-
-namespace nstd::inline net {
-    class service_already_exists;
-
-    template<typename Service>
-    auto use_service(::nstd::net::execution_context&)
-        -> Service&;
-    template<typename Service, typename... Args>
-    auto make_service(::nstd::net::execution_context&, Args&&...)
-        -> Service&;
-    template<typename Service>
-    auto has_service(::nstd::net::execution_context&)
-        -> bool;
-}
+namespace NET = ::nstd::net;
+namespace KT  = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
 
-#endif
+static KT::testcase const tests[] = {
+    KT::expect_success("service_already_exists interface", []{
+           return ::std::is_base_of_v<::std::logic_error, NET::service_already_exists>
+               ;
+        }),
+};
+
+static KT::add_tests suite("service", ::tests);

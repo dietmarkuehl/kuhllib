@@ -23,16 +23,19 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
+#include "nstd/executor/fork_event.hpp"
 #include "kuhl/test.hpp"
 
-namespace KT = ::kuhl::test;
+namespace NET = ::nstd::net;
+namespace KT  = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
-    KT::expect_failure("placeholder", [](KT::context& )->bool{
-           return false;
-        }),
+    KT::check_enum<NET::fork_event>("fork_event members",
+                                    NET::fork_event::prepare,
+                                    NET::fork_event::parent,
+                                    NET::fork_event::child),
 };
 
 static KT::add_tests suite("fork_event", ::tests);
