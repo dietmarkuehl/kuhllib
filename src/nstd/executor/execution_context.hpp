@@ -100,12 +100,13 @@ private:
         if (this->d_services.size() <= index) {
             this->d_services.resize(index + 1u);
         }
-        Service* rc(new Service(::std::forward<Args>(args)...));
+        Service* rc(new Service(*this, ::std::forward<Args>(args)...));
         this->d_services[index] = static_cast<typename Service::key_type*>(rc);
         return *rc;
     }
 
-    ::std::mutex                                            d_bottleneck;
+    mutable ::std::mutex                                    d_bottleneck;
+    bool                                                    d_running = true;
     ::std::vector<::nstd::net::execution_context::service*> d_services;
 };
 
@@ -162,6 +163,28 @@ template <typename Service>
 inline auto nstd::net::execution_context::key() -> ::std::size_t
 {
     return ::nstd::net::execution_context::get_key<typename Service::key_type>();
+}
+
+// ----------------------------------------------------------------------------
+
+template<typename Service>
+inline auto nstd::net::use_service(::nstd::net::execution_context& ctxt)
+    -> typename Service::key_type&
+    requires service<Service>
+{
+    return ctxt.use_service<Service>();
+}
+template<typename Service, typename... Args>
+inline auto nstd::net::make_service(::nstd::net::execution_context& ctxt, Args&&... args)
+    -> Service&
+{
+    return ctxt.make_service<Service>(::std::forward<Args>(args)...);
+}
+template<typename Service>
+inline auto nstd::net::has_service(::nstd::net::execution_context& ctxt)
+    -> bool
+{
+    return ctxt.has_service<Service>();
 }
 
 // ----------------------------------------------------------------------------

@@ -26,11 +26,50 @@
 #include "nstd/executor/execution_context.hpp"
 #include "nstd/executor/fork_event.hpp"
 #include "nstd/type_traits/declval.hpp"
+#include <utility>
+#include <vector>
 #include "kuhl/test.hpp"
 
 namespace NET = ::nstd::net;
 namespace TT = ::nstd::type_traits;
 namespace KT = ::kuhl::test;
+namespace test_declarations {}
+namespace TD = ::test_declarations;
+
+// ----------------------------------------------------------------------------
+
+namespace test_declarations
+{
+    enum class op {
+        dtor,
+        fork,
+        shutdown
+    };
+    template <int N>
+    struct service
+        : NET::execution_context::service
+    {
+        using key_type = service;
+        using NET::execution_context::service::service;
+
+        service(NET::execution_context& ctxt, ::std::vector<::std::pair<TD::op, int>>* vector = nullptr)
+            : NET::execution_context::service(ctxt)
+            , d_vector(vector)
+        {
+            
+        }
+        ~service() { this->record(TD::op::dtor); }
+        auto notify_fork(::NET::fork_event) noexcept -> void override { this->record(TD::op::fork); }
+        auto shutdown() noexcept -> void override { this->record(TD::op::shutdown); }
+
+        void record(TD::op op){
+            if (this->d_vector) {
+                this->d_vector->emplace_back(op, N);
+            }
+        }
+        ::std::vector<::std::pair<TD::op, int>>* d_vector = nullptr;
+    };
+}
 
 // ----------------------------------------------------------------------------
 
@@ -69,6 +108,62 @@ static KT::testcase const tests[] = {
                 && &ctxt == &svc.context()
                 ;
         }),
+    KT::expect_success("service creation", []{
+            NET::execution_context ctxt;
+            return not NET::has_service<TD::service<1>>(ctxt)
+                && not NET::has_service<TD::service<2>>(ctxt)
+                && (NET::use_service<TD::service<1>>(ctxt), NET::has_service<TD::service<1>>(ctxt))
+                && (NET::make_service<TD::service<2>>(ctxt), NET::has_service<TD::service<2>>(ctxt))
+                ;
+        }),
+    KT::expect_success("operation order", []{
+        ::std::vector<::std::pair<TD::op, int>> vector;
+        {
+            NET::execution_context ctxt;
+            NET::make_service<TD::service<1>>(ctxt, &vector);
+            NET::make_service<TD::service<2>>(ctxt, &vector);
+
+            ctxt.notify_fork(NET::fork_event::prepare);
+            ctxt.notify_fork(NET::fork_event::parent);
+            ctxt.notify_fork(NET::fork_event::child);
+        }
+        ::std::vector<::std::pair<TD::op, int>> expect{
+            { TD::op::fork, 1 },
+            { TD::op::fork, 2 },
+            { TD::op::fork, 2 },
+            { TD::op::fork, 1 },
+            { TD::op::fork, 2 },
+            { TD::op::fork, 1 },
+            { TD::op::shutdown, 2 },
+            { TD::op::shutdown, 1 },
+            { TD::op::dtor, 2 },
+            { TD::op::dtor, 1 },
+        };
+        return vector == expect
+            ;
+    }),
+    KT::expect_success("only one shutdown/destroy", []{
+        ::std::vector<::std::pair<TD::op, int>> vector;
+        {
+            struct context
+                : NET::execution_context {
+                using NET::execution_context::shutdown;
+                using NET::execution_context::destroy;
+            } ctxt;
+            NET::make_service<TD::service<1>>(ctxt, &vector);
+
+            ctxt.shutdown();
+            ctxt.shutdown();
+            ctxt.destroy();
+        }
+        ::std::vector<::std::pair<TD::op, int>> expect{
+            { TD::op::shutdown, 1 },
+            { TD::op::dtor, 1 },
+        };
+        return vector == expect
+            ;
+
+    })
 };
 
 static KT::add_tests suite("execution_context", ::tests);

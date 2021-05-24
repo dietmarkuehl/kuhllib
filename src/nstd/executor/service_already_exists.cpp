@@ -27,4 +27,7 @@
 
 // ----------------------------------------------------------------------------
 
-int service_dummy = 0;
+nstd::net::service_already_exists::service_already_exists()
+    : ::std::logic_error("service already exists")
+{
+}
