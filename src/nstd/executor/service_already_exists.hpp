@@ -39,6 +39,8 @@ namespace nstd::net {
 class nstd::net::service_already_exists
     : public ::std::logic_error
 {
+public:
+    service_already_exists();
 };
 
 // ----------------------------------------------------------------------------
