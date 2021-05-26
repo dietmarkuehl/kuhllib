@@ -24,24 +24,64 @@
 // ----------------------------------------------------------------------------
 
 #include "nstd/net/io_context.hpp"
+#include <chrono>
 #include <type_traits>
 #include "kuhl/test.hpp"
 
 namespace NET = ::nstd::net;
-namespace TT  = ::nstd::type_traits;
+namespace TT  = ::std;
+namespace TM  = ::std::chrono;
 namespace KT  = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
-    KT::expect_success("io_context derives from exection_context", [](KT::context&)->bool {
-            NET::io_context*        io_ctxt{nullptr};
-            NET::execution_context* ex_ctxt{io_ctxt};
-            KT::use(ex_ctxt);
-            return ::std::is_base_of_v<NET::execution_context, NET::io_context>;
+    KT::expect_success("io_context derives from exection_context", []{
+            return ::TT::is_base_of_v<NET::execution_context, NET::io_context>;
         }),
-    KT::expect_failure("placeholder", [](KT::context& )->bool{
-           return false;
+    KT::expect_success("io_context member types", []{
+            return KT::assert_type_exists<NET::io_context::executor_type>
+                && KT::assert_type_exists<NET::io_context::count_type>
+                ;
+        }),
+    KT::expect_success("io_context structors", []{
+            return TT::is_default_constructible_v<NET::io_context>
+                && TT::is_constructible_v<NET::io_context, int>
+                && !TT::is_copy_constructible_v<NET::io_context>
+                && !TT::is_move_constructible_v<NET::io_context>
+                && !TT::is_copy_assignable_v<NET::io_context>
+                && !TT::is_move_assignable_v<NET::io_context>
+                ;
+        }),
+    KT::expect_success("io_context operators", []{
+            using namespace ::std::chrono_literals;
+            NET::io_context* ctxt{};
+            auto             now{TM::system_clock::now()};
+
+            return KT::type<NET::io_context::executor_type>
+                    == KT::type<decltype(ctxt->get_executor())>
+                && noexcept(ctxt->get_executor())
+                && KT::type<NET::io_context::count_type>
+                    == KT::type<decltype(ctxt->run())>
+                && KT::type<NET::io_context::count_type>
+                    == KT::type<decltype(ctxt->run_for(2s))>
+                && KT::type<NET::io_context::count_type>
+                    == KT::type<decltype(ctxt->run_until(now))>
+                && KT::type<NET::io_context::count_type>
+                    == KT::type<decltype(ctxt->run_one())>
+                && KT::type<NET::io_context::count_type>
+                    == KT::type<decltype(ctxt->run_one_for(2s))>
+                && KT::type<NET::io_context::count_type>
+                    == KT::type<decltype(ctxt->run_one_until(now))>
+                && KT::type<NET::io_context::count_type>
+                    == KT::type<decltype(ctxt->poll())>
+                && KT::type<NET::io_context::count_type>
+                    == KT::type<decltype(ctxt->poll_one())>
+                && KT::type<void> == KT::type<decltype(ctxt->stop())>
+                && KT::type<bool> == KT::type<decltype(ctxt->stopped())>
+                && noexcept(ctxt->stopped())
+                && KT::type<void> == KT::type<decltype(ctxt->restart())>
+                ;
         }),
 };
 

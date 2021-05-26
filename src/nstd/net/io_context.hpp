@@ -27,6 +27,8 @@
 #define INCLUDED_NSTD_NET_IO_CONTEXT
 
 #include "nstd/net/netfwd.hpp"
+#include <chrono>
+#include <cstddef>
 
 // ----------------------------------------------------------------------------
 
@@ -39,6 +41,45 @@ namespace nstd::net {
 class nstd::net::io_context
     : public nstd::net::execution_context
 {
+public:
+    class executor_type;
+    using count_type = ::std::size_t;
+
+    io_context();
+    explicit io_context(int);
+    io_context(io_context const&) = delete;
+    auto operator=(io_context const&) -> io_context& = delete;
+    ~io_context();
+
+    auto get_executor() noexcept -> ::nstd::net::io_context::executor_type;
+
+    auto run() -> ::nstd::net::io_context::count_type;
+    template <typename Rep, typename Period>
+        auto run_for(::std::chrono::duration<Rep, Period> const&)
+            -> ::nstd::net::io_context::count_type;
+    template <typename Clock, typename Duration>
+        auto run_until(::std::chrono::time_point<Clock, Duration> const&)
+            -> ::nstd::net::io_context::count_type;
+    auto run_one() -> ::nstd::net::io_context::count_type;
+    template <typename Rep, typename Period>
+        auto run_one_for(::std::chrono::duration<Rep, Period> const&)
+            -> ::nstd::net::io_context::count_type;
+    template <typename Clock, typename Duration>
+        auto run_one_until(::std::chrono::time_point<Clock, Duration> const&)
+            -> ::nstd::net::io_context::count_type;
+
+    auto poll() -> ::nstd::net::io_context::count_type;
+    auto poll_one() -> ::nstd::net::io_context::count_type;
+    auto stop() -> void;
+    auto stopped() const noexcept -> bool;
+    auto restart() -> void;
+};
+
+// ----------------------------------------------------------------------------
+
+class nstd::net::io_context::executor_type
+{
+
 };
 
 // ----------------------------------------------------------------------------
