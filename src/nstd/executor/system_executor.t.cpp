@@ -23,15 +23,40 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
+#include "nstd/executor/system_executor.hpp"
+#include <memory>
+#include <type_traits>
 #include "kuhl/test.hpp"
 
-namespace KT = ::kuhl::test;
+namespace NET = ::nstd::net;
+namespace MEM = ::std;
+namespace TT  = ::std;
+namespace KT  = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
-    KT::expect_failure("placeholder", [](KT::context& )->bool{
-           return false;
+    KT::expect_success("system_executor structors", []{
+            return TT::is_default_constructible_v<NET::system_executor>
+                ;
+        }),
+    KT::expect_success("system_executor operations", []{
+            NET::system_executor       ex;
+            NET::system_executor const cex;
+            auto                       fun = []{};
+            MEM::allocator<void> const allocator;       
+            return KT::type<NET::system_context&> == KT::type<decltype(cex.context())>
+                && noexcept(cex.context())
+                && KT::type<void> == KT::type<decltype(cex.on_work_started())>
+                && noexcept(cex.on_work_started())
+                && KT::type<void> == KT::type<decltype(cex.on_work_started())>
+                && noexcept(cex.on_work_finished())
+                && KT::type<void> == KT::type<decltype(cex.dispatch(fun, allocator))>
+                && KT::type<void> == KT::type<decltype(cex.post(fun, allocator))>
+                && KT::type<void> == KT::type<decltype(cex.defer(fun, allocator))>
+                && KT::type<bool> == KT::type<decltype(cex == cex)>
+                && KT::type<bool> == KT::type<decltype(cex != cex)>
+                ;
         }),
 };
 

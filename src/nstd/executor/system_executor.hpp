@@ -37,6 +37,24 @@ namespace nstd::net {
                      ::nstd::net::system_executor const&);
 }
 
+class nstd::net::system_executor
+{
+public: 
+    system_executor();
+
+    auto context() const noexcept -> ::nstd::net::system_context&;
+
+    auto on_work_started() const noexcept ->void;
+    auto on_work_finished() const noexcept ->void;
+
+    template <typename Fun, typename ProtoAllocator>
+    auto dispatch(Fun&&, ProtoAllocator const&) const -> void;
+    template <typename Fun, typename ProtoAllocator>
+    auto post(Fun&&, ProtoAllocator const&) const -> void;
+    template <typename Fun, typename ProtoAllocator>
+    auto defer(Fun&&, ProtoAllocator const&) const -> void;
+};
+
 // ----------------------------------------------------------------------------
 
 #endif

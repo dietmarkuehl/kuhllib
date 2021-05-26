@@ -25,6 +25,8 @@
 
 #include "nstd/executor/system_executor.hpp"
 
+namespace NET = ::nstd::net;
+
 // ----------------------------------------------------------------------------
 
-int system_executor_dummy = 0;
+NET::system_executor::system_executor() = default;
