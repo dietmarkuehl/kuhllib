@@ -42,7 +42,44 @@ namespace nstd::net {
         -> ::nstd::net::associated_allocator_t<T>;
     template <typename T, typename ProtoAllocator>
     auto get_associated_allocator(T const&, ProtoAllocator const&) noexcept
-        -> ::nstd::net::associated_allocator_t<T>;
+        -> ::nstd::net::associated_allocator_t<T, ProtoAllocator>;
+}
+
+// ----------------------------------------------------------------------------
+
+template <typename T, class ProtoAllocator>
+struct nstd::net::associated_allocator
+{
+    using type = ProtoAllocator;
+    static type get(T const&, ProtoAllocator const& a = {}) noexcept{
+        return a;
+    }
+};
+
+template <typename T, class ProtoAllocator>
+    requires requires{ typename T::allocator_type; }
+struct nstd::net::associated_allocator<T, ProtoAllocator>
+{
+    using type = typename T::allocator_type;
+    static type get(T const& t, ProtoAllocator const& = {}) noexcept{
+        return t.get_allocator();
+    }
+};
+
+// ----------------------------------------------------------------------------
+
+template <typename T>
+auto nstd::net::get_associated_allocator(T const& t) noexcept
+    -> ::nstd::net::associated_allocator_t<T>
+{
+    return ::nstd::net::associated_allocator<T>::get(t);
+}
+
+template <typename T, typename ProtoAllocator>
+auto nstd::net::get_associated_allocator(T const& t, ProtoAllocator const& allocator) noexcept
+    -> ::nstd::net::associated_allocator_t<T, ProtoAllocator>
+{
+    return ::nstd::net::associated_allocator<T, ProtoAllocator>::get(t, allocator);
 }
 
 // ----------------------------------------------------------------------------
