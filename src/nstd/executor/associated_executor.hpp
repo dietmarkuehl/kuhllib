@@ -50,4 +50,42 @@ namespace nstd::net {
 
 // ----------------------------------------------------------------------------
 
+template <typename T, class Executor>
+struct nstd::net::associated_executor
+{
+    using type = Executor;
+
+    static auto get(T const&, Executor const& e = {}) noexcept -> type {
+        return e;
+    }
+};
+
+template <typename T, class Executor>
+    requires requires{ typename T::executor_type; }
+struct nstd::net::associated_executor<T, Executor>
+{
+    using type = typename T::executor_type;
+    static auto get(T const& t, Executor const& = {}) noexcept -> type {
+            return t.get_executor();
+    }
+};
+
+// ----------------------------------------------------------------------------
+
+template <typename T>
+    auto nstd::net::get_associated_executor(T const& t) noexcept
+        ->::nstd::net::associated_executor_t<T>
+{
+    return ::nstd::net::associated_executor<T>::get(t);
+}
+
+template <typename T, typename Executor>
+    auto nstd::net::get_associated_executor(T const&t, Executor const& executor) noexcept
+        ->::nstd::net::associated_executor_t<T, Executor>
+{
+    return ::nstd::net::associated_executor<T, Executor>::get(t, executor);
+}
+
+// ----------------------------------------------------------------------------
+
 #endif

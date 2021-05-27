@@ -40,7 +40,7 @@ namespace nstd::net {
 class nstd::net::system_executor
 {
 public: 
-    system_executor();
+    system_executor() = default;
 
     auto context() const noexcept -> ::nstd::net::system_context&;
 

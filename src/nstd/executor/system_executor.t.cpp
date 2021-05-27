@@ -41,7 +41,6 @@ static KT::testcase const tests[] = {
                 ;
         }),
     KT::expect_success("system_executor operations", []{
-            NET::system_executor       ex;
             NET::system_executor const cex;
             auto                       fun = []{};
             MEM::allocator<void> const allocator;       

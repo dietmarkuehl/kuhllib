@@ -29,4 +29,12 @@ namespace NET = ::nstd::net;
 
 // ----------------------------------------------------------------------------
 
-NET::system_executor::system_executor() = default;
+// NET::system_executor::system_executor() = default;
+
+// ----------------------------------------------------------------------------
+
+bool nstd::net::operator== (::nstd::net::system_executor const&,
+                            ::nstd::net::system_executor const&)
+{
+    return true;
+}
