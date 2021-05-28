@@ -26,11 +26,41 @@
 #ifndef INCLUDED_NSTD_EXECUTOR_ASYNC_COMPLETION
 #define INCLUDED_NSTD_EXECUTOR_ASYNC_COMPLETION
 
+#include "nstd/executor/async_result.hpp"
+#include <type_traits>
+
 // ----------------------------------------------------------------------------
 
 namespace nstd::net {
-        template <typename CompletionToken, typename Signature>
-        class async_completion;
+    template <typename CompletionToken, typename Signature>
+    class async_completion;
+}
+
+// ----------------------------------------------------------------------------
+
+template <typename CompletionToken, typename Signature>
+class nstd::net::async_completion
+{
+public:
+    using completion_handler_type = ::nstd::net::async_result<::std::decay_t<CompletionToken>, Signature>::completion_handler_type;
+
+    explicit async_completion(CompletionToken&);
+    async_completion(async_completion const&) = delete;
+    auto operator=(async_completion const&) ->async_completion& = delete;
+
+    ::std::conditional_t<::std::is_same_v<CompletionToken, completion_handler_type>,
+                         completion_handler_type&,
+                         completion_handler_type>                         completion_handler;
+    ::nstd::net::async_result<::std::decay_t<CompletionToken>, Signature> result;
+};
+
+// ----------------------------------------------------------------------------
+
+template <typename Token, typename Signature>
+nstd::net::async_completion<Token, Signature>::async_completion(Token& token)
+    : completion_handler(token)
+    , result(completion_handler)
+{
 }
 
 // ----------------------------------------------------------------------------

@@ -35,4 +35,20 @@ namespace nstd::net {
 
 // ----------------------------------------------------------------------------
 
+template <typename CompletionToken, typename Signature>
+class nstd::net::async_result
+{
+public:
+    using completion_handler_type = CompletionToken;
+    using return_type             = void;
+
+    explicit async_result(completion_handler_type&) {}
+    async_result(async_result const&) = delete;
+    auto operator=(async_result const&) -> async_result = delete;
+
+    return_type get() {}
+};
+
+// ----------------------------------------------------------------------------
+
 #endif

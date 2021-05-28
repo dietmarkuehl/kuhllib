@@ -23,15 +23,49 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
+#include "nstd/executor/async_completion.hpp"
+#include "nstd/executor/async_result.hpp"
+#include <type_traits>
 #include "kuhl/test.hpp"
 
-namespace KT = ::kuhl::test;
+namespace test_declarations {}
+namespace NET = ::nstd::net;
+namespace TT  = ::std;
+namespace KT  = ::kuhl::test;
+namespace TD  = ::test_declarations;
+
+// ----------------------------------------------------------------------------
+
+namespace test_declarations
+{
+    struct token {};
+    struct value;
+}
 
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
-    KT::expect_failure("placeholder", [](KT::context& )->bool{
-           return false;
+    KT::expect_success("async_completion types", []{
+            return KT::type<NET::async_result<TT::decay_t<TD::token>, void(TD::value)>::completion_handler_type>
+                    == KT::type<NET::async_completion<TD::token, void(TD::value)>::completion_handler_type>
+                ;
+        }),
+    KT::expect_success("async_completion structors", []{
+            return TT::is_constructible_v<NET::async_completion<TD::token, void(TD::value)>,
+                                          TD::token&>
+                && !TT::is_copy_constructible_v<NET::async_completion<TD::token, void(TD::value)>>
+                && !TT::is_copy_assignable_v<NET::async_completion<TD::token, void(TD::value)>>
+                ;
+
+        }),
+    KT::expect_success("async_completion members", []{
+            TD::token                                         token;
+            NET::async_completion<TD::token, void(TD::value)> ac(token);
+            return KT::type<TD::token&>
+                    == KT::type<decltype(ac.completion_handler)>
+                && KT::type<NET::async_result<TT::decay_t<TD::token>, void(TD::value)>>
+                    == KT::type<decltype(ac.result)>
+                ;
         }),
 };
 

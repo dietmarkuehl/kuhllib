@@ -42,6 +42,7 @@ static KT::testcase const tests[] = {
         }),
     KT::expect_success("system_executor operations", []{
             NET::system_executor const cex;
+            NET::system_executor const oex;
             auto                       fun = []{};
             MEM::allocator<void> const allocator;       
             return KT::type<NET::system_context&> == KT::type<decltype(cex.context())>
@@ -55,6 +56,7 @@ static KT::testcase const tests[] = {
                 && KT::type<void> == KT::type<decltype(cex.defer(fun, allocator))>
                 && KT::type<bool> == KT::type<decltype(cex == cex)>
                 && KT::type<bool> == KT::type<decltype(cex != cex)>
+                && cex == oex
                 ;
         }),
 };

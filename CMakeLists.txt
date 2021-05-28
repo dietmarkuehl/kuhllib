@@ -26,6 +26,7 @@ list(APPEND kuhllib_components
     src/nstd/executor/associated_allocator
     src/nstd/executor/associated_executor
     src/nstd/executor/async_completion
+    src/nstd/executor/async_result
     src/nstd/executor/execution_context
     src/nstd/executor/executor_binder
     src/nstd/executor/fork_event
