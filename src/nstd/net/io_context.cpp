@@ -25,6 +25,9 @@
 
 #include "nstd/net/io_context.hpp"
 
+namespace NET = ::nstd::net;
 // ----------------------------------------------------------------------------
 
-int io_context_dummy = 0;
+NET::io_context::io_context() = default;
+NET::io_context::~io_context() = default;
+

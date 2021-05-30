@@ -1,6 +1,6 @@
-// nstd/utility/move.hpp                                              -*-C++-*-
+// nstd/execution/set_done.t.cpp                                      -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
+//  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
 //  Permission is hereby granted, free of charge, to any person          
 //  obtaining a copy of this software and associated documentation       
@@ -23,24 +23,47 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_UTILITY_MOVE
-#define INCLUDED_NSTD_UTILITY_MOVE
+#include "nstd/execution/set_done.hpp"
+#include "nstd/utility/move.hpp"
+#include "kuhl/test.hpp"
 
-#include "nstd/type_traits/remove_reference.hpp"
+namespace test_declarations {}
+namespace TD = ::test_declarations;
+namespace EX = ::nstd::execution;
+namespace KT = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
 
-namespace nstd
-{
-    namespace utility {
-        template <typename T>
-        auto constexpr move(T&& other) noexcept -> nstd::type_traits::remove_reference_t<T>&& {
-            return static_cast<nstd::type_traits::remove_reference_t<T>&&>(other);
-        }
-    }
+namespace test_declarations {
+    struct member_set_done {
+        bool* const ptr;
+        void set_done() && { *ptr = true; }
+    };
+    void set_done(member_set_done&&) {}
 
+    struct non_member_set_done {
+        bool* const ptr;
+    };
+    void set_done(non_member_set_done&& r) { *r.ptr = true; }
 }
 
 // ----------------------------------------------------------------------------
 
-#endif
+static KT::testcase const tests[] = {
+    KT::expect_success("member set_done", []{
+           bool value(false);
+           EX::set_done(TD::member_set_done{&value});
+           return requires(::TD::member_set_done& r){ EX::set_done(::nstd::utility::move(r)); }
+               && value
+               ;
+        }),
+    KT::expect_success("non-member set_done", []{
+           bool value(false);
+           EX::set_done(TD::non_member_set_done{&value});
+           return requires(::TD::non_member_set_done& r){ EX::set_done(::nstd::utility::move(r)); }
+               && value
+               ;
+        }),
+};
+
+static KT::add_tests suite("set_done", ::tests);

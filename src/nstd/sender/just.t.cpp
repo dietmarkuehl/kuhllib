@@ -1,6 +1,6 @@
-// nstd/utility/move.hpp                                              -*-C++-*-
+// nstd/sender/just.t.cpp                                             -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
+//  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
 //  Permission is hereby granted, free of charge, to any person          
 //  obtaining a copy of this software and associated documentation       
@@ -23,24 +23,44 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_UTILITY_MOVE
-#define INCLUDED_NSTD_UTILITY_MOVE
+#include "nstd/sender/just.hpp"
+#include <exception>
+#include <optional>
+#include "kuhl/test.hpp"
 
-#include "nstd/type_traits/remove_reference.hpp"
-
-// ----------------------------------------------------------------------------
-
-namespace nstd
-{
-    namespace utility {
-        template <typename T>
-        auto constexpr move(T&& other) noexcept -> nstd::type_traits::remove_reference_t<T>&& {
-            return static_cast<nstd::type_traits::remove_reference_t<T>&&>(other);
-        }
-    }
-
-}
+namespace NET = ::nstd::net;
+namespace KT  = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
 
-#endif
+static KT::testcase const tests[] = {
+    KT::expect_failure("just usage", []{
+            ::std::optional<int> value;
+            struct receiver {
+                ::std::optional<int>* ptr;
+                void set_value(int v) && { *this->ptr = v; }
+                void set_error(::std::exception_ptr const&) && {}
+            };
+            auto just = NET::just(17);
+            auto state = just.connect(receiver{&value});
+            state.start();
+            return value.value_or(0) == 17
+                ;
+        }),
+    KT::expect_failure("just specialization", []{
+            ::std::optional<::std::string> value;
+            struct receiver {
+                ::std::optional<::std::string>* ptr;
+                void set_value(char const*) && {}
+                void set_value(::std::string_view v) && { *this->ptr = v; }
+                void set_error(::std::exception_ptr const&) && {}
+            };
+            auto just = NET::just("foo");
+            auto state = just.connect(receiver{&value});
+            state.start();
+            return value.value_or("") == "foo"
+                ;
+        }),
+};
+
+static KT::add_tests suite("just", ::tests);

@@ -23,6 +23,12 @@ list(APPEND kuhllib_test_components
     )
 
 list(APPEND kuhllib_components
+    src/nstd/execution/set_value
+    src/nstd/execution/set_error
+    src/nstd/execution/set_done
+    src/nstd/sender/just
+    src/nstd/sender/then
+    src/nstd/net/io_context
     src/nstd/executor/associated_allocator
     src/nstd/executor/associated_executor
     src/nstd/executor/async_completion
@@ -34,7 +40,6 @@ list(APPEND kuhllib_components
     src/nstd/executor/service_already_exists
     src/nstd/executor/executor
     src/nstd/net/netfwd
-    src/nstd/net/io_context
     src/nstd/algorithm/all_of
     src/nstd/algorithm/any_of
     src/nstd/algorithm/distance

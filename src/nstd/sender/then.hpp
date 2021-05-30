@@ -1,0 +1,116 @@
+// nstd/sender/then.hpp                                               -*-C++-*-
+// ----------------------------------------------------------------------------
+//  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
+//                                                                       
+//  Permission is hereby granted, free of charge, to any person          
+//  obtaining a copy of this software and associated documentation       
+//  files (the "Software"), to deal in the Software without restriction, 
+//  including without limitation the rights to use, copy, modify,        
+//  merge, publish, distribute, sublicense, and/or sell copies of        
+//  the Software, and to permit persons to whom the Software is          
+//  furnished to do so, subject to the following conditions:             
+//                                                                       
+//  The above copyright notice and this permission notice shall be       
+//  included in all copies or substantial portions of the Software.      
+//                                                                       
+//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,      
+//  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES      
+//  OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND             
+//  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT          
+//  HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,         
+//  WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING         
+//  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR        
+//  OTHER DEALINGS IN THE SOFTWARE. 
+// ----------------------------------------------------------------------------
+
+#ifndef INCLUDED_NSTD_SENDER_THEN
+#define INCLUDED_NSTD_SENDER_THEN
+
+#include "nstd/execution/set_value.hpp"
+#include "nstd/execution/set_error.hpp"
+#include "nstd/execution/set_done.hpp"
+#include "nstd/utility/forward.hpp"
+#include "nstd/utility/move.hpp"
+#include <exception>
+#include <type_traits>
+
+// ----------------------------------------------------------------------------
+
+namespace nstd::net {
+    template < typename Fun, typename Receiver> class then_receiver;
+    template <typename Sender, typename Fun> class then_sender;
+
+    template <typename Sender, typename Fun>
+    auto then(Sender&&, Fun&&)
+        -> ::nstd::net::then_sender<Sender, Fun>;
+}
+
+// ----------------------------------------------------------------------------
+
+template <typename Fun, typename Receiver>
+class nstd::net::then_receiver
+{
+public:
+    ::std::remove_cvref_t<Fun>       d_fun;
+    ::std::remove_cvref_t<Receiver>  d_receiver;
+
+public:
+    then_receiver(auto&& fun, Receiver&& receiver)
+        : d_fun(::nstd::utility::move(fun))
+        , d_receiver(::nstd::utility::forward<Receiver>(receiver)) {
+
+    }
+    void set_value(auto&&... args) && try {
+        if constexpr (::std::is_same_v<void, decltype(this->d_fun(::nstd::utility::forward<decltype(args)>(args)...))>) {
+            this->d_fun(::nstd::utility::forward<decltype(args)>(args)...);
+            ::nstd::execution::set_value(::nstd::utility::move(this->d_receiver));
+        }
+        else {
+            ::nstd::execution::set_value(::nstd::utility::move(this->d_receiver), this->d_fun(::nstd::utility::forward<decltype(args)>(args)...));
+        }
+    }
+    catch (...) {
+        ::nstd::execution::set_error(::nstd::utility::move(this->d_receiver), ::std::current_exception());
+    }
+    void set_error(auto&& arg) && {
+        ::nstd::execution::set_error(::nstd::utility::move(this->d_receiver), ::nstd::utility::forward<decltype(arg)>(arg));
+    }
+    void set_done() && {
+        ::nstd::execution::set_done(::nstd::utility::move(this->d_receiver));
+    }
+};
+
+// ----------------------------------------------------------------------------
+
+template <typename Sender, typename Fun>
+class nstd::net::then_sender
+{
+private:
+    ::std::remove_cvref_t<Sender> d_sender;
+    ::std::remove_cvref_t<Fun>    d_fun;
+
+public:
+    then_sender(Sender sender, Fun fun)
+        : d_sender(::nstd::utility::forward<Sender>(sender))
+        , d_fun(::nstd::utility::forward<Fun>(fun)) {
+    }
+
+    template <typename Receiver>
+    auto connect(Receiver&& receiver) {
+        return ::nstd::utility::move(this->d_sender).connect(
+            ::nstd::net::then_receiver<Fun, Receiver>(::nstd::utility::move(this->d_fun), ::nstd::utility::forward<Receiver>(receiver)));
+    }
+};
+
+// ----------------------------------------------------------------------------
+
+template <typename Sender, typename Fun>
+auto nstd::net::then(Sender&& sender, Fun&& fun)
+    -> ::nstd::net::then_sender<Sender, Fun>
+{
+    return { ::nstd::utility::forward<Sender>(sender), ::nstd::utility::forward<Fun>(fun) };
+}
+
+// ----------------------------------------------------------------------------
+
+#endif

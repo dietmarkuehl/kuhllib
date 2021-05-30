@@ -1,6 +1,6 @@
-// nstd/utility/move.hpp                                              -*-C++-*-
+// nstd/sender/then.t.cpp                                             -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
+//  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
 //  Permission is hereby granted, free of charge, to any person          
 //  obtaining a copy of this software and associated documentation       
@@ -23,24 +23,31 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_UTILITY_MOVE
-#define INCLUDED_NSTD_UTILITY_MOVE
+#include "nstd/sender/then.hpp"
+#include "nstd/sender/just.hpp"
+#include <optional>
+#include "kuhl/test.hpp"
 
-#include "nstd/type_traits/remove_reference.hpp"
-
-// ----------------------------------------------------------------------------
-
-namespace nstd
-{
-    namespace utility {
-        template <typename T>
-        auto constexpr move(T&& other) noexcept -> nstd::type_traits::remove_reference_t<T>&& {
-            return static_cast<nstd::type_traits::remove_reference_t<T>&&>(other);
-        }
-    }
-
-}
+namespace NET = ::nstd::net;
+namespace KT  = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
 
-#endif
+static KT::testcase const tests[] = {
+    KT::expect_success("then usagae", []{
+            struct receiver {
+                ::std::optional<bool>* ptr;
+                void set_value() && { *this->ptr = true; }
+                void set_error(::std::exception_ptr const&) && {}
+            };
+
+            ::std::optional<bool> value;
+            auto just = NET::just(17);
+            auto then = NET::then(just, [&value](auto v){ value = v; });
+            auto state = then.connect(receiver{&value});
+            state.start();
+            return value.value_or(false);
+        }),
+};
+
+static KT::add_tests suite("then", ::tests);
