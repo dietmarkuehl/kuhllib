@@ -38,7 +38,8 @@ static KT::testcase const tests[] = {
             struct receiver {
                 ::std::optional<bool>* ptr;
                 void set_value() && { *this->ptr = true; }
-                void set_error(::std::exception_ptr const&) && {}
+                void set_error(::std::exception_ptr const&) && noexcept {}
+                void set_done() && noexcept {}
             };
 
             ::std::optional<bool> value;

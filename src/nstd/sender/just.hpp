@@ -26,6 +26,7 @@
 #ifndef INCLUDED_NSTD_SENDER_JUST
 #define INCLUDED_NSTD_SENDER_JUST
 
+#include "nstd/execution/sender_base.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/set_error.hpp"
 #include "nstd/utility/forward.hpp"
@@ -67,6 +68,7 @@ public:
 
 template <typename Value>
 class nstd::net::just_sender
+    : public ::nstd::execution::sender_base
 {
 private:
     ::std::remove_cvref_t<Value> d_value;

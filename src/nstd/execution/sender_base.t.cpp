@@ -1,6 +1,6 @@
-// nstd/type_traits/integral_constant.hpp                             -*-C++-*-
+// nstd/execution/sender_base.t.cpp                                   -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
+//  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
 //  Permission is hereby granted, free of charge, to any person          
 //  obtaining a copy of this software and associated documentation       
@@ -23,38 +23,32 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_TYPE_TRAITS_INTEGRAL_CONSTANT
-#define INCLUDED_NSTD_TYPE_TRAITS_INTEGRAL_CONSTANT
+#include "nstd/execution/sender_base.hpp"
+#include "kuhl/test.hpp"
+
+namespace EX = ::nstd::execution;
+namespace KT = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
 
-namespace nstd
+namespace test_declarations
 {
-    namespace type_traits
+    template <typename Base>
+    struct can_inherit
+        : Base
     {
-        template <typename T, T Value> struct integral_constant;
-
-        template <bool Value>
-        using bool_constant = ::nstd::type_traits::integral_constant<bool, Value>;
-        using true_type = ::nstd::type_traits::integral_constant<bool, true>;
-        using false_type = ::nstd::type_traits::integral_constant<bool, false>;
-    }
+    };
 }
 
 // ----------------------------------------------------------------------------
 
-template <typename T, T Value>
-struct nstd::type_traits::integral_constant
-{
-    using value_type = T;
-    using type       = nstd::type_traits::integral_constant<T, Value>;
-
-    static constexpr T value{Value};
-    constexpr integral_constant() noexcept(true) {}
-    constexpr operator value_type()   const noexcept(true) { return Value; }
-    constexpr value_type operator()() const noexcept(true) { return Value; }
+static KT::testcase const tests[] = {
+    KT::expect_success("sender_base exists", []{
+           return KT::assert_type_exists<EX::sender_base>
+               && sizeof(EX::sender_base) // it is a complete type
+               && sizeof(::test_declarations::can_inherit<EX::sender_base>)
+               ;
+        }),
 };
 
-// ----------------------------------------------------------------------------
-
-#endif
+static KT::add_tests suite("sender_base", ::tests);

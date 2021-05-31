@@ -1,6 +1,6 @@
-// nstd/type_traits/integral_constant.hpp                             -*-C++-*-
+// nstd/execution/sender_base.cpp                                     -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
+//  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
 //  Permission is hereby granted, free of charge, to any person          
 //  obtaining a copy of this software and associated documentation       
@@ -23,38 +23,8 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_TYPE_TRAITS_INTEGRAL_CONSTANT
-#define INCLUDED_NSTD_TYPE_TRAITS_INTEGRAL_CONSTANT
+#include "nstd/execution/sender_base.hpp"
 
 // ----------------------------------------------------------------------------
 
-namespace nstd
-{
-    namespace type_traits
-    {
-        template <typename T, T Value> struct integral_constant;
-
-        template <bool Value>
-        using bool_constant = ::nstd::type_traits::integral_constant<bool, Value>;
-        using true_type = ::nstd::type_traits::integral_constant<bool, true>;
-        using false_type = ::nstd::type_traits::integral_constant<bool, false>;
-    }
-}
-
-// ----------------------------------------------------------------------------
-
-template <typename T, T Value>
-struct nstd::type_traits::integral_constant
-{
-    using value_type = T;
-    using type       = nstd::type_traits::integral_constant<T, Value>;
-
-    static constexpr T value{Value};
-    constexpr integral_constant() noexcept(true) {}
-    constexpr operator value_type()   const noexcept(true) { return Value; }
-    constexpr value_type operator()() const noexcept(true) { return Value; }
-};
-
-// ----------------------------------------------------------------------------
-
-#endif
+int sender_base_dummy = 0;

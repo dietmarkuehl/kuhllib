@@ -1,6 +1,6 @@
-// nstd/type_traits/integral_constant.hpp                             -*-C++-*-
+// nstd/execution/operation_state.t.cpp                               -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
+//  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
 //  Permission is hereby granted, free of charge, to any person          
 //  obtaining a copy of this software and associated documentation       
@@ -23,38 +23,48 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_TYPE_TRAITS_INTEGRAL_CONSTANT
-#define INCLUDED_NSTD_TYPE_TRAITS_INTEGRAL_CONSTANT
+#include "nstd/execution/operation_state.hpp"
+#include "kuhl/test.hpp"
+
+namespace test_declarations {}
+namespace EX = ::nstd::execution;
+namespace TD = ::test_declarations;
+namespace KT = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
 
-namespace nstd
-{
-    namespace type_traits
-    {
-        template <typename T, T Value> struct integral_constant;
+namespace test_declarations {
+    struct non_state {};
 
-        template <bool Value>
-        using bool_constant = ::nstd::type_traits::integral_constant<bool, Value>;
-        using true_type = ::nstd::type_traits::integral_constant<bool, true>;
-        using false_type = ::nstd::type_traits::integral_constant<bool, false>;
-    }
+    struct non_destructible_state {
+        ~non_destructible_state() = delete;
+        auto start() & noexcept -> void {}
+    };
+
+    template <bool Noexcept>
+    struct state {
+        auto start() & noexcept(Noexcept) -> void {}
+    };
 }
 
 // ----------------------------------------------------------------------------
 
-template <typename T, T Value>
-struct nstd::type_traits::integral_constant
-{
-    using value_type = T;
-    using type       = nstd::type_traits::integral_constant<T, Value>;
-
-    static constexpr T value{Value};
-    constexpr integral_constant() noexcept(true) {}
-    constexpr operator value_type()   const noexcept(true) { return Value; }
-    constexpr value_type operator()() const noexcept(true) { return Value; }
+static KT::testcase const tests[] = {
+    KT::expect_success("random object isn't a state", []{
+           return !EX::operation_state<TD::non_state>;
+        }),
+    KT::expect_success("non-destructible object isn't a state", []{
+           return !EX::operation_state<TD::non_destructible_state>;
+        }),
+    KT::expect_success("object with throwing start isn't a state", []{
+           return !EX::operation_state<TD::state<false>>;
+        }),
+    KT::expect_success("reference to a state", []{
+           return !EX::operation_state<TD::state<true>&>;
+        }),
+    KT::expect_success("destructible object with non-throwing start() is a state", []{
+           return EX::operation_state<TD::state<true>>;
+        }),
 };
 
-// ----------------------------------------------------------------------------
-
-#endif
+static KT::add_tests suite("operation_state", ::tests);

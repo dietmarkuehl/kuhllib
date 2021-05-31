@@ -23,9 +23,16 @@ list(APPEND kuhllib_test_components
     )
 
 list(APPEND kuhllib_components
+    src/nstd/execution/operation_state
+    src/nstd/execution/start
+    src/nstd/execution/sender_traits
+    src/nstd/execution/sender_base
+    src/nstd/execution/sender
+    src/nstd/execution/receiver
     src/nstd/execution/set_value
     src/nstd/execution/set_error
     src/nstd/execution/set_done
+    src/nstd/execution/connect
     src/nstd/sender/just
     src/nstd/sender/then
     src/nstd/net/io_context

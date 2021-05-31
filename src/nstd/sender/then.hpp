@@ -26,9 +26,11 @@
 #ifndef INCLUDED_NSTD_SENDER_THEN
 #define INCLUDED_NSTD_SENDER_THEN
 
+#include "nstd/execution/sender_base.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/set_error.hpp"
 #include "nstd/execution/set_done.hpp"
+#include "nstd/execution/connect.hpp"
 #include "nstd/utility/forward.hpp"
 #include "nstd/utility/move.hpp"
 #include <exception>
@@ -72,10 +74,10 @@ public:
     catch (...) {
         ::nstd::execution::set_error(::nstd::utility::move(this->d_receiver), ::std::current_exception());
     }
-    void set_error(auto&& arg) && {
+    void set_error(auto&& arg) && noexcept {
         ::nstd::execution::set_error(::nstd::utility::move(this->d_receiver), ::nstd::utility::forward<decltype(arg)>(arg));
     }
-    void set_done() && {
+    void set_done() && noexcept {
         ::nstd::execution::set_done(::nstd::utility::move(this->d_receiver));
     }
 };
@@ -84,6 +86,7 @@ public:
 
 template <typename Sender, typename Fun>
 class nstd::net::then_sender
+    : public ::nstd::execution::sender_base
 {
 private:
     ::std::remove_cvref_t<Sender> d_sender;
@@ -97,8 +100,10 @@ public:
 
     template <typename Receiver>
     auto connect(Receiver&& receiver) {
-        return ::nstd::utility::move(this->d_sender).connect(
-            ::nstd::net::then_receiver<Fun, Receiver>(::nstd::utility::move(this->d_fun), ::nstd::utility::forward<Receiver>(receiver)));
+        return ::nstd::execution::connect(
+            ::nstd::utility::move(this->d_sender),
+            ::nstd::net::then_receiver<Fun, Receiver>(::nstd::utility::move(this->d_fun),
+                                                      ::nstd::utility::forward<Receiver>(receiver)));
     }
 };
 
