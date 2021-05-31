@@ -34,7 +34,7 @@ namespace KT  = ::kuhl::test;
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
-    KT::expect_success("then usagae", []{
+    KT::expect_success("then usage", []{
             struct receiver {
                 ::std::optional<bool>* ptr;
                 void set_value() && { *this->ptr = true; }
@@ -45,6 +45,22 @@ static KT::testcase const tests[] = {
             ::std::optional<bool> value;
             auto just = NET::just(17);
             auto then = NET::then(just, [&value](auto v){ value = v; });
+            auto state = then.connect(receiver{&value});
+            state.start();
+            return value.value_or(false);
+        }),
+    KT::expect_success("then pipeline", []{
+            struct receiver {
+                ::std::optional<bool>* ptr;
+                void set_value() && { *this->ptr = true; }
+                void set_error(::std::exception_ptr const&) && noexcept {}
+                void set_done() && noexcept {}
+            };
+
+            ::std::optional<bool> value;
+            auto then = NET::just(17)
+                      | NET::then([&value](auto v){ value = v; })
+                      ;
             auto state = then.connect(receiver{&value});
             state.start();
             return value.value_or(false);

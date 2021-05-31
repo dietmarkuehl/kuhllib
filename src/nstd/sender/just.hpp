@@ -68,7 +68,7 @@ public:
 
 template <typename Value>
 class nstd::net::just_sender
-    : public ::nstd::execution::sender_base
+    : public ::nstd::execution::piped_sender_base
 {
 private:
     ::std::remove_cvref_t<Value> d_value;

@@ -73,6 +73,8 @@ namespace nstd {
             {
                 return connect(sender, ::nstd::utility::forward<Receiver>(receiver));
             }
+            //-dk:TODO connect for as-operation{s, r}
+            //-dk:TODO 
             auto operator()(auto&&...) const = delete;
         } connect;
     }

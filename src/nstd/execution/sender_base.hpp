@@ -35,6 +35,10 @@ namespace nstd::execution
 
     }
     using ::nstd::execution::hidden_names::sender_base;
+    struct piped_sender_base
+        : ::nstd::execution::sender_base
+    {
+    };
 }
 
 // ----------------------------------------------------------------------------

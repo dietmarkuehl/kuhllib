@@ -27,6 +27,7 @@
 #define INCLUDED_NSTD_EXECUTION_SENDER
 
 #include "nstd/execution/sender_traits.hpp"
+#include "nstd/utility/forward.hpp"
 #include <concepts>
 #include <type_traits>
 
@@ -39,6 +40,12 @@ namespace nstd::execution {
         =  ::std::move_constructible<::std::remove_cvref_t<Sender>>
         && !requires{ typename ::nstd::execution::sender_traits<::std::remove_cvref_t<Sender>>::not_specialized; }
         ;
+
+    template <::nstd::execution::sender Sender, typename Fun>
+    auto operator|(Sender&& sender, Fun&& fun)
+    {
+        return ::nstd::utility::forward<Fun>(fun)(::nstd::utility::forward<Sender>(sender));
+    }
 }
 
 // ----------------------------------------------------------------------------
