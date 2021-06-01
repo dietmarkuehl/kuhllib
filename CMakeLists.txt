@@ -23,6 +23,7 @@ list(APPEND kuhllib_test_components
     )
 
 list(APPEND kuhllib_components
+    src/nstd/file/open_flags
     src/nstd/execution/operation_state
     src/nstd/execution/start
     src/nstd/execution/sender_traits
