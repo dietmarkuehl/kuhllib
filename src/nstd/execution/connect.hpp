@@ -56,7 +56,7 @@ namespace nstd {
     }
     namespace execution::inline customization_points
     {
-        inline constexpr struct {
+        inline constexpr struct connect_cpo {
             template <::nstd::execution::sender Sender,
                       ::nstd::execution::receiver Receiver>
                 requires ::nstd::hidden_names::has_member_connect<Sender, Receiver>
@@ -75,7 +75,7 @@ namespace nstd {
             }
             //-dk:TODO connect for as-operation{s, r}
             //-dk:TODO 
-            auto operator()(auto&&...) const = delete;
+            // auto operator()(auto&&...) const = delete;
         } connect;
     }
 }

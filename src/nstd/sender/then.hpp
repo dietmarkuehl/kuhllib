@@ -48,7 +48,7 @@ namespace nstd::net {
     
     template <typename Fun>
     auto then(Fun&& fun) {
-        return [fun = ::nstd::utility::forward<decltype(fun)>(fun)](auto&& sender){
+        return [fun = ::nstd::utility::forward<Fun>(fun)](auto&& sender){
             return ::nstd::net::then(::nstd::utility::forward<decltype(sender)>(sender),
                                      ::nstd::utility::move(fun));
              };

@@ -1,4 +1,4 @@
-// nstd/net/io_context.cpp                                            -*-C++-*-
+// nstd/file/file.cpp                                                 -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,20 +23,8 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/net/io_context.hpp"
-
-namespace NET = ::nstd::net;
+#include "nstd/file/file.hpp"
 
 // ----------------------------------------------------------------------------
 
-NET::io_context::io_context() = default;
-NET::io_context::~io_context() = default;
-
-// ----------------------------------------------------------------------------
-
-auto NET::io_context::run()
-    -> NET::io_context::count_type
-{
-    //-dk:TODO work on task queue
-    return 0;
-}
+int file_dummy = 0;

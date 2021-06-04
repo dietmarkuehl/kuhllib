@@ -1,4 +1,4 @@
-// nstd/net/io_context.cpp                                            -*-C++-*-
+// nstd/file/file.t.cpp                                               -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,20 +23,48 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
+#include "nstd/file/file.hpp"
 #include "nstd/net/io_context.hpp"
+#include "nstd/sender/just.hpp"
+#include "nstd/sender/then.hpp"
+#include <iostream>
+#include "kuhl/test.hpp"
 
 namespace NET = ::nstd::net;
+namespace KT  = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
 
-NET::io_context::io_context() = default;
-NET::io_context::~io_context() = default;
+static KT::testcase const tests[] = {
+    KT::expect_success("file usage", []{
+            NET::io_context ctxt;
+            auto x = NET::just("/dev/null")
+#if 0
+                   | NET::then([](auto name){
+                       ::std::cout << "name='" << name << "'\n";
+                       return name;
+                     })
+                   | NET::file_in()
+                   | NET::on_error([](auto const& name, auto const& error){
+                       ::std::cout << "open filed, name='" << name < "', error=" << error << "\n";
+                     })
+                   | NET::read()
+                   | NET::then([](auto buffer){
+                       ::std::cout << "read='" << buffer << "'\n" << ::std::flush;
+                     })
+                   | NET::then([]{ ::std::cout << "done\n"; })
+#endif
+                   ;
+#if 1
+            KT::use(x);
+#else
+            NET::async_wait(ctxt, x);
+#endif
+            return true;
+        }),
+    KT::expect_failure("placeholder", [](KT::context& )->bool{
+           return false;
+        }),
+};
 
-// ----------------------------------------------------------------------------
-
-auto NET::io_context::run()
-    -> NET::io_context::count_type
-{
-    //-dk:TODO work on task queue
-    return 0;
-}
+static KT::add_tests suite("file", ::tests);
