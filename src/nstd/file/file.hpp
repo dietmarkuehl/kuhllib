@@ -70,7 +70,7 @@ struct nstd::file::open_sender
         auto set_value(::std::string_view&&...) && noexcept -> void {
             ::std::thread thread([this]{
                 using namespace ::std::chrono_literals;
-                ::std::this_thread::sleep_for(2000ms);
+                ::std::this_thread::sleep_for(200ms);
                 ::nstd::utility::move(this->d_receiver).set_value();
             });
             thread.detach();

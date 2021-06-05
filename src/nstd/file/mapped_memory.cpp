@@ -1,4 +1,4 @@
-// nstd/net/io_context.cpp                                            -*-C++-*-
+// nstd/file/mapped_memory.cpp                                        -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,62 +23,38 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/net/io_context.hpp"
-#include <functional>
-#include <stdexcept>
-#include <linux/io_uring.h> // requires a new enough kernel
-
-#include <sys/syscall.h>
+#include "nstd/file/mapped_memory.hpp"
+#include "nstd/utility/exchange.hpp"
+#include <unistd.h>
 #include <sys/mman.h>
-#include <sys/uio.h>
-#include <fcntl.h>
-
-namespace NET = ::nstd::net;
-
-namespace
-{
-    int io_uring_setup(std::uint32_t size, io_uring_params* params)
-    {
-        return ::syscall(__NR_io_uring_setup, size, params);
-    }
-}
 
 // ----------------------------------------------------------------------------
 
-NET::io_context::io_context()
-    : NET::io_context(NET::io_context::queue_size(1024)) //-dk:TODO remove/move to run
+nstd::file::mapped_memory::mapped_memory(mapped_memory && other)
+    : d_base(::nstd::utility::exchange(other.d_base, nullptr))
 {
 }
 
-NET::io_context::io_context(NET::io_context::queue_size size)
+nstd::file::mapped_memory::~mapped_memory()
 {
-    if (this->setup(size) < 0) {
-        throw ::std::runtime_error("failed to create io_uring"); //-dk:TODO throw a better error?
+    if (this->d_base != nullptr) {
+        ::munmap(this->d_base, this->d_length);
     }
 }
 
-NET::io_context::~io_context()
+auto nstd::file::mapped_memory::map(::std::size_t length,
+                                    int           fd,
+                                    ::std::ptrdiff_t offset)
+    -> bool
 {
-}
-
-// ----------------------------------------------------------------------------
-
-auto NET::io_context::setup(NET::io_context::queue_size size) -> int
-{
-    io_uring_params params{};
-    this->d_fd = ::nstd::file::descriptor(io_uring_setup(static_cast<int>(size), &params));
-    if (this->d_fd < 0) {
-        return this->d_fd;
+    this->d_length = length;
+    this->d_base = ::mmap(nullptr, length,
+                          PROT_READ | PROT_WRITE,
+                          MAP_SHARED | MAP_POPULATE,
+                          fd, offset);
+    if (this->d_base == MAP_FAILED) {
+        this->d_base = nullptr;
+        return true;
     }
-
-    return 0;
-}
-
-// ----------------------------------------------------------------------------
-
-auto NET::io_context::run()
-    -> NET::io_context::count_type
-{
-    //-dk:TODO work on task queue
-    return 0;
+    return false;
 }

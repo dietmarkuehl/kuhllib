@@ -27,6 +27,7 @@
 #define INCLUDED_NSTD_NET_IO_CONTEXT
 
 #include "nstd/net/netfwd.hpp"
+#include "nstd/file/descriptor.hpp"
 #include <chrono>
 #include <cstddef>
 
@@ -41,15 +42,23 @@ namespace nstd::net {
 class nstd::net::io_context
     : public nstd::net::execution_context
 {
+private:
+    ::nstd::file::descriptor d_fd;
+
 public:
     class executor_type;
     using count_type = ::std::size_t;
+    enum queue_size: int { max = ::std::numeric_limits<int>::max() };
 
     io_context();
+    explicit io_context(queue_size size); // extension
     explicit io_context(int);
     io_context(io_context const&) = delete;
     auto operator=(io_context const&) -> io_context& = delete;
     ~io_context();
+
+    auto setup(queue_size size) -> int; // extension; return better error?
+    auto is_setup() const -> bool;      // extension
 
     auto get_executor() noexcept -> ::nstd::net::io_context::executor_type;
 

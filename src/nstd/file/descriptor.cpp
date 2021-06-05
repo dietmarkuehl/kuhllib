@@ -1,4 +1,4 @@
-// nstd/net/io_context.cpp                                            -*-C++-*-
+// nstd/file/descriptor.cpp                                           -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,62 +23,12 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/net/io_context.hpp"
-#include <functional>
-#include <stdexcept>
-#include <linux/io_uring.h> // requires a new enough kernel
-
-#include <sys/syscall.h>
-#include <sys/mman.h>
-#include <sys/uio.h>
-#include <fcntl.h>
-
-namespace NET = ::nstd::net;
-
-namespace
-{
-    int io_uring_setup(std::uint32_t size, io_uring_params* params)
-    {
-        return ::syscall(__NR_io_uring_setup, size, params);
-    }
-}
+#include "nstd/file/descriptor.hpp"
+#include <unistd.h>
 
 // ----------------------------------------------------------------------------
 
-NET::io_context::io_context()
-    : NET::io_context(NET::io_context::queue_size(1024)) //-dk:TODO remove/move to run
+auto ::nstd::file::descriptor::close() -> int
 {
-}
-
-NET::io_context::io_context(NET::io_context::queue_size size)
-{
-    if (this->setup(size) < 0) {
-        throw ::std::runtime_error("failed to create io_uring"); //-dk:TODO throw a better error?
-    }
-}
-
-NET::io_context::~io_context()
-{
-}
-
-// ----------------------------------------------------------------------------
-
-auto NET::io_context::setup(NET::io_context::queue_size size) -> int
-{
-    io_uring_params params{};
-    this->d_fd = ::nstd::file::descriptor(io_uring_setup(static_cast<int>(size), &params));
-    if (this->d_fd < 0) {
-        return this->d_fd;
-    }
-
-    return 0;
-}
-
-// ----------------------------------------------------------------------------
-
-auto NET::io_context::run()
-    -> NET::io_context::count_type
-{
-    //-dk:TODO work on task queue
-    return 0;
+    return this->d_fd < 0? 0: ::close(this->d_fd);
 }

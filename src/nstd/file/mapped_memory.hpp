@@ -1,4 +1,4 @@
-// nstd/net/io_context.cpp                                            -*-C++-*-
+// nstd/file/mapped_memory.hpp                                        -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,62 +23,53 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/net/io_context.hpp"
-#include <functional>
-#include <stdexcept>
-#include <linux/io_uring.h> // requires a new enough kernel
+#ifndef INCLUDED_NSTD_FILE_MAPPED_MEMORY
+#define INCLUDED_NSTD_FILE_MAPPED_MEMORY
 
-#include <sys/syscall.h>
-#include <sys/mman.h>
-#include <sys/uio.h>
-#include <fcntl.h>
+#include <cstddef>
 
-namespace NET = ::nstd::net;
+// ----------------------------------------------------------------------------
 
-namespace
-{
-    int io_uring_setup(std::uint32_t size, io_uring_params* params)
-    {
-        return ::syscall(__NR_io_uring_setup, size, params);
-    }
+namespace nstd::file {
+    class mapped_memory;
 }
 
 // ----------------------------------------------------------------------------
 
-NET::io_context::io_context()
-    : NET::io_context(NET::io_context::queue_size(1024)) //-dk:TODO remove/move to run
+class nstd::file::mapped_memory
 {
+private:
+    void*         d_base{nullptr};
+    ::std::size_t d_length{};
+
+public:
+    mapped_memory() = default;
+    mapped_memory(mapped_memory &&);
+    mapped_memory(mapped_memory const&) = delete;
+    auto operator=(mapped_memory &&) -> mapped_memory&;
+    auto operator=(mapped_memory const&) -> mapped_memory& = delete;
+    ~mapped_memory();
+
+    auto map(::std::size_t length, int fd, ::std::ptrdiff_t offset) -> bool;
+    explicit operator bool() const;
+    template <typename T>
+    auto at_offset(::std::size_t off) const -> T*;
+};
+
+// ----------------------------------------------------------------------------
+
+inline nstd::file::mapped_memory::operator bool() const
+{
+    return this->d_base != nullptr;
 }
 
-NET::io_context::io_context(NET::io_context::queue_size size)
+template <typename T>
+inline auto nstd::file::mapped_memory::at_offset(std::size_t off) const -> T*
 {
-    if (this->setup(size) < 0) {
-        throw ::std::runtime_error("failed to create io_uring"); //-dk:TODO throw a better error?
-    }
-}
-
-NET::io_context::~io_context()
-{
+    void* tmp(static_cast<char*>(this->d_base) + off);
+    return static_cast<T*>(tmp);
 }
 
 // ----------------------------------------------------------------------------
 
-auto NET::io_context::setup(NET::io_context::queue_size size) -> int
-{
-    io_uring_params params{};
-    this->d_fd = ::nstd::file::descriptor(io_uring_setup(static_cast<int>(size), &params));
-    if (this->d_fd < 0) {
-        return this->d_fd;
-    }
-
-    return 0;
-}
-
-// ----------------------------------------------------------------------------
-
-auto NET::io_context::run()
-    -> NET::io_context::count_type
-{
-    //-dk:TODO work on task queue
-    return 0;
-}
+#endif

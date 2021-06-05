@@ -23,7 +23,8 @@
 
 // ----------------------------------------------------------------------------
 
-int io_uring_setup(std::uint32_t size, io_uring_params* params) {
+int io_uring_setup(std::uint32_t size, io_uring_params* params)
+{
     return syscall(__NR_io_uring_setup, size, params);
 }
 

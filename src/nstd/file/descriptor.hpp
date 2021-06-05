@@ -1,4 +1,4 @@
-// nstd/net/io_context.cpp                                            -*-C++-*-
+// nstd/file/descriptor.hpp                                           -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,62 +23,76 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/net/io_context.hpp"
-#include <functional>
-#include <stdexcept>
-#include <linux/io_uring.h> // requires a new enough kernel
+#ifndef INCLUDED_NSTD_FILE_DESCRIPTOR
+#define INCLUDED_NSTD_FILE_DESCRIPTOR
 
-#include <sys/syscall.h>
-#include <sys/mman.h>
-#include <sys/uio.h>
-#include <fcntl.h>
+#include "nstd/utility/exchange.hpp"
 
-namespace NET = ::nstd::net;
+// ----------------------------------------------------------------------------
 
-namespace
-{
-    int io_uring_setup(std::uint32_t size, io_uring_params* params)
-    {
-        return ::syscall(__NR_io_uring_setup, size, params);
-    }
+namespace nstd::file {
+    class descriptor;
 }
 
 // ----------------------------------------------------------------------------
 
-NET::io_context::io_context()
-    : NET::io_context(NET::io_context::queue_size(1024)) //-dk:TODO remove/move to run
+class nstd::file::descriptor
+{
+private:
+    int d_fd;
+    int close();
+
+public:
+    explicit descriptor(int = -1);
+    descriptor(descriptor const&) = delete;
+    descriptor(descriptor&&);
+    auto operator=(descriptor const&) -> descriptor& = delete;
+    auto operator=(descriptor&&)-> descriptor&;
+    ~descriptor();
+
+    auto get() const -> int;
+    operator int() const;
+};
+
+// ----------------------------------------------------------------------------
+
+inline nstd::file::descriptor::descriptor(int fd)
+    : d_fd(fd)
 {
 }
 
-NET::io_context::io_context(NET::io_context::queue_size size)
+inline nstd::file::descriptor::descriptor(::nstd::file::descriptor&& other)
+    : d_fd(::nstd::utility::exchange(other.d_fd, -1))
 {
-    if (this->setup(size) < 0) {
-        throw ::std::runtime_error("failed to create io_uring"); //-dk:TODO throw a better error?
+}
+
+inline auto nstd::file::descriptor::operator=(::nstd::file::descriptor&& other)
+    -> ::nstd::file::descriptor&
+{
+    if (this != &other) {
+        this->close();
+        this->d_fd = ::nstd::utility::exchange(other.d_fd, -1);
     }
+    return *this;
 }
 
-NET::io_context::~io_context()
+inline nstd::file::descriptor::~descriptor()
 {
+    this->close();
 }
 
 // ----------------------------------------------------------------------------
 
-auto NET::io_context::setup(NET::io_context::queue_size size) -> int
+inline auto nstd::file::descriptor::get() const -> int
 {
-    io_uring_params params{};
-    this->d_fd = ::nstd::file::descriptor(io_uring_setup(static_cast<int>(size), &params));
-    if (this->d_fd < 0) {
-        return this->d_fd;
-    }
+    return this->d_fd;
+}
 
-    return 0;
+inline nstd::file::descriptor::operator int() const
+{
+    return this->get();
 }
 
 // ----------------------------------------------------------------------------
 
-auto NET::io_context::run()
-    -> NET::io_context::count_type
-{
-    //-dk:TODO work on task queue
-    return 0;
-}
+#endif
