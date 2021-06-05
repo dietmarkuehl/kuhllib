@@ -1,4 +1,4 @@
-// nstd/file/mapped_memory.cpp                                        -*-C++-*-
+// nstd/file/ring.t.cpp                                               -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,38 +23,17 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/file/mapped_memory.hpp"
-#include "nstd/utility/exchange.hpp"
-#include <unistd.h>
-#include <sys/mman.h>
+#include "nstd/file/ring.hpp"
+#include "kuhl/test.hpp"
+
+namespace KT = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
 
-nstd::file::mapped_memory::mapped_memory(mapped_memory && other)
-    : d_base(::nstd::utility::exchange(other.d_base, nullptr))
-{
-}
+static KT::testcase const tests[] = {
+    KT::expect_failure("placeholder", [](KT::context& )->bool{
+           return false;
+        }),
+};
 
-nstd::file::mapped_memory::~mapped_memory()
-{
-    if (this->d_base != nullptr) {
-        ::munmap(this->d_base, this->d_length);
-    }
-}
-
-auto nstd::file::mapped_memory::map(::std::size_t length,
-                                    int           fd,
-                                    ::std::ptrdiff_t offset)
-    -> bool
-{
-    this->d_length = length;
-    this->d_base = ::mmap(nullptr, length,
-                          PROT_READ | PROT_WRITE,
-                          MAP_SHARED | MAP_POPULATE,
-                          fd, offset);
-    if (this->d_base == MAP_FAILED) {
-        this->d_base = nullptr;
-        return false;
-    }
-    return true;
-}
+static KT::add_tests suite("ring", ::tests);

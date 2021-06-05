@@ -23,6 +23,7 @@ list(APPEND kuhllib_test_components
     )
 
 list(APPEND kuhllib_components
+    src/nstd/file/ring
     src/nstd/file/descriptor
     src/nstd/file/mapped_memory
     src/nstd/file/open_flags

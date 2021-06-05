@@ -24,8 +24,12 @@
 // ----------------------------------------------------------------------------
 
 #include "nstd/net/io_context.hpp"
+#include <algorithm>
 #include <functional>
 #include <stdexcept>
+#include <iostream> //-dk:TODO
+#include <cstring> //-dk:TODO
+#include <cerrno> //-dk:TODO
 #include <linux/io_uring.h> // requires a new enough kernel
 
 #include <sys/syscall.h>
@@ -71,7 +75,33 @@ auto NET::io_context::setup(NET::io_context::queue_size size) -> int
         return this->d_fd;
     }
 
-    return 0;
+    ::std::size_t const smap(params.sq_off.array + params.sq_entries * sizeof(::std::uint32_t));
+    ::std::size_t const cmap(params.cq_off.cqes + params.cq_entries * sizeof(::io_uring_cqe));
+    ::std::size_t const sqmap(params.sq_entries * sizeof(::io_uring_sqe));
+    bool const          single_mmap(params.features & IORING_FEAT_SINGLE_MMAP);
+
+    if (!this->d_smem.map(single_mmap? ::std::max(smap, cmap): smap,
+                          this->d_fd, IORING_OFF_SQ_RING)
+        || (!single_mmap && !this->d_cmem.map(cmap, this->d_fd, IORING_OFF_CQ_RING))
+        || !this->d_emem.map(sqmap, this->d_fd, IORING_OFF_SQES)
+        ) {
+            ::std::cout << "mmap error=" << ::std::strerror(errno) << "\n";
+        return -1;
+    }
+    
+    this->d_submission = ::nstd::file::ring<unsigned int>(this->d_smem,
+                                                          params.sq_off.head,
+                                                          params.sq_off.tail,
+                                                          params.sq_off.ring_mask,
+                                                          params.sq_off.array);
+    this->d_completion = ::nstd::file::ring<::io_uring_cqe>(single_mmap? this->d_smem: this->d_cmem,
+                                                            params.cq_off.head,
+                                                            params.cq_off.tail,
+                                                            params.cq_off.ring_mask,
+                                                            params.cq_off.cqes);
+    this->d_submission_elements = this->d_emem.at_offset<::io_uring_sqe>(0u);
+
+    return this->d_fd;
 }
 
 // ----------------------------------------------------------------------------

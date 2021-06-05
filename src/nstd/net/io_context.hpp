@@ -28,6 +28,9 @@
 
 #include "nstd/net/netfwd.hpp"
 #include "nstd/file/descriptor.hpp"
+#include "nstd/file/mapped_memory.hpp"
+#include "nstd/file/ring.hpp"
+#include <linux/io_uring.h>
 #include <chrono>
 #include <cstddef>
 
@@ -43,7 +46,13 @@ class nstd::net::io_context
     : public nstd::net::execution_context
 {
 private:
-    ::nstd::file::descriptor d_fd;
+    ::nstd::file::descriptor            d_fd;
+    ::nstd::file::mapped_memory         d_smem; // submission ring memory
+    ::nstd::file::mapped_memory         d_cmem; // potentially needed completion ring memory
+    ::nstd::file::mapped_memory         d_emem; // submission element memory
+    ::nstd::file::ring<unsigned int>    d_submission;
+    ::nstd::file::ring<::io_uring_cqe>  d_completion;
+    ::io_uring_sqe*                     d_submission_elements;
 
 public:
     class executor_type;
