@@ -77,7 +77,7 @@ namespace nstd::file {
     constexpr auto operator^  (::nstd::file::open_flags,  ::nstd::file::open_flags) -> ::nstd::file::open_flags;
     constexpr auto operator&  (::nstd::file::open_flags,  ::nstd::file::open_flags) -> ::nstd::file::open_flags;
 
-    int to_system(::nstd::file::open_flags);
+    unsigned int to_system(::nstd::file::open_flags);
     ::std::ostream& operator<< (::std::ostream&, ::nstd::file::open_flags);
 }
 

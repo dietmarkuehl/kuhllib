@@ -28,12 +28,19 @@
 
 #include "nstd/file/open_flags.hpp"
 #include "nstd/execution/sender_base.hpp"
+#include "nstd/execution/set_value.hpp"
+#include "nstd/execution/set_error.hpp"
+#include "nstd/execution/set_done.hpp"
 #include "nstd/sender/then.hpp"
 #include "nstd/utility/move.hpp"
 #include "nstd/utility/forward.hpp"
 #include <string_view>
+#include <exception>
+#include <system_error>
 #include <chrono> //-dk:TODO remove
 #include <thread> //-dk:TODO remove
+#include <linux/io_uring.h>
+#include <fcntl.h>
 
 // ----------------------------------------------------------------------------
 
@@ -63,24 +70,61 @@ struct nstd::file::open_sender
     Context*                 d_context;
     ::nstd::file::open_flags d_flags;
 
+    struct foo {};
     template <typename Receiver>
-    struct receiver {
-        Receiver d_receiver;
+    struct receiver
+        : ::nstd::net::io_context::io_base
+    {
+        Context*                 d_context;
+        ::nstd::file::open_flags d_flags;
+        Receiver                 d_receiver;
+        ::std::string            d_name;
 
-        auto set_value(::std::string_view&&...) && noexcept -> void {
-            ::std::thread thread([this]{
-                using namespace ::std::chrono_literals;
-                ::std::this_thread::sleep_for(200ms);
-                ::nstd::utility::move(this->d_receiver).set_value();
+        template <typename R>
+        receiver(Context* context, ::nstd::file::open_flags flags, R&& receiver)
+            : ::nstd::net::io_context::io_base()
+            , d_context(context)
+            , d_flags(flags)
+            , d_receiver(::nstd::utility::forward<R>(receiver))
+            , d_name()
+        {
+
+        }
+
+        auto do_result(::std::int32_t res, ::uint32_t) -> void override {
+            if (-1 <  res) {
+                ::nstd::execution::set_value(::nstd::utility::move(this->d_receiver), res);
+            }
+            else {
+                ::nstd::execution::set_error(::nstd::utility::move(this->d_receiver),
+                                             ::std::make_exception_ptr(::std::system_error(-res, ::std::system_category())));
+            }
+        }
+
+        auto set_value(::std::string_view name) && noexcept -> void {
+            this->d_name = name;
+            this->d_context->submit([this](io_uring_sqe& elem){
+                elem = io_uring_sqe{
+                    .opcode     = IORING_OP_OPENAT,
+                    .flags      = {},
+                    .ioprio     = {},
+                    .fd         = AT_FDCWD,
+                    .off        = {},
+                    .addr       = reinterpret_cast<decltype(elem.addr)>(this->d_name.c_str()),
+                    .len        = 0,
+                    .open_flags = ::nstd::file::to_system(this->d_flags),
+                    .user_data  = reinterpret_cast<decltype(elem.user_data)>(static_cast<::nstd::net::io_context::io_base*>(this)),
+                    .__pad2     = {}
+                };
+
             });
-            thread.detach();
         }
         template <typename Error>
         auto set_error(Error&& error) && noexcept -> void {
-            ::nstd::utility::move(this->d_receiver).set_error(::nstd::utility::forward<Error>(error));
+            ::nstd::execution::set_error(::nstd::utility::move(this->d_receiver), ::nstd::utility::forward<Error>(error));
         }
         auto set_done() && noexcept -> void {
-            ::nstd::utility::move(this->d_receiver).set_done();
+            ::nstd::execution::set_done(::nstd::utility::move(this->d_receiver));
         }
     };
 
@@ -91,7 +135,7 @@ struct nstd::file::open_sender
     template <typename Receiver>
     auto connect(Receiver&& r) noexcept {
         return ::nstd::execution::connect(::nstd::utility::move(this->d_sender),
-                                          receiver{::nstd::utility::forward<Receiver>(r)});
+                                          receiver<Receiver>(this->d_context, this->d_flags, ::nstd::utility::forward<Receiver>(r)));
     }
 };
 

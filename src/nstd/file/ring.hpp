@@ -48,24 +48,31 @@ private:
 public:
     ring() = default;
     ring(::nstd::file::mapped_memory const& mem,
-         ::size_t                           head_offset,
-         ::size_t                           tail_offset,
-         ::size_t                           mask_offset,
-         ::size_t                           array_offset);
+         ::std::size_t                      head_offset,
+         ::std::size_t                      tail_offset,
+         ::std::size_t                      mask_offset,
+         ::std::size_t                      array_offset);
     ::std::atomic<unsigned int>* d_head{nullptr};
     ::std::atomic<unsigned int>* d_tail{nullptr};
     unsigned int                 d_mask{};
     T*                           d_array{nullptr};
+
+    auto head() const -> unsigned int { return this->d_head->load(::std::memory_order_seq_cst); }
+    auto tail() const -> unsigned int { return this->d_tail->load(::std::memory_order_seq_cst); }
+    auto mask(unsigned int index) const -> unsigned int { return index & this->d_mask; }
+    auto get(unsigned int index) const -> T { return this->d_array[this->mask(index)]; }
+    auto advance_head() -> void { ++*this->d_head; }
+    auto advance_tail() -> void { ++*this->d_tail; }
 };
 
 // ----------------------------------------------------------------------------
 
 template <typename T>
 nstd::file::ring<T>::ring(::nstd::file::mapped_memory const& mem,
-                          ::size_t                           head_offset,
-                          ::size_t                           tail_offset,
-                          ::size_t                           mask_offset,
-                          ::size_t                           array_offset)
+                          ::std::size_t                       head_offset,
+                          ::std::size_t                       tail_offset,
+                          ::std::size_t                       mask_offset,
+                          ::std::size_t                       array_offset)
     : d_head(mem.at_offset<::std::atomic<unsigned int>>(head_offset))
     , d_tail(mem.at_offset<::std::atomic<unsigned int>>(tail_offset))
     , d_mask(*mem.at_offset<unsigned int>(mask_offset))

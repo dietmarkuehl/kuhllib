@@ -29,7 +29,7 @@
 
 // ----------------------------------------------------------------------------
 
-auto ::nstd::file::to_system(::nstd::file::open_flags flags) -> int
+auto ::nstd::file::to_system(::nstd::file::open_flags flags) -> unsigned int
 {
     switch (flags)
     {

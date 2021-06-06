@@ -33,6 +33,8 @@
 #include <linux/io_uring.h>
 #include <chrono>
 #include <cstddef>
+#include <cstdint>
+#include <iostream> //-dk:TODO remove
 
 // ----------------------------------------------------------------------------
 
@@ -53,11 +55,22 @@ private:
     ::nstd::file::ring<unsigned int>    d_submission;
     ::nstd::file::ring<::io_uring_cqe>  d_completion;
     ::io_uring_sqe*                     d_submission_elements;
+    ::std::atomic<unsigned int>         d_outstanding;
+    ::std::atomic<bool>                 d_stopped{false};
+
+    auto intern_submit(::std::size_t) -> void;
+    auto process_result() -> ::std::size_t;
 
 public:
+    class io_base;
+    class run_guard;
+
+    template <typename Op>
+    auto submit(Op op) -> void;
+
     class executor_type;
     using count_type = ::std::size_t;
-    enum queue_size: int { max = ::std::numeric_limits<int>::max() };
+    enum queue_size: int { max = ::std::numeric_limits<int>::max() }; // extension
 
     io_context();
     explicit io_context(queue_size size); // extension
@@ -95,10 +108,36 @@ public:
 
 // ----------------------------------------------------------------------------
 
+class nstd::net::io_context::io_base
+{
+protected:
+    ~io_base() = default;
+    virtual auto do_result(::std::int32_t, ::std::uint32_t) -> void = 0;
+
+public:
+    auto result(::std::int32_t res, ::std::uint32_t flags) -> void { this->do_result(res, flags); }
+};
+
+// ----------------------------------------------------------------------------
+
 class nstd::net::io_context::executor_type
 {
 
 };
+
+// ----------------------------------------------------------------------------
+
+template <typename Op>
+auto nstd::net::io_context::submit(Op op) ->void
+{
+    auto tail(this->d_submission.tail());
+    auto index(this->d_submission.mask(tail));
+    op(this->d_submission_elements[index]);
+    this->d_submission.d_array[index] = index;
+    ++this->d_outstanding;
+    this->d_submission.advance_tail();
+    this->intern_submit(1u);
+}
 
 // ----------------------------------------------------------------------------
 

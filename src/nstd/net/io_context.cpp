@@ -45,6 +45,13 @@ namespace
     {
         return ::syscall(__NR_io_uring_setup, size, params);
     }
+
+    int io_uring_enter(int fd, unsigned int count, unsigned int min_complete, unsigned int flags, sigset_t)
+    {
+        //-dk:TODO do something with the sigset?
+        int rc(syscall(__NR_io_uring_enter, fd, count, min_complete, flags, NULL, 0));
+        return rc;
+    }
 }
 
 // ----------------------------------------------------------------------------
@@ -106,9 +113,43 @@ auto NET::io_context::setup(NET::io_context::queue_size size) -> int
 
 // ----------------------------------------------------------------------------
 
+auto NET::io_context::process_result() -> unsigned int
+{
+    auto head(this->d_completion.head());
+    auto tail(this->d_completion.tail());
+    if (head != tail) {
+        io_uring_cqe result{this->d_completion.get(head)};
+        this->d_completion.advance_head();
+        --this->d_outstanding;
+        reinterpret_cast<NET::io_context::io_base*>(result.user_data)->result(result.res, result.flags);
+        return 1u;
+    }
+    return 0u;
+}
+
+// ----------------------------------------------------------------------------
+
+auto NET::io_context::intern_submit(::std::size_t) -> void
+{
+    io_uring_enter(this->d_fd, 1u, 0u, 0u, ::sigset_t{});
+}
+
+auto NET::io_context::run_one() -> ::nstd::net::io_context::count_type
+{
+    io_uring_enter(this->d_fd, 0u, 1u, IORING_ENTER_GETEVENTS, ::sigset_t{});
+    return process_result();
+}
+
 auto NET::io_context::run()
     -> NET::io_context::count_type
 {
-    //-dk:TODO work on task queue
-    return 0;
+    NET::io_context::count_type rc{};
+
+    do
+    {
+        rc += this->run_one();
+    }
+    while (0u != this->d_outstanding);
+    
+    return rc;
 }
