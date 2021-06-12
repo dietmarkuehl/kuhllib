@@ -42,7 +42,7 @@ template <typename CompletionToken, typename Signature>
 class nstd::net::async_completion
 {
 public:
-    using completion_handler_type = ::nstd::net::async_result<::std::decay_t<CompletionToken>, Signature>::completion_handler_type;
+    using completion_handler_type = typename ::nstd::net::async_result<::std::decay_t<CompletionToken>, Signature>::completion_handler_type;
 
     explicit async_completion(CompletionToken&);
     async_completion(async_completion const&) = delete;

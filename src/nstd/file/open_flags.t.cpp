@@ -112,14 +112,14 @@ static KT::testcase const tests[] = {
                     && (   [flag          ]()mutable{ flag &=  File::open_flags::none; return flag != File::open_flags::none;         }()
                         || [flag, tmp=flag]()mutable{ flag &=  File::open_flags::all;  return flag != tmp;                            }()
                         || [flag, tmp=flag]()mutable{ flag &= ~File::open_flags::none; return flag != tmp;                            }()
-                        || [flag, tmp=flag]()mutable{ flag &=  flag;                   return flag != tmp;                            }()
+                        || [flag, tmp=flag]()mutable{ auto x(flag); flag &=  x;        return flag != tmp;                            }()
                         || [flag, tmp=flag]()mutable{ flag |=  File::open_flags::none; return flag != tmp;                            }()
                         || [flag          ]()mutable{ flag |=  File::open_flags::all;  return flag != File::open_flags::all;          }()
-                        || [flag, tmp=flag]()mutable{ flag |= ~File::open_flags::none; return flag != ~File::open_flags::none;        }()
-                        || [flag, tmp=flag]()mutable{ flag |=  flag;                   return flag != tmp;                            }()
+                        || [flag          ]()mutable{ flag |= ~File::open_flags::none; return flag != ~File::open_flags::none;        }()
+                        || [flag, tmp=flag]()mutable{ auto x(flag); flag |=  x;        return flag != tmp;                            }()
                         || [flag, tmp=flag]()mutable{ flag ^=  File::open_flags::none; return flag != tmp;                            }()
                         || [flag, tmp=flag]()mutable{ flag ^=  File::open_flags::all;  return flag != (~tmp & File::open_flags::all); }()
-                        || [flag          ]()mutable{ flag ^=  flag;                   return flag != File::open_flags::none;         }()
+                        || [flag          ]()mutable{ auto x(flag); flag ^=  x;        return flag != File::open_flags::none;         }()
                     )) {
                         return false;
                 }

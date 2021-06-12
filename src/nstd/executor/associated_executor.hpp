@@ -34,7 +34,7 @@ namespace nstd::net {
     template <typename, class = ::nstd::net::system_executor>
     struct associated_executor;
     template <typename T, class Executor = ::nstd::net::system_executor>
-    using associated_executor_t = ::nstd::net::associated_executor<T, Executor>::type;
+    using associated_executor_t = typename ::nstd::net::associated_executor<T, Executor>::type;
 
     template <typename T>
         auto get_associated_executor(T const&) noexcept

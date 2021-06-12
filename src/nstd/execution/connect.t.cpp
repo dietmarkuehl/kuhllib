@@ -64,7 +64,7 @@ namespace test_declarations
     template <bool Noexcept, typename Receiver>
     auto connect(non_member_sender<Noexcept>& sender, Receiver&&)
         noexcept(Noexcept)
-        -> non_member_sender<Noexcept>::state
+        -> typename non_member_sender<Noexcept>::state
     {
         *sender.ptr = 42;
         return {};

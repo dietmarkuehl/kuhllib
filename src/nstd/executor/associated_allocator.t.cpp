@@ -89,9 +89,9 @@ static KT::testcase const tests[] = {
                 && noexcept(NET::associated_allocator<TD::has_allocator, MEM::allocator<int>>::get(ha, MEM::allocator<int>()))
                 && MEM::allocator<void>() == NET::associated_allocator<TD::no_allocator>::get(na)
                 && TD::my_allocator{} == NET::associated_allocator<TD::no_allocator, TD::my_allocator>::get(na)
-                && TD::my_allocator{42} == NET::associated_allocator<TD::no_allocator, TD::my_allocator>::get(na, TD::my_allocator(42))
+                && TD::my_allocator{42} == NET::associated_allocator<TD::no_allocator, TD::my_allocator>::get(na, TD::my_allocator{42})
                 && TD::my_allocator{13} == NET::associated_allocator<TD::has_allocator>::get(ha)
-                && TD::my_allocator{13} == NET::associated_allocator<TD::has_allocator, TD::my_allocator>::get(ha, TD::my_allocator(42))
+                && TD::my_allocator{13} == NET::associated_allocator<TD::has_allocator, TD::my_allocator>::get(ha, TD::my_allocator{42})
                 ;
         }),
     KT::expect_success("get_associated_allocator", []{
@@ -110,9 +110,9 @@ static KT::testcase const tests[] = {
                     == KT::type<decltype(NET::get_associated_allocator(ha, MEM::allocator<int>()))>
                 && noexcept(NET::get_associated_allocator(ha, MEM::allocator<int>()))
                 && MEM::allocator<void>() == NET::get_associated_allocator(na)
-                && TD::my_allocator{42} == NET::get_associated_allocator(na, TD::my_allocator(42))
+                && TD::my_allocator{42} == NET::get_associated_allocator(na, TD::my_allocator{42})
                 && TD::my_allocator{13} == NET::get_associated_allocator(ha)
-                && TD::my_allocator{13} == NET::get_associated_allocator(ha, TD::my_allocator(42))
+                && TD::my_allocator{13} == NET::get_associated_allocator(ha, TD::my_allocator{42})
                 ;
         }),
 };

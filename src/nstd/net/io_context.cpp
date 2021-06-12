@@ -30,6 +30,7 @@
 #include <iostream> //-dk:TODO
 #include <cstring> //-dk:TODO
 #include <cerrno> //-dk:TODO
+#include <unistd.h> // requires a new enough kernel
 #include <linux/io_uring.h> // requires a new enough kernel
 
 #include <sys/syscall.h>

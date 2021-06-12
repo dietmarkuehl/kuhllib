@@ -66,7 +66,7 @@ static KT::testcase const tests[] = {
     KT::expect_success("member set_error(error) noexcept(true)", []{
         bool                                  value(false);
         TD::error                             err;
-        TD::member_set_error<TD::error, true> r(&value);
+        TD::member_set_error<TD::error, true> r{&value};
         EX::set_error(UTIL::move(r), TD::error());
         KT::use(err);
         return value
@@ -76,7 +76,7 @@ static KT::testcase const tests[] = {
     KT::expect_success("member set_error(error) noexcept(false)", []{
         bool                                   value(false);
         TD::error                              err;
-        TD::member_set_error<TD::error, false> r(&value);
+        TD::member_set_error<TD::error, false> r{&value};
         EX::set_error(UTIL::move(r), TD::error());
         return value
             && !noexcept(EX::set_error(UTIL::move(r), err))
@@ -85,7 +85,7 @@ static KT::testcase const tests[] = {
     KT::expect_success("non-member set_error(error) noexcept(true)", []{
         bool                                      value(false);
         TD::error                                 err;
-        TD::non_member_set_error<TD::error, true> r(&value);
+        TD::non_member_set_error<TD::error, true> r{&value};
         EX::set_error(UTIL::move(r), err);
         return value
             && noexcept(EX::set_error(UTIL::move(r), err))
@@ -94,7 +94,7 @@ static KT::testcase const tests[] = {
     KT::expect_success("non-member set_error(error) noexcept(false)", []{
         bool                                       value(false);
         TD::error                                  err;
-        TD::non_member_set_error<TD::error, false> r(&value);
+        TD::non_member_set_error<TD::error, false> r{&value};
         EX::set_error(UTIL::move(r), err);
         return value
             && !noexcept(EX::set_error(UTIL::move(r), err))

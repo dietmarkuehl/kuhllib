@@ -25,6 +25,8 @@
 
 #include "nstd/execution/sender_traits.hpp"
 #include <type_traits>
+#include <variant>
+#include <tuple>
 #include "kuhl/test.hpp"
 
 namespace test_declarations {}
@@ -41,10 +43,10 @@ namespace test_declarations {
         = !requires{ typename EX::sender_traits<TT::remove_cvref_t<Sender>>::not_specialized; }
         ;
 
-    template <template <template <typename...> class, template <typename...> class> class>
-    class test_value_types;
-    template <template <template <typename...> class> class>
-    class test_error_types;
+    //template <template <template <typename...> class, template <typename...> class> class>
+    //class test_value_types;
+    //template <template <template <typename...> class> class>
+    //class test_error_types;
 
     struct non_sender {};
 
@@ -104,10 +106,10 @@ static KT::testcase const tests[] = {
         }),
     KT::expect_success("a typed sender has sender_traits", []{
             return TD::has_sender_traits<TD::typed_sender>
-                && KT::type<TD::test_value_types<EX::sender_traits<TD::typed_sender>::value_types>>
-                    == KT::type<TD::test_value_types<TD::typed_sender::value_types>>
-                && KT::type<TD::test_error_types<EX::sender_traits<TD::typed_sender>::error_types>>
-                    == KT::type<TD::test_error_types<TD::typed_sender::error_types>>
+                && KT::type<EX::sender_traits<TD::typed_sender>::value_types<::std::variant, ::std::tuple>>
+                    == KT::type<TD::typed_sender::value_types<::std::variant, ::std::tuple>>
+                && KT::type<EX::sender_traits<TD::typed_sender>::error_types<::std::tuple>>
+                    == KT::type<TD::typed_sender::error_types<::std::tuple>>
                 && sizeof(::nstd::type_traits::bool_constant<EX::sender_traits<TD::typed_sender>::sends_done>)
                 && EX::sender_traits<TD::typed_sender>::sends_done == TD::typed_sender::sends_done
                 ;
@@ -121,10 +123,10 @@ static KT::testcase const tests[] = {
         }),
     KT::expect_success("a typed sender derived execution::sender_base has sender_traits", []{
             return TD::has_sender_traits<TD::derived_typed_sender>
-                && KT::type<TD::test_value_types<EX::sender_traits<TD::derived_typed_sender>::value_types>>
-                    == KT::type<TD::test_value_types<TD::derived_typed_sender::value_types>>
-                && KT::type<TD::test_error_types<EX::sender_traits<TD::derived_typed_sender>::error_types>>
-                    == KT::type<TD::test_error_types<TD::derived_typed_sender::error_types>>
+                && KT::type<EX::sender_traits<TD::derived_typed_sender>::value_types<::std::variant, ::std::tuple>>
+                    == KT::type<TD::derived_typed_sender::value_types<::std::variant, ::std::tuple>>
+                && KT::type<EX::sender_traits<TD::derived_typed_sender>::error_types<::std::tuple>>
+                    == KT::type<TD::derived_typed_sender::error_types<::std::tuple>>
                 && sizeof(::nstd::type_traits::bool_constant<EX::sender_traits<TD::derived_typed_sender>::sends_done>)
                 && EX::sender_traits<TD::derived_typed_sender>::sends_done == TD::derived_typed_sender::sends_done
                 ;

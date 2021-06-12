@@ -73,7 +73,7 @@ public:
         return intern_make_service<Service>(index, ::std::forward<Args>(args)...);
     }
     template <typename Service, typename... Args>
-    auto use_service(Args&&... args) -> typename Service::key_type& {
+    auto use_service(Args&&... /*-dk:TODO: use args*/) -> typename Service::key_type& {
         ::std::size_t index(this->key<Service>());
         ::std::lock_guard<::std::mutex> kerberos(this->d_bottleneck);
         return this->intern_has_service<Service>(index)

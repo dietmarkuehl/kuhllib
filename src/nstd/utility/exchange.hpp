@@ -38,7 +38,7 @@ namespace nstd::utility {
 
 // ----------------------------------------------------------------------------
 
-template <typename T, typename O = T>
+template <typename T, typename O>
 constexpr auto nstd::utility::exchange(T& object, O&& other) -> T
 {
     T rc(::nstd::utility::move(object));

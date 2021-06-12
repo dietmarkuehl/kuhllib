@@ -40,10 +40,10 @@ namespace nstd::net {
     class async_result< ::nstd::net::executor_binder<T, Executor>, Signature>;
 
     template <typename T, typename Executor, typename ProtoAllocator>
-    class associated_allocator< ::nstd::net::executor_binder<T, Executor>, ProtoAllocator>;
+    struct associated_allocator< ::nstd::net::executor_binder<T, Executor>, ProtoAllocator>;
 
     template <typename T, typename Executor, typename ExecutorArg>
-    class associated_executor< ::nstd::net::executor_binder<T, Executor>, ExecutorArg>;
+    struct associated_executor< ::nstd::net::executor_binder<T, Executor>, ExecutorArg>;
 
     template <typename Executor, typename T>
         auto bind_executor(Executor const&, T&&)
