@@ -1,4 +1,4 @@
-// nstd/sender/then.t.cpp                                             -*-C++-*-
+// nstd/sender/just_done.hpp                                          -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,47 +23,50 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/sender/then.hpp"
-#include "nstd/sender/just.hpp"
-#include <optional>
-#include "kuhl/test.hpp"
+#ifndef INCLUDED_NSTD_SENDER_JUST_DONE
+#define INCLUDED_NSTD_SENDER_JUST_DONE
 
-namespace NET = ::nstd::net;
-namespace KT  = ::kuhl::test;
+#include "nstd/execution/sender_base.hpp"
+#include "nstd/execution/set_done.hpp"
+#include "nstd/utility/move.hpp"
+#include "nstd/utility/forward.hpp"
+#include <cstddef>
+#include <string_view>
+#include <type_traits>
 
 // ----------------------------------------------------------------------------
 
-static KT::testcase const tests[] = {
-    KT::expect_success("then usage", []{
-            struct receiver {
-                ::std::optional<bool>* ptr;
-                void set_value() && { *this->ptr = true; }
-                void set_error(::std::exception_ptr const&) && noexcept {}
-                void set_done() && noexcept {}
-            };
+namespace nstd::net {
+    class just_done;
+    template <typename Receiver> struct just_done_state;
+}
 
-            ::std::optional<bool> value;
-            auto then = NET::then(NET::just(17), [&value](auto v){ value = v; });
-            auto state = then.connect(receiver{&value});
-            state.start();
-            return value.value_or(false);
-        }),
-    KT::expect_success("then pipeline", []{
-            struct receiver {
-                ::std::optional<bool>* ptr;
-                void set_value() && { *this->ptr = true; }
-                void set_error(::std::exception_ptr const&) && noexcept {}
-                void set_done() && noexcept {}
-            };
+// ----------------------------------------------------------------------------
 
-            ::std::optional<bool> value;
-            auto then = NET::just(17)
-                      | NET::then([&value](auto v){ value = v; })
-                      ;
-            auto state = then.connect(receiver{&value});
-            state.start();
-            return value.value_or(false);
-        }),
+template <typename Receiver>
+struct nstd::net::just_done_state
+{
+    ::std::remove_cvref_t<Receiver> d_receiver;
+
+    auto start() noexcept -> void {
+        ::nstd::execution::set_done(::nstd::utility::move(this->d_receiver));
+    }
 };
 
-static KT::add_tests suite("then", ::tests);
+// ----------------------------------------------------------------------------
+
+class nstd::net::just_done
+    : public ::nstd::execution::piped_sender_base
+{
+public:
+    template <typename Receiver>
+    auto connect(Receiver&& receiver) && -> ::nstd::net::just_done_state<Receiver> {
+        return ::nstd::net::just_done_state<Receiver>{
+            ::nstd::utility::forward<Receiver>(receiver)
+            };
+    }
+};
+
+// ----------------------------------------------------------------------------
+
+#endif

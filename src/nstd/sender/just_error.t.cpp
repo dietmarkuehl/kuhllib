@@ -1,4 +1,4 @@
-// nstd/sender/then.t.cpp                                             -*-C++-*-
+// nstd/sender/just_error.t.cpp                                       -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,10 +23,9 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/sender/then.hpp"
-#include "nstd/sender/just.hpp"
-#include <optional>
+#include "nstd/sender/just_error.hpp"
 #include "kuhl/test.hpp"
+#include <optional>
 
 namespace NET = ::nstd::net;
 namespace KT  = ::kuhl::test;
@@ -34,36 +33,31 @@ namespace KT  = ::kuhl::test;
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
-    KT::expect_success("then usage", []{
+    KT::expect_success("just_error usage", []{
+            ::std::optional<int> value;
             struct receiver {
-                ::std::optional<bool>* ptr;
-                void set_value() && { *this->ptr = true; }
-                void set_error(::std::exception_ptr const&) && noexcept {}
-                void set_done() && noexcept {}
+                ::std::optional<int>* ptr;
+                void set_value(int) && {}
+                void set_error(int v) && { *this->ptr = v; }
             };
-
-            ::std::optional<bool> value;
-            auto then = NET::then(NET::just(17), [&value](auto v){ value = v; });
-            auto state = then.connect(receiver{&value});
+            auto state = NET::just_error(17).connect(receiver{&value});
             state.start();
-            return value.value_or(false);
+            return value.value_or(0) == 17
+                ;
         }),
-    KT::expect_success("then pipeline", []{
+    KT::expect_success("just_error specialization", []{
+            ::std::optional<::std::string> value;
             struct receiver {
-                ::std::optional<bool>* ptr;
-                void set_value() && { *this->ptr = true; }
-                void set_error(::std::exception_ptr const&) && noexcept {}
-                void set_done() && noexcept {}
+                ::std::optional<::std::string>* ptr;
+                void set_value(::std::string_view) && {}
+                void set_error(char const*) && {}
+                void set_error(::std::string_view v) && { *this->ptr = v; }
             };
-
-            ::std::optional<bool> value;
-            auto then = NET::just(17)
-                      | NET::then([&value](auto v){ value = v; })
-                      ;
-            auto state = then.connect(receiver{&value});
+            auto state = NET::just_error("foo").connect(receiver{&value});
             state.start();
-            return value.value_or(false);
+            return value.value_or("") == "foo"
+                ;
         }),
 };
 
-static KT::add_tests suite("then", ::tests);
+static KT::add_tests suite("just_error", ::tests);

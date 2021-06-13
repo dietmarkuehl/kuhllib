@@ -31,6 +31,7 @@
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/set_error.hpp"
 #include "nstd/execution/set_done.hpp"
+#include "nstd/net/io_context.hpp"
 #include "nstd/sender/then.hpp"
 #include "nstd/utility/move.hpp"
 #include "nstd/utility/forward.hpp"
@@ -70,7 +71,6 @@ struct nstd::file::open_sender
     Context*                 d_context;
     ::nstd::file::open_flags d_flags;
 
-    struct foo {};
     template <typename Receiver>
     struct receiver
         : ::nstd::net::io_context::io_base
@@ -97,7 +97,7 @@ struct nstd::file::open_sender
             }
             else {
                 ::nstd::execution::set_error(::nstd::utility::move(this->d_receiver),
-                                             ::std::make_exception_ptr(::std::system_error(-res, ::std::system_category())));
+                                             ::std::error_code(-res, ::std::system_category()));
             }
         }
 
@@ -126,10 +126,6 @@ struct nstd::file::open_sender
         auto set_done() && noexcept -> void {
             ::nstd::execution::set_done(::nstd::utility::move(this->d_receiver));
         }
-    };
-
-    struct state {
-        auto start() noexcept -> void;
     };
 
     template <typename Receiver>

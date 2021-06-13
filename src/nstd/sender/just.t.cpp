@@ -34,20 +34,19 @@ namespace KT  = ::kuhl::test;
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
-    KT::expect_failure("just usage", []{
+    KT::expect_success("just usage", []{
             ::std::optional<int> value;
             struct receiver {
                 ::std::optional<int>* ptr;
                 void set_value(int v) && { *this->ptr = v; }
                 void set_error(::std::exception_ptr const&) && {}
             };
-            auto just = NET::just(17);
-            auto state = just.connect(receiver{&value});
+            auto state = NET::just(17).connect(receiver{&value});
             state.start();
             return value.value_or(0) == 17
                 ;
         }),
-    KT::expect_failure("just specialization", []{
+    KT::expect_success("just specialization", []{
             ::std::optional<::std::string> value;
             struct receiver {
                 ::std::optional<::std::string>* ptr;
@@ -55,8 +54,7 @@ static KT::testcase const tests[] = {
                 void set_value(::std::string_view v) && { *this->ptr = v; }
                 void set_error(::std::exception_ptr const&) && {}
             };
-            auto just = NET::just("foo");
-            auto state = just.connect(receiver{&value});
+            auto state = NET::just("foo").connect(receiver{&value});
             state.start();
             return value.value_or("") == "foo"
                 ;

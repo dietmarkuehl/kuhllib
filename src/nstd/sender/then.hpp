@@ -70,7 +70,7 @@ public:
         , d_receiver(::nstd::utility::forward<Receiver>(receiver)) {
 
     }
-    void set_value(auto&&... args) && try {
+    auto set_value(auto&&... args) && ->void try {
         if constexpr (::std::is_same_v<void, decltype(this->d_fun(::nstd::utility::forward<decltype(args)>(args)...))>) {
             this->d_fun(::nstd::utility::forward<decltype(args)>(args)...);
             ::nstd::execution::set_value(::nstd::utility::move(this->d_receiver));
@@ -82,10 +82,10 @@ public:
     catch (...) {
         ::nstd::execution::set_error(::nstd::utility::move(this->d_receiver), ::std::current_exception());
     }
-    void set_error(auto&& arg) && noexcept {
+    auto set_error(auto&& arg) && noexcept ->void {
         ::nstd::execution::set_error(::nstd::utility::move(this->d_receiver), ::nstd::utility::forward<decltype(arg)>(arg));
     }
-    void set_done() && noexcept {
+    auto set_done() && noexcept ->void {
         ::nstd::execution::set_done(::nstd::utility::move(this->d_receiver));
     }
 };

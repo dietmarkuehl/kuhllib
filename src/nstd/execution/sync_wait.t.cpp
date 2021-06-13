@@ -1,4 +1,4 @@
-// nstd/sender/then.t.cpp                                             -*-C++-*-
+// nstd/execution/sync_wait.t.cpp                                     -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,47 +23,76 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/sender/then.hpp"
+#include "nstd/execution/sync_wait.hpp"
 #include "nstd/sender/just.hpp"
-#include <optional>
+#include "nstd/sender/just_error.hpp"
+#include "nstd/sender/just_done.hpp"
+#include <exception>
+#include <stdexcept>
+#include <system_error>
 #include "kuhl/test.hpp"
 
+namespace EX  = ::nstd::execution;
 namespace NET = ::nstd::net;
 namespace KT  = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
-    KT::expect_success("then usage", []{
-            struct receiver {
-                ::std::optional<bool>* ptr;
-                void set_value() && { *this->ptr = true; }
-                void set_error(::std::exception_ptr const&) && noexcept {}
-                void set_done() && noexcept {}
-            };
-
-            ::std::optional<bool> value;
-            auto then = NET::then(NET::just(17), [&value](auto v){ value = v; });
-            auto state = then.connect(receiver{&value});
-            state.start();
-            return value.value_or(false);
-        }),
-    KT::expect_success("then pipeline", []{
-            struct receiver {
-                ::std::optional<bool>* ptr;
-                void set_value() && { *this->ptr = true; }
-                void set_error(::std::exception_ptr const&) && noexcept {}
-                void set_done() && noexcept {}
-            };
-
-            ::std::optional<bool> value;
-            auto then = NET::just(17)
-                      | NET::then([&value](auto v){ value = v; })
-                      ;
-            auto state = then.connect(receiver{&value});
-            state.start();
-            return value.value_or(false);
-        }),
+    KT::expect_success("sync_wait usage", []{
+        try {
+            EX::sync_wait(NET::just(17));
+            return true;
+        }
+        catch (...) {
+            return false;
+        }
+    }),
+    KT::expect_success("sync_wait error_code", []{
+        try {
+            EX::sync_wait(NET::just_error(::std::error_code(0, ::std::generic_category())));
+            return false;
+        }
+        catch (::std::system_error const&) {
+            return true;
+        }
+        catch (...) {
+            return false;
+        }
+    }),
+    KT::expect_success("sync_wait exception object", []{
+        try {
+            EX::sync_wait(NET::just_error(::std::runtime_error("error")));
+            return false;
+        }
+        catch (::std::runtime_error const&) {
+            return true;
+        }
+        catch (...) {
+            return false;
+        }
+    }),
+    KT::expect_success("sync_wait exception_ptr", []{
+        try {
+            EX::sync_wait(NET::just_error(::std::make_exception_ptr(::std::logic_error("error"))));
+            return false;
+        }
+        catch (::std::logic_error const&) {
+            return true;
+        }
+        catch (...) {
+            return false;
+        }
+    }),
+    KT::expect_success("sync_wait cancel", []{
+        try {
+            EX::sync_wait(NET::just_done());
+            return true;
+        }
+        catch (...) {
+            return false;
+        }
+    }),
 };
 
-static KT::add_tests suite("then", ::tests);
+static KT::add_tests suite("sync_wait", ::tests);

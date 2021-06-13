@@ -1,4 +1,4 @@
-// nstd/sender/then.t.cpp                                             -*-C++-*-
+// nstd/sender/just_done.cpp                                          -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,47 +23,8 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/sender/then.hpp"
-#include "nstd/sender/just.hpp"
-#include <optional>
-#include "kuhl/test.hpp"
-
-namespace NET = ::nstd::net;
-namespace KT  = ::kuhl::test;
+#include "nstd/sender/just_done.hpp"
 
 // ----------------------------------------------------------------------------
 
-static KT::testcase const tests[] = {
-    KT::expect_success("then usage", []{
-            struct receiver {
-                ::std::optional<bool>* ptr;
-                void set_value() && { *this->ptr = true; }
-                void set_error(::std::exception_ptr const&) && noexcept {}
-                void set_done() && noexcept {}
-            };
-
-            ::std::optional<bool> value;
-            auto then = NET::then(NET::just(17), [&value](auto v){ value = v; });
-            auto state = then.connect(receiver{&value});
-            state.start();
-            return value.value_or(false);
-        }),
-    KT::expect_success("then pipeline", []{
-            struct receiver {
-                ::std::optional<bool>* ptr;
-                void set_value() && { *this->ptr = true; }
-                void set_error(::std::exception_ptr const&) && noexcept {}
-                void set_done() && noexcept {}
-            };
-
-            ::std::optional<bool> value;
-            auto then = NET::just(17)
-                      | NET::then([&value](auto v){ value = v; })
-                      ;
-            auto state = then.connect(receiver{&value});
-            state.start();
-            return value.value_or(false);
-        }),
-};
-
-static KT::add_tests suite("then", ::tests);
+int just_done_dummy = 0;

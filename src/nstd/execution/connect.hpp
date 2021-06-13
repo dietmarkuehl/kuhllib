@@ -39,8 +39,8 @@ namespace nstd {
         template <typename Sender, typename Receiver>
         concept has_member_connect
             = requires(Sender&& sender, Receiver&& receiver){
-                sender.connect(::nstd::utility::forward<Receiver>(receiver));
-                requires ::nstd::execution::operation_state<decltype(sender.connect(receiver))>;
+                ::nstd::utility::forward<Sender>(sender).connect(::nstd::utility::forward<Receiver>(receiver));
+                requires ::nstd::execution::operation_state<decltype(::nstd::utility::forward<Sender>(sender).connect(receiver))>;
             }
             ;
 
@@ -49,8 +49,8 @@ namespace nstd {
         concept has_non_member_connect
             =  !has_member_connect<Sender, Receiver>
             && requires(Sender&& sender, Receiver&& receiver){
-                connect(sender, ::nstd::utility::forward<Receiver>(receiver));
-                requires ::nstd::execution::operation_state<decltype(connect(sender, receiver))>;
+                connect(::nstd::utility::forward<Sender>(sender), ::nstd::utility::forward<Receiver>(receiver));
+                requires ::nstd::execution::operation_state<decltype(connect(::nstd::utility::forward<Sender>(sender), receiver))>;
             }
             ;
     }
@@ -61,17 +61,17 @@ namespace nstd {
                       ::nstd::execution::receiver Receiver>
                 requires ::nstd::hidden_names::has_member_connect<Sender, Receiver>
             auto operator()(Sender&& sender, Receiver&& receiver) const
-                noexcept(noexcept(sender.connect(::nstd::utility::forward<Receiver>(receiver))))
+                noexcept(noexcept(::nstd::utility::forward<Sender>(sender).connect(::nstd::utility::forward<Receiver>(receiver))))
             {
-                return sender.connect(::nstd::utility::forward<Receiver>(receiver));
+                return ::nstd::utility::forward<Sender>(sender).connect(::nstd::utility::forward<Receiver>(receiver));
             }
             template <::nstd::execution::sender Sender,
                       ::nstd::execution::receiver Receiver>
                 requires ::nstd::hidden_names::has_non_member_connect<Sender, Receiver>
             auto operator()(Sender&& sender, Receiver&& receiver) const
-                noexcept(noexcept(connect(sender, ::nstd::utility::forward<Receiver>(receiver))))
+                noexcept(noexcept(connect(::nstd::utility::forward<Sender>(sender), ::nstd::utility::forward<Receiver>(receiver))))
             {
-                return connect(sender, ::nstd::utility::forward<Receiver>(receiver));
+                return connect(::nstd::utility::forward<Sender>(sender), ::nstd::utility::forward<Receiver>(receiver));
             }
             //-dk:TODO connect for as-operation{s, r}
             //-dk:TODO 

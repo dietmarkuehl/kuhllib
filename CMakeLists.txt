@@ -23,10 +23,12 @@ list(APPEND kuhllib_test_components
     )
 
 list(APPEND kuhllib_components
+    src/nstd/file/file
     src/nstd/file/ring
     src/nstd/file/descriptor
     src/nstd/file/mapped_memory
     src/nstd/file/open_flags
+    src/nstd/execution/sync_wait
     src/nstd/execution/operation_state
     src/nstd/execution/start
     src/nstd/execution/sender_traits
@@ -38,6 +40,8 @@ list(APPEND kuhllib_components
     src/nstd/execution/set_done
     src/nstd/execution/connect
     src/nstd/sender/just
+    src/nstd/sender/just_error
+    src/nstd/sender/just_done
     src/nstd/sender/then
     src/nstd/net/io_context
     src/nstd/executor/associated_allocator
