@@ -89,8 +89,9 @@ struct nstd::file::open_sender
             , d_receiver(::nstd::utility::forward<R>(receiver))
             , d_name()
         {
-
         }
+        receiver(receiver const&) = delete;
+        receiver(receiver&&) = default;
 
         auto do_result(::std::int32_t res, ::uint32_t) -> void override {
             if (-1 <  res) {

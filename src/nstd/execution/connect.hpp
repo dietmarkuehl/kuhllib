@@ -40,7 +40,7 @@ namespace nstd {
         concept has_member_connect
             = requires(Sender&& sender, Receiver&& receiver){
                 ::nstd::utility::forward<Sender>(sender).connect(::nstd::utility::forward<Receiver>(receiver));
-                requires ::nstd::execution::operation_state<decltype(::nstd::utility::forward<Sender>(sender).connect(receiver))>;
+                requires ::nstd::execution::operation_state<decltype(::nstd::utility::forward<Sender>(sender).connect(::nstd::utility::forward<Receiver>(receiver)))>;
             }
             ;
 
@@ -50,7 +50,7 @@ namespace nstd {
             =  !has_member_connect<Sender, Receiver>
             && requires(Sender&& sender, Receiver&& receiver){
                 connect(::nstd::utility::forward<Sender>(sender), ::nstd::utility::forward<Receiver>(receiver));
-                requires ::nstd::execution::operation_state<decltype(connect(::nstd::utility::forward<Sender>(sender), receiver))>;
+                requires ::nstd::execution::operation_state<decltype(connect(::nstd::utility::forward<Sender>(sender), ::nstd::utility::forward<Receiver>(receiver)))>;
             }
             ;
     }
