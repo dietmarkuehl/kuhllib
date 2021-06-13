@@ -1,4 +1,4 @@
-// nstd/file/file.hpp                                                 -*-C++-*-
+// nstd/file/open.hpp                                                 -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -26,6 +26,7 @@
 #ifndef INCLUDED_NSTD_FILE_FILE
 #define INCLUDED_NSTD_FILE_FILE
 
+#include "nstd/file/descriptor.hpp"
 #include "nstd/file/open_flags.hpp"
 #include "nstd/execution/sender_base.hpp"
 #include "nstd/execution/set_value.hpp"
@@ -93,7 +94,8 @@ struct nstd::file::open_sender
 
         auto do_result(::std::int32_t res, ::uint32_t) -> void override {
             if (-1 <  res) {
-                ::nstd::execution::set_value(::nstd::utility::move(this->d_receiver), res);
+                ::nstd::execution::set_value(::nstd::utility::move(this->d_receiver),
+                                             ::nstd::file::descriptor(res));
             }
             else {
                 ::nstd::execution::set_error(::nstd::utility::move(this->d_receiver),

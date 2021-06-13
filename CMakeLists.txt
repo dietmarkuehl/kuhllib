@@ -23,7 +23,8 @@ list(APPEND kuhllib_test_components
     )
 
 list(APPEND kuhllib_components
-    src/nstd/file/file
+    src/nstd/file/read
+    src/nstd/file/open
     src/nstd/file/ring
     src/nstd/file/descriptor
     src/nstd/file/mapped_memory
@@ -150,5 +151,5 @@ list(TRANSFORM kuhllib_components APPEND ${KUHLLIB_SOURCE_SUFFIX} OUTPUT_VARIABL
 list(TRANSFORM kuhllib_components APPEND ${KUHLLIB_TEST_SUFFIX}   OUTPUT_VARIABLE kuhllib_tstfiles)
 add_library(kuhllib STATIC ${kuhllib_libfiles})
 add_executable(kuhllib_test ${kuhllib_tstfiles})
-target_link_libraries(kuhllib_test PUBLIC kuhllib kuhltest)
+target_link_libraries(kuhllib_test PUBLIC kuhllib kuhltest pthread)
 add_test(NAME kuhllib_test COMMAND $<TARGET_FILE:kuhllib_test>)

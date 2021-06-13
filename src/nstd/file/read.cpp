@@ -1,4 +1,4 @@
-// nstd/file/file.t.cpp                                               -*-C++-*-
+// nstd/file/read.cpp                                                 -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,33 +23,8 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/file/file.hpp"
-#include "nstd/net/io_context.hpp"
-#include "nstd/sender/just.hpp"
-#include "nstd/sender/then.hpp"
-#include <iostream>
-#include "kuhl/test.hpp"
-
-namespace File = ::nstd::file;
-namespace NET  = ::nstd::net;
-namespace KT   = ::kuhl::test;
+#include "nstd/file/read.hpp"
 
 // ----------------------------------------------------------------------------
 
-static KT::testcase const tests[] = {
-    KT::expect_success("file usage", []{
-            NET::io_context ctxt;
-            auto x = NET::just("/dev/null")
-                   | File::open_in(ctxt)
-                   | NET::then([]{ ::std::cout << "done\n"; })
-                   ;
-#if 1
-            KT::use(x);
-#else
-            NET::async_wait(ctxt, x);
-#endif
-            return true;
-        }),
-};
-
-static KT::add_tests suite("file", ::tests);
+int read_dummy = 0;
