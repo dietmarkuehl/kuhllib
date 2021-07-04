@@ -1,4 +1,4 @@
-// nstd/execution/receiver.t.cpp                                      -*-C++-*-
+// nstd/execution/scheduler.t.cpp                                     -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,43 +23,64 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/execution/receiver.hpp"
+#include "nstd/execution/scheduler.hpp"
+#include "nstd/execution/schedule.hpp"
 #include "kuhl/test.hpp"
 
 namespace test_declarations {}
-namespace TD = ::test_declarations;
 namespace EX = ::nstd::execution;
+namespace TD = ::test_declarations;
 namespace KT = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
 
 namespace test_declarations
 {
-    template <typename Error, bool SetErrorNoexcept, bool SetDoneNoexcept>
-    struct receiver
-    {
-        receiver(receiver&);
-        receiver(receiver&&);
-        auto set_value(int, double) && -> void {}
-        auto set_error(Error) && noexcept(SetErrorNoexcept) -> void {}
-        auto set_done() && noexcept(SetDoneNoexcept) -> void {}
+    struct sender {};
+
+    struct scheduler {
+        scheduler(scheduler const&) = default;
+        bool operator== (scheduler const&) const { return true; }
+        friend sender tag_invoke(::nstd::execution::schedule_t, scheduler) { return sender{}; } 
     };
 
-    struct error {};
+    struct non_copyable_scheduler {
+        non_copyable_scheduler(non_copyable_scheduler&&) = default;
+        non_copyable_scheduler(non_copyable_scheduler const&) = delete;
+        bool operator== (non_copyable_scheduler const&) const { return true; }
+        friend sender tag_invoke(::nstd::execution::schedule_t, non_copyable_scheduler) { return sender{}; } 
+    };
+
+    struct non_comparable_scheduler {
+        non_comparable_scheduler(non_comparable_scheduler const&) = default;
+        friend sender tag_invoke(::nstd::execution::schedule_t, non_comparable_scheduler) { return sender{}; } 
+    };
+
+    struct non_scheduling_scheduler {
+        non_scheduling_scheduler(non_scheduling_scheduler const&) = default;
+        bool operator== (non_scheduling_scheduler const&) const { return true; }
+    };
 }
 
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
-    KT::expect_success("receiver", [](KT::context& )->bool{
-            return EX::receiver<TD::receiver<::std::exception_ptr, true, true>>
-                && EX::receiver<TD::receiver<::std::exception_ptr, true, true>&>
-                && !EX::receiver<TD::receiver<::std::exception_ptr, false, true>>
-                && !EX::receiver<TD::receiver<::std::exception_ptr, true, false>>
-                && !EX::receiver<TD::receiver<::std::exception_ptr, true, true>, TD::error>
-                && EX::receiver<TD::receiver<TD::error, true, true>, TD::error>
-                ;
-        }),
+    KT::expect_success("scheduler gets classified correctly", [](KT::context& ){
+        return EX::scheduler<TD::scheduler>
+            ;
+    }),
+    KT::expect_success("non-copyable scheduler isn't a scheduler", [](KT::context& ){
+        return !EX::scheduler<TD::non_copyable_scheduler>
+            ;
+    }),
+    KT::expect_success("non-comparable scheduler isn't a scheduler", [](KT::context& ){
+        return !EX::scheduler<TD::non_comparable_scheduler>
+            ;
+    }),
+    KT::expect_success("non-scheduling scheduler isn't a scheduler", [](KT::context& ){
+        return !EX::scheduler<TD::non_scheduling_scheduler>
+            ;
+    }),
 };
 
-static KT::add_tests suite("receiver", ::tests);
+static KT::add_tests suite("scheduler", ::tests);

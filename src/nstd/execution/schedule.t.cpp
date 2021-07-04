@@ -1,4 +1,4 @@
-// nstd/execution/receiver.hpp                                        -*-C++-*-
+// nstd/execution/schedule.t.cpp                                      -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,31 +23,38 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_EXECUTION_RECEIVER
-#define INCLUDED_NSTD_EXECUTION_RECEIVER
+#include "nstd/execution/schedule.hpp"
+#include "kuhl/test.hpp"
 
-#include "nstd/execution/set_value.hpp"
-#include "nstd/execution/set_error.hpp"
-#include "nstd/execution/set_done.hpp"
-#include "nstd/type_traits/remove_cvref.hpp"
-#include "nstd/utility/move.hpp"
-#include <concepts>
-#include <exception>
+namespace test_declarations {};
+namespace TD = ::test_declarations;
+namespace EX = ::nstd::execution;
+namespace KT = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::execution {
-    template <typename Receiver, typename Error = ::std::exception_ptr>
-    concept receiver
-        =  ::std::move_constructible<::nstd::type_traits::remove_cvref_t<Receiver>>
-        && ::std::constructible_from<::nstd::type_traits::remove_cvref_t<Receiver>, Receiver>
-        && requires(::nstd::type_traits::remove_cvref_t<Receiver>&& rec, Error&& err) {
-            { ::nstd::execution::set_done(::nstd::utility::move(rec)) } noexcept;
-            { ::nstd::execution::set_error(::nstd::utility::move(rec), ::nstd::utility::move(err)) } noexcept;
-        }
-        ;
+namespace test_declarations
+{
+    struct sender {
+        int value;
+    };
+
+    struct scheduler {
+        int value;
+        bool operator== (scheduler const&) const { return true; }
+        friend sender tag_invoke(::nstd::execution::schedule_t, scheduler s) {
+            return sender{s.value};
+        } 
+    };
 }
 
 // ----------------------------------------------------------------------------
 
-#endif
+static KT::testcase const tests[] = {
+    KT::expect_success("schedule invokes the scheduler's tag_invoke method", [](KT::context& ){
+        return EX::schedule(TD::scheduler{17}).value == 17
+            ;
+    }),
+};
+
+static KT::add_tests suite("schedule", ::tests);

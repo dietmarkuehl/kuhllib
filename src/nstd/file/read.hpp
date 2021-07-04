@@ -33,10 +33,10 @@
 #include "nstd/execution/set_done.hpp"
 #include "nstd/execution/sender_base.hpp"
 #include "nstd/net/io_context.hpp"
+#include "nstd/type_traits/remove_cvref.hpp"
 #include "nstd/utility/forward.hpp"
 #include "nstd/utility/move.hpp"
 #include <system_error>
-#include <type_traits>
 #include <cstddef>
 #include <cstdint>
 #include <unistd.h>
@@ -53,7 +53,7 @@ namespace nstd::file {
         Buffer                          d_buffer;
         ::iovec                         d_iovec[1];
         Context*                        d_context;
-        ::std::remove_cvref_t<Receiver> d_receiver;
+        ::nstd::type_traits::remove_cvref_t<Receiver> d_receiver;
         ::nstd::file::descriptor        d_fd;
 
         read_receiver(Context* context, Receiver&& receiver)
@@ -122,7 +122,7 @@ namespace nstd::file {
         : ::nstd::execution::piped_sender_base
     {
         Context*                       d_context;
-        ::std::remove_cvref_t<Sender>  d_sender;
+        ::nstd::type_traits::remove_cvref_t<Sender>  d_sender;
 
         template <typename Receiver>
         auto connect(Receiver&& receiver) noexcept {

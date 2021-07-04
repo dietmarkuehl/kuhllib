@@ -28,11 +28,11 @@
 
 #include "nstd/execution/sender_base.hpp"
 #include "nstd/execution/set_done.hpp"
+#include "nstd/type_traits/remove_cvref.hpp"
 #include "nstd/utility/move.hpp"
 #include "nstd/utility/forward.hpp"
 #include <cstddef>
 #include <string_view>
-#include <type_traits>
 
 // ----------------------------------------------------------------------------
 
@@ -46,7 +46,7 @@ namespace nstd::net {
 template <typename Receiver>
 struct nstd::net::just_done_state
 {
-    ::std::remove_cvref_t<Receiver> d_receiver;
+    ::nstd::type_traits::remove_cvref_t<Receiver> d_receiver;
 
     auto start() noexcept -> void {
         ::nstd::execution::set_done(::nstd::utility::move(this->d_receiver));

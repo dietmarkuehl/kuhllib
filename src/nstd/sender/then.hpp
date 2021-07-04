@@ -31,10 +31,10 @@
 #include "nstd/execution/set_error.hpp"
 #include "nstd/execution/set_done.hpp"
 #include "nstd/execution/connect.hpp"
+#include "nstd/type_traits/remove_cvref.hpp"
 #include "nstd/utility/forward.hpp"
 #include "nstd/utility/move.hpp"
 #include <exception>
-#include <type_traits>
 
 // ----------------------------------------------------------------------------
 
@@ -61,8 +61,8 @@ template <typename Fun, typename Receiver>
 class nstd::net::then_receiver
 {
 public:
-    ::std::remove_cvref_t<Fun>       d_fun;
-    ::std::remove_cvref_t<Receiver>  d_receiver;
+    ::nstd::type_traits::remove_cvref_t<Fun>       d_fun;
+    ::nstd::type_traits::remove_cvref_t<Receiver>  d_receiver;
 
 public:
     then_receiver(auto&& fun, Receiver&& receiver)
@@ -97,8 +97,8 @@ class nstd::net::then_sender
     : public ::nstd::execution::sender_base
 {
 private:
-    ::std::remove_cvref_t<Sender> d_sender;
-    ::std::remove_cvref_t<Fun>    d_fun;
+    ::nstd::type_traits::remove_cvref_t<Sender> d_sender;
+    ::nstd::type_traits::remove_cvref_t<Fun>    d_fun;
 
 public:
     then_sender(Sender sender, Fun fun)

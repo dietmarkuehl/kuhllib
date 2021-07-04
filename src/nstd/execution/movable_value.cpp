@@ -1,4 +1,4 @@
-// nstd/execution/receiver.hpp                                        -*-C++-*-
+// nstd/execution/movable_value.cpp                                   -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,31 +23,8 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_EXECUTION_RECEIVER
-#define INCLUDED_NSTD_EXECUTION_RECEIVER
-
-#include "nstd/execution/set_value.hpp"
-#include "nstd/execution/set_error.hpp"
-#include "nstd/execution/set_done.hpp"
-#include "nstd/type_traits/remove_cvref.hpp"
-#include "nstd/utility/move.hpp"
-#include <concepts>
-#include <exception>
+#include "nstd/execution/movable_value.hpp"
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::execution {
-    template <typename Receiver, typename Error = ::std::exception_ptr>
-    concept receiver
-        =  ::std::move_constructible<::nstd::type_traits::remove_cvref_t<Receiver>>
-        && ::std::constructible_from<::nstd::type_traits::remove_cvref_t<Receiver>, Receiver>
-        && requires(::nstd::type_traits::remove_cvref_t<Receiver>&& rec, Error&& err) {
-            { ::nstd::execution::set_done(::nstd::utility::move(rec)) } noexcept;
-            { ::nstd::execution::set_error(::nstd::utility::move(rec), ::nstd::utility::move(err)) } noexcept;
-        }
-        ;
-}
-
-// ----------------------------------------------------------------------------
-
-#endif
+int movable_value_dummy = 0;

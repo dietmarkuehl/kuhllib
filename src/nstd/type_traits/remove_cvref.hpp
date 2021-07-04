@@ -1,4 +1,4 @@
-// nstd/execution/receiver.hpp                                        -*-C++-*-
+// nstd/type_traits/remove_cvref.hpp                                  -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,30 +23,29 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_EXECUTION_RECEIVER
-#define INCLUDED_NSTD_EXECUTION_RECEIVER
+#ifndef INCLUDED_NSTD_TYPE_TRAITS_REMOVE_CVREF
+#define INCLUDED_NSTD_TYPE_TRAITS_REMOVE_CVREF
 
-#include "nstd/execution/set_value.hpp"
-#include "nstd/execution/set_error.hpp"
-#include "nstd/execution/set_done.hpp"
-#include "nstd/type_traits/remove_cvref.hpp"
-#include "nstd/utility/move.hpp"
-#include <concepts>
-#include <exception>
+#include "nstd/type_traits/remove_cv.hpp"
+#include "nstd/type_traits/remove_reference.hpp"
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::execution {
-    template <typename Receiver, typename Error = ::std::exception_ptr>
-    concept receiver
-        =  ::std::move_constructible<::nstd::type_traits::remove_cvref_t<Receiver>>
-        && ::std::constructible_from<::nstd::type_traits::remove_cvref_t<Receiver>, Receiver>
-        && requires(::nstd::type_traits::remove_cvref_t<Receiver>&& rec, Error&& err) {
-            { ::nstd::execution::set_done(::nstd::utility::move(rec)) } noexcept;
-            { ::nstd::execution::set_error(::nstd::utility::move(rec), ::nstd::utility::move(err)) } noexcept;
-        }
-        ;
+namespace nstd::type_traits {
+    template <typename>
+    struct remove_cvref;
+
+    template <typename T>
+    using remove_cvref_t = typename ::nstd::type_traits::remove_cvref<T>::type;
 }
+
+// ----------------------------------------------------------------------------
+
+template <typename T>
+struct nstd::type_traits::remove_cvref
+{
+    using type = ::nstd::type_traits::remove_cv_t<::nstd::type_traits::remove_reference_t<T>>;
+};
 
 // ----------------------------------------------------------------------------
 

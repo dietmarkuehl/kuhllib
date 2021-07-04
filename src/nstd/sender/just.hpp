@@ -29,11 +29,11 @@
 #include "nstd/execution/sender_base.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/set_error.hpp"
+#include "nstd/type_traits/remove_cvref.hpp"
 #include "nstd/utility/forward.hpp"
 #include "nstd/utility/move.hpp"
 #include <exception>
 #include <string_view>
-#include <type_traits>
 #include <cstddef>
 
 // ----------------------------------------------------------------------------
@@ -75,7 +75,7 @@ class nstd::net::just_sender
     : public ::nstd::execution::piped_sender_base
 {
 private:
-    ::std::remove_cvref_t<Value> d_value;
+    ::nstd::type_traits::remove_cvref_t<Value> d_value;
 
 public:
     explicit just_sender(Value value): d_value(::nstd::utility::forward<Value>(value)) {}

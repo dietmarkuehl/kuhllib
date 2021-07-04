@@ -28,11 +28,11 @@
 
 #include "nstd/execution/sender_base.hpp"
 #include "nstd/execution/set_error.hpp"
+#include "nstd/type_traits/remove_cvref.hpp"
 #include "nstd/utility/move.hpp"
 #include "nstd/utility/forward.hpp"
 #include <cstddef>
 #include <string_view>
-#include <type_traits>
 
 // ----------------------------------------------------------------------------
 
@@ -53,8 +53,8 @@ namespace nstd::net {
 template <typename Value, typename Receiver>
 struct nstd::net::just_error_state
 {
-    ::std::remove_cvref_t<Value>    d_value;
-    ::std::remove_cvref_t<Receiver> d_receiver;
+    ::nstd::type_traits::remove_cvref_t<Value>    d_value;
+    ::nstd::type_traits::remove_cvref_t<Receiver> d_receiver;
 
     auto start() noexcept -> void {
         ::nstd::execution::set_error(::nstd::utility::move(this->d_receiver),
@@ -69,7 +69,7 @@ class nstd::net::just_error_sender
     : public ::nstd::execution::piped_sender_base
 {
 public:
-    ::std::remove_cvref_t<Value> d_value;
+    ::nstd::type_traits::remove_cvref_t<Value> d_value;
 
     template <typename Receiver>
     auto connect(Receiver&& receiver) && -> ::nstd::net::just_error_state<Value, Receiver> {

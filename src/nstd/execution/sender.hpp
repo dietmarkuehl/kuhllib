@@ -28,8 +28,8 @@
 
 #include "nstd/execution/sender_traits.hpp"
 #include "nstd/utility/forward.hpp"
+#include "nstd/type_traits/remove_cvref.hpp"
 #include <concepts>
-#include <type_traits>
 
 // ----------------------------------------------------------------------------
 
@@ -37,8 +37,8 @@ namespace nstd::execution {
 
     template <typename Sender>
     concept sender
-        =  ::std::move_constructible<::std::remove_cvref_t<Sender>>
-        && !requires{ typename ::nstd::execution::sender_traits<::std::remove_cvref_t<Sender>>::not_specialized; }
+        =  ::std::move_constructible<::nstd::type_traits::remove_cvref_t<Sender>>
+        && !requires{ typename ::nstd::execution::sender_traits<::nstd::type_traits::remove_cvref_t<Sender>>::not_specialized; }
         ;
 
     template <::nstd::execution::sender Sender, typename Fun>
