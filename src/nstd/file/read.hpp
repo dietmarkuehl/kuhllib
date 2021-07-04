@@ -81,16 +81,24 @@ namespace nstd::file {
         }
 
         auto set_value(::nstd::file::descriptor&& fd) && noexcept {
+            ::std::cout << "read: rvalue set_value\n";
             this->d_fd = ::nstd::utility::move(fd);
+            this->submit(this->d_fd.get());
+        }
+        auto set_value(::nstd::file::descriptor const& fd) && noexcept {
+            ::std::cout << "read: lvalue set_value\n";
+            this->submit(fd.get());
+        }
+        auto submit(int fd) {
             this->d_iovec[0] = ::iovec{ .iov_base = this->d_buffer, .iov_len = sizeof(this->d_buffer) };
             ::std::cout << "buffer=" << +this->d_buffer << " "
                         << "iovec=" << this->d_iovec[0].iov_base << "/" << this->d_iovec[0].iov_len << "\n";
-            this->d_context->submit([this](io_uring_sqe& elem){
+            this->d_context->submit([this, fd](io_uring_sqe& elem){
                 elem = io_uring_sqe{
                     .opcode     = IORING_OP_READV,
                     .flags      = {},
                     .ioprio     = {},
-                    .fd         = this->d_fd.get(),
+                    .fd         = fd,
                     .off        = {},
                     .addr       = reinterpret_cast<decltype(elem.addr)>(+this->d_iovec),
                     .len        = 1u,

@@ -23,6 +23,7 @@ list(APPEND kuhllib_test_components
     )
 
 list(APPEND kuhllib_components
+    src/nstd/functional/tag_invoke
     src/nstd/file/read
     src/nstd/file/open
     src/nstd/file/ring
