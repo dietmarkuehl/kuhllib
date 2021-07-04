@@ -31,38 +31,8 @@
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::hidden_names {
-    void set_done();
-
-    template <typename Receiver>
-    concept has_member_set_done
-        = requires(Receiver& receiver){
-            ::nstd::utility::forward<Receiver>(receiver).set_done();
-            }
-        ;
-    template <typename Receiver>
-    concept has_set_done
-        =  !has_member_set_done<Receiver>
-        && requires(Receiver& receiver){
-            set_done(::nstd::utility::forward<Receiver>(receiver));
-            }
-        ;
-}
 namespace nstd::execution::inline customization_points {
     inline constexpr struct set_done_t {
-#if 0
-        auto operator()(::nstd::hidden_names::has_member_set_done auto&& receiver) const
-            noexcept(noexcept(::nstd::utility::forward<decltype(receiver)>(receiver).set_done()))
-        {
-            return ::nstd::utility::forward<decltype(receiver)>(receiver).set_done();
-        }
-        auto operator()(::nstd::hidden_names::has_set_done auto&& receiver) const
-            noexcept(noexcept(set_done(::nstd::utility::forward<decltype(receiver)>(receiver))))
-        {
-            return set_done(::nstd::utility::forward<decltype(receiver)>(receiver));
-        }
-        auto operator()(auto) = delete;
-#endif
         template <typename Receiver>
         auto operator()(Receiver&& receiver) const
             noexcept(noexcept(::nstd::tag_invoke(*this, ::nstd::utility::forward<Receiver>(receiver))))
