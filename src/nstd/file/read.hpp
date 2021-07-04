@@ -112,8 +112,8 @@ namespace nstd::file {
             ::nstd::execution::set_error(::nstd::utility::move(this->d_receiver),
                                          ::nstd::utility::forward<decltype(err)>(err));
         }
-        auto set_done() && noexcept {
-            ::nstd::execution::set_done(::nstd::utility::move(this->d_receiver));
+        friend auto tag_invoke(::nstd::execution::set_done_t, read_receiver&& r) noexcept -> void {
+            ::nstd::execution::set_done(::nstd::utility::move(r.d_receiver));
         }
     };
 

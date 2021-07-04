@@ -63,6 +63,16 @@ static KT::testcase const tests[] = {
             && !EX::receiver_of<int, bool, char>
             ;
     }),
+    KT::expect_success("schedule", [](KT::context&){
+        return KT::assert_type_exists<EX::schedule_t>
+            && KT::type<EX::schedule_t const> == KT::type<decltype(EX::schedule)>
+            ;
+    }),
+    KT::expect_success("set_done", [](KT::context&){
+        return KT::assert_type_exists<EX::set_done_t>
+            && KT::type<EX::set_done_t const> == KT::type<decltype(EX::set_done)>
+            ;
+    }),
 };
 
 static KT::add_tests suite("execution", ::tests);

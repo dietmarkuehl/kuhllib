@@ -76,7 +76,7 @@ namespace test_declarations
 
     struct receiver {
         auto set_error(::std::exception_ptr) && noexcept -> void {}
-        auto set_done() && noexcept -> void {}
+        friend auto tag_invoke(EX::set_done_t, receiver&&) noexcept -> void {}
     };
 }
 

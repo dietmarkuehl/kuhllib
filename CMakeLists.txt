@@ -22,6 +22,9 @@ list(APPEND kuhllib_test_components
     src/kuhl/test
     )
 
+list(APPEND temporary_removed
+)
+
 list(APPEND kuhllib_components
     src/nstd/algorithm/all_of
     src/nstd/algorithm/any_of

@@ -32,6 +32,10 @@
 #include "nstd/execution/scheduler.hpp"
 #include "nstd/execution/receiver.hpp"
 #include "nstd/execution/receiver_of.hpp"
+#include "nstd/execution/schedule.hpp"
+#include "nstd/execution/set_value.hpp"
+#include "nstd/execution/set_error.hpp"
+#include "nstd/execution/set_done.hpp"
 
 // ----------------------------------------------------------------------------
 

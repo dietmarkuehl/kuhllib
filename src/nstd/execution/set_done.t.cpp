@@ -37,14 +37,17 @@ namespace KT = ::kuhl::test;
 namespace test_declarations {
     struct member_set_done {
         bool* const ptr;
-        void set_done() && { *ptr = true; }
+        friend auto tag_invoke(EX::set_done_t, member_set_done&& r) noexcept -> void {
+            *r.ptr = true;
+        }
     };
-    void set_done(member_set_done&&) {}
 
     struct non_member_set_done {
         bool* const ptr;
     };
-    void set_done(non_member_set_done&& r) { *r.ptr = true; }
+    auto tag_invoke(EX::set_done_t, non_member_set_done&& r) noexcept -> void {
+        *r.ptr = true;
+    }
 }
 
 // ----------------------------------------------------------------------------

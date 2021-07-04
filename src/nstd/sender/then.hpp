@@ -85,8 +85,8 @@ public:
     auto set_error(auto&& arg) && noexcept ->void {
         ::nstd::execution::set_error(::nstd::utility::move(this->d_receiver), ::nstd::utility::forward<decltype(arg)>(arg));
     }
-    auto set_done() && noexcept ->void {
-        ::nstd::execution::set_done(::nstd::utility::move(this->d_receiver));
+    friend auto tag_invoke(::nstd::execution::set_done_t, then_receiver&& r) noexcept -> void {
+        ::nstd::execution::set_done(::nstd::utility::move(r.d_receiver));
     }
 };
 

@@ -31,6 +31,7 @@
 #include <mutex>
 #include <condition_variable>
 #include "nstd/execution/connect.hpp"
+#include "nstd/execution/set_done.hpp"
 #include "nstd/utility/forward.hpp"
 
 // ----------------------------------------------------------------------------
@@ -79,8 +80,8 @@ public:
         *this->exception = ex;
         this->complete();
     }
-    auto set_done() && noexcept -> void {
-        this->complete();
+    friend auto tag_invoke(::nstd::execution::set_done_t, sync_wait_receiver&& r) noexcept -> void {
+        r.complete();
     }
 };
 

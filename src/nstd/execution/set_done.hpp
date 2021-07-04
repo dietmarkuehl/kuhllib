@@ -26,6 +26,7 @@
 #ifndef INCLUDED_NSTD_EXECUTION_SET_DONE
 #define INCLUDED_NSTD_EXECUTION_SET_DONE
 
+#include "nstd/functional/tag_invoke.hpp"
 #include "nstd/utility/forward.hpp"
 
 // ----------------------------------------------------------------------------
@@ -48,7 +49,8 @@ namespace nstd::hidden_names {
         ;
 }
 namespace nstd::execution::inline customization_points {
-    inline constexpr struct {
+    inline constexpr struct set_done_t {
+#if 0
         auto operator()(::nstd::hidden_names::has_member_set_done auto&& receiver) const
             noexcept(noexcept(::nstd::utility::forward<decltype(receiver)>(receiver).set_done()))
         {
@@ -60,6 +62,16 @@ namespace nstd::execution::inline customization_points {
             return set_done(::nstd::utility::forward<decltype(receiver)>(receiver));
         }
         auto operator()(auto) = delete;
+#endif
+        template <typename Receiver>
+        auto operator()(Receiver&& receiver) const
+            noexcept(noexcept(::nstd::tag_invoke(*this, ::nstd::utility::forward<Receiver>(receiver))))
+            requires requires(Receiver&& receiver) {
+                ::nstd::tag_invoke(*this, ::nstd::utility::forward<Receiver>(receiver));
+            }
+        {
+            return ::nstd::tag_invoke(*this, ::nstd::utility::forward<Receiver>(receiver));
+        }
     } set_done;
 }
 

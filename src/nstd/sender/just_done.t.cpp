@@ -27,21 +27,27 @@
 #include "kuhl/test.hpp"
 #include <optional>
 
+namespace test_declarations {}
+namespace TD  = test_declarations;
+namespace EX  = ::nstd::execution;
 namespace NET = ::nstd::net;
 namespace KT  = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
 
+namespace test_declarations {
+    struct receiver {
+        bool* ptr;
+        void set_value(int) && {}
+        void set_error(int) && {}
+        friend auto tag_invoke(EX::set_done_t, receiver&& r) -> void { *r.ptr = true; }
+    };
+}
+
 static KT::testcase const tests[] = {
     KT::expect_success("just_done usage", []{
             bool value(false);
-            struct receiver {
-                bool* ptr;
-                void set_value(int) && {}
-                void set_error(int) && {}
-                void set_done() && { *this->ptr = true; }
-            };
-            auto state = NET::just_done().connect(receiver{&value});
+            auto state = NET::just_done().connect(TD::receiver{&value});
             state.start();
             return value
                 ;

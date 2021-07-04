@@ -126,8 +126,8 @@ struct nstd::file::open_sender
         auto set_error(Error&& error) && noexcept -> void {
             ::nstd::execution::set_error(::nstd::utility::move(this->d_receiver), ::nstd::utility::forward<Error>(error));
         }
-        auto set_done() && noexcept -> void {
-            ::nstd::execution::set_done(::nstd::utility::move(this->d_receiver));
+        friend auto tag_invoke(::nstd::execution::set_done_t, receiver&& r) noexcept -> void {
+            ::nstd::execution::set_done(::nstd::utility::move(r.d_receiver));
         }
     };
 
