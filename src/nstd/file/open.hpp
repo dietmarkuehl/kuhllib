@@ -104,27 +104,27 @@ struct nstd::file::open_sender
             }
         }
 
-        auto set_value(::std::string_view name) && noexcept -> void {
-            this->d_name = name;
-            this->d_context->submit([this](io_uring_sqe& elem){
+        friend auto tag_invoke(::nstd::execution::set_value_t, receiver&& r, ::std::string_view name) noexcept -> void {
+            r.d_name = name;
+            r.d_context->submit([&r](io_uring_sqe& elem){
                 elem = io_uring_sqe{
                     .opcode     = IORING_OP_OPENAT,
                     .flags      = {},
                     .ioprio     = {},
                     .fd         = AT_FDCWD,
                     .off        = {},
-                    .addr       = reinterpret_cast<decltype(elem.addr)>(this->d_name.c_str()),
+                    .addr       = reinterpret_cast<decltype(elem.addr)>(r.d_name.c_str()),
                     .len        = 0,
-                    .open_flags = ::nstd::file::to_system(this->d_flags),
-                    .user_data  = reinterpret_cast<decltype(elem.user_data)>(static_cast<::nstd::net::io_context::io_base*>(this)),
+                    .open_flags = ::nstd::file::to_system(r.d_flags),
+                    .user_data  = reinterpret_cast<decltype(elem.user_data)>(static_cast<::nstd::net::io_context::io_base*>(&r)),
                     .__pad2     = {}
                 };
 
             });
         }
         template <typename Error>
-        auto set_error(Error&& error) && noexcept -> void {
-            ::nstd::execution::set_error(::nstd::utility::move(this->d_receiver), ::nstd::utility::forward<Error>(error));
+        friend auto tag_invoke(::nstd::execution::set_error_t, receiver&& r, Error&& error) noexcept -> void {
+            ::nstd::execution::set_error(::nstd::utility::move(r.d_receiver), ::nstd::utility::forward<Error>(error));
         }
         friend auto tag_invoke(::nstd::execution::set_done_t, receiver&& r) noexcept -> void {
             ::nstd::execution::set_done(::nstd::utility::move(r.d_receiver));

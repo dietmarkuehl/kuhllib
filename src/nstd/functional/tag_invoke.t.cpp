@@ -34,7 +34,7 @@ namespace KT = ::kuhl::test;
 
 namespace test_declarations
 {
-    constexpr struct non_overloaded_tag_t {} non_overloaded_tag;
+    struct non_overloaded_tag_t {};
 
     template <bool Nothrow> struct overloaded_tag_t {};
     template <bool Nothrow> constexpr overloaded_tag_t<Nothrow> overloaded_tag;

@@ -33,44 +33,9 @@
 
 namespace nstd
 {
-    namespace hidden_names
-    {
-        void set_error();
-
-        template <typename Receiver, typename Error>
-        concept has_member_set_error
-            = requires(Receiver receiver, Error error){
-                ::nstd::utility::forward<Receiver>(receiver).set_error(::nstd::utility::forward<Error>(error));
-            }
-            ;
-
-        template <typename Receiver, typename Error>
-        concept has_non_member_set_error
-            =  !has_member_set_error<Receiver, Error>
-            && requires(Receiver receiver, Error error){
-                set_error(::nstd::utility::forward<Receiver>(receiver), ::nstd::utility::forward<Error>(error));
-            }
-            ;
-    }
     namespace execution::inline customization_points
     {
         inline constexpr struct set_error_t {
-            template <typename Receiver, typename Error>
-                requires ::nstd::hidden_names::has_member_set_error<Receiver, Error>
-            constexpr auto operator()(Receiver&& receiver, Error&& error) const
-                noexcept(noexcept(::nstd::utility::forward<Receiver>(receiver).set_error(::nstd::utility::forward<Error>(error))))
-            {
-                return ::nstd::utility::forward<Receiver>(receiver).set_error(::nstd::utility::forward<Error>(error));
-            }
-            template <typename Receiver, typename Error>
-                requires ::nstd::hidden_names::has_non_member_set_error<Receiver, Error>
-            constexpr auto operator()(Receiver&& receiver, Error&& error) const
-                noexcept(noexcept(set_error(::nstd::utility::forward<Receiver>(receiver), ::nstd::utility::forward<Error>(error))))
-            {
-                return set_error(::nstd::utility::forward<Receiver>(receiver), ::nstd::utility::forward<Error>(error));
-            }
-            auto operator()(auto&&, auto&&) const = delete;
-
             template <typename Receiver, typename Error>
             constexpr auto operator()(Receiver&& receiver, Error&& error) const
                 noexcept(noexcept(::nstd::tag_invoke(*this,

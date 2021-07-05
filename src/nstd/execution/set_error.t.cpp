@@ -44,10 +44,8 @@ namespace test_declarations
     struct member_set_error
     {
         bool* const ptr;
-        void set_error(Error) && noexcept(Noexcept) { *this->ptr = true; }
+        friend auto tag_invoke(EX::set_error_t, member_set_error&& r, Error) noexcept(Noexcept) -> void { *r.ptr = true; }
     };
-    template <typename Error, bool Noexcept>
-    void set_error(member_set_error<Error, Noexcept>&&, Error) {}
 
     template <typename Error, bool Noexcept>
     struct non_member_set_error
@@ -55,7 +53,7 @@ namespace test_declarations
         bool* const ptr;
     };
     template <typename Error, bool Noexcept>
-    void set_error(non_member_set_error<Error, Noexcept>&& r, Error) noexcept(Noexcept){
+    auto tag_invoke(EX::set_error_t, non_member_set_error<Error, Noexcept>&& r, Error) noexcept(Noexcept) -> void {
         *r.ptr = true;
     }
 }

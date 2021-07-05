@@ -25,6 +25,9 @@
 
 #include "nstd/sender/then.hpp"
 #include "nstd/sender/just.hpp"
+#include "nstd/execution/set_value.hpp"
+#include "nstd/execution/set_error.hpp"
+#include "nstd/execution/set_done.hpp"
 #include <optional>
 #include "kuhl/test.hpp"
 
@@ -39,8 +42,8 @@ namespace KT  = ::kuhl::test;
 namespace test_declarations {
     struct receiver {
         ::std::optional<bool>* ptr;
-        void set_value() && { *this->ptr = true; }
-        void set_error(::std::exception_ptr const&) && noexcept {}
+        friend auto tag_invoke(EX::set_value_t, receiver&& r) -> void { *r.ptr = true; }
+        friend auto tag_invoke(EX::set_error_t, receiver&&, ::std::exception_ptr const&) noexcept -> void {}
         friend auto tag_invoke(EX::set_done_t, receiver&&) noexcept -> void {}
     };
 }

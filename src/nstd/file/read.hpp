@@ -80,14 +80,14 @@ namespace nstd::file {
             }
         }
 
-        auto set_value(::nstd::file::descriptor&& fd) && noexcept {
+        friend auto tag_invoke(::nstd::execution::set_value_t, read_receiver&& r, ::nstd::file::descriptor&& fd) noexcept -> void {
             ::std::cout << "read: rvalue set_value\n";
-            this->d_fd = ::nstd::utility::move(fd);
-            this->submit(this->d_fd.get());
+            r.d_fd = ::nstd::utility::move(fd);
+            r.submit(r.d_fd.get());
         }
-        auto set_value(::nstd::file::descriptor const& fd) && noexcept {
+        friend auto tag_invoke(::nstd::execution::set_value_t, read_receiver&& r, ::nstd::file::descriptor const& fd) noexcept -> void {
             ::std::cout << "read: lvalue set_value\n";
-            this->submit(fd.get());
+            r.submit(fd.get());
         }
         auto submit(int fd) {
             this->d_iovec[0] = ::iovec{ .iov_base = this->d_buffer, .iov_len = sizeof(this->d_buffer) };
@@ -108,8 +108,8 @@ namespace nstd::file {
                 };
             });
         }
-        auto set_error(auto&& err) && noexcept {
-            ::nstd::execution::set_error(::nstd::utility::move(this->d_receiver),
+        friend auto tag_invoke(::nstd::execution::set_error_t, read_receiver&& r, auto&& err) noexcept -> void {
+            ::nstd::execution::set_error(::nstd::utility::move(r.d_receiver),
                                          ::nstd::utility::forward<decltype(err)>(err));
         }
         friend auto tag_invoke(::nstd::execution::set_done_t, read_receiver&& r) noexcept -> void {

@@ -42,8 +42,6 @@ namespace KT  = ::kuhl::test;
 namespace test_declarations {
     struct receiver {
         ::std::optional<int>* ptr;
-        //void set_value(int v) && { *this->ptr = v; }
-        //void set_error(::std::exception_ptr const&) && {}
 
         friend void tag_invoke(EX::set_value_t, receiver&& r, int v) { *r.ptr = v; }
         friend void tag_invoke(EX::set_error_t, receiver&&, ::std::exception_ptr const&) {}
@@ -51,9 +49,6 @@ namespace test_declarations {
 
     struct string_receiver {
         ::std::optional<::std::string>* ptr;
-        //void set_value(char const*) && {}
-        //void set_value(::std::string_view v) && { *this->ptr = v; }
-        //void set_error(::std::exception_ptr const&) && {}
 
         friend void tag_invoke(EX::set_value_t, string_receiver&&, char const*) {}
         friend void tag_invoke(EX::set_value_t, string_receiver&& r, ::std::string_view v) { *r.ptr = v; }

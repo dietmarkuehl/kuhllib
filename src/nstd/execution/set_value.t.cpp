@@ -41,13 +41,11 @@ namespace test_declarations {
     {
         int*    const ptr1;
         double* const ptr2;
-        auto set_value(int value1, double value2) && noexcept(Noexcept) ->void {
-            *this->ptr1 = value1;
-            *this->ptr2 = value2;
+        friend auto tag_invoke(EX::set_value_t, member_set_values&& r, int value1, double value2) noexcept(Noexcept) ->void {
+            *r.ptr1 = value1;
+            *r.ptr2 = value2;
         }
     };
-    template <bool Noexcept>
-    void set_value(member_set_values<Noexcept>&&, int, double) {}
 
     template <bool Noexcept>
     struct non_member_set_values
@@ -56,7 +54,7 @@ namespace test_declarations {
         double* const ptr2;
     };
     template <bool Noexcept>
-    void set_value(non_member_set_values<Noexcept>&& r, int value1, double value2) noexcept(Noexcept) {
+    auto tag_invoke(EX::set_value_t, non_member_set_values<Noexcept>&& r, int value1, double value2) noexcept(Noexcept) -> void {
             *r.ptr1 = value1;
             *r.ptr2 = value2;
     }

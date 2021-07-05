@@ -31,65 +31,25 @@
 
 // ----------------------------------------------------------------------------
 
-namespace nstd {
-    namespace hidden_names
-    {
-        void set_value();
-
+namespace nstd::execution::inline customization_points
+{
+    inline constexpr struct set_value_t {
         template <typename Receiver, typename... Args>
-        concept has_member_set_value
-            = requires(Receiver receiver, Args...args){
-                ::nstd::utility::forward<Receiver>(receiver).set_value(::nstd::utility::forward<Args>(args)...);
-            }
-            ;
-
-        template <typename Receiver, typename... Args>
-        concept has_non_member_set_value
-            =  !has_member_set_value<Receiver, Args...>
-            && requires(Receiver&& receiver, Args&&... args){
-                set_value(::nstd::utility::forward<Receiver>(receiver), ::nstd::utility::forward<Args>(args)...);
-            }
-            ;
-    }
-    namespace execution::inline customization_points
-    {
-        inline constexpr struct set_value_t {
-            template <typename Receiver, typename... Args>
-                requires ::nstd::hidden_names::has_member_set_value<Receiver, Args...>
-            auto operator()(Receiver&& receiver, Args&&... args) const
-                noexcept(noexcept(::nstd::utility::forward<Receiver>(receiver).set_value(::nstd::utility::forward<Args>(args)...)))
-            {
-                return ::nstd::utility::forward<Receiver>(receiver).set_value(::nstd::utility::forward<Args>(args)...);
-            }
-
-            template <typename Receiver, typename... Args>
-                requires ::nstd::hidden_names::has_non_member_set_value<Receiver, Args...>
-            auto operator()(Receiver&& receiver, Args&&... args) const
-                noexcept(noexcept(set_value(::nstd::utility::forward<Receiver>(receiver), ::nstd::utility::forward<Args>(args)...)))
-            {
-                return set_value(::nstd::utility::forward<Receiver>(receiver), ::nstd::utility::forward<Args>(args)...);
-            }
-
-            //template <typename... Args>
-            //auto operator()(Args...) = delete;
-
-            template <typename Receiver, typename... Args>
-            constexpr auto operator()(Receiver&& receiver, Args&&... args) const
-                noexcept(noexcept(::nstd::tag_invoke(*this,
-                                                     ::nstd::utility::forward<Receiver>(receiver),
-                                                     ::nstd::utility::forward<Args>(args)...)))
-                requires requires(Receiver&& receiver, Args&&... args) {
-                    ::nstd::tag_invoke(*this,
-                                       ::nstd::utility::forward<Receiver>(receiver),
-                                       ::nstd::utility::forward<Args>(args)...);
-                }
-            {
+        constexpr auto operator()(Receiver&& receiver, Args&&... args) const
+            noexcept(noexcept(::nstd::tag_invoke(*this,
+                                                 ::nstd::utility::forward<Receiver>(receiver),
+                                                 ::nstd::utility::forward<Args>(args)...)))
+            requires requires(Receiver&& receiver, Args&&... args) {
                 ::nstd::tag_invoke(*this,
                                    ::nstd::utility::forward<Receiver>(receiver),
                                    ::nstd::utility::forward<Args>(args)...);
             }
-        } set_value;
-    }
+        {
+            ::nstd::tag_invoke(*this,
+                               ::nstd::utility::forward<Receiver>(receiver),
+                               ::nstd::utility::forward<Args>(args)...);
+        }
+    } set_value;
 }
 
 // ----------------------------------------------------------------------------

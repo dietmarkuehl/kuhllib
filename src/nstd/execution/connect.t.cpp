@@ -75,7 +75,7 @@ namespace test_declarations
     auto connect(non_member_sender<Noexcept>&&, Receiver&&) -> void = delete;
 
     struct receiver {
-        auto set_error(::std::exception_ptr) && noexcept -> void {}
+        friend auto tag_invoke(EX::set_error_t, receiver&&, ::std::exception_ptr) noexcept -> void {}
         friend auto tag_invoke(EX::set_done_t, receiver&&) noexcept -> void {}
     };
 }
