@@ -32,6 +32,7 @@
 #include <condition_variable>
 #include "nstd/execution/connect.hpp"
 #include "nstd/execution/set_done.hpp"
+#include "nstd/execution/set_error.hpp"
 #include "nstd/utility/forward.hpp"
 
 // ----------------------------------------------------------------------------
@@ -64,21 +65,29 @@ public:
 
 public:
     template <typename... A>
-    auto set_value(A&&...) && noexcept -> void {
-        this->complete();
+    friend auto tag_invoke(::nstd::execution::set_value_t ,
+                           sync_wait_receiver&&           r,
+                           A&&...                         ) noexcept -> void {
+        r.complete();
     }
-    auto set_error(::std::error_code const& error) && noexcept -> void {
-        *this->exception = ::std::make_exception_ptr(::std::system_error(error.value(), error.category()));
-        this->complete();
+    friend auto tag_invoke(::nstd::execution::set_error_t ,
+                           sync_wait_receiver&&           r,
+                           ::std::error_code const&       error) noexcept -> void {
+        *r.exception = ::std::make_exception_ptr(::std::system_error(error.value(), error.category()));
+        r.complete();
     }
     template <typename Exception>
-    auto set_error(Exception const& error) && noexcept -> void {
-        *this->exception = ::std::make_exception_ptr(error);
-        this->complete();
+    friend auto tag_invoke(::nstd::execution::set_error_t ,
+                           sync_wait_receiver&&           r,
+                           Exception const&               error) noexcept -> void {
+        *r.exception = ::std::make_exception_ptr(error);
+        r.complete();
     }
-    auto set_error(::std::exception_ptr const& ex) && noexcept -> void {
-        *this->exception = ex;
-        this->complete();
+    friend auto tag_invoke(::nstd::execution::set_error_t ,
+                           sync_wait_receiver&&           r,
+                           ::std::exception_ptr const&    ex) noexcept -> void {
+        *r.exception = ex;
+        r.complete();
     }
     friend auto tag_invoke(::nstd::execution::set_done_t, sync_wait_receiver&& r) noexcept -> void {
         r.complete();

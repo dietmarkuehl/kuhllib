@@ -26,6 +26,7 @@
 #ifndef INCLUDED_NSTD_EXECUTION_SET_VALUE
 #define INCLUDED_NSTD_EXECUTION_SET_VALUE
 
+#include "nstd/functional/tag_invoke.hpp"
 #include "nstd/utility/forward.hpp"
 
 // ----------------------------------------------------------------------------
@@ -52,7 +53,7 @@ namespace nstd {
     }
     namespace execution::inline customization_points
     {
-        inline constexpr struct {
+        inline constexpr struct set_value_t {
             template <typename Receiver, typename... Args>
                 requires ::nstd::hidden_names::has_member_set_value<Receiver, Args...>
             auto operator()(Receiver&& receiver, Args&&... args) const
@@ -71,6 +72,22 @@ namespace nstd {
 
             //template <typename... Args>
             //auto operator()(Args...) = delete;
+
+            template <typename Receiver, typename... Args>
+            constexpr auto operator()(Receiver&& receiver, Args&&... args) const
+                noexcept(noexcept(::nstd::tag_invoke(*this,
+                                                     ::nstd::utility::forward<Receiver>(receiver),
+                                                     ::nstd::utility::forward<Args>(args)...)))
+                requires requires(Receiver&& receiver, Args&&... args) {
+                    ::nstd::tag_invoke(*this,
+                                       ::nstd::utility::forward<Receiver>(receiver),
+                                       ::nstd::utility::forward<Args>(args)...);
+                }
+            {
+                ::nstd::tag_invoke(*this,
+                                   ::nstd::utility::forward<Receiver>(receiver),
+                                   ::nstd::utility::forward<Args>(args)...);
+            }
         } set_value;
     }
 }

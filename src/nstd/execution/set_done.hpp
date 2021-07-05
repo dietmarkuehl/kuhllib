@@ -34,7 +34,7 @@
 namespace nstd::execution::inline customization_points {
     inline constexpr struct set_done_t {
         template <typename Receiver>
-        auto operator()(Receiver&& receiver) const
+        constexpr auto operator()(Receiver&& receiver) const
             noexcept(noexcept(::nstd::tag_invoke(*this, ::nstd::utility::forward<Receiver>(receiver))))
             requires requires(Receiver&& receiver) {
                 ::nstd::tag_invoke(*this, ::nstd::utility::forward<Receiver>(receiver));

@@ -70,20 +70,24 @@ public:
         , d_receiver(::nstd::utility::forward<Receiver>(receiver)) {
 
     }
-    auto set_value(auto&&... args) && ->void try {
-        if constexpr (::std::is_same_v<void, decltype(this->d_fun(::nstd::utility::forward<decltype(args)>(args)...))>) {
-            this->d_fun(::nstd::utility::forward<decltype(args)>(args)...);
-            ::nstd::execution::set_value(::nstd::utility::move(this->d_receiver));
+    friend auto tag_invoke(::nstd::execution::set_value_t ,
+                           then_receiver&&                r,
+                           auto&&...                      args) ->void try {
+        if constexpr (::std::is_same_v<void, decltype(r.d_fun(::nstd::utility::forward<decltype(args)>(args)...))>) {
+            r.d_fun(::nstd::utility::forward<decltype(args)>(args)...);
+            ::nstd::execution::set_value(::nstd::utility::move(r.d_receiver));
         }
         else {
-            ::nstd::execution::set_value(::nstd::utility::move(this->d_receiver), this->d_fun(::nstd::utility::forward<decltype(args)>(args)...));
+            ::nstd::execution::set_value(::nstd::utility::move(r.d_receiver), r.d_fun(::nstd::utility::forward<decltype(args)>(args)...));
         }
     }
     catch (...) {
-        ::nstd::execution::set_error(::nstd::utility::move(this->d_receiver), ::std::current_exception());
+        ::nstd::execution::set_error(::nstd::utility::move(r.d_receiver), ::std::current_exception());
     }
-    auto set_error(auto&& arg) && noexcept ->void {
-        ::nstd::execution::set_error(::nstd::utility::move(this->d_receiver), ::nstd::utility::forward<decltype(arg)>(arg));
+    friend auto tag_invoke(::nstd::execution::set_error_t ,
+                           then_receiver&&                r,
+                           auto&&                         arg) noexcept ->void {
+        ::nstd::execution::set_error(::nstd::utility::move(r.d_receiver), ::nstd::utility::forward<decltype(arg)>(arg));
     }
     friend auto tag_invoke(::nstd::execution::set_done_t, then_receiver&& r) noexcept -> void {
         ::nstd::execution::set_done(::nstd::utility::move(r.d_receiver));

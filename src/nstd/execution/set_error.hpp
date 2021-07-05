@@ -26,6 +26,7 @@
 #ifndef INCLUDED_NSTD_EXECUTION_SET_ERROR
 #define INCLUDED_NSTD_EXECUTION_SET_ERROR
 
+#include "nstd/functional/tag_invoke.hpp"
 #include "nstd/utility/forward.hpp"
 
 // ----------------------------------------------------------------------------
@@ -53,7 +54,7 @@ namespace nstd
     }
     namespace execution::inline customization_points
     {
-        inline constexpr struct {
+        inline constexpr struct set_error_t {
             template <typename Receiver, typename Error>
                 requires ::nstd::hidden_names::has_member_set_error<Receiver, Error>
             constexpr auto operator()(Receiver&& receiver, Error&& error) const
@@ -69,6 +70,22 @@ namespace nstd
                 return set_error(::nstd::utility::forward<Receiver>(receiver), ::nstd::utility::forward<Error>(error));
             }
             auto operator()(auto&&, auto&&) const = delete;
+
+            template <typename Receiver, typename Error>
+            constexpr auto operator()(Receiver&& receiver, Error&& error) const
+                noexcept(noexcept(::nstd::tag_invoke(*this,
+                                                     ::nstd::utility::forward<Receiver>(receiver),
+                                                     ::nstd::utility::forward<Error>(error))))
+                requires requires(Receiver&& receiver, Error&& error) {
+                    ::nstd::tag_invoke(*this,
+                                       ::nstd::utility::forward<Receiver>(receiver),
+                                       ::nstd::utility::forward<Error>(error));
+                }
+            {
+                ::nstd::tag_invoke(*this,
+                                   ::nstd::utility::forward<Receiver>(receiver),
+                                   ::nstd::utility::forward<Error>(error));
+            }
         } set_error;
     }
 }

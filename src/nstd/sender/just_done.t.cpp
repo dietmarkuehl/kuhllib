@@ -24,6 +24,9 @@
 // ----------------------------------------------------------------------------
 
 #include "nstd/sender/just_done.hpp"
+#include "nstd/execution/set_value.hpp"
+#include "nstd/execution/set_error.hpp"
+#include "nstd/execution/set_done.hpp"
 #include "kuhl/test.hpp"
 #include <optional>
 
@@ -38,8 +41,8 @@ namespace KT  = ::kuhl::test;
 namespace test_declarations {
     struct receiver {
         bool* ptr;
-        void set_value(int) && {}
-        void set_error(int) && {}
+        friend auto tag_invoke(EX::set_value_t, receiver&&, int) {}
+        friend auto tag_invoke(EX::set_error_t, receiver&&, int) {}
         friend auto tag_invoke(EX::set_done_t, receiver&& r) -> void { *r.ptr = true; }
     };
 }

@@ -24,36 +24,50 @@
 // ----------------------------------------------------------------------------
 
 #include "nstd/sender/just_error.hpp"
+#include "nstd/execution/set_value.hpp"
+#include "nstd/execution/set_error.hpp"
+#include "nstd/execution/set_done.hpp"
 #include "kuhl/test.hpp"
 #include <optional>
 
+namespace test_declarations {}
+namespace TD  = test_declarations;
+namespace EX  = ::nstd::execution;
 namespace NET = ::nstd::net;
 namespace KT  = ::kuhl::test;
+
+// ----------------------------------------------------------------------------
+
+namespace test_declarations {
+    struct receiver {
+        ::std::optional<int>* ptr;
+
+        friend void tag_invoke(EX::set_value_t, receiver&&, int) {}
+        friend void tag_invoke(EX::set_error_t, receiver&& r, int v) { *r.ptr = v; }
+    };
+
+    struct string_receiver {
+        ::std::optional<::std::string>* ptr;
+
+        friend void tag_invoke(EX::set_value_t, string_receiver&&, ::std::string_view) {}
+        friend void tag_invoke(EX::set_error_t, string_receiver&&, char const*) {}
+        friend void tag_invoke(EX::set_error_t, string_receiver&& r, ::std::string_view v) { *r.ptr = v; }
+    };
+}
 
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
     KT::expect_success("just_error usage", []{
             ::std::optional<int> value;
-            struct receiver {
-                ::std::optional<int>* ptr;
-                void set_value(int) && {}
-                void set_error(int v) && { *this->ptr = v; }
-            };
-            auto state = NET::just_error(17).connect(receiver{&value});
+            auto state = NET::just_error(17).connect(TD::receiver{&value});
             state.start();
             return value.value_or(0) == 17
                 ;
         }),
     KT::expect_success("just_error specialization", []{
             ::std::optional<::std::string> value;
-            struct receiver {
-                ::std::optional<::std::string>* ptr;
-                void set_value(::std::string_view) && {}
-                void set_error(char const*) && {}
-                void set_error(::std::string_view v) && { *this->ptr = v; }
-            };
-            auto state = NET::just_error("foo").connect(receiver{&value});
+            auto state = NET::just_error("foo").connect(TD::string_receiver{&value});
             state.start();
             return value.value_or("") == "foo"
                 ;
