@@ -1,6 +1,6 @@
-// nstd/utility/forward.hpp                                           -*-C++-*-
+// nstd/utility/as_const.cpp                                          -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
+//  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
 //  Permission is hereby granted, free of charge, to any person          
 //  obtaining a copy of this software and associated documentation       
@@ -23,32 +23,8 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_UTILITY_FORWARD
-#define INCLUDED_NSTD_UTILITY_FORWARD
-
-#include "nstd/type_traits/remove_reference.hpp"
+#include "nstd/utility/as_const.hpp"
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::utility {
-    template <typename T>
-    auto constexpr forward(nstd::type_traits::remove_reference_t<T>& value) noexcept(true) -> T&&;
-    template <typename T>
-    auto constexpr forward(nstd::type_traits::remove_reference_t<T>&& value) noexcept(true) -> T&&;
-}
-
-// ----------------------------------------------------------------------------
-
-template <typename T>
-auto constexpr nstd::utility::forward(nstd::type_traits::remove_reference_t<T>& value) noexcept(true) -> T&& {
-    return static_cast<T&&>(value);
-}
-
-template <typename T>
-auto constexpr nstd::utility::forward(nstd::type_traits::remove_reference_t<T>&& value) noexcept(true) -> T&& {
-    return static_cast<T&&>(value);
-}
-
-// ----------------------------------------------------------------------------
-
-#endif
+int as_const_dummy = 0;

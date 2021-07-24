@@ -1,6 +1,6 @@
-// nstd/utility/forward.hpp                                           -*-C++-*-
+// nstd/utility/as_const.hpp                                          -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
+//  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
 //  Permission is hereby granted, free of charge, to any person          
 //  obtaining a copy of this software and associated documentation       
@@ -23,30 +23,26 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_UTILITY_FORWARD
-#define INCLUDED_NSTD_UTILITY_FORWARD
+#ifndef INCLUDED_NSTD_UTILITY_AS_CONST
+#define INCLUDED_NSTD_UTILITY_AS_CONST
 
-#include "nstd/type_traits/remove_reference.hpp"
+#include "nstd/type_traits/add_const.hpp"
 
 // ----------------------------------------------------------------------------
 
 namespace nstd::utility {
     template <typename T>
-    auto constexpr forward(nstd::type_traits::remove_reference_t<T>& value) noexcept(true) -> T&&;
+    constexpr auto as_const(T&) noexcept -> ::nstd::type_traits::add_const_t<T>&;
     template <typename T>
-    auto constexpr forward(nstd::type_traits::remove_reference_t<T>&& value) noexcept(true) -> T&&;
+    auto as_const(T&&) -> void = delete;
 }
 
 // ----------------------------------------------------------------------------
 
 template <typename T>
-auto constexpr nstd::utility::forward(nstd::type_traits::remove_reference_t<T>& value) noexcept(true) -> T&& {
-    return static_cast<T&&>(value);
-}
-
-template <typename T>
-auto constexpr nstd::utility::forward(nstd::type_traits::remove_reference_t<T>&& value) noexcept(true) -> T&& {
-    return static_cast<T&&>(value);
+inline constexpr auto nstd::utility::as_const(T& t) noexcept -> ::nstd::type_traits::add_const_t<T>&
+{
+    return t;
 }
 
 // ----------------------------------------------------------------------------

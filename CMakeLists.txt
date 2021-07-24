@@ -114,6 +114,7 @@ list(APPEND kuhllib_components
     src/nstd/sender/just_done
     src/nstd/sender/just_error
     src/nstd/sender/then
+    src/nstd/type_traits/add_const
     src/nstd/type_traits/add_lvalue_reference
     src/nstd/type_traits/add_rvalue_reference
     src/nstd/type_traits/choose_type
@@ -143,6 +144,7 @@ list(APPEND kuhllib_components
     src/nstd/type_traits/remove_reference
     src/nstd/type_traits/remove_volatile
     src/nstd/type_traits/result_of
+    src/nstd/utility/as_const
     src/nstd/utility/equality_comparable
     src/nstd/utility/forward
     src/nstd/utility/integer_sequence
