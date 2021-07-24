@@ -29,8 +29,7 @@
 #include "nstd/execution/receiver.hpp"
 #include "nstd/execution/scheduler.hpp"
 #include "nstd/functional/tag_invoke.hpp"
-//-dk:TODO #include "nstd/utility/as_const.hpp"
-#include <utility>
+#include "nstd/utility/as_const.hpp"
 
 // ----------------------------------------------------------------------------
 
@@ -41,11 +40,11 @@ namespace nstd::execution::inline customization_points {
             noexcept(noexcept(::nstd::tag_invoke(*this, ::nstd::utility::forward<Receiver>(receiver))))
             requires ::nstd::execution::receiver<Receiver>
                 && requires(Receiver&& receiver) {
-                    { ::nstd::tag_invoke(*this, ::std::as_const(receiver)) } noexcept;
+                    { ::nstd::tag_invoke(*this, ::nstd::utility::as_const(receiver)) } noexcept;
                    }
-                && ::nstd::execution::scheduler<decltype(::nstd::tag_invoke(*this, ::std::as_const(receiver)))>
+                && ::nstd::execution::scheduler<decltype(::nstd::tag_invoke(*this, ::nstd::utility::as_const(receiver)))>
         {
-            return ::nstd::tag_invoke(*this, ::std::as_const(receiver));
+            return ::nstd::tag_invoke(*this, ::nstd::utility::as_const(receiver));
         }
     } get_scheduler;
 }
