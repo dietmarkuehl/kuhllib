@@ -1,4 +1,4 @@
-// nstd/execution/get_scheduler.hpp                                   -*-C++-*-
+// nstd/execution/get_allocator.cpp                                   -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,32 +23,8 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_EXECUTION_GET_SCHEDULER
-#define INCLUDED_NSTD_EXECUTION_GET_SCHEDULER
-
-#include "nstd/execution/receiver.hpp"
-#include "nstd/execution/scheduler.hpp"
-#include "nstd/functional/tag_invoke.hpp"
-#include "nstd/utility/as_const.hpp"
+#include "nstd/execution/get_allocator.hpp"
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::execution::inline customization_points {
-    inline constexpr struct get_scheduler_t {
-        template <typename Receiver>
-        constexpr auto operator()(Receiver&& receiver) const
-            noexcept(noexcept(::nstd::tag_invoke(*this, ::nstd::utility::as_const(receiver))))
-            requires ::nstd::execution::receiver<Receiver>
-                && requires(Receiver&& receiver) {
-                    { ::nstd::tag_invoke(*this, ::nstd::utility::as_const(receiver)) } noexcept;
-                   }
-                && ::nstd::execution::scheduler<decltype(::nstd::tag_invoke(*this, ::nstd::utility::as_const(receiver)))>
-        {
-            return ::nstd::tag_invoke(*this, ::nstd::utility::as_const(receiver));
-        }
-    } get_scheduler;
-}
-
-// ----------------------------------------------------------------------------
-
-#endif
+int get_allocator_dummy = 0;

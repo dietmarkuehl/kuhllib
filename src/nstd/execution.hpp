@@ -28,6 +28,7 @@
 
 // ----------------------------------------------------------------------------
 
+#include "nstd/execution/get_allocator.hpp"
 #include "nstd/execution/get_scheduler.hpp"
 #include "nstd/execution/movable_value.hpp"
 #include "nstd/execution/scheduler.hpp"
@@ -40,7 +41,6 @@
 
 #if 0
 //-dk:TODO
-#include "nstd/execution/get_allocator.hpp"
 #include "nstd/execution/get_stop_token.hpp"
 #include "nstd/execution/operation_state.hpp"
 #include "nstd/execution/start.hpp"

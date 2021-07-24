@@ -1,4 +1,4 @@
-// nstd/execution/get_scheduler.hpp                                   -*-C++-*-
+// nstd/execution/get_allocator.hpp                                   -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,18 +23,17 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_EXECUTION_GET_SCHEDULER
-#define INCLUDED_NSTD_EXECUTION_GET_SCHEDULER
+#ifndef INCLUDED_NSTD_EXECUTION_GET_ALLOCATOR
+#define INCLUDED_NSTD_EXECUTION_GET_ALLOCATOR
 
-#include "nstd/execution/receiver.hpp"
-#include "nstd/execution/scheduler.hpp"
 #include "nstd/functional/tag_invoke.hpp"
+#include "nstd/execution/receiver.hpp"
 #include "nstd/utility/as_const.hpp"
 
 // ----------------------------------------------------------------------------
 
 namespace nstd::execution::inline customization_points {
-    inline constexpr struct get_scheduler_t {
+    inline constexpr struct get_allocator_t {
         template <typename Receiver>
         constexpr auto operator()(Receiver&& receiver) const
             noexcept(noexcept(::nstd::tag_invoke(*this, ::nstd::utility::as_const(receiver))))
@@ -42,11 +41,11 @@ namespace nstd::execution::inline customization_points {
                 && requires(Receiver&& receiver) {
                     { ::nstd::tag_invoke(*this, ::nstd::utility::as_const(receiver)) } noexcept;
                    }
-                && ::nstd::execution::scheduler<decltype(::nstd::tag_invoke(*this, ::nstd::utility::as_const(receiver)))>
+                //-dk:TODO && ::nstd::execution::allocator<decltype(::nstd::tag_invoke(*this, ::nstd::utility::as_const(receiver)))>
         {
             return ::nstd::tag_invoke(*this, ::nstd::utility::as_const(receiver));
         }
-    } get_scheduler;
+    } get_allocator;
 }
 
 // ----------------------------------------------------------------------------

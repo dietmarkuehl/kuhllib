@@ -1,4 +1,4 @@
-// nstd/execution.t.cpp                                               -*-C++-*-
+// nstd/execution/get_allocator.t.cpp                                 -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,66 +23,68 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/execution.hpp"
-#include <exception>
+#include "nstd/execution/get_allocator.hpp"
+#include "nstd/execution/receiver.hpp"
+#include <memory>
 #include "kuhl/test.hpp"
 
 namespace test_declarations {}
+namespace TD = test_declarations;
 namespace EX = ::nstd::execution;
-namespace TD = ::test_declarations;
 namespace KT = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
 
-namespace test_declarations {
-    struct non_movable {
-        non_movable(non_movable&&) = delete;
-        non_movable(non_movable const&) = delete;
+namespace test_declarations
+{
+    template <typename Receiver>
+    concept has_get_allocator
+        = requires(Receiver const& r) { EX::get_allocator(r); }
+        ;
+
+    template <typename Allocator, bool Noexcept, bool IsReceiver = true>
+    struct receiver {
+        bool* const value;
+        friend auto tag_invoke(EX::set_done_t, receiver&&) noexcept(IsReceiver) {}
+        friend auto tag_invoke(EX::set_error_t, receiver&&, std::exception_ptr) noexcept {}
+        friend auto tag_invoke(EX::get_allocator_t, receiver const& r) noexcept(Noexcept) {
+            *r.value = true;
+            return ::std::allocator<int>();
+        }
     };
 }
 
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
-    KT::expect_success("movable_value", []{
-        return EX::movable_value<int>
-            && !EX::movable_value<TD::non_movable>
-            ;
-    }),
-    KT::expect_success("scheduler", []{
-        return !EX::scheduler<int>
-            ;
-    }),
-    KT::expect_success("receiver", []{
-        return !EX::receiver<int>
-            && !EX::receiver<int, ::std::exception_ptr>
-            ;
-    }),
-    KT::expect_success("receiver_of", []{
-        return !EX::receiver_of<int>
-            && !EX::receiver_of<int, bool, char>
-            ;
-    }),
-    KT::expect_success("schedule", []{
-        return KT::assert_type_exists<EX::schedule_t>
-            && KT::type<EX::schedule_t const> == KT::type<decltype(EX::schedule)>
-            ;
-    }),
-    KT::expect_success("set_done", []{
-        return KT::assert_type_exists<EX::set_done_t>
-            && KT::type<EX::set_done_t const> == KT::type<decltype(EX::set_done)>
-            ;
-    }),
-    KT::expect_success("get_scheduler", []{
-        return KT::assert_type_exists<EX::get_scheduler_t>
-            && KT::type<EX::get_scheduler_t const> == KT::type<decltype(EX::get_scheduler)>
-            ;
-    }),
-    KT::expect_success("get_allocator", []{
+    KT::expect_success("get_allocator breathing", []{
         return KT::assert_type_exists<EX::get_allocator_t>
             && KT::type<EX::get_allocator_t const> == KT::type<decltype(EX::get_allocator)>
             ;
     }),
+    KT::expect_success("test declarations behave as expected", []{
+            return EX::receiver<TD::receiver<std::allocator<int>, true>>
+                && EX::receiver<TD::receiver<std::allocator<int>, false>>
+                && !EX::receiver<TD::receiver<std::allocator<int>, true, false>>
+                ;
+        }),
+    KT::expect_success("receiver returning a allocator has get_allocator", []{
+            bool                              value(false);
+            TD::receiver<::std::allocator<int>, true> r{&value};
+            EX::get_allocator(r);
+            return TD::has_get_allocator<TD::receiver<::std::allocator<int>, true>>
+                && KT::type<decltype(EX::get_allocator(r))> == KT::type<::std::allocator<int>>
+                && value
+                ;
+        }),
+    KT::expect_success("non-receiver doesn't have get_allocator", []{
+            return !TD::has_get_allocator<TD::receiver<::std::allocator<int>, true, false>>
+                ;
+        }),
+    KT::expect_success("throwing get_allocator isn't allowed ", []{
+            return !TD::has_get_allocator<TD::receiver<::std::allocator<int>, false>>
+                ;
+        }),
 };
 
-static KT::add_tests suite("execution", ::tests);
+static KT::add_tests suite("get_allocatot", ::tests);
