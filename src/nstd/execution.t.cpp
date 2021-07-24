@@ -73,6 +73,11 @@ static KT::testcase const tests[] = {
             && KT::type<EX::set_done_t const> == KT::type<decltype(EX::set_done)>
             ;
     }),
+    KT::expect_success("get_scheduler", []{
+        return KT::assert_type_exists<EX::get_scheduler_t>
+            && KT::type<EX::get_scheduler_t const> == KT::type<decltype(EX::get_scheduler)>
+            ;
+    }),
 };
 
 static KT::add_tests suite("execution", ::tests);

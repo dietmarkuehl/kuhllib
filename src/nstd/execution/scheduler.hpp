@@ -35,8 +35,8 @@
 
 namespace nstd::execution {
     template <typename Scheduler>
-    concept scheduler =
-        ::std::copy_constructible<::nstd::type_traits::remove_cvref_t<Scheduler>>
+    concept scheduler
+        =  ::std::copy_constructible<::nstd::type_traits::remove_cvref_t<Scheduler>>
         && ::std::equality_comparable<::nstd::type_traits::remove_cvref_t<Scheduler>>
         && requires(Scheduler&& s) {
             ::nstd::execution::schedule(::nstd::utility::move(s));

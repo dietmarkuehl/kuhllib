@@ -31,28 +31,26 @@
 
 // ----------------------------------------------------------------------------
 
-namespace nstd
+namespace nstd::execution::inline customization_points
 {
-    namespace execution::inline customization_points
-    {
-        inline constexpr struct set_error_t {
-            template <typename Receiver, typename Error>
-            constexpr auto operator()(Receiver&& receiver, Error&& error) const
-                noexcept(noexcept(::nstd::tag_invoke(*this,
-                                                     ::nstd::utility::forward<Receiver>(receiver),
-                                                     ::nstd::utility::forward<Error>(error))))
-                requires requires(Receiver&& receiver, Error&& error) {
-                    ::nstd::tag_invoke(*this,
-                                       ::nstd::utility::forward<Receiver>(receiver),
-                                       ::nstd::utility::forward<Error>(error));
-                }
-            {
+    inline constexpr struct set_error_t {
+        template <typename Receiver, typename Error>
+        constexpr auto operator()(Receiver&& receiver, Error&& error) const
+            noexcept(noexcept(::nstd::tag_invoke(*this,
+                                                 ::nstd::utility::forward<Receiver>(receiver),
+                                                 ::nstd::utility::forward<Error>(error))))
+            -> void //-dk:TODO verify if expression-equivalent may mean it can have a [reference?] return type
+            requires requires(Receiver&& receiver, Error&& error) {
                 ::nstd::tag_invoke(*this,
                                    ::nstd::utility::forward<Receiver>(receiver),
                                    ::nstd::utility::forward<Error>(error));
             }
-        } set_error;
-    }
+        {
+            ::nstd::tag_invoke(*this,
+                               ::nstd::utility::forward<Receiver>(receiver),
+                               ::nstd::utility::forward<Error>(error));
+        }
+    } set_error;
 }
 
 // ----------------------------------------------------------------------------

@@ -30,6 +30,7 @@
 #include "nstd/execution/set_error.hpp"
 #include "nstd/execution/set_done.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
+#include "nstd/utility/forward.hpp"
 #include "nstd/utility/move.hpp"
 #include <concepts>
 #include <exception>
@@ -43,7 +44,7 @@ namespace nstd::execution {
         && ::std::constructible_from<::nstd::type_traits::remove_cvref_t<Receiver>, Receiver>
         && requires(::nstd::type_traits::remove_cvref_t<Receiver>&& rec, Error&& err) {
             { ::nstd::execution::set_done(::nstd::utility::move(rec)) } noexcept;
-            { ::nstd::execution::set_error(::nstd::utility::move(rec), ::nstd::utility::move(err)) } noexcept;
+            { ::nstd::execution::set_error(::nstd::utility::move(rec), ::nstd::utility::forward<Error>(err)) } noexcept;
         }
         ;
 }

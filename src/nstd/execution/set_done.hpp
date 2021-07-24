@@ -36,6 +36,7 @@ namespace nstd::execution::inline customization_points {
         template <typename Receiver>
         constexpr auto operator()(Receiver&& receiver) const
             noexcept(noexcept(::nstd::tag_invoke(*this, ::nstd::utility::forward<Receiver>(receiver))))
+            -> void //-dk:TODO verify if expression-equivalent may mean it can have a [reference?] return type
             requires requires(Receiver&& receiver) {
                 ::nstd::tag_invoke(*this, ::nstd::utility::forward<Receiver>(receiver));
             }

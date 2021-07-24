@@ -28,7 +28,7 @@
 
 #include "nstd/execution/receiver.hpp"
 #include "nstd/execution/set_value.hpp"
-#include "nstd/utility/move.hpp"
+#include "nstd/utility/forward.hpp"
 #include "nstd/utility/move.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
 
@@ -39,7 +39,8 @@ namespace nstd::execution {
     concept receiver_of
         =  ::nstd::execution::receiver<Receiver>
         && requires(::nstd::type_traits::remove_cvref_t<Receiver>&& rec, Args&&... args) {
-            ::nstd::execution::set_value(::nstd::utility::move(rec), ::nstd::utility::move(args)...);
+            ::nstd::execution::set_value(::nstd::utility::move(rec),
+                                         ::nstd::utility::forward<Args>(args)...);
         }
         ;
 }

@@ -39,6 +39,7 @@ namespace nstd::execution::inline customization_points
             noexcept(noexcept(::nstd::tag_invoke(*this,
                                                  ::nstd::utility::forward<Receiver>(receiver),
                                                  ::nstd::utility::forward<Args>(args)...)))
+            -> void //-dk:TODO verify if expression-equivalent may mean it can have a [reference?] return type
             requires requires(Receiver&& receiver, Args&&... args) {
                 ::nstd::tag_invoke(*this,
                                    ::nstd::utility::forward<Receiver>(receiver),

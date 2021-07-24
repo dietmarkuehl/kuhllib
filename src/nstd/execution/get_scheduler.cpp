@@ -1,4 +1,4 @@
-// nstd/execution/movable_value.hpp                                   -*-C++-*-
+// nstd/execution/get_scheduler.cpp                                   -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,22 +23,8 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_EXECUTION_MOVABLE_VALUE
-#define INCLUDED_NSTD_EXECUTION_MOVABLE_VALUE
-
-#include "nstd/type_traits/remove_cvref.hpp"
-#include <concepts>
+#include "nstd/execution/get_scheduler.hpp"
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::execution {
-    template <typename T>
-    concept movable_value
-        =  ::std::move_constructible<::nstd::type_traits::remove_cvref_t<T>>
-        && ::std::constructible_from<::nstd::type_traits::remove_cvref_t<T>, T>
-        ;
-}
-
-// ----------------------------------------------------------------------------
-
-#endif
+int get_scheduler_dummy = 0;
