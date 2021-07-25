@@ -38,6 +38,7 @@ list(APPEND kuhllib_components
     src/nstd/algorithm/none_of
     src/nstd/algorithm/search
     src/nstd/atomic/atomic
+    src/nstd/concepts/boolean_testable
     src/nstd/cursor/array
     src/nstd/cursor/category
     src/nstd/cursor/model_key
@@ -116,6 +117,7 @@ list(APPEND kuhllib_components
     src/nstd/sender/just_done
     src/nstd/sender/just_error
     src/nstd/sender/then
+    src/nstd/stop_token/stoppable_token
     src/nstd/type_traits/add_const
     src/nstd/type_traits/add_lvalue_reference
     src/nstd/type_traits/add_rvalue_reference
