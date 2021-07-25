@@ -64,6 +64,7 @@ list(APPEND kuhllib_components
     src/nstd/execution/scheduler
     src/nstd/execution/sender
     src/nstd/execution/sender_base
+    src/nstd/execution/sender_to
     src/nstd/execution/sender_traits
     src/nstd/execution/sequenced_policy
     src/nstd/execution/set_done

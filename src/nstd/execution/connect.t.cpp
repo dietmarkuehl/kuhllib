@@ -25,11 +25,13 @@
 
 #include "nstd/execution/connect.hpp"
 #include "nstd/execution/start.hpp"
+#include "nstd/utility/move.hpp"
 #include "kuhl/test.hpp"
 
 namespace test_declarations {}
 namespace TD = ::test_declarations;
 namespace EX = ::nstd::execution;
+namespace UT = ::nstd::utility;
 namespace KT = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
@@ -37,7 +39,7 @@ namespace KT = ::kuhl::test;
 namespace test_declarations
 {
     template <bool Noexcept>
-    struct member_sender
+    struct sender
         : EX::sender_base
     {
         struct state {
@@ -45,39 +47,12 @@ namespace test_declarations
         };
         int* const ptr;
         template <typename Receiver>
-        auto connect(Receiver&&) noexcept(Noexcept) -> state {
-            *this->ptr = 42;
+        friend auto tag_invoke(EX::connect_t, sender&& sender, Receiver&&) noexcept(Noexcept)
+            -> state {
+            *sender.ptr = 42;
             return {};
         }
     };
-    template <bool Noexcept, typename Receiver>
-    auto connect(member_sender<Noexcept>&, Receiver&&) -> void = delete;
-    template <bool Noexcept, typename Receiver>
-    auto connect(member_sender<Noexcept> const&, Receiver&&) -> void = delete;
-    template <bool Noexcept, typename Receiver>
-    auto connect(member_sender<Noexcept>&&, Receiver&&) -> void = delete;
-
-    template <bool Noexcept>
-    struct non_member_sender
-        : EX::sender_base
-    {
-        struct state {
-            friend void tag_invoke(EX::start_t, state&) noexcept {};
-        };
-        int* const ptr;
-    };
-    template <bool Noexcept, typename Receiver>
-    auto connect(non_member_sender<Noexcept>& sender, Receiver&&)
-        noexcept(Noexcept)
-        -> typename non_member_sender<Noexcept>::state
-    {
-        *sender.ptr = 42;
-        return {};
-    }
-    template <bool Noexcept, typename Receiver>
-    auto connect(non_member_sender<Noexcept> const&, Receiver&&) -> void = delete;
-    template <bool Noexcept, typename Receiver>
-    auto connect(non_member_sender<Noexcept>&&, Receiver&&) -> void = delete;
 
     struct receiver {
         friend auto tag_invoke(EX::set_error_t, receiver&&, ::std::exception_ptr) noexcept -> void {}
@@ -90,38 +65,20 @@ namespace test_declarations
 static KT::testcase const tests[] = {
     KT::expect_success("member connect() noexcept(true)", []{
             int                     value(17);
-            TD::member_sender<true> sender{{}, &value};
+            TD::sender<true> sender{{}, &value};
 
-            EX::connect(sender, TD::receiver());
+            EX::connect(UT::move(sender), TD::receiver());
             return value == 42
-                && noexcept(EX::connect(sender, TD::receiver()))
+                && noexcept(EX::connect(UT::move(sender), TD::receiver()))
                 ;
         }),
     KT::expect_success("member connect() noexcept(false)", []{
             int                      value(17);
-            TD::member_sender<false> sender{{}, &value};
+            TD::sender<false> sender{{}, &value};
 
-            EX::connect(sender, TD::receiver());
+            EX::connect(UT::move(sender), TD::receiver());
             return value == 42
-                && !noexcept(EX::connect(sender, TD::receiver()))
-                ;
-        }),
-    KT::expect_success("non_member connect() noexcept(true)", []{
-            int                         value(17);
-            TD::non_member_sender<true> sender{{}, &value};
-
-            EX::connect(sender, TD::receiver());
-            return value == 42
-                && noexcept(EX::connect(sender, TD::receiver()))
-                ;
-        }),
-    KT::expect_success("non_member connect() noexcept(false)", []{
-            int                          value(17);
-            TD::non_member_sender<false> sender{{}, &value};
-
-            EX::connect(sender, TD::receiver());
-            return value == 42
-                && !noexcept(EX::connect(sender, TD::receiver()))
+                && !noexcept(EX::connect(UT::move(sender), TD::receiver()))
                 ;
         }),
 };

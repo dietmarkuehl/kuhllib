@@ -111,10 +111,10 @@ public:
     }
 
     template <typename Receiver>
-    auto connect(Receiver&& receiver) {
+    auto friend tag_invoke(::nstd::execution::connect_t, then_sender&& sender, Receiver&& receiver) {
         return ::nstd::execution::connect(
-            ::nstd::utility::move(this->d_sender),
-            ::nstd::net::then_receiver<Fun, Receiver>(::nstd::utility::move(this->d_fun),
+            ::nstd::utility::move(sender.d_sender),
+            ::nstd::net::then_receiver<Fun, Receiver>(::nstd::utility::move(sender.d_fun),
                                                       ::nstd::utility::forward<Receiver>(receiver)));
     }
 };

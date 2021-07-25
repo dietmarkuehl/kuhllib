@@ -24,6 +24,7 @@
 // ----------------------------------------------------------------------------
 
 #include "nstd/sender/just.hpp"
+#include "nstd/execution/connect.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/set_error.hpp"
 #include "nstd/execution/set_done.hpp"
@@ -44,16 +45,18 @@ namespace test_declarations {
     struct receiver {
         ::std::optional<int>* ptr;
 
-        friend void tag_invoke(EX::set_value_t, receiver&& r, int v) { *r.ptr = v; }
-        friend void tag_invoke(EX::set_error_t, receiver&&, ::std::exception_ptr const&) {}
+        friend void tag_invoke(EX::set_value_t, receiver&& r, int v) noexcept { *r.ptr = v; }
+        friend void tag_invoke(EX::set_error_t, receiver&&, ::std::exception_ptr const&) noexcept {}
+        friend void tag_invoke(EX::set_done_t, receiver&&) noexcept {}
     };
 
     struct string_receiver {
         ::std::optional<::std::string>* ptr;
 
-        friend void tag_invoke(EX::set_value_t, string_receiver&&, char const*) {}
-        friend void tag_invoke(EX::set_value_t, string_receiver&& r, ::std::string_view v) { *r.ptr = v; }
-        friend void tag_invoke(EX::set_error_t, string_receiver&&, ::std::exception_ptr const&) {}
+        friend void tag_invoke(EX::set_value_t, string_receiver&&, char const*) noexcept {}
+        friend void tag_invoke(EX::set_value_t, string_receiver&& r, ::std::string_view v) noexcept { *r.ptr = v; }
+        friend void tag_invoke(EX::set_error_t, string_receiver&&, ::std::exception_ptr const&) noexcept {}
+        friend void tag_invoke(EX::set_done_t, string_receiver&&) noexcept {}
     };
 }
 
@@ -62,14 +65,14 @@ namespace test_declarations {
 static KT::testcase const tests[] = {
     KT::expect_success("just usage", []{
             ::std::optional<int> value;
-            auto state = NET::just(17).connect(TD::receiver{&value});
+            auto state = EX::connect(NET::just(17), TD::receiver{&value});
             EX::start(state);
             return value.value_or(0) == 17
                 ;
         }),
     KT::expect_success("just specialization", []{
             ::std::optional<::std::string> value;
-            auto state = NET::just("foo").connect(TD::string_receiver{&value});
+            auto state = EX::connect(NET::just("foo"), TD::string_receiver{&value});
             EX::start(state);
             return value.value_or("") == "foo"
                 ;

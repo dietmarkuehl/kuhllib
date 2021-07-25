@@ -27,6 +27,7 @@
 #define INCLUDED_NSTD_SENDER_JUST
 
 #include "nstd/execution/sender_base.hpp"
+#include "nstd/execution/connect.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/set_error.hpp"
 #include "nstd/execution/start.hpp"
@@ -82,8 +83,12 @@ public:
     explicit just_sender(Value value): d_value(::nstd::utility::forward<Value>(value)) {}
 
     template <typename Receiver>
-    ::nstd::net::just_state<Value, Receiver> connect(Receiver&& receiver) && {
-        return { ::nstd::utility::move(this->d_value), ::nstd::utility::forward<Receiver>(receiver) };
+    friend auto tag_invoke(::nstd::execution::connect_t,
+                           just_sender&& sender,
+                           Receiver&& receiver)
+        -> ::nstd::net::just_state<Value, Receiver>
+    {
+        return { ::nstd::utility::move(sender.d_value), ::nstd::utility::forward<Receiver>(receiver) };
     }
 };
 

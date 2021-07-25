@@ -25,10 +25,12 @@
 
 #include "nstd/sender/then.hpp"
 #include "nstd/sender/just.hpp"
+#include "nstd/execution/connect.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/set_error.hpp"
 #include "nstd/execution/set_done.hpp"
 #include "nstd/execution/start.hpp"
+#include "nstd/utility/move.hpp"
 #include <optional>
 #include "kuhl/test.hpp"
 
@@ -36,6 +38,7 @@ namespace test_declarations {}
 namespace TD  = test_declarations;
 namespace EX  = ::nstd::execution;
 namespace NET = ::nstd::net;
+namespace UT = ::nstd::utility;
 namespace KT  = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
@@ -55,7 +58,7 @@ static KT::testcase const tests[] = {
     KT::expect_success("then usage", []{
             ::std::optional<bool> value;
             auto then = NET::then(NET::just(17), [&value](auto v){ value = v; });
-            auto state = then.connect(TD::receiver{&value});
+            auto state = EX::connect(UT::move(then), TD::receiver{&value});
             EX::start(state);
             return value.value_or(false);
         }),
@@ -64,7 +67,7 @@ static KT::testcase const tests[] = {
             auto then = NET::just(17)
                       | NET::then([&value](auto v){ value = v; })
                       ;
-            auto state = then.connect(TD::receiver{&value});
+            auto state = EX::connect(UT::move(then), TD::receiver{&value});
             EX::start(state);
             return value.value_or(false);
         }),

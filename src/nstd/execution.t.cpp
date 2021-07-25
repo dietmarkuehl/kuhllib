@@ -93,6 +93,18 @@ static KT::testcase const tests[] = {
             && KT::type<EX::start_t const> == KT::type<decltype(EX::start)>
             ;
     }),
+    KT::expect_success("operation_state", []{
+        return !EX::operation_state<int>
+            ;
+    }),
+    KT::expect_success("sender", []{
+        return !EX::sender<int>
+            ;
+    }),
+    KT::expect_success("sender_to", []{
+        return !EX::sender_to<int, int>
+            ;
+    }),
 };
 
 static KT::add_tests suite("execution", ::tests);

@@ -26,6 +26,7 @@
 #ifndef INCLUDED_NSTD_SENDER_JUST_ERROR
 #define INCLUDED_NSTD_SENDER_JUST_ERROR
 
+#include "nstd/execution/connect.hpp"
 #include "nstd/execution/sender_base.hpp"
 #include "nstd/execution/set_error.hpp"
 #include "nstd/execution/start.hpp"
@@ -73,9 +74,10 @@ public:
     ::nstd::type_traits::remove_cvref_t<Value> d_value;
 
     template <typename Receiver>
-    auto connect(Receiver&& receiver) && -> ::nstd::net::just_error_state<Value, Receiver> {
+    friend auto tag_invoke(::nstd::execution::connect_t, just_error_sender&& sender, Receiver&& receiver)
+        -> ::nstd::net::just_error_state<Value, Receiver> {
         return ::nstd::net::just_error_state<Value, Receiver>{
-            ::nstd::utility::move(this->d_value),
+            ::nstd::utility::move(sender.d_value),
             ::nstd::utility::forward<Receiver>(receiver)
             };
     }

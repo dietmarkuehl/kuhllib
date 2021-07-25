@@ -28,6 +28,7 @@
 
 #include "nstd/file/descriptor.hpp"
 #include "nstd/file/open_flags.hpp"
+#include "nstd/execution/connect.hpp"
 #include "nstd/execution/sender_base.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/set_error.hpp"
@@ -132,9 +133,9 @@ struct nstd::file::open_sender
     };
 
     template <typename Receiver>
-    auto connect(Receiver&& r) noexcept {
-        return ::nstd::execution::connect(::nstd::utility::move(this->d_sender),
-                                          receiver<Receiver>(this->d_context, this->d_flags, ::nstd::utility::forward<Receiver>(r)));
+    friend auto tag_invoke(::nstd::execution::connect_t, open_sender&& sender, Receiver&& r) noexcept {
+        return ::nstd::execution::connect(::nstd::utility::move(sender.d_sender),
+                                          receiver<Receiver>(sender.d_context, sender.d_flags, ::nstd::utility::forward<Receiver>(r)));
     }
 };
 

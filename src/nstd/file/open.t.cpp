@@ -28,10 +28,13 @@
 #include "nstd/sender/just.hpp"
 #include "nstd/sender/then.hpp"
 #include "nstd/execution/sync_wait.hpp"
+#include "nstd/utility/move.hpp"
 #include "kuhl/test.hpp"
 #include <thread>
 
 namespace File = ::nstd::file;
+namespace EX   = ::nstd::execution;
+namespace UT   = ::nstd::utility;
 namespace NET  = ::nstd::net;
 namespace KT   = ::kuhl::test;
 
@@ -46,7 +49,7 @@ static KT::testcase const tests[] = {
                    | File::open_in(ctxt)
                    | NET::then([&value](File::descriptor&&){ value = true; })
                    ;
-            ::nstd::execution::sync_wait(x);
+            EX::sync_wait(UT::move(x));
             return value;
         }),
     KT::expect_success("file open() non-existing file", []{
@@ -58,7 +61,7 @@ static KT::testcase const tests[] = {
                    | NET::then([&value](File::descriptor&&){ value = true; })
                    ;
             try {
-                ::nstd::execution::sync_wait(x);
+                EX::sync_wait(UT::move(x));
                 return false;
             }
             catch (::std::system_error const&) {

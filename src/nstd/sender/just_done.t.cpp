@@ -24,6 +24,7 @@
 // ----------------------------------------------------------------------------
 
 #include "nstd/sender/just_done.hpp"
+#include "nstd/execution/connect.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/set_error.hpp"
 #include "nstd/execution/set_done.hpp"
@@ -42,16 +43,16 @@ namespace KT  = ::kuhl::test;
 namespace test_declarations {
     struct receiver {
         bool* ptr;
-        friend auto tag_invoke(EX::set_value_t, receiver&&, int) {}
-        friend auto tag_invoke(EX::set_error_t, receiver&&, int) {}
-        friend auto tag_invoke(EX::set_done_t, receiver&& r) -> void { *r.ptr = true; }
+        friend auto tag_invoke(EX::set_value_t, receiver&&, int) noexcept -> void {}
+        friend auto tag_invoke(EX::set_error_t, receiver&&, std::exception_ptr) noexcept -> void {}
+        friend auto tag_invoke(EX::set_done_t, receiver&& r) noexcept -> void { *r.ptr = true; }
     };
 }
 
 static KT::testcase const tests[] = {
     KT::expect_success("just_done usage", []{
             bool value(false);
-            auto state = NET::just_done().connect(TD::receiver{&value});
+            auto state = EX::connect(NET::just_done(), TD::receiver{&value});
             EX::start(state);
             return value
                 ;

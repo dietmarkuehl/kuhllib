@@ -125,10 +125,10 @@ namespace nstd::file {
         ::nstd::type_traits::remove_cvref_t<Sender>  d_sender;
 
         template <typename Receiver>
-        auto connect(Receiver&& receiver) noexcept {
-            return ::nstd::execution::connect(::nstd::utility::move(this->d_sender),
+        friend auto tag_invoke(::nstd::execution::connect_t, read_sender&& sender, Receiver&& receiver) noexcept {
+            return ::nstd::execution::connect(::nstd::utility::move(sender.d_sender),
                                               ::nstd::file::read_receiver<Buffer, Context, Receiver>(
-                                                this->d_context,
+                                                sender.d_context,
                                                 ::nstd::utility::forward<Receiver>(receiver)
                                               ));
         }

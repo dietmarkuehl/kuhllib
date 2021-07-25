@@ -27,6 +27,7 @@
 #define INCLUDED_NSTD_SENDER_JUST_DONE
 
 #include "nstd/execution/sender_base.hpp"
+#include "nstd/execution/connect.hpp"
 #include "nstd/execution/set_done.hpp"
 #include "nstd/execution/start.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
@@ -59,7 +60,8 @@ class nstd::net::just_done
 {
 public:
     template <typename Receiver>
-    auto connect(Receiver&& receiver) && -> ::nstd::net::just_done_state<Receiver> {
+    friend auto tag_invoke(::nstd::execution::connect_t, just_done&&, Receiver&& receiver)
+         -> ::nstd::net::just_done_state<Receiver> {
         return ::nstd::net::just_done_state<Receiver>{
             ::nstd::utility::forward<Receiver>(receiver)
             };

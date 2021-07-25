@@ -1,4 +1,4 @@
-// nstd/execution/connect.hpp                                         -*-C++-*-
+// nstd/execution/sender_to.cpp                                       -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,43 +23,8 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_EXECUTION_CONNECT
-#define INCLUDED_NSTD_EXECUTION_CONNECT
-
-#include "nstd/execution/operation_state.hpp"
-#include "nstd/execution/receiver.hpp"
-#include "nstd/execution/sender.hpp"
-#include "nstd/functional/tag_invoke.hpp"
-#include "nstd/utility/forward.hpp"
+#include "nstd/execution/sender_to.hpp"
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::execution::inline customization_points {
-    inline constexpr struct connect_t {
-        template <typename Sender, typename Receiver>
-        constexpr auto operator()(Sender&& sender, Receiver&& receiver) const
-            noexcept(noexcept(::nstd::tag_invoke(*this,
-                                                 ::nstd::utility::forward<Sender>(sender),
-                                                 ::nstd::utility::forward<Receiver>(receiver))))
-            requires ::nstd::execution::sender<Sender>
-                  && ::nstd::execution::receiver<Receiver>
-                  && requires(Sender&& sender, Receiver&& receiver) {
-                {
-                    ::nstd::tag_invoke(*this,
-                                       ::nstd::utility::forward<Sender>(sender),
-                                       ::nstd::utility::forward<Receiver>(receiver))
-                }
-                -> ::nstd::execution::operation_state
-                ;
-            }
-        {
-            return ::nstd::tag_invoke(*this,
-                                     ::nstd::utility::forward<Sender>(sender),
-                                     ::nstd::utility::forward<Receiver>(receiver));
-        }
-    } connect;
-}
-
-// ----------------------------------------------------------------------------
-
-#endif
+int sender_to_dummy = 0;

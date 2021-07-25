@@ -32,6 +32,7 @@
 #include "nstd/execution/get_scheduler.hpp"
 #include "nstd/execution/get_stop_token.hpp"
 #include "nstd/execution/movable_value.hpp"
+#include "nstd/execution/operation_state.hpp"
 #include "nstd/execution/scheduler.hpp"
 #include "nstd/execution/receiver.hpp"
 #include "nstd/execution/receiver_of.hpp"
@@ -40,12 +41,11 @@
 #include "nstd/execution/set_error.hpp"
 #include "nstd/execution/set_done.hpp"
 #include "nstd/execution/start.hpp"
+#include "nstd/execution/sender.hpp"
+#include "nstd/execution/sender_to.hpp"
 
 #if 0
 //-dk:TODO
-#include "nstd/execution/operation_state.hpp"
-#include "nstd/execution/sender.hpp"
-#include "nstd/execution/sender_to.hpp"
 #include "nstd/execution/has_sender_types.hpp"
 #include "nstd/execution/typed_sender.hpp"
 #include "nstd/execution/sender_base.hpp"
