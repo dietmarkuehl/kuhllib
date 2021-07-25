@@ -105,6 +105,11 @@ static KT::testcase const tests[] = {
         return !EX::sender_to<int, int>
             ;
     }),
+    KT::expect_success("connect", []{
+        return KT::assert_type_exists<EX::connect_t>
+            && KT::type<EX::connect_t const> == KT::type<decltype(EX::connect)>
+            ;
+    }),
 };
 
 static KT::add_tests suite("execution", ::tests);

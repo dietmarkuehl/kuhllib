@@ -43,6 +43,7 @@
 #include "nstd/execution/start.hpp"
 #include "nstd/execution/sender.hpp"
 #include "nstd/execution/sender_to.hpp"
+#include "nstd/execution/connect.hpp"
 
 #if 0
 //-dk:TODO
@@ -50,7 +51,6 @@
 #include "nstd/execution/typed_sender.hpp"
 #include "nstd/execution/sender_base.hpp"
 #include "nstd/execution/sender_traits.hpp"
-#include "nstd/execution/connect.hpp"
 #include "nstd/execution/get_completion_scheduler.hpp"
 #include "nstd/execution/sechedule.hpp"
 #include "nstd/execution/just.hpp"
