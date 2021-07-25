@@ -83,6 +83,11 @@ static KT::testcase const tests[] = {
             && KT::type<EX::get_allocator_t const> == KT::type<decltype(EX::get_allocator)>
             ;
     }),
+    KT::expect_success("get_stop_token", []{
+        return KT::assert_type_exists<EX::get_stop_token_t>
+            && KT::type<EX::get_stop_token_t const> == KT::type<decltype(EX::get_stop_token)>
+            ;
+    }),
 };
 
 static KT::add_tests suite("execution", ::tests);

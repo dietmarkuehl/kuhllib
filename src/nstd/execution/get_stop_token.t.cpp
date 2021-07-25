@@ -1,4 +1,4 @@
-// nstd/execution/get_allocator.t.cpp                                 -*-C++-*-
+// nstd/execution/get_stop_token.t.cpp                                -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,9 +23,8 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/execution/get_allocator.hpp"
+#include "nstd/execution/get_stop_token.hpp"
 #include "nstd/execution/receiver.hpp"
-#include <memory>
 #include "kuhl/test.hpp"
 
 namespace test_declarations {}
@@ -38,18 +37,22 @@ namespace KT = ::kuhl::test;
 namespace test_declarations
 {
     template <typename Receiver>
-    concept has_get_allocator
-        = requires(Receiver const& r) { EX::get_allocator(r); }
+    concept has_get_stop_token
+        = requires(Receiver const& r) { EX::get_stop_token(r); }
         ;
 
-    template <typename Allocator, bool Noexcept, bool IsReceiver = true>
+    struct stop_token {
+
+    };
+
+    template <typename StopToken, bool Noexcept, bool IsReceiver = true>
     struct receiver {
         bool* const value;
         friend auto tag_invoke(EX::set_done_t, receiver&&) noexcept(IsReceiver) {}
         friend auto tag_invoke(EX::set_error_t, receiver&&, std::exception_ptr) noexcept {}
-        friend auto tag_invoke(EX::get_allocator_t, receiver const& r) noexcept(Noexcept) {
+        friend auto tag_invoke(EX::get_stop_token_t, receiver const& r) noexcept(Noexcept) {
             *r.value = true;
-            return ::std::allocator<int>();
+            return StopToken();
         }
     };
 }
@@ -57,34 +60,34 @@ namespace test_declarations
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
-    KT::expect_success("get_allocator breathing", []{
-        return KT::assert_type_exists<EX::get_allocator_t>
-            && KT::type<EX::get_allocator_t const> == KT::type<decltype(EX::get_allocator)>
+    KT::expect_success("get_stop_token breathing", []{
+        return KT::assert_type_exists<EX::get_stop_token_t>
+            && KT::type<EX::get_stop_token_t const> == KT::type<decltype(EX::get_stop_token)>
             ;
     }),
     KT::expect_success("test declarations behave as expected", []{
-            return EX::receiver<TD::receiver<std::allocator<int>, true>>
-                && EX::receiver<TD::receiver<std::allocator<int>, false>>
-                && !EX::receiver<TD::receiver<std::allocator<int>, true, false>>
+            return EX::receiver<TD::receiver<TD::stop_token, true>>
+                && EX::receiver<TD::receiver<TD::stop_token, false>>
+                && !EX::receiver<TD::receiver<TD::stop_token, true, false>>
                 ;
         }),
-    KT::expect_success("receiver returning a allocator has get_allocator", []{
+    KT::expect_success("receiver returning a stop_token has get_stop_token", []{
             bool                              value(false);
-            TD::receiver<::std::allocator<int>, true> r{&value};
-            EX::get_allocator(r);
-            return TD::has_get_allocator<TD::receiver<::std::allocator<int>, true>>
-                && KT::type<decltype(EX::get_allocator(r))> == KT::type<::std::allocator<int>>
+            TD::receiver<TD::stop_token, true> r{&value};
+            EX::get_stop_token(r);
+            return TD::has_get_stop_token<TD::receiver<TD::stop_token, true>>
+                && KT::type<decltype(EX::get_stop_token(r))> == KT::type<TD::stop_token>
                 && value
                 ;
         }),
-    KT::expect_success("non-receiver doesn't have get_allocator", []{
-            return !TD::has_get_allocator<TD::receiver<::std::allocator<int>, true, false>>
+    KT::expect_success("non-receiver doesn't have get_stop_token", []{
+            return !TD::has_get_stop_token<TD::receiver<TD::stop_token, true, false>>
                 ;
         }),
-    KT::expect_success("throwing get_allocator isn't allowed ", []{
-            return !TD::has_get_allocator<TD::receiver<::std::allocator<int>, false>>
+    KT::expect_success("throwing get_stop_token isn't allowed ", []{
+            return !TD::has_get_stop_token<TD::receiver<TD::stop_token, false>>
                 ;
         }),
 };
 
-static KT::add_tests suite("get_allocator", ::tests);
+static KT::add_tests suite("get_stop_token", ::tests);
