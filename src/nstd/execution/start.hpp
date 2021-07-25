@@ -26,32 +26,21 @@
 #ifndef INCLUDED_NSTD_EXECUTION_START
 #define INCLUDED_NSTD_EXECUTION_START
 
+#include "nstd/functional/tag_invoke.hpp"
+
 // ----------------------------------------------------------------------------
 
-namespace nstd::hidden_names {
-    template <typename State>
-    concept has_member_start
-        = requires(State& state){ state.start(); }
-        ;
-
-    void start();
-    template <typename State>
-    concept has_non_member_start
-        =  !has_member_start<State>
-        && requires(State& state){ start(state); }
-        ;
-}
 namespace nstd::execution::inline customization_points {
-    inline constexpr struct {
-        template <::nstd::hidden_names::has_member_start State>
-        auto operator()(State& state) const noexcept(noexcept(state.start()))
+    inline constexpr struct start_t {
+        template <typename State>
+        constexpr auto operator()(State& state) const
+            noexcept(noexcept(::nstd::tag_invoke(*this, state)))
+            -> void //-dk:TODO verify if expression-equivalent may mean it can have a [reference?] return type
+            requires requires(State& state) {
+                ::nstd::tag_invoke(*this, state);
+            }
         {
-            return state.start();
-        }
-        template <::nstd::hidden_names::has_non_member_start State>
-        auto operator()(State& state) const noexcept(noexcept(start(state)))
-        {
-            return start(state);
+            ::nstd::tag_invoke(*this, state);
         }
         auto operator()(auto&&) const = delete;
     } start;

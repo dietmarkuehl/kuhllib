@@ -27,6 +27,7 @@
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/set_error.hpp"
 #include "nstd/execution/set_done.hpp"
+#include "nstd/execution/start.hpp"
 #include "kuhl/test.hpp"
 #include <optional>
 
@@ -51,7 +52,7 @@ static KT::testcase const tests[] = {
     KT::expect_success("just_done usage", []{
             bool value(false);
             auto state = NET::just_done().connect(TD::receiver{&value});
-            state.start();
+            EX::start(state);
             return value
                 ;
         }),

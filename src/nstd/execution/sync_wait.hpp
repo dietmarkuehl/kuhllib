@@ -106,7 +106,7 @@ auto nstd::execution::sync_wait(Sender&& s) -> void
 
     auto operation = ::nstd::execution::connect(::nstd::utility::forward<Sender>(s),
                                  ::nstd::execution::sync_wait_receiver{ &bottleneck, &condition, &flag, &exception });
-    operation.start();
+    ::nstd::execution::start(operation);
 
     ::std::unique_lock kerberos(bottleneck);
     condition.wait(kerberos, [&flag]{ return flag; });

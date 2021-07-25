@@ -27,6 +27,7 @@
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/set_error.hpp"
 #include "nstd/execution/set_done.hpp"
+#include "nstd/execution/start.hpp"
 #include <exception>
 #include <optional>
 #include "kuhl/test.hpp"
@@ -62,14 +63,14 @@ static KT::testcase const tests[] = {
     KT::expect_success("just usage", []{
             ::std::optional<int> value;
             auto state = NET::just(17).connect(TD::receiver{&value});
-            state.start();
+            EX::start(state);
             return value.value_or(0) == 17
                 ;
         }),
     KT::expect_success("just specialization", []{
             ::std::optional<::std::string> value;
             auto state = NET::just("foo").connect(TD::string_receiver{&value});
-            state.start();
+            EX::start(state);
             return value.value_or("") == "foo"
                 ;
         }),

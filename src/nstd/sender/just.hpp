@@ -29,6 +29,7 @@
 #include "nstd/execution/sender_base.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/set_error.hpp"
+#include "nstd/execution/start.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
 #include "nstd/utility/forward.hpp"
 #include "nstd/utility/move.hpp"
@@ -60,11 +61,11 @@ public:
         : d_value(::nstd::utility::move(value))
         , d_receiver(::nstd::utility::forward<Receiver>(receiver)) {
     }
-    auto start() noexcept -> void try {
-        ::nstd::execution::set_value(::nstd::utility::move(this->d_receiver), ::nstd::utility::move(this->d_value));
+    friend auto tag_invoke(::nstd::execution::start_t, just_state& state) noexcept -> void try {
+        ::nstd::execution::set_value(::nstd::utility::move(state.d_receiver), ::nstd::utility::move(state.d_value));
     }
     catch (...) {
-        ::nstd::execution::set_error(::nstd::utility::move(this->d_receiver), ::std::current_exception());
+        ::nstd::execution::set_error(::nstd::utility::move(state.d_receiver), ::std::current_exception());
     }
 };
 

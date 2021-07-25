@@ -28,6 +28,7 @@
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/set_error.hpp"
 #include "nstd/execution/set_done.hpp"
+#include "nstd/execution/start.hpp"
 #include <optional>
 #include "kuhl/test.hpp"
 
@@ -55,7 +56,7 @@ static KT::testcase const tests[] = {
             ::std::optional<bool> value;
             auto then = NET::then(NET::just(17), [&value](auto v){ value = v; });
             auto state = then.connect(TD::receiver{&value});
-            state.start();
+            EX::start(state);
             return value.value_or(false);
         }),
     KT::expect_success("then pipeline", []{
@@ -64,7 +65,7 @@ static KT::testcase const tests[] = {
                       | NET::then([&value](auto v){ value = v; })
                       ;
             auto state = then.connect(TD::receiver{&value});
-            state.start();
+            EX::start(state);
             return value.value_or(false);
         }),
 };

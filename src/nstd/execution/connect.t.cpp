@@ -24,6 +24,7 @@
 // ----------------------------------------------------------------------------
 
 #include "nstd/execution/connect.hpp"
+#include "nstd/execution/start.hpp"
 #include "kuhl/test.hpp"
 
 namespace test_declarations {}
@@ -39,7 +40,9 @@ namespace test_declarations
     struct member_sender
         : EX::sender_base
     {
-        struct state { void start() & noexcept {}; };
+        struct state {
+            friend void tag_invoke(EX::start_t, state&) noexcept {};
+        };
         int* const ptr;
         template <typename Receiver>
         auto connect(Receiver&&) noexcept(Noexcept) -> state {
@@ -58,7 +61,9 @@ namespace test_declarations
     struct non_member_sender
         : EX::sender_base
     {
-        struct state { void start() & noexcept {}; };
+        struct state {
+            friend void tag_invoke(EX::start_t, state&) noexcept {};
+        };
         int* const ptr;
     };
     template <bool Noexcept, typename Receiver>

@@ -34,27 +34,39 @@ namespace KT = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
 
-namespace test_declarations
-{
-    template <typename Receiver>
-    concept has_get_stop_token
-        = requires(Receiver const& r) { EX::get_stop_token(r); }
-        ;
+namespace test_declarations {
+    namespace {
+        template <typename Receiver>
+        concept has_get_stop_token
+            = requires(Receiver const& r) { EX::get_stop_token(r); }
+            ;
 
-    struct stop_token {
+        struct non_stop_token {};
 
-    };
+        struct stop_token
+        {
+            template <typename T>
+            using callback_type = void(T);
 
-    template <typename StopToken, bool Noexcept, bool IsReceiver = true>
-    struct receiver {
-        bool* const value;
-        friend auto tag_invoke(EX::set_done_t, receiver&&) noexcept(IsReceiver) {}
-        friend auto tag_invoke(EX::set_error_t, receiver&&, std::exception_ptr) noexcept {}
-        friend auto tag_invoke(EX::get_stop_token_t, receiver const& r) noexcept(Noexcept) {
-            *r.value = true;
-            return StopToken();
-        }
-    };
+            stop_token() {}
+            stop_token(stop_token const&) noexcept {}
+            stop_token(stop_token &&) noexcept {}
+            auto operator== (stop_token const&) const -> bool = default;
+            auto stop_requested() const noexcept -> bool;
+            auto stop_possible() const noexcept -> bool;
+        };
+
+        template <typename StopToken, bool Noexcept, bool IsReceiver = true>
+        struct receiver {
+            bool* const value;
+            friend auto tag_invoke(EX::set_done_t, receiver&&) noexcept(IsReceiver) {}
+            friend auto tag_invoke(EX::set_error_t, receiver&&, std::exception_ptr) noexcept {}
+            friend auto tag_invoke(EX::get_stop_token_t, receiver const& r) noexcept(Noexcept) {
+                *r.value = true;
+                return StopToken();
+            }
+        };
+    }
 }
 
 // ----------------------------------------------------------------------------
@@ -86,6 +98,10 @@ static KT::testcase const tests[] = {
         }),
     KT::expect_success("throwing get_stop_token isn't allowed ", []{
             return !TD::has_get_stop_token<TD::receiver<TD::stop_token, false>>
+                ;
+        }),
+    KT::expect_success("return a non-stop_token from get_stop_token isn't allowed ", []{
+            return !TD::has_get_stop_token<TD::receiver<TD::non_stop_token, true>>
                 ;
         }),
 };

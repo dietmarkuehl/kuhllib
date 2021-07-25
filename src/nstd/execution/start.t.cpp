@@ -34,52 +34,29 @@ namespace KT = ::kuhl::test;
 // ----------------------------------------------------------------------------
 
 namespace test_declarations {
+    namespace {
     template <bool Noexcept>
-    struct member_start {
-        int* const ptr;
-        void start() & noexcept(Noexcept) { *this->ptr = 42; }
-    };
-    template <bool Noexcept>
-    void start(member_start<Noexcept>&) {}
-
-    template <bool Noexcept>
-    struct non_member_start {
-        int* const ptr;
-    };
-    template <bool Noexcept>
-    void start(non_member_start<Noexcept>& s) noexcept(Noexcept) { *s.ptr = 42; }
+        struct state {
+            int* const ptr;
+            friend void tag_invoke(EX::start_t, state& s) noexcept(Noexcept) { *s.ptr = 42; }
+        };
+    }
 }
 
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
-    KT::expect_success("member start() is called noexcept(true)", []{
-            int                    value(17);
-            TD::member_start<true> state{&value};
+    KT::expect_success("state's start tag_invoke() is called noexcept(true)", []{
+            int             value(17);
+            TD::state<true> state{&value};
             EX::start(state);
             return value == 42
                 && noexcept(EX::start(state))
                 ;
         }),
-    KT::expect_success("member start() is called noexcept(false)", []{
-            int                     value(17);
-            TD::member_start<false> state{&value};
-            EX::start(state);
-            return value == 42
-                && !noexcept(EX::start(state))
-                ;
-        }),
-    KT::expect_success("non-member start() is called noexcept(true)", []{
-            int                        value(17);
-            TD::non_member_start<true> state{&value};
-            EX::start(state);
-            return value == 42
-                && noexcept(EX::start(state))
-                ;
-        }),
-    KT::expect_success("non-member start() is called noexcept(false)", []{
-            int                         value(17);
-            TD::non_member_start<false> state{&value};
+    KT::expect_success("state's start tag_invoke() is called noexcept(true)", []{
+            int              value(17);
+            TD::state<false> state{&value};
             EX::start(state);
             return value == 42
                 && !noexcept(EX::start(state))

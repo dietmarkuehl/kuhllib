@@ -28,6 +28,7 @@
 
 #include "nstd/execution/sender_base.hpp"
 #include "nstd/execution/set_error.hpp"
+#include "nstd/execution/start.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
 #include "nstd/utility/move.hpp"
 #include "nstd/utility/forward.hpp"
@@ -56,9 +57,9 @@ struct nstd::net::just_error_state
     ::nstd::type_traits::remove_cvref_t<Value>    d_value;
     ::nstd::type_traits::remove_cvref_t<Receiver> d_receiver;
 
-    auto start() noexcept -> void {
-        ::nstd::execution::set_error(::nstd::utility::move(this->d_receiver),
-                                     ::nstd::utility::move(this->d_value));
+    friend auto tag_invoke(::nstd::execution::start_t, just_error_state& state) noexcept -> void {
+        ::nstd::execution::set_error(::nstd::utility::move(state.d_receiver),
+                                     ::nstd::utility::move(state.d_value));
     }
 };
 

@@ -24,6 +24,7 @@
 // ----------------------------------------------------------------------------
 
 #include "nstd/execution/operation_state.hpp"
+#include "nstd/execution/start.hpp"
 #include "kuhl/test.hpp"
 
 namespace test_declarations {}
@@ -38,12 +39,12 @@ namespace test_declarations {
 
     struct non_destructible_state {
         ~non_destructible_state() = delete;
-        auto start() & noexcept -> void {}
+        friend auto tag_invoke(EX::start_t, non_destructible_state&) noexcept -> void {}
     };
 
     template <bool Noexcept>
     struct state {
-        auto start() & noexcept(Noexcept) -> void {}
+        friend auto tag_invoke(EX::start_t, state&) noexcept(Noexcept) -> void {}
     };
 }
 
