@@ -1,4 +1,4 @@
-// nstd/execution/sender_traits.hpp                                   -*-C++-*-
+// nstd/hidden_names/derives_from_sender_base.t.cpp                   -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,38 +23,51 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_EXECUTION_SENDER_TRAITS
-#define INCLUDED_NSTD_EXECUTION_SENDER_TRAITS
-
-#include "nstd/hidden_names/has_sender_types.hpp"
 #include "nstd/hidden_names/derives_from_sender_base.hpp"
-#include <concepts>
+#include "kuhl/test.hpp"
+
+namespace test_declarations {}
+namespace TD = test_declarations;
+namespace HN = ::nstd::hidden_names;
+namespace EX = ::nstd::execution;
+namespace KT = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::execution {
-    template <typename>
-    struct sender_traits
-    {
-        using not_specialized = void;
-    };
+namespace test_declarations {
+    namespace {
+        struct non_sender {};
 
-    template <::nstd::hidden_names::has_sender_types Sender>
-    struct sender_traits<Sender>
-    {
-        template <template <typename...> class Tuple, template <typename...> class Variant>
-        using value_types = typename Sender::template value_types<Tuple, Variant>;
-        template <template <typename...> class Tuple>
-        using error_types = typename Sender::template error_types<Tuple>;
-        static constexpr bool sends_done = Sender::sends_done;
-    };
+        struct sender
+            : EX::sender_base
+        {
+        };
 
-    template <::nstd::hidden_names::derives_from_sender_base Sender>
-    struct sender_traits<Sender>
-    {
-    };
+        struct typed_sender
+            : EX::sender_base
+        {
+            template <template <typename...> class V, template <typename...> class T>
+            using value_types = V<T<>>;
+            template <template <typename...> class V>
+            using error_types = V<int>;
+            static constexpr bool sends_done = false;
+        };
+
+    }
 }
 
 // ----------------------------------------------------------------------------
 
-#endif
+static KT::testcase const tests[] = {
+    KT::expect_success("class not deriving from sender_base ", []{
+            return !HN::derives_from_sender_base<TD::non_sender>;
+        }),
+    KT::expect_success("sender deriving from sender_base ", []{
+            return HN::derives_from_sender_base<TD::sender>;
+        }),
+    KT::expect_success("typed_sender deriving from sender_base ", []{
+            return !HN::derives_from_sender_base<TD::typed_sender>;
+        }),
+};
+
+static KT::add_tests suite("derives_from_sender_base", ::tests);

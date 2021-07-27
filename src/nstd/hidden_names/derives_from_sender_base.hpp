@@ -1,4 +1,4 @@
-// nstd/execution/sender_traits.hpp                                   -*-C++-*-
+// nstd/hidden_names/derives_from_sender_base.hpp                     -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,36 +23,21 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_EXECUTION_SENDER_TRAITS
-#define INCLUDED_NSTD_EXECUTION_SENDER_TRAITS
+#ifndef INCLUDED_NSTD_HIDDEN_NAMES_DERIVES_FROM_SENDER_BASE
+#define INCLUDED_NSTD_HIDDEN_NAMES_DERIVES_FROM_SENDER_BASE
 
 #include "nstd/hidden_names/has_sender_types.hpp"
-#include "nstd/hidden_names/derives_from_sender_base.hpp"
+#include "nstd/execution/sender_base.hpp"
 #include <concepts>
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::execution {
-    template <typename>
-    struct sender_traits
-    {
-        using not_specialized = void;
-    };
-
-    template <::nstd::hidden_names::has_sender_types Sender>
-    struct sender_traits<Sender>
-    {
-        template <template <typename...> class Tuple, template <typename...> class Variant>
-        using value_types = typename Sender::template value_types<Tuple, Variant>;
-        template <template <typename...> class Tuple>
-        using error_types = typename Sender::template error_types<Tuple>;
-        static constexpr bool sends_done = Sender::sends_done;
-    };
-
-    template <::nstd::hidden_names::derives_from_sender_base Sender>
-    struct sender_traits<Sender>
-    {
-    };
+namespace nstd::hidden_names {
+    template <typename Sender>
+    concept derives_from_sender_base
+        = !has_sender_types<Sender>
+        && ::std::derived_from<Sender, ::nstd::execution::sender_base>
+        ;
 }
 
 // ----------------------------------------------------------------------------

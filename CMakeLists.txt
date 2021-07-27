@@ -99,6 +99,8 @@ list(APPEND kuhllib_components
     src/nstd/functional/reference_wrapper
     src/nstd/functional/tag_invoke
     src/nstd/functional/tuple_invoke
+    src/nstd/hidden_names/derives_from_sender_base
+    src/nstd/hidden_names/has_sender_types
     src/nstd/iterator/bidirectional_iterator
     src/nstd/iterator/bidirectional_iterator_tag
     src/nstd/iterator/forward_iterator
