@@ -42,13 +42,13 @@ namespace test_declarations {
             using value_types = V<T<>>;
             template <template <typename...> class V>
             using error_types = V<int>;
-            static constexpr bool sends_done = false;
+            static constexpr bool sends_done = true;
         };
 
         struct no_value_types {
             template <template <typename...> class V>
             using error_types = V<int>;
-            static constexpr bool sends_done = false;
+            static constexpr bool sends_done = true;
         };
 
         struct wrong_value_types {
@@ -56,13 +56,13 @@ namespace test_declarations {
             using value_types = T<V>;
             template <template <typename...> class V>
             using error_types = V<int>;
-            static constexpr bool sends_done = false;
+            static constexpr bool sends_done = true;
         };
 
         struct no_error_types {
             template <template <typename...> class V, template <typename...> class T>
             using value_types = V<T<>>;
-            static constexpr bool sends_done = false;
+            static constexpr bool sends_done = true;
         };
 
         struct wrong_error_types {
@@ -70,7 +70,7 @@ namespace test_declarations {
             using value_types = V<T<>>;
             template <typename V>
             using error_types = V;
-            static constexpr bool sends_done = false;
+            static constexpr bool sends_done = true;
         };
 
         struct no_sends_done {
@@ -85,7 +85,7 @@ namespace test_declarations {
             using value_types = V<T<>>;
             template <template <typename...> class V>
             using error_types = V<int>;
-            bool const sends_done = false;
+            bool const sends_done = true;
         };
 
         struct non_constexpr_sends_done {
@@ -93,7 +93,7 @@ namespace test_declarations {
             using value_types = V<T<>>;
             template <template <typename...> class V>
             using error_types = V<int>;
-            static bool sends_done;
+            static bool const sends_done;
         };
 
         struct non_boolean_sends_done {
@@ -114,16 +114,24 @@ static KT::testcase const tests[] = {
             return !HN::has_sender_types<TD::no_types>;
         }),
     KT::expect_success("nested declarations missing value_types", []{
-            return !HN::has_sender_types<TD::no_value_types>;
+            return !HN::has_sender_types<TD::no_value_types>
+                && TD::no_value_types::sends_done
+                ;
         }),
     KT::expect_success("nested declarations wrong value_types", []{
-            return !HN::has_sender_types<TD::wrong_value_types>;
+            return !HN::has_sender_types<TD::wrong_value_types>
+                && TD::wrong_value_types::sends_done
+                ;
         }),
     KT::expect_success("nested declarations missing error_types", []{
-            return !HN::has_sender_types<TD::no_error_types>;
+            return !HN::has_sender_types<TD::no_error_types>
+                && TD::no_error_types::sends_done
+                ;
         }),
     KT::expect_success("nested declarations wrong error_types", []{
-            return !HN::has_sender_types<TD::wrong_error_types>;
+            return !HN::has_sender_types<TD::wrong_error_types>
+                && TD::wrong_error_types::sends_done
+                ;
         }),
     KT::expect_success("nested declarations missing sends_done", []{
             return !HN::has_sender_types<TD::no_sends_done>;
@@ -132,17 +140,26 @@ static KT::testcase const tests[] = {
             return !HN::has_sender_types<TD::non_static_sends_done>;
         }),
     KT::expect_success("nested declarations non-constexpr sends_done", []{
-            return !HN::has_sender_types<TD::non_constexpr_sends_done>;
+            return !HN::has_sender_types<TD::non_constexpr_sends_done>
+                && TD::non_constexpr_sends_done::sends_done
+                ;
         }),
     KT::expect_success("nested declarations non-boolean sends_done", []{
-            return !HN::has_sender_types<TD::non_boolean_sends_done>;
-        }),
-    KT::expect_success("nested declarations with non-static sends_done", []{
-            return !HN::has_sender_types<TD::no_sends_done>;
+            return !HN::has_sender_types<TD::non_boolean_sends_done>
+                && TD::non_boolean_sends_done::sends_done
+                ;
         }),
     KT::expect_success("complete nested declarations", []{
-            return HN::has_sender_types<TD::sender>;
+            return HN::has_sender_types<TD::sender>
+                && TD::sender::sends_done
+                ;
         }),
 };
 
 static KT::add_tests suite("has_sender_types", ::tests);
+
+namespace test_declarations {
+    namespace {
+        bool const non_constexpr_sends_done::sends_done = true;
+    }
+}
