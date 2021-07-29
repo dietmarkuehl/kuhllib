@@ -24,36 +24,66 @@
 // ----------------------------------------------------------------------------
 
 #include "nstd/execution/schedule.hpp"
+#include "nstd/execution/sender_base.hpp"
+#include "nstd/utility/forward.hpp"
+#include <type_traits> //-dk:TODO "nstd/utility/conditional.hpp"
 #include "kuhl/test.hpp"
 
 namespace test_declarations {};
 namespace TD = ::test_declarations;
 namespace EX = ::nstd::execution;
+namespace TT = ::std; //-dk:TODO ::nstd::type_traits;
+namespace UT = ::nstd::utility;
 namespace KT = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
 
 namespace test_declarations
 {
-    struct sender {
-        int value;
-    };
+    namespace
+    {
+        struct empty {};
+        template <bool Sender>
+        struct sender
+            : TT::conditional_t<Sender, EX::sender_base, empty>
+        {
+            int value;
+        };
 
-    struct scheduler {
-        int value;
-        bool operator== (scheduler const&) const { return true; }
-        friend sender tag_invoke(::nstd::execution::schedule_t, scheduler s) {
-            return sender{s.value};
-        } 
-    };
+        template <bool Sender>
+        struct scheduler {
+            int value;
+            bool operator== (scheduler const&) const { return true; }
+            friend TD::sender<Sender> tag_invoke(EX::schedule_t, scheduler s) {
+                return TD::sender<Sender>{{}, s.value};
+            } 
+        };
+
+        template <typename Scheduler>
+        concept has_schedule
+            = requires(Scheduler&& s) { EX::schedule(UT::forward<Scheduler>(s)); }
+            ;
+    }
 }
 
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
-    KT::expect_success("schedule invokes the scheduler's tag_invoke method", [](KT::context& ){
-        return EX::schedule(TD::scheduler{17}).value == 17
+    KT::expect_success("sender<true> is a sender", []{
+        return EX::sender<TD::sender<true>>;
+    }),
+    KT::expect_success("sender<false> is not a sender", []{
+        return not EX::sender<TD::sender<false>>;
+    }),
+    KT::expect_success("scheduler has schedule()", []{
+        return TD::has_schedule<TD::scheduler<true>>;
+    }),
+    KT::expect_success("schedule invokes the scheduler's tag_invoke method", []{
+        return EX::schedule(TD::scheduler<true>{17}).value == 17
             ;
+    }),
+    KT::expect_success("schedule doesn't exist for scheduler returning non-sender", []{
+        return not TD::has_schedule<TD::scheduler<false>>;
     }),
 };
 

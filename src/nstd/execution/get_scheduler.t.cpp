@@ -43,9 +43,10 @@ namespace test_declarations
         ;
 
     struct non_scheduler {};
+    struct sender: EX::sender_base {};
     struct scheduler {
         bool operator== (scheduler const&) const = default;
-        friend auto tag_invoke(EX::schedule_t, scheduler&&) {}
+        friend auto tag_invoke(EX::schedule_t, scheduler&&) -> sender { return {}; }
     };
 
     template <typename Scheduler, bool Noexcept, bool IsReceiver = true>

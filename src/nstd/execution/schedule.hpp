@@ -27,6 +27,7 @@
 #define INCLUDED_NSTD_EXECUTION_SCHEDULE
 
 #include "nstd/functional/tag_invoke.hpp"
+#include "nstd/execution/sender.hpp"
 #include "nstd/utility/forward.hpp"
 
 // ----------------------------------------------------------------------------
@@ -37,8 +38,9 @@ namespace nstd::execution {
         auto operator()(Scheduler&& s) const
             noexcept(noexcept(::nstd::tag_invoke(*this, ::nstd::utility::forward<Scheduler>(s))))
             requires requires(Scheduler&& s){
-                ::nstd::tag_invoke(*this, ::nstd::utility::forward<Scheduler>(s));
-                //-dk:TODO test that the result is a sender
+                { ::nstd::tag_invoke(*this, ::nstd::utility::forward<Scheduler>(s)) }
+                    -> nstd::execution::sender
+                    ; 
             }
         {
             return ::nstd::tag_invoke(*this, ::nstd::utility::forward<Scheduler>(s));
