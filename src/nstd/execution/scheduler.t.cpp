@@ -26,11 +26,13 @@
 #include "nstd/execution/scheduler.hpp"
 #include "nstd/execution/schedule.hpp"
 #include "nstd/execution/sender_base.hpp"
+#include "nstd/utility/move.hpp"
 #include "kuhl/test.hpp"
 
 namespace test_declarations {}
 namespace EX = ::nstd::execution;
 namespace TD = ::test_declarations;
+namespace UT = ::nstd::utility;
 namespace KT = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
@@ -48,6 +50,7 @@ namespace test_declarations
         };
 
         struct non_copyable_scheduler {
+            non_copyable_scheduler() = default;
             non_copyable_scheduler(non_copyable_scheduler&&) = default;
             non_copyable_scheduler(non_copyable_scheduler const&) = delete;
             bool operator== (non_copyable_scheduler const&) const { return true; }
@@ -55,6 +58,7 @@ namespace test_declarations
         };
 
         struct non_comparable_scheduler {
+            non_comparable_scheduler() = default;
             non_comparable_scheduler(non_comparable_scheduler const&) = default;
             friend sender tag_invoke(::nstd::execution::schedule_t, non_comparable_scheduler) { return sender{}; } 
         };
@@ -74,10 +78,12 @@ static KT::testcase const tests[] = {
             ;
     }),
     KT::expect_success("non-copyable scheduler isn't a scheduler", [](KT::context& ){
+        tag_invoke(EX::schedule, TD::non_copyable_scheduler());
         return !EX::scheduler<TD::non_copyable_scheduler>
             ;
     }),
     KT::expect_success("non-comparable scheduler isn't a scheduler", [](KT::context& ){
+        tag_invoke(EX::schedule, TD::non_comparable_scheduler());
         return !EX::scheduler<TD::non_comparable_scheduler>
             ;
     }),
