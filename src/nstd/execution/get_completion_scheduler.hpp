@@ -1,6 +1,6 @@
-// nstd/type_traits/is_same.hpp                                       -*-C++-*-
+// nstd/execution/get_completion_scheduler.hpp                        -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
+//  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
 //  Permission is hereby granted, free of charge, to any person          
 //  obtaining a copy of this software and associated documentation       
@@ -23,40 +23,42 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_TYPE_TRAITS_IS_SAME
-#define INCLUDED_NSTD_TYPE_TRAITS_IS_SAME
+#ifndef INCLUDED_NSTD_EXECUTION_GET_COMPLETION_SCHEDULER
+#define INCLUDED_NSTD_EXECUTION_GET_COMPLETION_SCHEDULER
 
-#include "nstd/type_traits/integral_constant.hpp"
+#include "nstd/execution/scheduler.hpp"
+#include "nstd/execution/sender.hpp"
+#include "nstd/execution/set_value.hpp"
+#include "nstd/execution/set_error.hpp"
+#include "nstd/execution/set_done.hpp"
+#include "nstd/functional/tag_invoke.hpp"
+#include "nstd/utility/as_const.hpp"
+#include <concepts>
 
 // ----------------------------------------------------------------------------
 
-namespace nstd
-{
-    namespace type_traits
-    {
-        template <typename S, typename T> struct is_same;
-        template <typename T> struct is_same<T, T>;
+namespace nstd::execution {
+    template <typename CPO>
+        requires ::std::same_as<::nstd::execution::set_value_t, CPO>
+              || ::std::same_as<::nstd::execution::set_error_t, CPO>
+              || ::std::same_as<::nstd::execution::set_done_t, CPO>
+    struct get_completion_scheduler_t {
+        template <::nstd::execution::sender Sender>
+            requires requires(get_completion_scheduler_t<CPO> const& cpo, Sender&& sender) {
+                { ::nstd::tag_invoke(cpo, ::nstd::utility::as_const(sender)) } noexcept -> ::nstd::execution::scheduler;
+            }
+        auto operator()(Sender&& sender) const
+        {
+            return ::nstd::tag_invoke(*this, ::nstd::utility::as_const(sender));
+        }
+    };
 
-        template <typename S, typename T>
-        inline constexpr bool is_same_v = ::nstd::type_traits::is_same<S, T>::value;
-    }
+    template <typename CPO>
+        requires ::std::same_as<::nstd::execution::set_value_t, CPO>
+              || ::std::same_as<::nstd::execution::set_error_t, CPO>
+              || ::std::same_as<::nstd::execution::set_done_t, CPO>
+    inline constexpr get_completion_scheduler_t<CPO> get_completion_scheduler;
 }
-
-// ----------------------------------------------------------------------------
-
-template <typename S, typename T>
-struct nstd::type_traits::is_same
-    : nstd::type_traits::false_type
-{
-    constexpr is_same() noexcept(true) {}
-};
-
-template <typename T>
-struct nstd::type_traits::is_same<T, T>
-    : nstd::type_traits::true_type
-{
-    constexpr is_same() noexcept(true) {}
-};
 
 // ----------------------------------------------------------------------------
 

@@ -29,6 +29,7 @@
 
 namespace test_declarations {}
 namespace EX = ::nstd::execution;
+namespace HN = ::nstd::hidden_names;
 namespace TD = ::test_declarations;
 namespace KT = ::kuhl::test;
 
@@ -46,21 +47,21 @@ namespace test_declarations {
 static KT::testcase const tests[] = {
     KT::expect_success("movable_value", []{
         return EX::movable_value<int>
-            && !EX::movable_value<TD::non_movable>
+            && not EX::movable_value<TD::non_movable>
             ;
     }),
     KT::expect_success("scheduler", []{
-        return !EX::scheduler<int>
+        return not EX::scheduler<int>
             ;
     }),
     KT::expect_success("receiver", []{
-        return !EX::receiver<int>
-            && !EX::receiver<int, ::std::exception_ptr>
+        return not EX::receiver<int>
+            && not EX::receiver<int, ::std::exception_ptr>
             ;
     }),
     KT::expect_success("receiver_of", []{
-        return !EX::receiver_of<int>
-            && !EX::receiver_of<int, bool, char>
+        return not EX::receiver_of<int>
+            && not EX::receiver_of<int, bool, char>
             ;
     }),
     KT::expect_success("schedule", []{
@@ -94,16 +95,28 @@ static KT::testcase const tests[] = {
             ;
     }),
     KT::expect_success("operation_state", []{
-        return !EX::operation_state<int>
+        return not EX::operation_state<int>
             ;
     }),
     KT::expect_success("sender", []{
-        return !EX::sender<int>
+        return not EX::sender<int>
             ;
     }),
     KT::expect_success("sender_to", []{
-        return !EX::sender_to<int, int>
+        return not EX::sender_to<int, int>
             ;
+    }),
+    KT::expect_success("has_sender_types", []{
+        return not HN::has_sender_types<int>;
+    }),
+    KT::expect_success("typed_sender", []{
+        return not EX::typed_sender<int>;
+    }),
+    KT::expect_success("sender_base", []{
+        return KT::assert_type_exists<EX::sender_base>;
+    }),
+    KT::expect_success("sender_traits", []{
+        return KT::assert_type_exists<EX::sender_traits<int>>;
     }),
     KT::expect_success("connect", []{
         return KT::assert_type_exists<EX::connect_t>

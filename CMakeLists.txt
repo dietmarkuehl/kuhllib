@@ -51,6 +51,7 @@ list(APPEND kuhllib_components
     src/nstd/execution/connect
     src/nstd/execution/execution
     src/nstd/execution/get_allocator
+    src/nstd/execution/get_completion_scheduler
     src/nstd/execution/get_scheduler
     src/nstd/execution/get_stop_token
     src/nstd/execution/is_execution_policy
