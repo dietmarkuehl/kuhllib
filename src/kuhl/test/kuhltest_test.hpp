@@ -75,7 +75,7 @@ namespace kuhl
                       kuhl::test::testcase const (&tests)[NoTests]);
 
         template <typename T>
-        void use(T const&);
+        bool use(T const&);
     }
 }
 
@@ -363,8 +363,9 @@ kuhl::test::run_tests(char const* name, int ac, char* av[],
 // ----------------------------------------------------------------------------
 
 template <typename T>
-void kuhl::test::use(T const&)
+bool kuhl::test::use(T const&)
 {
+    return true;
 }
 
 // ----------------------------------------------------------------------------

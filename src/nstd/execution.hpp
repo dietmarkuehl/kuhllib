@@ -31,7 +31,7 @@
 #include "nstd/execution/get_allocator.hpp"
 #include "nstd/execution/get_scheduler.hpp"
 #include "nstd/execution/get_stop_token.hpp"
-#include "nstd/execution/movable_value.hpp"
+#include "nstd/hidden_names/movable_value.hpp"
 #include "nstd/execution/operation_state.hpp"
 #include "nstd/execution/scheduler.hpp"
 #include "nstd/execution/receiver.hpp"

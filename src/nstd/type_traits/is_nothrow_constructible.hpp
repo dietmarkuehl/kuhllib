@@ -42,6 +42,9 @@ namespace nstd
             template <typename T, typename... Args> struct is_nothrow_constructible<false, T, Args...>;
         }
         template <typename, typename...> struct is_nothrow_constructible;
+        template <typename T, typename... Args>
+        inline constexpr bool is_nothrow_constructible_v
+            = ::nstd::type_traits::is_nothrow_constructible<T, Args...>::value;
     }
 
 }

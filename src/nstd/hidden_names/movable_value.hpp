@@ -1,4 +1,4 @@
-// nstd/execution/movable_value.hpp                                   -*-C++-*-
+// nstd/hidden_names/movable_value.hpp                                   -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,15 +23,15 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_EXECUTION_MOVABLE_VALUE
-#define INCLUDED_NSTD_EXECUTION_MOVABLE_VALUE
+#ifndef INCLUDED_NSTD_HIDDEN_NAMES_MOVABLE_VALUE
+#define INCLUDED_NSTD_HIDDEN_NAMES_MOVABLE_VALUE
 
 #include "nstd/type_traits/remove_cvref.hpp"
 #include <concepts>
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::execution {
+namespace nstd::hidden_names {
     template <typename T>
     concept movable_value
         =  ::std::move_constructible<::nstd::type_traits::remove_cvref_t<T>>

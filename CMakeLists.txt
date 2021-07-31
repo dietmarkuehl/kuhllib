@@ -55,7 +55,7 @@ list(APPEND kuhllib_components
     src/nstd/execution/get_scheduler
     src/nstd/execution/get_stop_token
     src/nstd/execution/is_execution_policy
-    src/nstd/execution/movable_value
+    src/nstd/execution/just
     src/nstd/execution/operation_state
     src/nstd/execution/parallel_policy
     src/nstd/execution/parallel_unsequenced_policy
@@ -103,6 +103,7 @@ list(APPEND kuhllib_components
     src/nstd/functional/tuple_invoke
     src/nstd/hidden_names/derives_from_sender_base
     src/nstd/hidden_names/has_sender_types
+    src/nstd/hidden_names/movable_value
     src/nstd/iterator/bidirectional_iterator
     src/nstd/iterator/bidirectional_iterator_tag
     src/nstd/iterator/forward_iterator

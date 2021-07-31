@@ -46,8 +46,8 @@ namespace test_declarations {
 
 static KT::testcase const tests[] = {
     KT::expect_success("movable_value", []{
-        return EX::movable_value<int>
-            && not EX::movable_value<TD::non_movable>
+        return HN::movable_value<int>
+            && not HN::movable_value<TD::non_movable>
             ;
     }),
     KT::expect_success("scheduler", []{
