@@ -123,6 +123,20 @@ static KT::testcase const tests[] = {
             && KT::type<EX::connect_t const> == KT::type<decltype(EX::connect)>
             ;
     }),
+    KT::expect_success("schedule", []{
+        return KT::assert_type_exists<EX::schedule_t>
+            && KT::type<EX::schedule_t const> == KT::type<decltype(EX::schedule)>
+            ;
+    }),
+    KT::expect_success("get_completion_scheduler", []{
+        return KT::assert_type_exists<EX::get_completion_scheduler_t<EX::set_value_t>>
+            && KT::type<EX::get_completion_scheduler_t<EX::set_value_t> const>
+               == KT::type<decltype(EX::get_completion_scheduler<EX::set_value_t>)>
+            ;
+    }),
+    KT::expect_success("just", []{
+        return KT::assert_type_exists<decltype(EX::just(0))>;
+    }),
 };
 
 static KT::add_tests suite("execution", ::tests);

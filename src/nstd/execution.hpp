@@ -48,12 +48,12 @@
 #include "nstd/execution/sender_base.hpp"
 #include "nstd/execution/sender_traits.hpp"
 #include "nstd/execution/connect.hpp"
+#include "nstd/execution/get_completion_scheduler.hpp"
+#include "nstd/execution/schedule.hpp"
+#include "nstd/execution/just.hpp"
 
 #if 0
 //-dk:TODO
-#include "nstd/execution/get_completion_scheduler.hpp"
-#include "nstd/execution/sechedule.hpp"
-#include "nstd/execution/just.hpp"
 #include "nstd/execution/transfer_just.hpp"
 #include "nstd/execution/on.hpp"
 #include "nstd/execution/lazy_on.hpp"
