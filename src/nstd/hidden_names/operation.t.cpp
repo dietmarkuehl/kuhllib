@@ -43,15 +43,27 @@ namespace test_declarations {
     namespace {
         template <typename...> struct variant;
         template <typename...> struct tuple;
-        struct action_t {};
+        template <typename...> struct var;
+        template <typename...> struct tup;
+        template <int> struct action_t {};
 
         template <typename R>
-        auto tag_invoke(action_t, int arg, R&& receiver) {
+        auto tag_invoke(action_t<1>, int arg, R&& receiver) {
             EX::set_value(UT::forward<R>(receiver), arg);
         } 
+        inline constexpr HN::operation<action_t<1>, TD::variant<TD::tuple<int>>, TD::variant<std::exception_ptr>>
+            action1;
 
-        inline constexpr HN::operation<action_t, TD::variant<TD::tuple<int>>, TD::tuple<std::exception_ptr>>
-            action;
+        template <int> struct type {
+            int value = 0;
+            auto operator== (type const&) const -> bool = default;
+        };
+        template <typename R>
+        auto tag_invoke(action_t<2>, TD::type<0> a0, TD::type<1> a1, TD::type<2> a2, R&& receiver) {
+            EX::set_value(UT::forward<R>(receiver), a0, a1, a2);
+        } 
+        inline constexpr HN::operation<action_t<2>, TD::variant<TD::tuple<TD::type<0>, TD::type<1>, TD::type<2>>>, TD::variant<std::exception_ptr>>
+            action2;
     }
 }
 
@@ -59,21 +71,70 @@ namespace test_declarations {
 
 static KT::testcase const tests[] = {
     KT::expect_success("factory creation of a sender", []{
-            auto sender = TD::action(17);
+            auto sender = TD::action1(17);
             /*auto res =*/ EX::sync_wait(UT::move(sender));
             return KT::use(sender)
                 && EX::sender<decltype(sender)>
+                && KT::type<decltype(sender)::value_types<TD::var, TD::tup>>
+                    == KT::type<TD::var<TD::tup<int>>>
+                && KT::type<decltype(sender)::error_types<TD::var>>
+                    == KT::type<TD::var<std::exception_ptr>>
                 ;
         }),
-#if 0
     KT::expect_success("direct creation with a sender", []{
-            auto sender = TD::action(EX::just(17));
+            auto sender = TD::action1(EX::just(17));
             /*auto res =*/ EX::sync_wait(UT::move(sender));
             return KT::use(sender)
                 && EX::sender<decltype(sender)>
                 ;
         }),
-#endif
+    KT::expect_success("combining sender with a pipe", []{
+            auto sender = EX::just(17) | TD::action1();
+            /*auto res =*/ EX::sync_wait(UT::move(sender));
+            return KT::use(sender)
+                //&& EX::sender<decltype(sender)>
+                ;
+        }),
+    KT::expect_success("factory creation of a 3 arg sender", []{
+            auto sender = TD::action2(TD::type<0>{42}, TD::type<1>{1}, TD::type<2>{17});
+            EX::sync_wait(UT::move(sender));
+            return EX::sender<decltype(sender)>
+                && KT::type<decltype(sender)::value_types<TD::var, TD::tup>>
+                    == KT::type<TD::var<TD::tup<TD::type<0>, TD::type<1>, TD::type<2>>>>
+                && KT::type<decltype(sender)::error_types<TD::var>>
+                    == KT::type<TD::var<std::exception_ptr>>
+                ;
+        }),
+    KT::expect_success("combining 1 arg sender with 2 args for a 3 arg sender", []{
+            auto sender = EX::just(TD::type<2>{17}) | TD::action2(TD::type<0>{42}, TD::type<1>{1});
+            EX::sync_wait(UT::move(sender));
+            return EX::sender<decltype(sender)>
+                && KT::type<decltype(sender)::value_types<TD::var, TD::tup>>
+                    == KT::type<TD::var<TD::tup<TD::type<0>, TD::type<1>, TD::type<2>>>>
+                && KT::type<decltype(sender)::error_types<TD::var>>
+                    == KT::type<TD::var<std::exception_ptr>>
+                ;
+        }),
+    KT::expect_success("combining 2 arg sender with 1 args for a 3 arg sender", []{
+            auto sender = EX::just(TD::type<1>{1}, TD::type<2>{17}) | TD::action2(TD::type<0>{42});
+            EX::sync_wait(UT::move(sender));
+            return EX::sender<decltype(sender)>
+                && KT::type<decltype(sender)::value_types<TD::var, TD::tup>>
+                    == KT::type<TD::var<TD::tup<TD::type<0>, TD::type<1>, TD::type<2>>>>
+                && KT::type<decltype(sender)::error_types<TD::var>>
+                    == KT::type<TD::var<std::exception_ptr>>
+                ;
+        }),
+    KT::expect_success("combining 3 arg sender with 0 args for a 3 arg sender", []{
+            auto sender = EX::just(TD::type<0>{0}, TD::type<1>{1}, TD::type<2>{17}) | TD::action2();
+            EX::sync_wait(UT::move(sender));
+            return EX::sender<decltype(sender)>
+                && KT::type<decltype(sender)::value_types<TD::var, TD::tup>>
+                    == KT::type<TD::var<TD::tup<TD::type<0>, TD::type<1>, TD::type<2>>>>
+                && KT::type<decltype(sender)::error_types<TD::var>>
+                    == KT::type<TD::var<std::exception_ptr>>
+                ;
+        }),
 };
 
 static KT::add_tests suite("operation", ::tests);

@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.0.0)
 project(kuhllib VERSION 0.1.0)
 
 if(CMAKE_COMPILER_IS_GNUCXX)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Werror -std=c++2a")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Werror -std=c++2a -fconcepts-diagnostics-depth=2")
 endif()
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Werror -std=c++20")
@@ -104,6 +104,8 @@ list(APPEND kuhllib_components
     src/nstd/hidden_names/derives_from_sender_base
     src/nstd/hidden_names/has_sender_types
     src/nstd/hidden_names/movable_value
+    src/nstd/hidden_names/operation
+    src/nstd/hidden_names/type_list
     src/nstd/iterator/bidirectional_iterator
     src/nstd/iterator/bidirectional_iterator_tag
     src/nstd/iterator/forward_iterator

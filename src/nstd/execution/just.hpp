@@ -29,6 +29,7 @@
 #include "nstd/execution/connect.hpp"
 #include "nstd/execution/receiver.hpp"
 #include "nstd/execution/receiver_of.hpp"
+#include "nstd/execution/sender_base.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/start.hpp"
 #include "nstd/hidden_names/movable_value.hpp"
@@ -44,6 +45,7 @@
 namespace nstd::hidden_names {
     template <typename... A>
     struct just_sender
+        : ::nstd::execution::piped_sender_base
     {
         template <template <typename...> class V, template <typename...> class T>
         using value_types = V<T<A...>>;
@@ -98,7 +100,7 @@ namespace nstd::execution {
                                       A> && ...))
     {
         return ::nstd::hidden_names::just_sender<::nstd::type_traits::remove_cvref_t<A>...>{
-            ::std::make_tuple(::nstd::utility::forward<A>(a)...)
+            {}, ::std::make_tuple(::nstd::utility::forward<A>(a)...)
             };
     }
 }
