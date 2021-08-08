@@ -1,4 +1,4 @@
-// nstd/type_traits/remove_cvref.hpp                                  -*-C++-*-
+// nstd/type_traits/type_identity.cpp                                 -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,33 +23,8 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_TYPE_TRAITS_REMOVE_CVREF
-#define INCLUDED_NSTD_TYPE_TRAITS_REMOVE_CVREF
-
-#include "nstd/type_traits/remove_cv.hpp"
-#include "nstd/type_traits/remove_reference.hpp"
+#include "nstd/type_traits/type_identity.hpp"
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::type_traits {
-    template <typename>
-    struct remove_cvref;
-
-    template <typename T>
-    using remove_cvref_t = typename ::nstd::type_traits::remove_cvref<T>::type;
-}
-
-// ----------------------------------------------------------------------------
-
-template <typename T>
-struct nstd::type_traits::remove_cvref
-{
-    using type = ::nstd::type_traits::remove_cv_t<::nstd::type_traits::remove_reference_t<T>>;
-
-    remove_cvref() = default;
-    remove_cvref(type did_you_mean_to_use_remove_cvref_t) = delete;
-};
-
-// ----------------------------------------------------------------------------
-
-#endif
+int type_identity_dummy = 0;
