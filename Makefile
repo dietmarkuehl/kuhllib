@@ -52,7 +52,7 @@ verbose: cmake
 check: build test
 
 .PHONY: test
-test:
+test: build
 	cd $(BUILDDIR); $(MAKE) test
 
 .PHONY: all

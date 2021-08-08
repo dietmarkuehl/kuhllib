@@ -36,7 +36,7 @@ namespace nstd::type_traits {
         type_identity(type did_you_mean_to_use_type_identity_t) = delete;
     };
     template <typename T>
-    using type_identity_t = ::nstd::type_traits::type_identity<T>::type;
+    using type_identity_t = typename ::nstd::type_traits::type_identity<T>::type;
 }
 
 // ----------------------------------------------------------------------------

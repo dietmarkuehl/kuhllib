@@ -27,13 +27,16 @@
 #include "nstd/execution/just.hpp"
 #include "nstd/execution/sender.hpp"
 #include "nstd/execution/sync_wait.hpp"
+#include "nstd/thread/sync_wait.hpp"
 #include "nstd/utility/move.hpp"
 #include "kuhl/test.hpp"
+#include <thread>
 
 namespace test_declarations {}
 namespace EX = ::nstd::execution;
 namespace TD = ::test_declarations;
 namespace HN = ::nstd::hidden_names;
+namespace TT = ::nstd::this_thread;
 namespace UT = ::nstd::utility;
 namespace KT = ::kuhl::test;
 
@@ -48,8 +51,8 @@ namespace test_declarations {
         template <int> struct action_t {};
 
         template <typename R>
-        auto tag_invoke(action_t<1>, int arg, R&& receiver) {
-            EX::set_value(UT::forward<R>(receiver), arg);
+        auto tag_invoke(action_t<1>, R&& receiver, int arg) {
+            EX::set_value(UT::move(receiver.d_receiver), arg);
         } 
         inline constexpr HN::operation<action_t<1>, TD::variant<TD::tuple<int>>, TD::variant<std::exception_ptr>>
             action1;
@@ -59,11 +62,32 @@ namespace test_declarations {
             auto operator== (type const&) const -> bool = default;
         };
         template <typename R>
-        auto tag_invoke(action_t<2>, TD::type<0> a0, TD::type<1> a1, TD::type<2> a2, R&& receiver) {
-            EX::set_value(UT::forward<R>(receiver), a0, a1, a2);
+        auto tag_invoke(action_t<2>, R&& receiver, TD::type<0> a0, TD::type<1> a1, TD::type<2> a2) {
+            EX::set_value(UT::move(receiver.d_receiver), a0, a1, a2);
         } 
         inline constexpr HN::operation<action_t<2>, TD::variant<TD::tuple<TD::type<0>, TD::type<1>, TD::type<2>>>, TD::variant<std::exception_ptr>>
             action2;
+    }
+}
+
+namespace nstd::hidden_names {
+    template <typename R>
+    struct operation_base<TD::action_t<3>, R, int> {
+        R d_receiver;
+    };
+
+}
+
+namespace test_declarations {
+    namespace {
+        template <typename R>
+        auto tag_invoke(TD::action_t<3>, R&& receiver, int value) {
+            ::std::thread([ptr = &receiver, value]{
+                EX::set_value(UT::move(ptr->d_receiver), value * 2);
+            }).detach();
+        }
+        inline constexpr HN::operation<TD::action_t<3>, TD::variant<TD::tuple<int>>, TD::variant<::std::exception_ptr>>
+            action3;
     }
 }
 
@@ -133,6 +157,15 @@ static KT::testcase const tests[] = {
                     == KT::type<TD::var<TD::tup<TD::type<0>, TD::type<1>, TD::type<2>>>>
                 && KT::type<decltype(sender)::error_types<TD::var>>
                     == KT::type<TD::var<std::exception_ptr>>
+                ;
+        }),
+    KT::expect_success("test use of state in base class", []{
+            auto sender = TD::action3(4);
+            auto res = TT::sync_wait(UT::move(sender));
+            return KT::use(res)
+                && KT::type<decltype(res)> == KT::type<::std::optional<::std::variant<int>>>
+                && res
+                && ::std::get<0>(*res) == 8
                 ;
         }),
 };

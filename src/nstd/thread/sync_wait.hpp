@@ -34,6 +34,7 @@
 #include "nstd/execution/set_done.hpp"
 #include "nstd/execution/start.hpp"
 #include "nstd/execution/connect.hpp"
+#include "nstd/execution/receiver_of.hpp"
 #include "nstd/execution/get_completion_scheduler.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
 #include "nstd/type_traits/type_identity.hpp"
@@ -93,16 +94,18 @@ namespace nstd::this_thread {
             }
 
             template <typename T>
-            friend auto tag_invoke(::nstd::execution::set_value_t, receiver const& r, T&& t) noexcept {
+            friend auto tag_invoke(::nstd::execution::set_value_t, receiver  r, T&& t) noexcept {
                 (*r.res) = t;
                 r.complete();
             }
-            friend auto tag_invoke(::nstd::execution::set_error_t, receiver const& r, ::std::exception_ptr ex) noexcept {
+            template <typename... T>
+            friend auto tag_invoke(::nstd::execution::set_value_t, receiver , T&&...) noexcept {}
+            friend auto tag_invoke(::nstd::execution::set_error_t, receiver r, ::std::exception_ptr ex) noexcept {
                 (*r.ex) = ex;
                 r.complete();
             }
             template <typename E>
-            friend auto tag_invoke(::nstd::execution::set_error_t, receiver const& r, E ex) noexcept {
+            friend auto tag_invoke(::nstd::execution::set_error_t, receiver r, E ex) noexcept {
                 try { throw ex; }
                 catch (...) { (*r.ex) = ::std::current_exception(); }
                 r.complete();
@@ -121,8 +124,9 @@ namespace nstd::this_thread {
             bool                                  done(false);
             type                                  res(std::nullopt);
             ::std::optional<::std::exception_ptr> ex;
-            receiver<type>                        r{&bottleneck, &condition, &done, &res, &ex};
-            auto                                  state = ::nstd::execution::connect(s, r);
+
+            auto state = ::nstd::execution::connect(::nstd::utility::forward<Sender>(s),
+                                                    receiver<type>{&bottleneck, &condition, &done, &res, &ex});
             ::nstd::execution::start(state);
 
             ::std::unique_lock kerberos(bottleneck);

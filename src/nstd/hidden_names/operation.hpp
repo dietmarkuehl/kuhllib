@@ -58,6 +58,12 @@ namespace nstd::hidden_names {
     template <typename Tag, typename Results, typename Errors>
     class operation;
 
+    // specialize operation_base as needed: it is a base of the 
+    // It needs to contain a members with the receiver:
+    // Receiver d_receiver;
+    // All template arguments are remove_cvref'ed
+    template <typename Tag, typename Receiver, typename... Args>
+    struct operation_base;
     template <typename Tag, typename Receiver, typename... Args>
     struct operation_receiver;
 }
@@ -83,16 +89,26 @@ public:
 // ----------------------------------------------------------------------------
 
 template <typename Tag, typename Receiver, typename... Args>
-struct nstd::hidden_names::operation_receiver {
+struct nstd::hidden_names::operation_base
+{
+    Receiver d_receiver;
+};
+
+template <typename Tag, typename Receiver, typename... Args>
+struct nstd::hidden_names::operation_receiver
+    : public ::nstd::hidden_names::operation_base<
+        ::nstd::type_traits::remove_cvref_t<Tag>, 
+        ::nstd::type_traits::remove_cvref_t<Receiver>, 
+        ::nstd::type_traits::remove_cvref_t<Args>...>
+{
     ::std::tuple<Args...>                         d_args;
-    ::nstd::type_traits::remove_cvref_t<Receiver> d_receiver;
     template <typename... A>
     friend auto tag_invoke(::nstd::execution::set_value_t, operation_receiver&& r, A&&... a) noexcept {
         ::std::apply([&r, &a...](auto&&... args){
                 ::nstd::tag_invoke(Tag(),
+                r,
                 ::nstd::utility::forward<Args>(args)...,
-                ::nstd::utility::forward<A>(a)...,
-                ::nstd::utility::move(r.d_receiver));
+                ::nstd::utility::forward<A>(a)...);
         }, ::nstd::utility::move(r.d_args));
     }
     friend auto tag_invoke(::nstd::execution::set_error_t, operation_receiver&& r, ::std::exception_ptr ex) noexcept {
@@ -132,8 +148,8 @@ struct nstd::hidden_names::operation<Tag, Results, Errors>::sender
         return ::nstd::execution::connect(
                               ::nstd::utility::move(s.d_sender),
                               operation_receiver<Tag, Receiver, Args...>{
+                                  { ::nstd::utility::forward<Receiver>(r) },
                                   ::nstd::utility::move(s.d_args),
-                                  ::nstd::utility::forward<Receiver>(r)
                               });
     }
 };
