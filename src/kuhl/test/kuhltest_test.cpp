@@ -105,8 +105,10 @@ kuhl::test::run_tests(char const* name, int ac, char *av[],
             }
         }
     }
-    std::cout << name << ": "
-              << success << "/" << count << " succeeded\n";
+    if (false) {
+        std::cout << name << ": "
+                  << success << "/" << count << " succeeded\n";
+    }
     return success == (end - begin)? EXIT_SUCCESS: EXIT_FAILURE;
 }
 

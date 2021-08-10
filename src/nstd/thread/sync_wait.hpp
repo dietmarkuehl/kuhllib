@@ -34,7 +34,6 @@
 #include "nstd/execution/set_done.hpp"
 #include "nstd/execution/start.hpp"
 #include "nstd/execution/connect.hpp"
-#include "nstd/execution/receiver_of.hpp"
 #include "nstd/execution/get_completion_scheduler.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
 #include "nstd/type_traits/type_identity.hpp"
@@ -93,13 +92,14 @@ namespace nstd::this_thread {
                 condition->notify_one();
             }
 
-            template <typename T>
-            friend auto tag_invoke(::nstd::execution::set_value_t, receiver  r, T&& t) noexcept {
+            friend auto tag_invoke(::nstd::execution::set_value_t, receiver  r, Type const& t) noexcept {
                 (*r.res) = t;
                 r.complete();
             }
-            template <typename... T>
-            friend auto tag_invoke(::nstd::execution::set_value_t, receiver , T&&...) noexcept {}
+            friend auto tag_invoke(::nstd::execution::set_value_t, receiver  r, Type&& t) noexcept {
+                (*r.res) = ::nstd::utility::move(t);
+                r.complete();
+            }
             friend auto tag_invoke(::nstd::execution::set_error_t, receiver r, ::std::exception_ptr ex) noexcept {
                 (*r.ex) = ex;
                 r.complete();

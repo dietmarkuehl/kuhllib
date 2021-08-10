@@ -73,4 +73,4 @@ static KT::testcase const tests[] = {
         }),
 };
 
-static KT::add_tests suite("file", ::tests);
+static KT::add_tests suite("open", ::tests);

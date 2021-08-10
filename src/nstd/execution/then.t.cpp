@@ -119,14 +119,6 @@ namespace test_declarations {
         auto tag_invoke(EX::then_t, TD::scheduled_sender<true, Scheduled>&&, Fun&&) {
             return TD::eager_sender<2>();
         }
-
-        struct fun {
-            auto operator()(int r) const -> int { return r; }
-            auto operator()(TD::result r) const -> int { return r.value; }
-            //friend std::ostream& operator<< (std::ostream& os, fun const&){ 
-            //    return os << "fun";
-           // }
-        };
     }
 }
 
@@ -205,55 +197,36 @@ static KT::testcase const tests[] = {
                 && ::std::get<0>(*res).value == 12
                 ;
         }),
-#if 1
-    KT::expect_success("then can be piped 1", []{
-            // auto sender = EX::lazy_then(EX::lazy_then(EX::just(3, 4), [](int a, int b){ return TD::result{a * b}; }), TD::fun());
-            // auto sender = EX::then(EX::just(TD::result{12}), TD::fun());
-            auto sender = EX::lazy_then(EX::just(TD::result{12}), [](TD::result r){ return r.value; });
-            // auto sender = EX::then(EX::just(12), TD::fun());
-            //auto sender = EX::then(EX::just(3, 4), [](int a, int b){ return TD::result{a * b}; })
-            //            | EX::then(TD::fun())
-                        //| EX::then([](TD::result r){ return r.value; })
-                        ;
+    KT::expect_success("then can be chained", []{
+            auto sender = EX::then(EX::then(EX::just(4, 3),
+                                            [](auto a, auto b){ return TD::result{a * b}; }
+                                            ),
+                                   [](TD::result a){  return a.value; }
+                                   //-dk:TODO support [](auto a){  return a.value; }
+                                   );
             auto res = TT::sync_wait(UT::move(sender)); KT::use(res);
+
             return KT::use(sender)
-                && KT::use(TD::fun())
                 && EX::sender<decltype(sender)>
                 && EX::typed_sender<decltype(sender)>
-                //&& KT::type<decltype(sender)::value_types<TD::V, TD::T>> == KT::type<TD::V<TD::T<TD::result>>>
-                //&& KT::type<decltype(res)> == KT::type<::std::optional<::std::variant<TD::result>>>
                 && KT::type<decltype(sender)::value_types<TD::V, TD::T>> == KT::type<TD::V<TD::T<int>>>
-                //&& KT::type<decltype(res)> == KT::type<::std::optional<::std::variant<int>>>
-                //&& res
-                //&& ::std::get<0>(*res) == 12
-                ;
+                && ::std::get<0>(*res) == 12
                 ;
         }),
-#endif
-#if 0
-    KT::expect_success("then can be piped 2", []{
-            //struct fun {
-            //    auto operator()(TD::result r)-> int { return r.value; }
-            //};
+    KT::expect_success("then can be piped", []{
             auto sender = EX::just(3, 4)
                         | EX::then([](int a, int b){ return TD::result{a * b}; })
-                        //| EX::then(fun())
-                        //| EX::then([](TD::result r){ return r.value; })
+                        | EX::then([](TD::result r){ return r.value; })
                         ;
-            //auto res = TT::sync_wait(UT::move(sender));
+            auto res = TT::sync_wait(UT::move(sender));
             return KT::use(sender)
                 && EX::sender<decltype(sender)>
                 && EX::typed_sender<decltype(sender)>
-                //&& KT::use(res)
-                //&& KT::type<decltype(sender)::value_types<TD::V, TD::T>> == KT::type<TD::V<TD::T<TD::result>>>
-                //&& KT::type<decltype(res)> == KT::type<::std::optional<::std::variant<TD::result>>>
-                //&& KT::type<decltype(res)> == KT::type<::std::optional<::std::variant<int>>>
-                //&& res
-                //&& ::std::get<0>(*res) == 12
-                ;
+                && KT::type<decltype(res)> == KT::type<::std::optional<::std::variant<int>>>
+                && res
+                && ::std::get<0>(*res) == 12
                 ;
         }),
-#endif
 };
 
 static KT::add_tests suite("then", ::tests);
