@@ -69,6 +69,12 @@ template <typename Context, typename Sender>
 struct nstd::file::open_sender
     : ::nstd::execution::sender_base
 {
+    template <template <typename...> class V, template <typename...> class T>
+    using value_types = V<T<::nstd::file::descriptor>>;
+    template <template <typename...> class V>
+    using error_types = V<::std::exception_ptr, std::error_code>;
+    static constexpr bool sends_done = true;
+
     Sender                   d_sender;
     Context*                 d_context;
     ::nstd::file::open_flags d_flags;

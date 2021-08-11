@@ -30,6 +30,7 @@
 namespace test_declarations {}
 namespace EX = ::nstd::execution;
 namespace HN = ::nstd::hidden_names;
+namespace TT = ::nstd::this_thread;
 namespace TD = ::test_declarations;
 namespace KT = ::kuhl::test;
 
@@ -132,6 +133,11 @@ static KT::testcase const tests[] = {
         return KT::assert_type_exists<EX::get_completion_scheduler_t<EX::set_value_t>>
             && KT::type<EX::get_completion_scheduler_t<EX::set_value_t> const>
                == KT::type<decltype(EX::get_completion_scheduler<EX::set_value_t>)>
+            ;
+    }),
+    KT::expect_success("sync_wait", []{
+        return KT::assert_type_exists<TT::sync_wait_t>
+            && KT::type<TT::sync_wait_t const> == KT::type<decltype(TT::sync_wait)>
             ;
     }),
     KT::expect_success("just", []{

@@ -25,14 +25,20 @@
 
 #include "nstd/thread/sync_wait.hpp"
 #include "nstd/execution/just.hpp"
+#include "nstd/sender/just_done.hpp"
+#include "nstd/sender/just_error.hpp"
 #include "kuhl/test.hpp"
 #include <optional>
 #include <variant>
+#include <system_error>
+#include <exception>
+#include <stdexcept>
 
 namespace test_declarations {}
 namespace TD = ::test_declarations;
 namespace EX = ::nstd::execution;
 namespace TT = ::nstd::this_thread;
+namespace NET = ::nstd::net;
 namespace KT = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
@@ -45,7 +51,7 @@ namespace test_declarations {
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
-    KT::expect_success("breathing", []{
+    KT::expect_success("sync_wait usage", []{
             auto res = TT::sync_wait(EX::just(64));
             return KT::use(res)
                 && KT::type<decltype(res)> == KT::type<::std::optional<::std::variant<int>>>
@@ -53,6 +59,55 @@ static KT::testcase const tests[] = {
                 && ::std::get<0>(*res) == 64
                 ;
         }),
+    KT::expect_success("sync_wait error_code", []{
+        try {
+            TT::sync_wait(NET::just_error(::std::error_code(0, ::std::generic_category())));
+            return false;
+        }
+        catch (::std::error_code const&) {
+            //-dk:TODO error_code should become a system_error
+            return true;
+        }
+        catch (::std::system_error const&) {
+            return true;
+        }
+        catch (...) {
+            return false;
+        }
+    }),
+    KT::expect_success("sync_wait exception object", []{
+        try {
+            TT::sync_wait(NET::just_error(::std::runtime_error("error")));
+            return false;
+        }
+        catch (::std::runtime_error const&) {
+            return true;
+        }
+        catch (...) {
+            return false;
+        }
+    }),
+    KT::expect_success("sync_wait exception_ptr", []{
+        try {
+            TT::sync_wait(NET::just_error(::std::make_exception_ptr(::std::logic_error("error"))));
+            return false;
+        }
+        catch (::std::logic_error const&) {
+            return true;
+        }
+        catch (...) {
+            return false;
+        }
+    }),
+    KT::expect_success("sync_wait cancel", []{
+        try {
+            TT::sync_wait(NET::just_done());
+            return true;
+        }
+        catch (...) {
+            return false;
+        }
+    }),
 };
 
 static KT::add_tests suite("sync_wait", ::tests);

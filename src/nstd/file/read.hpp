@@ -121,6 +121,12 @@ namespace nstd::file {
     struct read_sender
         : ::nstd::execution::piped_sender_base
     {
+        template <template <typename...> class V, template <typename...> class T>
+        using value_types = V<T<::nstd::file::descriptor, ::std::size_t>>;
+        template <template <typename...> class V>
+        using error_types = V<::std::exception_ptr>;
+        static constexpr bool sends_done = true;
+
         Context*                       d_context;
         ::nstd::type_traits::remove_cvref_t<Sender>  d_sender;
 

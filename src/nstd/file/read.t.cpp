@@ -28,12 +28,13 @@
 #include "nstd/net/io_context.hpp"
 #include "nstd/sender/just.hpp"
 #include "nstd/sender/then.hpp"
-#include "nstd/execution/sync_wait.hpp"
+#include "nstd/thread/sync_wait.hpp"
 #include <thread>
 #include "kuhl/test.hpp"
 
 namespace File = ::nstd::file;
 namespace Ex   = ::nstd::execution;
+namespace TT   = ::nstd::this_thread;
 namespace Net  = ::nstd::net;
 namespace KT   = ::kuhl::test;
 
@@ -45,7 +46,7 @@ static KT::testcase const tests[] = {
             //-dk:TODO enable test
             Net::io_context ctxt;
             //-dk:TODO ::std::jthread thread([&cxt]{ ctxt.run(); });
-            Ex::sync_wait(Net::just("/dev/null")
+            TT::sync_wait(Net::just("/dev/null")
                           | File::open(ctxt, File::open_flags::in)
                           | File::read<10>(ctxt)
                           | Net::then([](::std::byte*, ::std::size_t){})

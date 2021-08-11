@@ -25,15 +25,18 @@
 
 #include "nstd/file/open.hpp"
 #include "nstd/net/io_context.hpp"
-#include "nstd/sender/just.hpp"
-#include "nstd/sender/then.hpp"
-#include "nstd/execution/sync_wait.hpp"
+#include "nstd/execution/just.hpp"
+#include "nstd/execution/then.hpp"
+#include "nstd/thread/sync_wait.hpp"
 #include "nstd/utility/move.hpp"
 #include "kuhl/test.hpp"
+#include <string_view>
 #include <thread>
+#include <iostream>
 
 namespace File = ::nstd::file;
 namespace EX   = ::nstd::execution;
+namespace TT   = ::nstd::this_thread;
 namespace UT   = ::nstd::utility;
 namespace NET  = ::nstd::net;
 namespace KT   = ::kuhl::test;
@@ -45,29 +48,36 @@ static KT::testcase const tests[] = {
             bool            value(false);
             NET::io_context ctxt;
             ::std::jthread thread([&ctxt]{ ctxt.run_one(); });
-            auto x = NET::just("/dev/null")
+            auto x = EX::just(::std::string_view("/dev/null"))
                    | File::open_in(ctxt)
-                   | NET::then([&value](File::descriptor&&){ value = true; })
+                   | EX::then([&value](File::descriptor&&){ return value = true; })
                    ;
-            EX::sync_wait(UT::move(x));
+            TT::sync_wait(UT::move(x));
             return value;
         }),
     KT::expect_success("file open() non-existing file", []{
             bool            value(false);
             NET::io_context ctxt;
             ::std::jthread thread([&ctxt]{ ctxt.run_one(); });
-            auto x = NET::just("/dev/nill")
+            auto x = EX::just(::std::string_view("/dev/nill"))
                    | File::open_in(ctxt)
-                   | NET::then([&value](File::descriptor&&){ value = true; })
+                   | EX::then([&value](File::descriptor&&){ return value = true; })
                    ;
             try {
-                EX::sync_wait(UT::move(x));
+                TT::sync_wait(UT::move(x));
+                std::cout << "try\n";
                 return false;
             }
+            catch (::std::error_code const&) {
+                std::cout << "catch(error_code): " << std::boolalpha << value << "\n";
+                return value == false;
+            }
             catch (::std::system_error const&) {
+                std::cout << "catch(system_error): " << std::boolalpha << value << "\n";
                 return value == false;
             }
             catch (...) {
+                std::cout << "catch(...);\n";
                 return false;
             }
         }),

@@ -73,7 +73,6 @@ list(APPEND kuhllib_components
     src/nstd/execution/set_error
     src/nstd/execution/set_value
     src/nstd/execution/start
-    src/nstd/execution/sync_wait
     src/nstd/execution/then
     src/nstd/execution/typed_sender
     src/nstd/executor/associated_allocator

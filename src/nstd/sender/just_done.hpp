@@ -33,6 +33,7 @@
 #include "nstd/type_traits/remove_cvref.hpp"
 #include "nstd/utility/move.hpp"
 #include "nstd/utility/forward.hpp"
+#include <exception>
 
 // ----------------------------------------------------------------------------
 
@@ -59,6 +60,12 @@ class nstd::net::just_done
     : public ::nstd::execution::piped_sender_base
 {
 public:
+    template <template <typename...> class V, template <typename...> class T>
+    using value_types = V<T<int>>;
+    template <template <typename...> class V>
+    using error_types = V<::std::exception_ptr>;
+    static constexpr bool sends_done = true;
+
     template <typename Receiver>
     friend auto tag_invoke(::nstd::execution::connect_t, just_done&&, Receiver&& receiver)
          -> ::nstd::net::just_done_state<Receiver> {

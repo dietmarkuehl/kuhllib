@@ -51,6 +51,7 @@
 #include "nstd/execution/get_completion_scheduler.hpp"
 #include "nstd/execution/schedule.hpp"
 #include "nstd/execution/just.hpp"
+#include "nstd/thread/sync_wait.hpp"
 
 #if 0
 //-dk:TODO
@@ -87,8 +88,7 @@
 #include "nstd/execution/unschedule.hpp"
 #include "nstd/execution/ensure_started.hpp"
 #include "nstd/execution/start_detacted.hpp"
-#include "nstd/execution/sync_wait.hpp"
-#include "nstd/execution/sync_wait_with_variant.hpp"
+#include "nstd/thread/sync_wait_with_variant.hpp"
 #include "nstd/execution/execute.hpp"
 #endif
 

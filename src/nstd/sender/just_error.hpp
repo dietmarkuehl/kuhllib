@@ -35,6 +35,7 @@
 #include "nstd/utility/forward.hpp"
 #include <cstddef>
 #include <string_view>
+#include <exception>
 
 // ----------------------------------------------------------------------------
 
@@ -71,6 +72,12 @@ class nstd::net::just_error_sender
     : public ::nstd::execution::piped_sender_base
 {
 public:
+    template <template <typename...> class V, template <typename...> class T>
+    using value_types = V<T<int>>;
+    template <template <typename...> class V>
+    using error_types = V<::std::exception_ptr>;
+    static constexpr bool sends_done = false;
+
     ::nstd::type_traits::remove_cvref_t<Value> d_value;
 
     template <typename Receiver>
