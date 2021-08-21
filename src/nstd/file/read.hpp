@@ -94,18 +94,17 @@ namespace nstd::file {
             ::std::cout << "buffer=" << +this->d_buffer << " "
                         << "iovec=" << this->d_iovec[0].iov_base << "/" << this->d_iovec[0].iov_len << "\n";
             this->d_context->submit([this, fd](io_uring_sqe& elem){
-                elem = io_uring_sqe{
-                    .opcode     = IORING_OP_READV,
-                    .flags      = {},
-                    .ioprio     = {},
-                    .fd         = fd,
-                    .off        = {},
-                    .addr       = reinterpret_cast<decltype(elem.addr)>(+this->d_iovec),
-                    .len        = 1u,
-                    .open_flags = {},
-                    .user_data  = reinterpret_cast<decltype(elem.user_data)>(static_cast<::nstd::net::io_context::io_base*>(this)),
-                    .__pad2     = {}
-                };
+                elem = io_uring_sqe{};
+                elem.opcode     = IORING_OP_READV;
+                //    .flags      = {},
+                //    .ioprio     = {},
+                elem.fd         = fd,
+                //    .off        = {},
+                elem.addr       = reinterpret_cast<decltype(elem.addr)>(+this->d_iovec);
+                elem.len        = 1u;
+                //    .open_flags = {},
+                elem.user_data  = reinterpret_cast<decltype(elem.user_data)>(static_cast<::nstd::net::io_context::io_base*>(this));
+                //    .__pad2     = {}
             });
         }
         friend auto tag_invoke(::nstd::execution::set_error_t, read_receiver&& r, auto&& err) noexcept -> void {

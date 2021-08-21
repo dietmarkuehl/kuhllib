@@ -34,7 +34,6 @@
 #include "nstd/execution/set_error.hpp"
 #include "nstd/execution/set_done.hpp"
 #include "nstd/net/io_context.hpp"
-#include "nstd/sender/then.hpp"
 #include "nstd/utility/move.hpp"
 #include "nstd/utility/forward.hpp"
 #include <string_view>

@@ -122,10 +122,8 @@ list(APPEND kuhllib_components
     src/nstd/projection/identity
     src/nstd/projection/model_readable
     src/nstd/projection/model_value
-    src/nstd/sender/just
     src/nstd/sender/just_done
     src/nstd/sender/just_error
-    src/nstd/sender/then
     src/nstd/stop_token/stoppable_token
     src/nstd/thread/sync_wait
     src/nstd/type_traits/add_const
