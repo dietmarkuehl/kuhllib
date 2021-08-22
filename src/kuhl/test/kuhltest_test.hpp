@@ -75,7 +75,8 @@ namespace kuhl
                       kuhl::test::testcase const (&tests)[NoTests]);
 
         template <typename T>
-        bool use(T const&);
+        bool use(T&&);
+        inline bool use(bool); // work-around for clang bug
     }
 }
 
@@ -363,7 +364,12 @@ kuhl::test::run_tests(char const* name, int ac, char* av[],
 // ----------------------------------------------------------------------------
 
 template <typename T>
-bool kuhl::test::use(T const&)
+bool kuhl::test::use(T&&)
+{
+    return true;
+}
+
+bool kuhl::test::use(bool)
 {
     return true;
 }

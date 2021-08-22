@@ -1,4 +1,4 @@
-// nstd/net/io_context.cpp                                            -*-C++-*-
+// nstd/net/basic_socket_acceptor.hpp                                 -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,6 +23,46 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/net/io_context.hpp"
+#ifndef INCLUDED_NSTD_NET_BASIC_SOCKET_ACCEPTOR
+#define INCLUDED_NSTD_NET_BASIC_SOCKET_ACCEPTOR
 
-int nstd_net_io_context_dummy = 0;
+#include "nstd/net/netfwd.hpp"
+#include "nstd/net/io_context.hpp"
+#include "nstd/net/socket_base.hpp"
+
+// ----------------------------------------------------------------------------
+
+namespace nstd::net {
+    template <typename AcceptableProtocol, typename Context>
+    class basic_socket_acceptor;
+}
+
+// ----------------------------------------------------------------------------
+
+template <typename AcceptableProtocol, typename Context>
+class nstd::net::basic_socket_acceptor
+    : public ::nstd::net::socket_base
+{
+private:
+    Context* d_context;
+
+public:
+    using native_handle_type = int;
+    using protocol_type = AcceptableProtocol;
+
+    explicit basic_socket_acceptor(Context& context);
+
+    auto is_open() const -> bool { return false; }
+};
+
+// ----------------------------------------------------------------------------
+
+template <typename AcceptableProtocol, typename Context>
+nstd::net::basic_socket_acceptor<AcceptableProtocol, Context>::basic_socket_acceptor(Context& context)
+    : d_context(&context)
+{
+}
+
+// ----------------------------------------------------------------------------
+
+#endif

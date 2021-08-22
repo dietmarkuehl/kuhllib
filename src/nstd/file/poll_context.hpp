@@ -1,4 +1,4 @@
-// nstd/net/io_context.cpp                                            -*-C++-*-
+// nstd/file/poll_context.hpp                                         -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,6 +23,21 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/net/io_context.hpp"
+#ifndef INCLUDED_NSTD_FILE_POLL_CONTEXT
+#define INCLUDED_NSTD_FILE_POLL_CONTEXT
 
-int nstd_net_io_context_dummy = 0;
+// ----------------------------------------------------------------------------
+
+namespace nstd::file {
+    class poll_context; // I/O context based on [e]poll()
+}
+
+// ----------------------------------------------------------------------------
+
+class nstd::file::poll_context
+{
+};
+
+// ----------------------------------------------------------------------------
+
+#endif

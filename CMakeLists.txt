@@ -90,7 +90,9 @@ list(APPEND kuhllib_components
     src/nstd/file/open
     src/nstd/file/open_flags
     src/nstd/file/read
+    src/nstd/file/poll_context
     src/nstd/file/ring
+    src/nstd/file/ring_context
     src/nstd/functional/bind
     src/nstd/functional/equal_to
     src/nstd/functional/invoke
@@ -114,8 +116,11 @@ list(APPEND kuhllib_components
     src/nstd/iterator/iterator_traits
     src/nstd/memory/addressof
     src/nstd/memory/uninitialized_default_construct
+    src/nstd/net/basic_socket_acceptor
     src/nstd/net/io_context
     src/nstd/net/netfwd
+    src/nstd/net/socket_base
+    src/nstd/net/tcp
     src/nstd/new/new
     src/nstd/operators/equality
     src/nstd/operators/relational

@@ -1,4 +1,4 @@
-// nstd/net/io_context.cpp                                            -*-C++-*-
+// nstd/net/socket_base.t.cpp                                         -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,6 +23,29 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/net/io_context.hpp"
+#include "nstd/net/socket_base.hpp"
+#include "kuhl/test.hpp"
 
-int nstd_net_io_context_dummy = 0;
+namespace test_declarations {}
+namespace TD = ::test_declarations;
+namespace KT = ::kuhl::test;
+namespace NN = ::nstd::net;
+
+// ----------------------------------------------------------------------------
+
+namespace test_declarations {
+    namespace {
+    }
+}
+
+// ----------------------------------------------------------------------------
+
+static KT::testcase const tests[] = {
+    KT::expect_success("breathing", []{
+            NN::socket_base base;
+            return KT::use(base)
+                ;
+        }),
+};
+
+static KT::add_tests suite("socket_base", ::tests);

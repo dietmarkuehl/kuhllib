@@ -1,4 +1,4 @@
-// nstd/net/io_context.cpp                                            -*-C++-*-
+// nstd/file/ring_context.t.cpp                                       -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,6 +23,29 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/net/io_context.hpp"
+#include "nstd/file/ring_context.hpp"
+#include "kuhl/test.hpp"
 
-int nstd_net_io_context_dummy = 0;
+namespace test_declarations {}
+namespace TD = ::test_declarations;
+namespace KT = ::kuhl::test;
+namespace NF = ::nstd::file;
+
+// ----------------------------------------------------------------------------
+
+namespace test_declarations {
+    namespace {
+    }
+}
+
+// ----------------------------------------------------------------------------
+
+static KT::testcase const tests[] = {
+    KT::expect_success("breathing", []{
+            NF::ring_context context;
+            return KT::use(context)
+                ;
+        }),
+};
+
+static KT::add_tests suite("ring_context", ::tests);

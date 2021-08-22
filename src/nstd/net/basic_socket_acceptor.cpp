@@ -1,4 +1,4 @@
-// nstd/net/io_context.cpp                                            -*-C++-*-
+// nstd/net/basic_socket_acceptor.cpp                                 -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,6 +23,8 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/net/io_context.hpp"
+#include "nstd/net/basic_socket_acceptor.hpp"
 
-int nstd_net_io_context_dummy = 0;
+// ----------------------------------------------------------------------------
+
+int basic_socket_acceptor_dummy = 0;

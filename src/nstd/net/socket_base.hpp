@@ -1,4 +1,4 @@
-// nstd/net/io_context.cpp                                            -*-C++-*-
+// nstd/net/socket_base.hpp                                           -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,6 +23,26 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/net/io_context.hpp"
+#ifndef INCLUDED_NSTD_NET_SOCKET_BASE
+#define INCLUDED_NSTD_NET_SOCKET_BASE
 
-int nstd_net_io_context_dummy = 0;
+// ----------------------------------------------------------------------------
+
+namespace nstd::net {
+    class socket_base;
+}
+
+// ----------------------------------------------------------------------------
+
+class nstd::net::socket_base
+{
+public:
+    //-dk:TODO define the various member types
+
+    socket_base() = default;
+    ~socket_base() = default;
+};
+
+// ----------------------------------------------------------------------------
+
+#endif
