@@ -29,6 +29,10 @@
 #include "nstd/net/netfwd.hpp"
 #include "nstd/net/io_context.hpp"
 #include "nstd/net/socket_base.hpp"
+#include "nstd/file/descriptor.hpp"
+#include <optional>
+#include <sys/types.h>
+#include <sys/socket.h>
 
 // ----------------------------------------------------------------------------
 
@@ -43,23 +47,51 @@ template <typename AcceptableProtocol, typename Context>
 class nstd::net::basic_socket_acceptor
     : public ::nstd::net::socket_base
 {
-private:
-    Context* d_context;
-
 public:
     using native_handle_type = int;
     using protocol_type = AcceptableProtocol;
 
-    explicit basic_socket_acceptor(Context& context);
+private:
+    Context* d_context;
+    ::std::optional<protocol_type> d_protocol;
+    ::nstd::file::descriptor       d_fd;
 
-    auto is_open() const -> bool { return false; }
+    static auto internal_open(protocol_type) -> ::nstd::file::descriptor;
+
+public:
+    explicit basic_socket_acceptor(Context& context);
+    explicit basic_socket_acceptor(Context& context, protocol_type protocol);
+
+    auto is_open() const -> bool { return bool(this->d_fd); }
+    auto non_blocking() const -> bool { return false; }
+    auto enable_connection_aborted() const -> bool { return false; }
+    auto protocol() const -> protocol_type { return *this->d_protocol; }
 };
 
 // ----------------------------------------------------------------------------
 
 template <typename AcceptableProtocol, typename Context>
+auto
+nstd::net::basic_socket_acceptor<AcceptableProtocol, Context>
+    ::internal_open(protocol_type protocol) -> ::nstd::file::descriptor
+{
+    return ::nstd::file::descriptor(::socket(protocol.family(),
+                                             protocol.type(),
+                                             protocol.protocol()));
+}
+
+template <typename AcceptableProtocol, typename Context>
 nstd::net::basic_socket_acceptor<AcceptableProtocol, Context>::basic_socket_acceptor(Context& context)
     : d_context(&context)
+{
+}
+
+template <typename AcceptableProtocol, typename Context>
+nstd::net::basic_socket_acceptor<AcceptableProtocol, Context>::basic_socket_acceptor(Context& context,
+                                                                                     protocol_type protocol)
+    : d_context(&context)
+    , d_protocol(protocol)
+    , d_fd(internal_open(*this->d_protocol))
 {
 }
 

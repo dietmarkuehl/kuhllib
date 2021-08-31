@@ -1,4 +1,4 @@
-// nstd/net/basic_socket_acceptor.t.cpp                               -*-C++-*-
+// nstd/net/ip/v4_mapped.hpp                                          -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,42 +23,15 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/net/basic_socket_acceptor.hpp"
-#include "nstd/net/ip/tcp.hpp"
-#include "kuhl/test.hpp"
-
-namespace test_declarations {}
-namespace TD = test_declarations;
-namespace KT = ::kuhl::test;
-namespace NN = ::nstd::net;
+#ifndef INCLUDED_NSTD_NET_IP_V4_MAPPED
+#define INCLUDED_NSTD_NET_IP_V4_MAPPED
 
 // ----------------------------------------------------------------------------
 
-namespace test_declarations {
-    namespace {
-    }
+namespace nstd::net::ip {
+    inline constexpr struct v4_mapped_t {} v4_mapped;
 }
 
 // ----------------------------------------------------------------------------
 
-static KT::testcase const tests[] = {
-    KT::expect_success("basic construction", []{
-            NN::io_context                         context;
-            NN::basic_socket_acceptor<NN::ip::tcp> acceptor(context);
-            return KT::use(acceptor)
-                && acceptor.is_open() == false
-                ;
-        }),
-    KT::expect_success("construction with protocol", []{
-            NN::io_context                         context;
-            NN::basic_socket_acceptor<NN::ip::tcp> acceptor(context, NN::ip::tcp::v4());
-            return KT::use(acceptor)
-                && acceptor.is_open() == true
-                && acceptor.non_blocking() == false
-                && acceptor.enable_connection_aborted() == false
-                && acceptor.protocol() == NN::ip::tcp::v4()
-                ;
-        }),
-};
-
-static KT::add_tests suite("basic_socket_acceptor", ::tests);
+#endif

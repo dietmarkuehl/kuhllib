@@ -51,7 +51,7 @@ public:
     ~descriptor();
 
     auto get() const -> int;
-    operator int() const;
+    explicit operator bool() const;
 };
 
 // ----------------------------------------------------------------------------
@@ -88,9 +88,9 @@ inline auto nstd::file::descriptor::get() const -> int
     return this->d_fd;
 }
 
-inline nstd::file::descriptor::operator int() const
+inline nstd::file::descriptor::operator bool() const
 {
-    return this->get();
+    return 0 <= this->get();
 }
 
 // ----------------------------------------------------------------------------

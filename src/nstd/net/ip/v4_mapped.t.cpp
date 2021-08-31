@@ -1,4 +1,4 @@
-// nstd/net/basic_socket_acceptor.t.cpp                               -*-C++-*-
+// nstd/net/ip/v4_mapped.t.cpp                                        -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,42 +23,21 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/net/basic_socket_acceptor.hpp"
-#include "nstd/net/ip/tcp.hpp"
+#include "nstd/net/ip/v4_mapped.hpp"
 #include "kuhl/test.hpp"
 
-namespace test_declarations {}
-namespace TD = test_declarations;
+namespace NI = ::nstd::net::ip;
 namespace KT = ::kuhl::test;
-namespace NN = ::nstd::net;
-
-// ----------------------------------------------------------------------------
-
-namespace test_declarations {
-    namespace {
-    }
-}
 
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
-    KT::expect_success("basic construction", []{
-            NN::io_context                         context;
-            NN::basic_socket_acceptor<NN::ip::tcp> acceptor(context);
-            return KT::use(acceptor)
-                && acceptor.is_open() == false
-                ;
-        }),
-    KT::expect_success("construction with protocol", []{
-            NN::io_context                         context;
-            NN::basic_socket_acceptor<NN::ip::tcp> acceptor(context, NN::ip::tcp::v4());
-            return KT::use(acceptor)
-                && acceptor.is_open() == true
-                && acceptor.non_blocking() == false
-                && acceptor.enable_connection_aborted() == false
-                && acceptor.protocol() == NN::ip::tcp::v4()
+    KT::expect_success("breathing", []{
+            constexpr auto v = NI::v4_mapped;
+            return KT::type<NI::v4_mapped_t const> == KT::type<decltype(NI::v4_mapped)>
+                && KT::use(v)
                 ;
         }),
 };
 
-static KT::add_tests suite("basic_socket_acceptor", ::tests);
+static KT::add_tests suite("v4_mapped", ::tests);

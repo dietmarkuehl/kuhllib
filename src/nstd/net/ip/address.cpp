@@ -1,4 +1,4 @@
-// nstd/net/tcp.cpp                                                   -*-C++-*-
+// nstd/net/ip/address.cpp                                            -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,8 +23,8 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/net/tcp.hpp"
+#include "nstd/net/ip/address.hpp"
 
 // ----------------------------------------------------------------------------
 
-int tcp_dummy = 0;
+int net_ip_address_dummy = 0;

@@ -1,4 +1,4 @@
-// nstd/net/tcp.t.cpp                                                 -*-C++-*-
+// nstd/net/ip/tcp.t.cpp                                              -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,7 +23,7 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/net/tcp.hpp"
+#include "nstd/net/ip/tcp.hpp"
 #include "kuhl/test.hpp"
 
 namespace test_declarations {}
@@ -87,6 +87,18 @@ static KT::testcase const tests[] = {
                 && KT::type<bool> == KT::type<decltype(NI::tcp::v4() != NI::tcp::v4())>
                 && NI::tcp::v4() == NI::tcp::v4()
                 && not(NI::tcp::v4() != NI::tcp::v4())
+                ;
+        }),
+    KT::expect_success("net::ip::tcp::v4() config", []{
+            return AF_INET     == NI::tcp::v4().family()
+                && SOCK_STREAM == NI::tcp::v4().type()
+                && 0           == NI::tcp::v4().protocol()
+                ;
+        }),
+    KT::expect_success("net::ip::tcp::v6() config", []{
+            return AF_INET6    == NI::tcp::v6().family()
+                && SOCK_STREAM == NI::tcp::v6().type()
+                && 0           == NI::tcp::v6().protocol()
                 ;
         }),
 };

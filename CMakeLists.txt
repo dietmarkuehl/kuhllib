@@ -116,11 +116,15 @@ list(APPEND kuhllib_components
     src/nstd/iterator/iterator_traits
     src/nstd/memory/addressof
     src/nstd/memory/uninitialized_default_construct
+    src/nstd/net/ip/address
+    src/nstd/net/ip/address_v4
+    src/nstd/net/ip/basic_endpoint
+    src/nstd/net/ip/tcp
+    src/nstd/net/ip/v4_mapped
     src/nstd/net/basic_socket_acceptor
     src/nstd/net/io_context
     src/nstd/net/netfwd
     src/nstd/net/socket_base
-    src/nstd/net/tcp
     src/nstd/new/new
     src/nstd/operators/equality
     src/nstd/operators/relational

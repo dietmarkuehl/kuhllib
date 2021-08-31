@@ -1,4 +1,4 @@
-// nstd/net/tcp.hpp                                                   -*-C++-*-
+// nstd/net/ip/basic_endpoint.cpp                                     -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,41 +23,8 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_NET_TCP
-#define INCLUDED_NSTD_NET_TCP
-
-#include "nstd/net/netfwd.hpp"
+#include "nstd/net/ip/basic_endpoint.hpp"
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::net::ip {
-    class tcp;
-}
-
-// ----------------------------------------------------------------------------
-
-class nstd::net::ip::tcp
-{
-private:
-    explicit constexpr tcp(int) {}
-
-public:
-    using endpoint = ::nstd::net::ip::basic_endpoint<::nstd::net::ip::tcp>;
-    using resolver = ::nstd::net::ip::basic_resolver<::nstd::net::ip::tcp>;
-    using socket = ::nstd::net::basic_stream_socket<::nstd::net::ip::tcp>;
-    using acceptor = ::nstd::net::basic_socket_acceptor<::nstd::net::ip::tcp>;
-    using iostream = ::nstd::net::basic_socket_iostream<::nstd::net::ip::tcp>;
-
-    class no_delay;
-
-    static constexpr auto v4() noexcept -> ::nstd::net::ip::tcp { return ::nstd::net::ip::tcp(0); }
-    static constexpr auto v6() noexcept -> ::nstd::net::ip::tcp { return ::nstd::net::ip::tcp(0); }
-
-    tcp() = delete;
-
-    constexpr auto operator== (tcp const&) const noexcept -> bool = default;
-};
-
-// ----------------------------------------------------------------------------
-
-#endif
+int net_ip_basic_endpoint_dummy = 0;

@@ -79,8 +79,8 @@ auto NF::ring_context::setup(NF::ring_context::queue_size size) -> int
 {
     io_uring_params params{};
     this->d_fd = ::nstd::file::descriptor(io_uring_setup(static_cast<int>(size), &params));
-    if (this->d_fd < 0) {
-        return this->d_fd;
+    if (not this->d_fd) {
+        return this->d_fd.get();
     }
 
     ::std::size_t const smap(params.sq_off.array + params.sq_entries * sizeof(::std::uint32_t));
@@ -89,9 +89,9 @@ auto NF::ring_context::setup(NF::ring_context::queue_size size) -> int
     bool const          single_mmap(params.features & IORING_FEAT_SINGLE_MMAP);
 
     if (!this->d_smem.map(single_mmap? ::std::max(smap, cmap): smap,
-                          this->d_fd, IORING_OFF_SQ_RING)
-        || (!single_mmap && !this->d_cmem.map(cmap, this->d_fd, IORING_OFF_CQ_RING))
-        || !this->d_emem.map(sqmap, this->d_fd, IORING_OFF_SQES)
+                          this->d_fd.get(), IORING_OFF_SQ_RING)
+        || (!single_mmap && !this->d_cmem.map(cmap, this->d_fd.get(), IORING_OFF_CQ_RING))
+        || !this->d_emem.map(sqmap, this->d_fd.get(), IORING_OFF_SQES)
         ) {
             ::std::cout << "mmap error=" << ::std::strerror(errno) << "\n";
         return -1;
@@ -109,7 +109,7 @@ auto NF::ring_context::setup(NF::ring_context::queue_size size) -> int
                                                             params.cq_off.cqes);
     this->d_submission_elements = this->d_emem.at_offset<::io_uring_sqe>(0u);
 
-    return this->d_fd;
+    return this->d_fd.get();
 }
 
 // ----------------------------------------------------------------------------
@@ -132,12 +132,12 @@ auto NF::ring_context::process_result() -> unsigned int
 
 auto NF::ring_context::intern_submit(::std::size_t) -> void
 {
-    io_uring_enter(this->d_fd, 1u, 0u, 0u, ::sigset_t{});
+    io_uring_enter(this->d_fd.get(), 1u, 0u, 0u, ::sigset_t{});
 }
 
 auto NF::ring_context::run_one() -> NF::ring_context::count_type
 {
-    io_uring_enter(this->d_fd, 0u, 1u, IORING_ENTER_GETEVENTS, ::sigset_t{});
+    io_uring_enter(this->d_fd.get(), 0u, 1u, IORING_ENTER_GETEVENTS, ::sigset_t{});
     return process_result();
 }
 

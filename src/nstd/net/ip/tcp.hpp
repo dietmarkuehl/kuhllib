@@ -1,4 +1,4 @@
-// nstd/net/basic_socket_acceptor.t.cpp                               -*-C++-*-
+// nstd/net/ip/tcp.hpp                                                -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,42 +23,46 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/net/basic_socket_acceptor.hpp"
-#include "nstd/net/ip/tcp.hpp"
-#include "kuhl/test.hpp"
+#ifndef INCLUDED_NSTD_NET_IP_TCP
+#define INCLUDED_NSTD_NET_IP_TCP
 
-namespace test_declarations {}
-namespace TD = test_declarations;
-namespace KT = ::kuhl::test;
-namespace NN = ::nstd::net;
+#include "nstd/net/netfwd.hpp"
+#include <sys/socket.h>
 
 // ----------------------------------------------------------------------------
 
-namespace test_declarations {
-    namespace {
-    }
+namespace nstd::net::ip {
+    class tcp;
 }
 
 // ----------------------------------------------------------------------------
 
-static KT::testcase const tests[] = {
-    KT::expect_success("basic construction", []{
-            NN::io_context                         context;
-            NN::basic_socket_acceptor<NN::ip::tcp> acceptor(context);
-            return KT::use(acceptor)
-                && acceptor.is_open() == false
-                ;
-        }),
-    KT::expect_success("construction with protocol", []{
-            NN::io_context                         context;
-            NN::basic_socket_acceptor<NN::ip::tcp> acceptor(context, NN::ip::tcp::v4());
-            return KT::use(acceptor)
-                && acceptor.is_open() == true
-                && acceptor.non_blocking() == false
-                && acceptor.enable_connection_aborted() == false
-                && acceptor.protocol() == NN::ip::tcp::v4()
-                ;
-        }),
+class nstd::net::ip::tcp
+{
+private:
+    int d_family;
+    explicit constexpr tcp(int family): d_family(family) {}
+
+public:
+    using endpoint = ::nstd::net::ip::basic_endpoint<::nstd::net::ip::tcp>;
+    using resolver = ::nstd::net::ip::basic_resolver<::nstd::net::ip::tcp>;
+    using socket = ::nstd::net::basic_stream_socket<::nstd::net::ip::tcp>;
+    using acceptor = ::nstd::net::basic_socket_acceptor<::nstd::net::ip::tcp>;
+    using iostream = ::nstd::net::basic_socket_iostream<::nstd::net::ip::tcp>;
+
+    class no_delay;
+
+    static constexpr auto v4() noexcept -> ::nstd::net::ip::tcp { return ::nstd::net::ip::tcp(AF_INET); }
+    static constexpr auto v6() noexcept -> ::nstd::net::ip::tcp { return ::nstd::net::ip::tcp(AF_INET6); }
+
+    tcp() = delete;
+
+    constexpr auto family() const noexcept -> int { return this->d_family; }
+    constexpr auto type() const noexcept -> int { return SOCK_STREAM; }
+    constexpr auto protocol() const noexcept -> int { return 0; }
+    constexpr auto operator== (tcp const&) const noexcept -> bool = default;
 };
 
-static KT::add_tests suite("basic_socket_acceptor", ::tests);
+// ----------------------------------------------------------------------------
+
+#endif
