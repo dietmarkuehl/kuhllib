@@ -1,4 +1,4 @@
-// nstd/net/ip/address_v4.hpp                                         -*-C++-*-
+// nstd/net/ip/address_v6.hpp                                         -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -27,7 +27,7 @@
 #define INCLUDED_NSTD_NET_IP_ADDRESS_V4
 
 #include "nstd/net/netfwd.hpp"
-#include "nstd/net/ip/v4_mapped.hpp"
+#include "nstd/net/ip/types.hpp"
 #include <system_error>
 #include <iosfwd>
 #include <array>
@@ -39,52 +39,61 @@
 // ----------------------------------------------------------------------------
 
 namespace nstd::net::ip {
-    class address_v4;
+    class address_v6;
 
     template <typename CharT, typename Traits>
     auto operator<< (::std::basic_ostream<CharT, Traits>&,
-                     ::nstd::net::ip::address_v4 const&)
+                     ::nstd::net::ip::address_v6 const&)
         -> ::std::basic_ostream<CharT, Traits>&;
 }
 
 // ----------------------------------------------------------------------------
 
-class nstd::net::ip::address_v4
+class nstd::net::ip::address_v6
 {
 public:
-    using uint_type = ::std::uint_least32_t;
     struct bytes_type
-        : ::std::array<unsigned char, 4>
+        : ::std::array<unsigned char, 16>
     {
         template <typename... T>
         explicit constexpr bytes_type(T... t)
-            : std::array<unsigned char, 4>{{ static_cast<unsigned char>(t)... }}
+            : std::array<unsigned char, 16>{{ static_cast<unsigned char>(t)... }}
         {
         }
     };
 
+
 private:
-    bytes_type d_bytes;
+    bytes_type                     d_bytes;
+    ::nstd::net::ip::scope_id_type d_scope_id;
 
 public:
-    static constexpr auto any() noexcept -> address_v4;
-    static constexpr auto loopback() noexcept -> address_v4;
-    static constexpr auto broadcast() noexcept -> address_v4;
+    static constexpr auto any() noexcept -> address_v6;
+    static constexpr auto loopback() noexcept -> address_v6;
 
-    constexpr address_v4() noexcept = default;
-    constexpr address_v4(address_v4 const&) noexcept = default;
-    constexpr address_v4(bytes_type const&);
-    explicit constexpr address_v4(uint_type);
+    constexpr address_v6() noexcept;
+    constexpr address_v6(address_v6 const&) noexcept = default;
+    constexpr address_v6(bytes_type const&,
+                         ::nstd::net::ip::scope_id_type = {});
 
-    auto operator= (address_v4 const&) noexcept -> address_v4& = default;
-    constexpr auto operator== (address_v4 const&) const -> bool = default;
-    constexpr auto operator<=> (address_v4 const&) const = default;
+    auto operator= (address_v6 const&) noexcept -> address_v6& = default;
+    constexpr auto operator== (address_v6 const&) const -> bool = default;
+    constexpr auto operator<=> (address_v6 const&) const = default;
 
+    auto scope_id(::nstd::net::ip::scope_id_type) noexcept -> void;
+    constexpr auto scope_id() const noexcept -> ::nstd::net::ip::scope_id_type;
     constexpr auto is_unspecified() const noexcept -> bool;
     constexpr auto is_loopback() const noexcept -> bool;
     constexpr auto is_multicast() const noexcept -> bool;
+    constexpr auto is_link_local() const noexcept -> bool;
+    constexpr auto is_site_local() const noexcept -> bool;
+    constexpr auto is_v4_mapped() const noexcept -> bool;
+    constexpr auto is_multicast_node_local() const noexcept -> bool;
+    constexpr auto is_multicast_link_local() const noexcept -> bool;
+    constexpr auto is_multicast_site_local() const noexcept -> bool;
+    constexpr auto is_multicast_org_local() const noexcept -> bool;
+    constexpr auto is_multicast_global() const noexcept -> bool;
     constexpr auto to_bytes() const noexcept -> bytes_type;
-    constexpr auto to_uint() const noexcept -> uint_type;
     template <typename Allocator = ::std::allocator<char>>
     auto to_string(Allocator const& = {}) const
         -> ::std::basic_string<char, ::std::char_traits<char>, Allocator>;
@@ -92,87 +101,85 @@ public:
 
 // ----------------------------------------------------------------------------
 
-inline constexpr nstd::net::ip::address_v4::address_v4(
-    ::nstd::net::ip::address_v4::bytes_type const& bytes)
-    : d_bytes(bytes)
+inline constexpr nstd::net::ip::address_v6::address_v6() noexcept
+    : d_bytes()
+    , d_scope_id()
 {
 }
 
-inline constexpr nstd::net::ip::address_v4::address_v4(
-    ::nstd::net::ip::address_v4::uint_type value)
-    : d_bytes{ (value >> 24) & 0xff, (value >> 16) & 0xff, (value >> 8) & 0xff, (value >> 0) & 0xff }
+inline constexpr nstd::net::ip::address_v6::address_v6(
+    ::nstd::net::ip::address_v6::bytes_type const& bytes,
+    ::nstd::net::ip::scope_id_type                 scope_id)
+    : d_bytes(bytes)
+    , d_scope_id(scope_id)
 {
 }
 
 // ----------------------------------------------------------------------------
 
-inline constexpr auto nstd::net::ip::address_v4::to_bytes() const noexcept
-    -> ::nstd::net::ip::address_v4::bytes_type
+inline constexpr auto nstd::net::ip::address_v6::to_bytes() const noexcept
+    -> ::nstd::net::ip::address_v6::bytes_type
 {
     return this->d_bytes;
 }
 
-inline constexpr auto nstd::net::ip::address_v4::to_uint() const noexcept
-    -> ::nstd::net::ip::address_v4::uint_type
+inline auto nstd::net::ip::address_v6::scope_id(::nstd::net::ip::scope_id_type scope_id) noexcept
+    -> void
 {
-    return (::nstd::net::ip::address_v4::uint_type(this->d_bytes[0]) << 24)
-        |  (::nstd::net::ip::address_v4::uint_type(this->d_bytes[1]) << 16)
-        |  (::nstd::net::ip::address_v4::uint_type(this->d_bytes[2]) <<  8)
-        |  (::nstd::net::ip::address_v4::uint_type(this->d_bytes[3]) <<  0)
-        ;
+    this->d_scope_id = scope_id;
 }
 
-inline constexpr auto nstd::net::ip::address_v4::is_unspecified() const noexcept
-    -> bool
+inline constexpr auto nstd::net::ip::address_v6::scope_id() const noexcept
+    -> ::nstd::net::ip::scope_id_type
 {
-    return this->to_uint() == ::nstd::net::ip::address_v4::uint_type();
+    return this->d_scope_id;
 }
 
-inline constexpr auto nstd::net::ip::address_v4::is_loopback() const noexcept
+inline constexpr auto nstd::net::ip::address_v6::is_unspecified() const noexcept
     -> bool
 {
-    return (this->to_uint() & ::nstd::net::ip::address_v4::uint_type(0xFF000000))
-        == ::nstd::net::ip::address_v4::uint_type(0x7F000000);
+    return true; //-dk:TODO is_unspecified
 }
 
-inline constexpr auto nstd::net::ip::address_v4::is_multicast() const noexcept
+inline constexpr auto nstd::net::ip::address_v6::is_loopback() const noexcept
     -> bool
 {
-    return (this->to_uint() & ::nstd::net::ip::address_v4::uint_type(0xF0000000))
-        == ::nstd::net::ip::address_v4::uint_type(0xE0000000);
+    return true; //-dk:TODO is_loopback
+}
+
+inline constexpr auto nstd::net::ip::address_v6::is_multicast() const noexcept
+    -> bool
+{
+    return true; //-dk:TODO is_multicast
 }
 
 template <typename Allocator>
-inline auto nstd::net::ip::address_v4::to_string(Allocator const& a) const
+inline auto nstd::net::ip::address_v6::to_string(Allocator const& a) const
     -> ::std::basic_string<char, ::std::char_traits<char>, Allocator>
 {
     ::std::ostringstream out;
+    #if 0
     out << int(this->d_bytes[0]) << '.'
         << int(this->d_bytes[1]) << '.'
         << int(this->d_bytes[2]) << '.'
         << int(this->d_bytes[3]);
+        #endif
     auto tmp(out.str());
     return ::std::basic_string<char, ::std::char_traits<char>, Allocator>(tmp.begin(), tmp.end(), a);
 }
 
 // ----------------------------------------------------------------------------
 
-inline constexpr auto nstd::net::ip::address_v4::any() noexcept
-    -> ::nstd::net::ip::address_v4
+inline constexpr auto nstd::net::ip::address_v6::any() noexcept
+    -> ::nstd::net::ip::address_v6
 {
-    return ::nstd::net::ip::address_v4();
+    return ::nstd::net::ip::address_v6();
 }
 
-inline constexpr auto nstd::net::ip::address_v4::loopback() noexcept
-    -> ::nstd::net::ip::address_v4
+inline constexpr auto nstd::net::ip::address_v6::loopback() noexcept
+    -> ::nstd::net::ip::address_v6
 {
-    return ::nstd::net::ip::address_v4(0x7F000001);
-}
-
-inline constexpr auto nstd::net::ip::address_v4::broadcast() noexcept
-    -> ::nstd::net::ip::address_v4
-{
-    return ::nstd::net::ip::address_v4(0xFFFFFFFF);
+    return ::nstd::net::ip::address_v6();
 }
 
 // ----------------------------------------------------------------------------
