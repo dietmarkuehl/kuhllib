@@ -26,6 +26,10 @@
 #ifndef INCLUDED_NSTD_NET_IP_ADDRESS
 #define INCLUDED_NSTD_NET_IP_ADDRESS
 
+#include "nstd/net/ip/address_v4.hpp"
+#include "nstd/net/ip/address_v6.hpp"
+#include <variant>
+
 // ----------------------------------------------------------------------------
 
 namespace nstd::net::ip {
@@ -36,9 +40,113 @@ namespace nstd::net::ip {
 
 class nstd::net::ip::address
 {
+private:
+    enum { v4_index, v6_index };
+    using address_type = ::std::variant<::nstd::net::ip::address_v4, ::nstd::net::ip::address_v6>;
+    address_type d_address;
+
 public:
-    constexpr bool operator== (::nstd::net::ip::address const&) const noexcept = default;
+    constexpr address() noexcept = default;
+    constexpr address(::nstd::net::ip::address_v4 const&) noexcept;
+    constexpr address(::nstd::net::ip::address_v6 const&) noexcept;
+    auto operator=(address const&) noexcept -> ::nstd::net::ip::address& = default;
+    auto operator=(::nstd::net::ip::address_v4 const&) noexcept -> ::nstd::net::ip::address& ;
+    auto operator=(::nstd::net::ip::address_v6 const&) noexcept -> ::nstd::net::ip::address& ;
+
+    constexpr auto operator== (::nstd::net::ip::address const&) const noexcept -> bool = default;
+    constexpr auto operator<=> (::nstd::net::ip::address const&) const noexcept = default;
+
+    constexpr auto is_v4() const noexcept -> bool;
+    constexpr auto is_v6() const noexcept -> bool;
+    constexpr auto to_v4() const -> ::nstd::net::ip::address_v4;
+    constexpr auto to_v6() const -> ::nstd::net::ip::address_v6;
+
+    constexpr auto is_unspecified() const noexcept -> bool;
+    constexpr auto is_loopback() const noexcept -> bool;
+    constexpr auto is_multicast() const noexcept -> bool;
+
+    template <typename Allocator = ::std::allocator<char>>
+    auto to_string(Allocator const& = Allocator()) const
+        -> ::std::basic_string<char, ::std::char_traits<char>, Allocator>;
 };
+
+// ----------------------------------------------------------------------------
+
+inline constexpr nstd::net::ip::address::address(::nstd::net::ip::address_v4 const& addr) noexcept
+    : d_address(addr)
+{
+}
+inline constexpr nstd::net::ip::address::address(::nstd::net::ip::address_v6 const& addr) noexcept
+    : d_address(addr)
+{
+}
+
+inline auto nstd::net::ip::address::operator=(::nstd::net::ip::address_v4 const& addr) noexcept
+    -> ::nstd::net::ip::address&
+{
+    this->d_address = addr;
+    return *this;
+}
+inline auto nstd::net::ip::address::operator=(::nstd::net::ip::address_v6 const& addr) noexcept
+    -> ::nstd::net::ip::address&
+{
+    this->d_address = addr;
+    return *this;
+}
+
+// ----------------------------------------------------------------------------
+
+inline constexpr auto nstd::net::ip::address::is_v4() const noexcept
+    -> bool
+{
+    return this->d_address.index() == v4_index;
+}
+
+inline constexpr auto nstd::net::ip::address::is_v6() const noexcept
+    -> bool
+{
+    return this->d_address.index() == v6_index;
+}
+
+inline constexpr auto nstd::net::ip::address::to_v4() const
+    -> ::nstd::net::ip::address_v4
+{
+    return ::std::get<v4_index>(this->d_address);
+}
+
+inline constexpr auto nstd::net::ip::address::to_v6() const
+    -> ::nstd::net::ip::address_v6
+{
+    return ::std::get<v6_index>(this->d_address);
+}
+
+inline constexpr auto nstd::net::ip::address::is_unspecified() const noexcept
+    -> bool
+{
+    return ::std::visit([](auto&& addr){ return addr.is_unspecified(); },
+                        this->d_address);
+}
+
+inline constexpr auto nstd::net::ip::address::is_loopback() const noexcept
+    -> bool
+{
+    return ::std::visit([](auto&& addr){ return addr.is_loopback(); },
+                        this->d_address);
+}
+
+inline constexpr auto nstd::net::ip::address::is_multicast() const noexcept
+    -> bool
+{
+    return ::std::visit([](auto&& addr){ return addr.is_multicast(); },
+                        this->d_address);
+}
+
+template <typename Allocator>
+inline auto nstd::net::ip::address::to_string(Allocator const& allocator) const
+    -> ::std::basic_string<char, ::std::char_traits<char>, Allocator>
+{
+    return ::std::visit([&allocator](auto&& addr){ return addr.to_string(allocator); });
+}
 
 // ----------------------------------------------------------------------------
 

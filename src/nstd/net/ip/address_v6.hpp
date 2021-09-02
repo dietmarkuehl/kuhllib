@@ -23,8 +23,8 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_NET_IP_ADDRESS_V4
-#define INCLUDED_NSTD_NET_IP_ADDRESS_V4
+#ifndef INCLUDED_NSTD_NET_IP_ADDRESS_V6
+#define INCLUDED_NSTD_NET_IP_ADDRESS_V6
 
 #include "nstd/net/netfwd.hpp"
 #include "nstd/net/ip/types.hpp"

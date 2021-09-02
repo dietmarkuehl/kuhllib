@@ -29,6 +29,7 @@
 namespace test_declarations {}
 namespace TD = test_declarations;
 namespace KT = ::kuhl::test;
+namespace NI = ::nstd::net::ip;
 
 // ----------------------------------------------------------------------------
 
@@ -40,8 +41,59 @@ namespace test_declarations {
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
-    KT::expect_success("breathing", []{
-            return true
+    KT::expect_success("default ctor", []{
+            constexpr NI::address address;
+            return KT::use(address)
+                && noexcept(NI::address())
+                && address.is_v4()
+                && not address.is_v6()
+                && address.is_unspecified()
+                ;
+        }),
+    KT::expect_success("ctor from address_v4", []{
+            constexpr NI::address_v4  v4(0xC0000001);
+            constexpr NI::address     address(v4);
+            return KT::use(address)
+                && noexcept(NI::address(v4))
+                && address.is_v4()
+                && not address.is_v6()
+                && address.to_v4() == v4
+                ;
+        }),
+    KT::expect_success("ctor from address_v6", []{
+            constexpr NI::address_v6::bytes_type bytes{ 0x7f };
+            constexpr NI::address_v6             v6(bytes);
+            constexpr NI::address                address(v6);
+            return KT::use(address)
+                && noexcept(NI::address(v6))
+                && not address.is_v4()
+                && address.is_v6()
+                && address.to_v6() == v6
+                ;
+        }),
+    KT::expect_success("assign from address_v4", []{
+            constexpr NI::address_v4  v4(0xC0000001);
+            NI::address               address(NI::address_v6::loopback());
+            return KT::use(address)
+                && not address.is_v4()
+                && noexcept(address = v4)
+                && &address == &(address = v4)
+                && address.is_v4()
+                && not address.is_v6()
+                && address.to_v4() == v4
+                ;
+        }),
+    KT::expect_success("assign from address_v6", []{
+            constexpr NI::address_v6::bytes_type bytes{ 0x7f };
+            constexpr NI::address_v6             v6(bytes);
+            NI::address                          address(NI::address_v4::loopback());
+            return KT::use(address)
+                && not address.is_v6()
+                && noexcept(address = v6)
+                && &address == &(address = v6)
+                && address.is_v6()
+                && not address.is_v4()
+                && address.to_v6() == v6
                 ;
         }),
 };
