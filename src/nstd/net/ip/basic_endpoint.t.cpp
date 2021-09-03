@@ -56,6 +56,24 @@ static KT::testcase const tests[] = {
                 && ep.port() == 0
                 ;
         }),
+    KT::expect_success("ctor from protocol", []{
+            constexpr NI::basic_endpoint<NI::tcp> ep(NI::tcp::v4(), 17u);
+            return KT::use(ep)
+                && noexcept(NI::basic_endpoint<NI::tcp>(NI::tcp::v4(), 17u))
+                && ep.address() == NI::address_v4()
+                && ep.protocol() == NI::tcp::v4()
+                && ep.port() == 17u
+                ;
+        }),
+    KT::expect_success("ctor from address", []{
+            constexpr NI::address                 address(NI::address_v4(0xC0ea0001));
+            constexpr NI::basic_endpoint<NI::tcp> ep(address, 17u);
+            return KT::use(ep)
+                && noexcept(NI::basic_endpoint<NI::tcp>(NI::tcp::v4(), 17u))
+                && ep.address() == address
+                && ep.port() == 17u
+                ;
+        }),
 };
 
 static KT::add_tests suite("basic_endpoint", ::tests);

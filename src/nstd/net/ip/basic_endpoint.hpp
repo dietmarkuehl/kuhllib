@@ -28,6 +28,7 @@
 
 #include "nstd/net/netfwd.hpp"
 #include "nstd/net/ip/address.hpp"
+#include "nstd/net/ip/types.hpp"
 
 // ----------------------------------------------------------------------------
 
@@ -43,27 +44,69 @@ class nstd::net::ip::basic_endpoint
 {
 public:
     using protocol_type = InternetProtocol;
-    using port_type = unsigned short; //-dk:TODO report missing typedef?
+
+private: 
+    protocol_type              d_protocol{InternetProtocol::v6()};
+    ::nstd::net::ip::address   d_address{};
+    ::nstd::net::ip::port_type d_port{};
+
+public:
+    constexpr basic_endpoint() noexcept = default;
+    constexpr basic_endpoint(protocol_type const& protocol, ::nstd::net::ip::port_type port) noexcept;
+    constexpr basic_endpoint(::nstd::net::ip::address const& addr, ::nstd::net::ip::port_type port) noexcept;
 
     constexpr auto protocol() const noexcept -> protocol_type;
     constexpr auto address() const noexcept -> ::nstd::net::ip::address;
-    constexpr auto port() const noexcept -> port_type;
+    constexpr auto port() const noexcept -> ::nstd::net::ip::port_type;
+
+    auto address(::nstd::net::ip::address const& addr) noexcept -> void;
+    auto port(::nstd::net::ip::port_type port) noexcept -> void;
+
+    constexpr auto operator== (basic_endpoint const&) const noexcept -> bool = default;
+    constexpr auto operator<=>(basic_endpoint const&) const noexcept = default;
 };
 
 // ----------------------------------------------------------------------------
 
 template <typename InternetProtocol>
-constexpr auto nstd::net::ip::basic_endpoint<InternetProtocol>::address() const noexcept
+inline constexpr nstd::net::ip::basic_endpoint<InternetProtocol>::basic_endpoint(
+    protocol_type const& protocol,
+    ::nstd::net::ip::port_type port) noexcept
+    : d_protocol(protocol)
+    , d_port(port)
+{
+}
+
+template <typename InternetProtocol>
+inline constexpr nstd::net::ip::basic_endpoint<InternetProtocol>::basic_endpoint(
+    ::nstd::net::ip::address const& address,
+    ::nstd::net::ip::port_type port) noexcept
+    : d_address(address)
+    , d_port(port)
+{
+}
+
+// ----------------------------------------------------------------------------
+
+template <typename InternetProtocol>
+inline constexpr auto nstd::net::ip::basic_endpoint<InternetProtocol>::protocol() const noexcept
+    -> ::nstd::net::ip::basic_endpoint<InternetProtocol>::protocol_type
+{
+    return this->d_protocol;
+}
+
+template <typename InternetProtocol>
+inline constexpr auto nstd::net::ip::basic_endpoint<InternetProtocol>::address() const noexcept
     -> ::nstd::net::ip::address
 {
-    return {};
+    return this->d_address;
 }
 
 template <typename InternetProtocol>
 constexpr auto nstd::net::ip::basic_endpoint<InternetProtocol>::port() const noexcept
     -> port_type
 {
-    return {};
+    return this->d_port;
 }
 
 // ----------------------------------------------------------------------------

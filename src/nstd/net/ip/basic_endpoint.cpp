@@ -27,4 +27,4 @@
 
 // ----------------------------------------------------------------------------
 
-int net_ip_basic_endpoint_dummy = 0;
+int nstd_net_ip_basic_endpoint_dummy = 0;
