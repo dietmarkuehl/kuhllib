@@ -1,4 +1,4 @@
-// nstd/net/ip/tcp.hpp                                                -*-C++-*-
+// nstd/hidden_names/boolean_socket_option.hpp                        -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,46 +23,45 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_NET_IP_TCP
-#define INCLUDED_NSTD_NET_IP_TCP
+#ifndef INCLUDED_NSTD_HIDDEN_NAMES_BOOLEAN_SOCKET_OPTION
+#define INCLUDED_NSTD_HIDDEN_NAMES_BOOLEAN_SOCKET_OPTION
 
-#include "nstd/net/netfwd.hpp"
+#include <cstddef>
 #include <sys/socket.h>
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::net::ip {
-    class tcp;
+namespace nstd::hidden_names {
+    template <int> class boolean_socket_option;
 }
 
 // ----------------------------------------------------------------------------
 
-class nstd::net::ip::tcp
+template <int Name>
+class nstd::hidden_names::boolean_socket_option
 {
 private:
-    int d_family;
-    explicit constexpr tcp(int family): d_family(family) {}
+    int d_value{};
 
 public:
-    using endpoint = ::nstd::net::ip::basic_endpoint<::nstd::net::ip::tcp>;
-    using resolver = ::nstd::net::ip::basic_resolver<::nstd::net::ip::tcp>;
-    using socket   = ::nstd::net::basic_stream_socket<::nstd::net::ip::tcp>;
-    using acceptor = ::nstd::net::basic_socket_acceptor<::nstd::net::ip::tcp>;
-    using iostream = ::nstd::net::basic_socket_iostream<::nstd::net::ip::tcp>;
+    boolean_socket_option() noexcept = default;
+    explicit boolean_socket_option(bool value) noexcept: d_value(value) {}
 
-    class no_delay;
+    auto operator= (bool value) noexcept -> boolean_socket_option& {
+        this->d_value = value;
+        return *this;
+    }
 
-    static constexpr auto v4() noexcept -> ::nstd::net::ip::tcp { return ::nstd::net::ip::tcp(AF_INET); }
-    static constexpr auto v6() noexcept -> ::nstd::net::ip::tcp { return ::nstd::net::ip::tcp(AF_INET6); }
+    auto level(auto) const noexcept -> int { return SOL_SOCKET; }
+    auto name(auto) const noexcept -> int { return Name; }
+    auto data(auto) const noexcept -> void const* { return &this->d_value; }
+    auto size(auto) const noexcept -> ::std::size_t { return sizeof this->d_value; }
 
-    tcp() = delete;
-
-    constexpr auto family() const noexcept -> int { return this->d_family; }
-    constexpr auto type() const noexcept -> int { return SOCK_STREAM; }
-    constexpr auto protocol() const noexcept -> int { return 0; }
-    constexpr auto operator== (tcp const&) const noexcept -> bool = default;
+    auto value() const noexcept -> bool { return this->d_value; }
+    auto operator not() const noexcept -> bool { return not this->value(); }
+    explicit operator bool() const noexcept { return this->value(); }
 };
 
-// ----------------------------------------------------------------------------
+    // ----------------------------------------------------------------------------
 
 #endif

@@ -44,6 +44,8 @@ namespace nstd::file {
 
 class nstd::file::ring_context
 {
+public:
+    using scheduler_type = int;
 private:
     ::nstd::file::descriptor            d_fd;
     ::nstd::file::mapped_memory         d_smem; // submission ring memory

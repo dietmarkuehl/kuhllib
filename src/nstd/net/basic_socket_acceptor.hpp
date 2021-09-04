@@ -48,8 +48,11 @@ class nstd::net::basic_socket_acceptor
     : public ::nstd::net::socket_base
 {
 public:
+    using scheduler_type     = typename Context::scheduler_type;
     using native_handle_type = int;
-    using protocol_type = AcceptableProtocol;
+    using protocol_type      = AcceptableProtocol;
+    using endpoint_type      = typename protocol_type::endpoint;
+    using socket_type        = typename protocol_type::socket;
 
 private:
     Context* d_context;
@@ -59,13 +62,30 @@ private:
     static auto internal_open(protocol_type) -> ::nstd::file::descriptor;
 
 public:
-    explicit basic_socket_acceptor(Context& context);
-    explicit basic_socket_acceptor(Context& context, protocol_type protocol);
+    explicit basic_socket_acceptor(Context&);
+    basic_socket_acceptor(Context&, protocol_type const&);
+    basic_socket_acceptor(Context&, endpoint_type const&, bool = true);
+    basic_socket_acceptor(Context&, protocol_type const&, native_handle_type const&);
+    basic_socket_acceptor(basic_socket_acceptor const&) = delete;
+    basic_socket_acceptor(basic_socket_acceptor&&);
+    ~basic_socket_acceptor() = default;
+
+    template <typename SettableSocketOption>
+    auto set_option(SettableSocketOption const& option) -> void {
+        ::setsockopt(this->native_handle(),
+                     option.level(this->d_protocol),
+                     option.name(this->d_protocol),
+                     option.data(this->d_protocol),
+                     option.size(this->d_protocol));
+    }
+    auto listen(int n = max_listen_connections) -> void{ ::listen(this->native_handle(), n); /*-dk:TODO*/ }
+    auto bind(endpoint_type const&) -> void { /*-dk:TODO*/ }
 
     auto is_open() const -> bool { return bool(this->d_fd); }
     auto non_blocking() const -> bool { return false; }
     auto enable_connection_aborted() const -> bool { return false; }
     auto protocol() const -> protocol_type { return *this->d_protocol; }
+    auto native_handle() const noexcept -> native_handle_type { return this->d_fd.get(); }
 };
 
 // ----------------------------------------------------------------------------
@@ -87,12 +107,28 @@ nstd::net::basic_socket_acceptor<AcceptableProtocol, Context>::basic_socket_acce
 }
 
 template <typename AcceptableProtocol, typename Context>
-nstd::net::basic_socket_acceptor<AcceptableProtocol, Context>::basic_socket_acceptor(Context& context,
-                                                                                     protocol_type protocol)
+nstd::net::basic_socket_acceptor<AcceptableProtocol, Context>::basic_socket_acceptor(
+        Context&             context,
+        protocol_type const& protocol)
     : d_context(&context)
     , d_protocol(protocol)
     , d_fd(internal_open(*this->d_protocol))
 {
+}
+
+template <typename AcceptableProtocol, typename Context>
+nstd::net::basic_socket_acceptor<AcceptableProtocol, Context>::basic_socket_acceptor(
+    Context&             context,
+    endpoint_type const& endpoint, bool reuse)
+    : d_context(&context)
+    , d_protocol(endpoint.protocol())
+    , d_fd(internal_open(*this->d_protocol))
+{
+    if (reuse) {
+        this->set_option(reuse_address(true));
+    }
+    this->bind(endpoint);
+    this->listen();
 }
 
 // ----------------------------------------------------------------------------

@@ -104,6 +104,7 @@ list(APPEND kuhllib_components
     src/nstd/functional/reference_wrapper
     src/nstd/functional/tag_invoke
     src/nstd/functional/tuple_invoke
+    src/nstd/hidden_names/boolean_socket_option
     src/nstd/hidden_names/derives_from_sender_base
     src/nstd/hidden_names/has_sender_types
     src/nstd/hidden_names/movable_value

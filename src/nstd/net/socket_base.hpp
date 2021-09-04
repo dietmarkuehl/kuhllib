@@ -26,6 +26,9 @@
 #ifndef INCLUDED_NSTD_NET_SOCKET_BASE
 #define INCLUDED_NSTD_NET_SOCKET_BASE
 
+#include "nstd/hidden_names/boolean_socket_option.hpp"
+#include <sys/socket.h>
+
 // ----------------------------------------------------------------------------
 
 namespace nstd::net {
@@ -37,7 +40,10 @@ namespace nstd::net {
 class nstd::net::socket_base
 {
 public:
+    using reuse_address = ::nstd::hidden_names::boolean_socket_option<SO_REUSEADDR>;
     //-dk:TODO define the various member types
+
+    static constexpr int max_listen_connections = SOMAXCONN;
 
     socket_base() = default;
     ~socket_base() = default;

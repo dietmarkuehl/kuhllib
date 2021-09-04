@@ -1,4 +1,4 @@
-// nstd/net/ip/tcp.hpp                                                -*-C++-*-
+// nstd/hidden_names/boolean_socket_option.cpp                        -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,46 +23,8 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_NET_IP_TCP
-#define INCLUDED_NSTD_NET_IP_TCP
-
-#include "nstd/net/netfwd.hpp"
-#include <sys/socket.h>
+#include "nstd/hidden_names/boolean_socket_option.hpp"
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::net::ip {
-    class tcp;
-}
-
-// ----------------------------------------------------------------------------
-
-class nstd::net::ip::tcp
-{
-private:
-    int d_family;
-    explicit constexpr tcp(int family): d_family(family) {}
-
-public:
-    using endpoint = ::nstd::net::ip::basic_endpoint<::nstd::net::ip::tcp>;
-    using resolver = ::nstd::net::ip::basic_resolver<::nstd::net::ip::tcp>;
-    using socket   = ::nstd::net::basic_stream_socket<::nstd::net::ip::tcp>;
-    using acceptor = ::nstd::net::basic_socket_acceptor<::nstd::net::ip::tcp>;
-    using iostream = ::nstd::net::basic_socket_iostream<::nstd::net::ip::tcp>;
-
-    class no_delay;
-
-    static constexpr auto v4() noexcept -> ::nstd::net::ip::tcp { return ::nstd::net::ip::tcp(AF_INET); }
-    static constexpr auto v6() noexcept -> ::nstd::net::ip::tcp { return ::nstd::net::ip::tcp(AF_INET6); }
-
-    tcp() = delete;
-
-    constexpr auto family() const noexcept -> int { return this->d_family; }
-    constexpr auto type() const noexcept -> int { return SOCK_STREAM; }
-    constexpr auto protocol() const noexcept -> int { return 0; }
-    constexpr auto operator== (tcp const&) const noexcept -> bool = default;
-};
-
-// ----------------------------------------------------------------------------
-
-#endif
+int nstd_hidden_names_boolean_socket_option_dummy = 0;
