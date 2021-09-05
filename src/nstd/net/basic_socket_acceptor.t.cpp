@@ -25,14 +25,21 @@
 
 #include "nstd/net/basic_socket_acceptor.hpp"
 #include "nstd/net/ip/basic_endpoint.hpp"
+#include "nstd/net/ip/make_address_v4.hpp"
 #include "nstd/net/ip/tcp.hpp"
+#include "nstd/execution/then.hpp"
+#include "nstd/thread/sync_wait.hpp"
+#include "nstd/utility/move.hpp"
 #include "kuhl/test.hpp"
 
 namespace test_declarations {}
 namespace TD = test_declarations;
 namespace KT = ::kuhl::test;
+namespace EX = ::nstd::execution;
 namespace NN = ::nstd::net;
 namespace NI = ::nstd::net::ip;
+namespace UT = ::nstd::utility;
+namespace TR = ::nstd::this_thread;
 
 // ----------------------------------------------------------------------------
 
@@ -63,13 +70,26 @@ static KT::testcase const tests[] = {
         }),
     KT::expect_success("construction with endpoint", []{
             NN::io_context                         context;
-            NI::basic_endpoint<NI::tcp>            ep;
+            NI::basic_endpoint<NI::tcp>            ep(NI::address_v4::any(), 12345);
+
             NN::basic_socket_acceptor<NN::ip::tcp> acceptor(context, ep);
             return KT::use(acceptor)
-                //-dk:TODO && acceptor.is_open() == true
-                //-dk:TODO && acceptor.non_blocking() == false
-                //-dk:TODO && acceptor.enable_connection_aborted() == false
-                //-dk:TODO && acceptor.protocol() == NN::ip::tcp::v4()
+                && acceptor.is_open() == true
+                && acceptor.non_blocking() == false
+                && acceptor.enable_connection_aborted() == false
+                && acceptor.protocol() == NN::ip::tcp::v4()
+                ;
+        }),
+    KT::expect_success("async_accept", []{
+            NN::io_context                         context;
+            NI::basic_endpoint<NI::tcp>            ep(NI::address_v4::any(), 12345);
+
+            NN::basic_socket_acceptor<NN::ip::tcp> acceptor(context, ep);
+            auto accept_sender = NN::async_accept(UT::move(acceptor));
+            auto then = EX::then(UT::move(accept_sender),
+                                 [](auto&&){ return 0; });
+            TR::sync_wait(UT::move(then));
+            return KT::use(accept_sender)
                 ;
         }),
 };

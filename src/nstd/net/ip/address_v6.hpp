@@ -35,6 +35,9 @@
 #include <string_view>
 #include <sstream>
 #include <cstdint>
+#include <cstring>
+#include <sys/socket.h>
+#include <netinet/ip.h>
 
 // ----------------------------------------------------------------------------
 
@@ -79,6 +82,8 @@ public:
     auto operator= (address_v6 const&) noexcept -> address_v6& = default;
     constexpr auto operator== (address_v6 const&) const -> bool = default;
     constexpr auto operator<=> (address_v6 const&) const = default;
+
+    auto get_address(::sockaddr_storage*, ::nstd::net::ip::port_type) const -> ::socklen_t;
 
     auto scope_id(::nstd::net::ip::scope_id_type) noexcept -> void;
     constexpr auto scope_id() const noexcept -> ::nstd::net::ip::scope_id_type;
@@ -180,6 +185,20 @@ inline constexpr auto nstd::net::ip::address_v6::loopback() noexcept
     -> ::nstd::net::ip::address_v6
 {
     return ::nstd::net::ip::address_v6();
+}
+
+// ----------------------------------------------------------------------------
+
+inline auto nstd::net::ip::address_v6::get_address(::sockaddr_storage*        storage,
+                                                   ::nstd::net::ip::port_type port) const
+    -> ::socklen_t
+{
+    ::sockaddr_in6 addr;
+    addr.sin6_family = AF_INET6;
+    addr.sin6_port   = ::htons(port);
+    ::std::memcpy(&addr.sin6_addr, &this->d_bytes[0], this->d_bytes.size());
+    ::std::memcpy(storage, &addr, sizeof addr);
+    return sizeof addr;
 }
 
 // ----------------------------------------------------------------------------

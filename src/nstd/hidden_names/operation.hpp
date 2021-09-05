@@ -89,24 +89,15 @@ public:
 // ----------------------------------------------------------------------------
 
 template <typename Tag, typename Receiver, typename... Args>
-struct nstd::hidden_names::operation_base
-{
-    Receiver d_receiver;
-};
-
-template <typename Tag, typename Receiver, typename... Args>
 struct nstd::hidden_names::operation_receiver
-    : public ::nstd::hidden_names::operation_base<
-        ::nstd::type_traits::remove_cvref_t<Tag>, 
-        ::nstd::type_traits::remove_cvref_t<Receiver>, 
-        ::nstd::type_traits::remove_cvref_t<Args>...>
+    : public Tag::template base<Receiver>
 {
-    ::std::tuple<Args...>                         d_args;
+    ::std::tuple<Args...> d_args;
     template <typename... A>
     friend auto tag_invoke(::nstd::execution::set_value_t, operation_receiver&& r, A&&... a) noexcept {
         ::std::apply([&r, &a...](auto&&... args){
                 ::nstd::tag_invoke(Tag(),
-                r,
+                ::nstd::utility::move(r),
                 ::nstd::utility::forward<Args>(args)...,
                 ::nstd::utility::forward<A>(a)...);
         }, ::nstd::utility::move(r.d_args));

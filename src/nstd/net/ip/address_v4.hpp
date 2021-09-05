@@ -27,7 +27,9 @@
 #define INCLUDED_NSTD_NET_IP_ADDRESS_V4
 
 #include "nstd/net/netfwd.hpp"
+#include "nstd/net/ip/types.hpp"
 #include "nstd/net/ip/v4_mapped.hpp"
+#include <algorithm>
 #include <system_error>
 #include <iosfwd>
 #include <array>
@@ -35,6 +37,9 @@
 #include <string_view>
 #include <sstream>
 #include <cstdint>
+#include <cstring>
+#include <sys/socket.h>
+#include <netinet/ip.h>
 
 // ----------------------------------------------------------------------------
 
@@ -71,7 +76,7 @@ public:
     static constexpr auto loopback() noexcept -> address_v4;
     static constexpr auto broadcast() noexcept -> address_v4;
 
-    constexpr address_v4() noexcept = default;
+    constexpr address_v4() noexcept;
     constexpr address_v4(address_v4 const&) noexcept = default;
     constexpr address_v4(bytes_type const&);
     explicit constexpr address_v4(uint_type);
@@ -79,6 +84,8 @@ public:
     auto operator= (address_v4 const&) noexcept -> address_v4& = default;
     constexpr auto operator== (address_v4 const&) const -> bool = default;
     constexpr auto operator<=> (address_v4 const&) const = default;
+
+    auto get_address(::sockaddr_storage*, ::nstd::net::ip::port_type) const -> ::socklen_t;
 
     constexpr auto is_unspecified() const noexcept -> bool;
     constexpr auto is_loopback() const noexcept -> bool;
@@ -91,6 +98,11 @@ public:
 };
 
 // ----------------------------------------------------------------------------
+
+inline constexpr nstd::net::ip::address_v4::address_v4() noexcept
+    : d_bytes{}
+{
+}
 
 inline constexpr nstd::net::ip::address_v4::address_v4(
     ::nstd::net::ip::address_v4::bytes_type const& bytes)
@@ -173,6 +185,23 @@ inline constexpr auto nstd::net::ip::address_v4::broadcast() noexcept
     -> ::nstd::net::ip::address_v4
 {
     return ::nstd::net::ip::address_v4(0xFFFFFFFF);
+}
+
+// ----------------------------------------------------------------------------
+
+inline auto nstd::net::ip::address_v4::get_address(::sockaddr_storage*        storage,
+                                                   ::nstd::net::ip::port_type port) const
+    -> ::socklen_t
+{
+    static_assert(4u == sizeof(::in_addr_t));
+    ::sockaddr_in addr;
+    addr.sin_family = AF_INET;
+    addr.sin_port   = ::htons(port);
+    bytes_type tmp(this->d_bytes);
+    ::std::reverse(tmp.begin(), tmp.end());
+    ::std::memcpy(&addr.sin_addr, &tmp[0], this->d_bytes.size());
+    ::std::memcpy(storage, &addr, sizeof addr);
+    return sizeof addr;
 }
 
 // ----------------------------------------------------------------------------

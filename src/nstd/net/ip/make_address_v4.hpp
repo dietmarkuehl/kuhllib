@@ -27,6 +27,7 @@
 #define INCLUDED_NSTD_NET_IP_MAKE_ADDRESS_V4
 
 #include "nstd/net/ip/address_v4.hpp"
+#include <arpa/inet.h>
 
 // ----------------------------------------------------------------------------
 
@@ -38,7 +39,7 @@ namespace nstd::net::ip {
     constexpr auto make_address_v4(::nstd::net::ip::v4_mapped_t,
                                    ::nstd::net::ip::address_v6 const&)
         -> ::nstd::net::ip::address_v4;
-    constexpr auto make_address_v4(char const*)
+    auto make_address_v4(char const*)
         -> ::nstd::net::ip::address_v4;
     constexpr auto make_address_v4(char const*, ::std::error_code&) noexcept
         -> ::nstd::net::ip::address_v4;
@@ -50,6 +51,15 @@ namespace nstd::net::ip {
         -> ::nstd::net::ip::address_v4;
     constexpr auto make_address_v4(::std::string_view, ::std::error_code&) noexcept
         -> ::nstd::net::ip::address_v4;
+}
+
+// ----------------------------------------------------------------------------
+
+inline auto nstd::net::ip::make_address_v4(char const* addr)
+    -> ::nstd::net::ip::address_v4
+{    
+    address_v4::bytes_type bytes;
+    return ::inet_pton(AF_INET, addr, &bytes[0])? address_v4(bytes): address_v4();
 }
 
 // ----------------------------------------------------------------------------

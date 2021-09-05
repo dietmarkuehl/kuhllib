@@ -27,18 +27,45 @@
 #define INCLUDED_NSTD_NET_BASIC_SOCKET_ACCEPTOR
 
 #include "nstd/net/netfwd.hpp"
+#include "nstd/net/ip/tcp.hpp"
 #include "nstd/net/io_context.hpp"
 #include "nstd/net/socket_base.hpp"
 #include "nstd/file/descriptor.hpp"
+#include "nstd/hidden_names/operation.hpp"
+#include "nstd/execution/set_value.hpp"
 #include <optional>
+#include <tuple>
+#include <variant>
+#include <system_error>
+#include <cerrno>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <netinet/ip.h>
 
 // ----------------------------------------------------------------------------
 
 namespace nstd::net {
     template <typename AcceptableProtocol, typename Context>
     class basic_socket_acceptor;
+
+    struct async_accept_t {
+        template <typename Receiver>
+        struct base {
+            Receiver d_receiver;
+            base(Receiver&& receiver): d_receiver(::nstd::utility::move(receiver)) {}
+            friend void tag_invoke(::nstd::net::async_accept_t, base&& ob, auto...)
+            {
+                ::nstd::execution::set_value(::nstd::utility::move(ob.d_receiver),
+                                             0);
+            }
+        };
+    };
+    inline constexpr nstd::hidden_names::operation<
+        ::nstd::net::async_accept_t,
+        // ::std::variant<::std::tuple<::nstd::net::basic_stream_socket<::nstd::net::ip::tcp>>>,
+        ::std::variant<::std::tuple<int>>,
+        ::std::variant<::std::exception_ptr>
+        > async_accept;
 }
 
 // ----------------------------------------------------------------------------
@@ -67,7 +94,7 @@ public:
     basic_socket_acceptor(Context&, endpoint_type const&, bool = true);
     basic_socket_acceptor(Context&, protocol_type const&, native_handle_type const&);
     basic_socket_acceptor(basic_socket_acceptor const&) = delete;
-    basic_socket_acceptor(basic_socket_acceptor&&);
+    basic_socket_acceptor(basic_socket_acceptor&&) = default;
     ~basic_socket_acceptor() = default;
 
     template <typename SettableSocketOption>
@@ -78,8 +105,8 @@ public:
                      option.data(this->d_protocol),
                      option.size(this->d_protocol));
     }
-    auto listen(int n = max_listen_connections) -> void{ ::listen(this->native_handle(), n); /*-dk:TODO*/ }
-    auto bind(endpoint_type const&) -> void { /*-dk:TODO*/ }
+    auto listen(int n = max_listen_connections) -> void;
+    auto bind(endpoint_type const&) -> void;
 
     auto is_open() const -> bool { return bool(this->d_fd); }
     auto non_blocking() const -> bool { return false; }
@@ -129,6 +156,26 @@ nstd::net::basic_socket_acceptor<AcceptableProtocol, Context>::basic_socket_acce
     }
     this->bind(endpoint);
     this->listen();
+}
+
+// ----------------------------------------------------------------------------
+
+template <typename AcceptableProtocol, typename Context>
+auto nstd::net::basic_socket_acceptor<AcceptableProtocol, Context>::listen(int n) -> void
+{
+    if (int rc = ::listen(this->native_handle(), n)) {
+        throw ::std::system_error(::std::error_code(errno, ::std::system_category()));
+    }
+}
+
+template <typename AcceptableProtocol, typename Context>
+auto nstd::net::basic_socket_acceptor<AcceptableProtocol, Context>::bind(endpoint_type const& endpoint) -> void
+{
+    ::sockaddr_storage storage;
+    ::socklen_t        size = endpoint.address().get_address(&storage, endpoint.port());
+    if (int rc = ::bind(this->native_handle(), reinterpret_cast<::sockaddr const*>(&storage), size)) {
+        throw ::std::system_error(::std::error_code(errno, ::std::system_category()));
+    }
 }
 
 // ----------------------------------------------------------------------------

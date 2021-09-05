@@ -28,6 +28,7 @@
 
 #include "nstd/net/netfwd.hpp"
 #include "nstd/net/ip/address.hpp"
+#include "nstd/net/ip/tcp.hpp"
 #include "nstd/net/ip/types.hpp"
 
 // ----------------------------------------------------------------------------
@@ -81,7 +82,8 @@ template <typename InternetProtocol>
 inline constexpr nstd::net::ip::basic_endpoint<InternetProtocol>::basic_endpoint(
     ::nstd::net::ip::address const& address,
     ::nstd::net::ip::port_type port) noexcept
-    : d_address(address)
+    : d_protocol(address.is_v4()? ::nstd::net::ip::tcp::v4(): ::nstd::net::ip::tcp::v6())
+    , d_address(address)
     , d_port(port)
 {
 }

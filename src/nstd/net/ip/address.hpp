@@ -29,6 +29,7 @@
 #include "nstd/net/ip/address_v4.hpp"
 #include "nstd/net/ip/address_v6.hpp"
 #include <variant>
+#include <sys/socket.h>
 
 // ----------------------------------------------------------------------------
 
@@ -56,6 +57,8 @@ public:
     constexpr auto operator== (::nstd::net::ip::address const&) const noexcept -> bool = default;
     constexpr auto operator<=> (::nstd::net::ip::address const&) const noexcept = default;
 
+    auto get_address(::sockaddr_storage*, ::nstd::net::ip::port_type) const -> ::socklen_t;
+
     constexpr auto is_v4() const noexcept -> bool;
     constexpr auto is_v6() const noexcept -> bool;
     constexpr auto to_v4() const -> ::nstd::net::ip::address_v4;
@@ -68,6 +71,11 @@ public:
     template <typename Allocator = ::std::allocator<char>>
     auto to_string(Allocator const& = Allocator()) const
         -> ::std::basic_string<char, ::std::char_traits<char>, Allocator>;
+    
+    friend ::std::ostream& operator << (::std::ostream& out,
+                                        address const& address) {
+        return out << address.to_string();
+    }
 };
 
 // ----------------------------------------------------------------------------
@@ -145,7 +153,19 @@ template <typename Allocator>
 inline auto nstd::net::ip::address::to_string(Allocator const& allocator) const
     -> ::std::basic_string<char, ::std::char_traits<char>, Allocator>
 {
-    return ::std::visit([&allocator](auto&& addr){ return addr.to_string(allocator); });
+    return ::std::visit([&allocator](auto&& addr){ return addr.to_string(allocator); },
+                        this->d_address);
+}
+
+// ----------------------------------------------------------------------------
+
+inline auto nstd::net::ip::address::get_address(::sockaddr_storage*        storage,
+                                                ::nstd::net::ip::port_type port) const
+    -> ::socklen_t
+{
+    return ::std::visit([storage, port](auto&& addr){
+        return addr.get_address(storage, port);
+        }, this->d_address);
 }
 
 // ----------------------------------------------------------------------------

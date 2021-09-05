@@ -48,7 +48,12 @@ namespace test_declarations {
         template <typename...> struct tuple;
         template <typename...> struct var;
         template <typename...> struct tup;
-        template <int> struct action_t {};
+        template <int> struct action_t {
+            template <typename R>
+            struct base {
+                R d_receiver;
+            };
+        };
 
         template <typename R>
         auto tag_invoke(action_t<1>, R&& receiver, int arg) {
@@ -67,19 +72,7 @@ namespace test_declarations {
         } 
         inline constexpr HN::operation<action_t<2>, TD::variant<TD::tuple<TD::type<0>, TD::type<1>, TD::type<2>>>, TD::variant<std::exception_ptr>>
             action2;
-    }
-}
 
-namespace nstd::hidden_names {
-    template <typename R>
-    struct operation_base<TD::action_t<3>, R, int> {
-        R d_receiver;
-    };
-
-}
-
-namespace test_declarations {
-    namespace {
         template <typename R>
         auto tag_invoke(TD::action_t<3>, R&& receiver, int value) {
             ::std::thread([ptr = &receiver, value]{
