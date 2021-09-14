@@ -32,6 +32,7 @@
 #include "nstd/thread/sync_wait.hpp"
 #include "nstd/utility/move.hpp"
 #include "nstd/type_traits/is_same.hpp"
+#include <thread>
 #include "kuhl/test.hpp"
 
 namespace test_declarations {}
