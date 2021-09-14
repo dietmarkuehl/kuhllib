@@ -28,8 +28,10 @@
 #include "nstd/net/ip/make_address_v4.hpp"
 #include "nstd/net/ip/tcp.hpp"
 #include "nstd/execution/then.hpp"
+#include "nstd/execution/sender.hpp"
 #include "nstd/thread/sync_wait.hpp"
 #include "nstd/utility/move.hpp"
+#include "nstd/type_traits/is_same.hpp"
 #include "kuhl/test.hpp"
 
 namespace test_declarations {}
@@ -40,11 +42,22 @@ namespace NN = ::nstd::net;
 namespace NI = ::nstd::net::ip;
 namespace UT = ::nstd::utility;
 namespace TR = ::nstd::this_thread;
+namespace TT = ::nstd::type_traits;
 
 // ----------------------------------------------------------------------------
 
 namespace test_declarations {
     namespace {
+#if 0
+        struct receiver {
+            receiver() = default;
+            template <typename T>
+            receiver(T&&) { static_assert(TT::is_same_v<T, receiver>); }
+            friend auto tag_invoke(EX::set_value_t, receiver, auto&&...) noexcept -> void {}
+            friend auto tag_invoke(EX::set_error_t, receiver, auto&&) noexcept -> void {}
+            friend auto tag_invoke(EX::set_done_t, receiver) noexcept -> void {}
+        };
+#endif
     }
 }
 
@@ -53,14 +66,14 @@ namespace test_declarations {
 static KT::testcase const tests[] = {
     KT::expect_success("basic construction", []{
             NN::io_context                         context;
-            NN::basic_socket_acceptor<NN::ip::tcp> acceptor(context);
+            NN::basic_socket_acceptor<NN::ip::tcp> acceptor;
             return KT::use(acceptor)
                 && acceptor.is_open() == false
                 ;
         }),
     KT::expect_success("construction with protocol", []{
             NN::io_context                         context;
-            NN::basic_socket_acceptor<NN::ip::tcp> acceptor(context, NN::ip::tcp::v4());
+            NN::basic_socket_acceptor<NN::ip::tcp> acceptor(NN::ip::tcp::v4());
             return KT::use(acceptor)
                 && acceptor.is_open() == true
                 && acceptor.non_blocking() == false
@@ -72,7 +85,7 @@ static KT::testcase const tests[] = {
             NN::io_context                         context;
             NI::basic_endpoint<NI::tcp>            ep(NI::address_v4::any(), 12345);
 
-            NN::basic_socket_acceptor<NN::ip::tcp> acceptor(context, ep);
+            NN::basic_socket_acceptor<NN::ip::tcp> acceptor(ep);
             return KT::use(acceptor)
                 && acceptor.is_open() == true
                 && acceptor.non_blocking() == false
@@ -84,12 +97,17 @@ static KT::testcase const tests[] = {
             NN::io_context                         context;
             NI::basic_endpoint<NI::tcp>            ep(NI::address_v4::any(), 12345);
 
-            NN::basic_socket_acceptor<NN::ip::tcp> acceptor(context, ep);
-            auto accept_sender = NN::async_accept(UT::move(acceptor));
+            NN::basic_socket_acceptor<NN::ip::tcp> acceptor(ep);
+            auto accept_sender = NN::async_accept(acceptor, context.scheduler());
+            //EX::connect(UT::move(accept_sender), TD::receiver());
             auto then = EX::then(UT::move(accept_sender),
                                  [](auto&&){ return 0; });
+            ::std::thread t([&]{ context.run_one(); });
+            t.join();
             TR::sync_wait(UT::move(then));
+            //TR::sync_wait(UT::move(accept_sender));
             return KT::use(accept_sender)
+                && EX::sender<decltype(accept_sender)>
                 ;
         }),
 };

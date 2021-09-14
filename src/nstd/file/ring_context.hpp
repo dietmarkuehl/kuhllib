@@ -31,6 +31,7 @@
 #include "nstd/file/ring.hpp"
 #include <linux/io_uring.h>
 #include <chrono>
+#include <mutex>
 #include <cstddef>
 #include <cstdint>
 
@@ -44,8 +45,6 @@ namespace nstd::file {
 
 class nstd::file::ring_context
 {
-public:
-    using scheduler_type = int;
 private:
     ::nstd::file::descriptor            d_fd;
     ::nstd::file::mapped_memory         d_smem; // submission ring memory
@@ -56,6 +55,7 @@ private:
     ::io_uring_sqe*                     d_submission_elements;
     ::std::atomic<unsigned int>         d_outstanding;
     ::std::atomic<bool>                 d_stopped{false};
+    ::std::mutex                        d_mutex;
 
     auto intern_submit(::std::size_t) -> void;
     auto process_result() -> ::std::size_t;
@@ -67,7 +67,7 @@ public:
     template <typename Op>
     auto submit(Op op) -> void;
 
-    //-dk:TODO class executor_type;
+    class scheduler_type;
     using count_type = ::std::size_t;
     enum queue_size: int { max = ::std::numeric_limits<int>::max() }; // extension
 
@@ -81,7 +81,7 @@ public:
     auto setup(queue_size size) -> int; // extension; return better error?
     auto is_setup() const -> bool;      // extension
 
-    //-dk:TODO auto get_executor() noexcept -> ::nstd::file::ring_context::executor_type;
+    auto scheduler() noexcept -> ::nstd::file::ring_context::scheduler_type;
 
     auto run() -> ::nstd::file::ring_context::count_type;
     template <typename Rep, typename Period>
@@ -103,7 +103,28 @@ public:
     auto stop() -> void;
     auto stopped() const noexcept -> bool;
     auto restart() -> void;
+
+    auto accept(int, void*, void*, int, io_base*) -> void;
 };
+
+// ----------------------------------------------------------------------------
+
+class nstd::file::ring_context::scheduler_type
+{
+private:
+    friend class ::nstd::file::ring_context;
+    ::nstd::file::ring_context* d_context;
+    explicit scheduler_type(::nstd::file::ring_context* context) noexcept: d_context(context) {}
+
+public:
+    auto context() noexcept -> ::nstd::file::ring_context* { return this->d_context; }
+};
+
+inline auto nstd::file::ring_context::scheduler() noexcept
+    -> ::nstd::file::ring_context::scheduler_type
+{
+    return ::nstd::file::ring_context::scheduler_type(this);
+}
 
 // ----------------------------------------------------------------------------
 
@@ -122,6 +143,7 @@ public:
 template <typename Op>
 auto nstd::file::ring_context::submit(Op op) ->void
 {
+    ::std::lock_guard kerberos(this->d_mutex);
     auto tail(this->d_submission.tail());
     auto index(this->d_submission.mask(tail));
     op(this->d_submission_elements[index]);

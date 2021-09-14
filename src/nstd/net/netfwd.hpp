@@ -61,7 +61,7 @@ namespace nstd::net
         class basic_datagram_socket;
     template<typename Protocol>
         class basic_stream_socket;
-    template<typename Protocol, typename Context = ::nstd::net::io_context>
+    template<typename Protocol>
         class basic_socket_acceptor;
 
     template<typename Protocol, typename Clock = std::chrono::steady_clock,

@@ -45,18 +45,35 @@
 // ----------------------------------------------------------------------------
 
 namespace nstd::net {
-    template <typename AcceptableProtocol, typename Context>
+    template <typename AcceptableProtocol>
     class basic_socket_acceptor;
 
     struct async_accept_t {
         template <typename Receiver>
-        struct base {
-            Receiver d_receiver;
-            base(Receiver&& receiver): d_receiver(::nstd::utility::move(receiver)) {}
-            friend void tag_invoke(::nstd::net::async_accept_t, base&& ob, auto...)
+        struct base
+            : public ::nstd::file::ring_context::io_base
+        {
+            Receiver           d_receiver;
+            ::sockaddr_storage d_address{};
+            ::socklen_t        d_len{sizeof(::sockaddr_storage)};
+
+            template <typename R>
+            explicit base(R&& receiver): d_receiver(::nstd::utility::forward<R>(receiver)) {}
+            template <typename P, typename S>
+            friend auto tag_invoke(::nstd::net::async_accept_t, base&& ob,
+                                   ::nstd::net::basic_socket_acceptor<P>& acceptor,
+                                   S scheduler) -> void
             {
-                ::nstd::execution::set_value(::nstd::utility::move(ob.d_receiver),
-                                             0);
+                (void)ob; (void)scheduler; (void)acceptor;
+                scheduler.context()->accept(acceptor.native_handle(),
+                                            &ob.d_address,
+                                            &ob.d_len,
+                                            0,
+                                            &ob);
+            }
+            auto do_result(::std::int32_t fd, ::std::uint32_t) -> void override
+            {
+                ::nstd::execution::set_value(::nstd::utility::move(this->d_receiver), fd);
             }
         };
     };
@@ -70,29 +87,27 @@ namespace nstd::net {
 
 // ----------------------------------------------------------------------------
 
-template <typename AcceptableProtocol, typename Context>
+template <typename AcceptableProtocol>
 class nstd::net::basic_socket_acceptor
     : public ::nstd::net::socket_base
 {
 public:
-    using scheduler_type     = typename Context::scheduler_type;
     using native_handle_type = int;
     using protocol_type      = AcceptableProtocol;
     using endpoint_type      = typename protocol_type::endpoint;
     using socket_type        = typename protocol_type::socket;
 
 private:
-    Context* d_context;
     ::std::optional<protocol_type> d_protocol;
     ::nstd::file::descriptor       d_fd;
 
     static auto internal_open(protocol_type) -> ::nstd::file::descriptor;
 
 public:
-    explicit basic_socket_acceptor(Context&);
-    basic_socket_acceptor(Context&, protocol_type const&);
-    basic_socket_acceptor(Context&, endpoint_type const&, bool = true);
-    basic_socket_acceptor(Context&, protocol_type const&, native_handle_type const&);
+    basic_socket_acceptor();
+    explicit basic_socket_acceptor(protocol_type const&);
+    basic_socket_acceptor(endpoint_type const&, bool = true);
+    basic_socket_acceptor(protocol_type const&, native_handle_type const&);
     basic_socket_acceptor(basic_socket_acceptor const&) = delete;
     basic_socket_acceptor(basic_socket_acceptor&&) = default;
     ~basic_socket_acceptor() = default;
@@ -117,9 +132,9 @@ public:
 
 // ----------------------------------------------------------------------------
 
-template <typename AcceptableProtocol, typename Context>
+template <typename AcceptableProtocol>
 auto
-nstd::net::basic_socket_acceptor<AcceptableProtocol, Context>
+nstd::net::basic_socket_acceptor<AcceptableProtocol>
     ::internal_open(protocol_type protocol) -> ::nstd::file::descriptor
 {
     return ::nstd::file::descriptor(::socket(protocol.family(),
@@ -127,28 +142,21 @@ nstd::net::basic_socket_acceptor<AcceptableProtocol, Context>
                                              protocol.protocol()));
 }
 
-template <typename AcceptableProtocol, typename Context>
-nstd::net::basic_socket_acceptor<AcceptableProtocol, Context>::basic_socket_acceptor(Context& context)
-    : d_context(&context)
-{
-}
+template <typename AcceptableProtocol>
+nstd::net::basic_socket_acceptor<AcceptableProtocol>::basic_socket_acceptor() = default;
 
-template <typename AcceptableProtocol, typename Context>
-nstd::net::basic_socket_acceptor<AcceptableProtocol, Context>::basic_socket_acceptor(
-        Context&             context,
+template <typename AcceptableProtocol>
+nstd::net::basic_socket_acceptor<AcceptableProtocol>::basic_socket_acceptor(
         protocol_type const& protocol)
-    : d_context(&context)
-    , d_protocol(protocol)
+    : d_protocol(protocol)
     , d_fd(internal_open(*this->d_protocol))
 {
 }
 
-template <typename AcceptableProtocol, typename Context>
-nstd::net::basic_socket_acceptor<AcceptableProtocol, Context>::basic_socket_acceptor(
-    Context&             context,
+template <typename AcceptableProtocol>
+nstd::net::basic_socket_acceptor<AcceptableProtocol>::basic_socket_acceptor(
     endpoint_type const& endpoint, bool reuse)
-    : d_context(&context)
-    , d_protocol(endpoint.protocol())
+    : d_protocol(endpoint.protocol())
     , d_fd(internal_open(*this->d_protocol))
 {
     if (reuse) {
@@ -160,16 +168,16 @@ nstd::net::basic_socket_acceptor<AcceptableProtocol, Context>::basic_socket_acce
 
 // ----------------------------------------------------------------------------
 
-template <typename AcceptableProtocol, typename Context>
-auto nstd::net::basic_socket_acceptor<AcceptableProtocol, Context>::listen(int n) -> void
+template <typename AcceptableProtocol>
+auto nstd::net::basic_socket_acceptor<AcceptableProtocol>::listen(int n) -> void
 {
     if (int rc = ::listen(this->native_handle(), n)) {
         throw ::std::system_error(::std::error_code(errno, ::std::system_category()));
     }
 }
 
-template <typename AcceptableProtocol, typename Context>
-auto nstd::net::basic_socket_acceptor<AcceptableProtocol, Context>::bind(endpoint_type const& endpoint) -> void
+template <typename AcceptableProtocol>
+auto nstd::net::basic_socket_acceptor<AcceptableProtocol>::bind(endpoint_type const& endpoint) -> void
 {
     ::sockaddr_storage storage;
     ::socklen_t        size = endpoint.address().get_address(&storage, endpoint.port());

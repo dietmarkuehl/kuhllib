@@ -154,3 +154,22 @@ auto NF::ring_context::run()
     
     return rc;
 }
+
+// ----------------------------------------------------------------------------
+
+auto NF::ring_context::accept(int      fd,
+                              void*    addr,
+                              void*    len,
+                              int      flags,
+                              io_base* continuation) -> void
+{
+    this->submit([=](::io_uring_sqe& element){
+        element = ::io_uring_sqe{};
+        element.opcode    = IORING_OP_ACCEPT;
+        element.fd        = fd;
+        element.flags     = flags;
+        element.addr      = reinterpret_cast<::std::uint64_t>(addr);
+        element.addr2     = reinterpret_cast<::std::uint64_t>(len);
+        element.user_data = reinterpret_cast<::std::uint64_t>(continuation);
+    });
+}

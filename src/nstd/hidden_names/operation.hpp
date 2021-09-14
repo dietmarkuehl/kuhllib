@@ -78,12 +78,10 @@ public:
 
     template <::nstd::execution::sender Sender, typename... Args>
     auto operator()(Sender&& s, Args&&... args) const
-        -> sender<::nstd::type_traits::remove_cvref_t<Sender>,
-                  ::nstd::type_traits::remove_cvref_t<Args>...>;
+        -> sender<::nstd::type_traits::remove_cvref_t<Sender>, Args...>;
     template <typename... Args>
     auto operator()(Args&&... args) const
-        -> sender<decltype(::nstd::execution::just()),
-                  ::nstd::type_traits::remove_cvref_t<Args>...>;
+        -> sender<decltype(::nstd::execution::just()), Args...>;
 };
 
 // ----------------------------------------------------------------------------
@@ -92,6 +90,12 @@ template <typename Tag, typename Receiver, typename... Args>
 struct nstd::hidden_names::operation_receiver
     : public Tag::template base<Receiver>
 {
+    template <typename B, typename T>
+    operation_receiver(B&& b, T&& t)
+        : Tag::template base<Receiver>{::nstd::utility::forward<B>(b)}
+        , d_args(::nstd::utility::forward<T>(t))
+    {
+    }
     ::std::tuple<Args...> d_args;
     template <typename... A>
     friend auto tag_invoke(::nstd::execution::set_value_t, operation_receiver&& r, A&&... a) noexcept {
@@ -139,7 +143,7 @@ struct nstd::hidden_names::operation<Tag, Results, Errors>::sender
         return ::nstd::execution::connect(
                               ::nstd::utility::move(s.d_sender),
                               operation_receiver<Tag, Receiver, Args...>{
-                                  { ::nstd::utility::forward<Receiver>(r) },
+                                  ::nstd::utility::forward<Receiver>(r),
                                   ::nstd::utility::move(s.d_args),
                               });
     }
@@ -150,25 +154,23 @@ struct nstd::hidden_names::operation<Tag, Results, Errors>::sender
 template <typename Tag, typename Results, typename Errors>
     template <::nstd::execution::sender Sender, typename... Args>
 auto nstd::hidden_names::operation<Tag, Results, Errors>::operator()(Sender&& s, Args&&... args) const
-        -> sender<::nstd::type_traits::remove_cvref_t<Sender>,
-                  ::nstd::type_traits::remove_cvref_t<Args>...>
+        -> sender<::nstd::type_traits::remove_cvref_t<Sender>, Args...>
 {
     return {
         {},
         ::nstd::utility::forward<Sender>(s),
-        ::std::tuple<::nstd::type_traits::remove_cvref_t<Args>...>(::nstd::utility::forward<Args>(args)...)
+        ::std::tuple<Args...>(::nstd::utility::forward<Args>(args)...)
         };
 }
 
 template <typename Tag, typename Results, typename Errors>
     template <typename... Args>
 auto nstd::hidden_names::operation<Tag, Results, Errors>::operator()(Args&&... args) const
-    -> sender<decltype(::nstd::execution::just()),
-              ::nstd::type_traits::remove_cvref_t<Args>...> {
+    -> sender<decltype(::nstd::execution::just()), Args...> {
     return {
         {},
         ::nstd::execution::just(),
-        ::std::tuple<::nstd::type_traits::remove_cvref_t<Args>...>(::nstd::utility::forward<Args>(args)...)
+        ::std::tuple<Args...>(::nstd::utility::forward<Args>(args)...)
         };
 }
 
