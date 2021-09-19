@@ -119,12 +119,14 @@ auto NF::ring_context::process_result() -> unsigned int
     auto head(this->d_completion.head());
     auto tail(this->d_completion.tail());
     if (head != tail) {
+        ::std::cout << "ring_context::process_result() got a result\n";
         io_uring_cqe result{this->d_completion.get(head)};
         this->d_completion.advance_head();
         --this->d_outstanding;
         reinterpret_cast<NF::ring_context::io_base*>(result.user_data)->result(result.res, result.flags);
         return 1u;
     }
+    ::std::cout << "ring_context::process_result() didn't get a result\n";
     return 0u;
 }
 
@@ -132,12 +134,16 @@ auto NF::ring_context::process_result() -> unsigned int
 
 auto NF::ring_context::intern_submit(::std::size_t) -> void
 {
+    ::std::cout << "ring_context::inter_submit()\n";
     io_uring_enter(this->d_fd.get(), 1u, 0u, 0u, ::sigset_t{});
+    ::std::cout << "ring_context::inter_submit() done\n";
 }
 
 auto NF::ring_context::run_one() -> NF::ring_context::count_type
 {
+    ::std::cout << "ring_context::run_one()\n";
     io_uring_enter(this->d_fd.get(), 0u, 1u, IORING_ENTER_GETEVENTS, ::sigset_t{});
+    ::std::cout << "ring_context::run_one() done\n";
     return process_result();
 }
 

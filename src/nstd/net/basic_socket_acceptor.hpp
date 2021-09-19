@@ -41,6 +41,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/ip.h>
+#include <iostream> //-dk:TODO remove
 
 // ----------------------------------------------------------------------------
 
@@ -64,7 +65,7 @@ namespace nstd::net {
                                    ::nstd::net::basic_socket_acceptor<P>& acceptor,
                                    S scheduler) -> void
             {
-                (void)ob; (void)scheduler; (void)acceptor;
+                ::std::cout << "scheduling accept\n";
                 scheduler.context()->accept(acceptor.native_handle(),
                                             &ob.d_address,
                                             &ob.d_len,
@@ -73,6 +74,7 @@ namespace nstd::net {
             }
             auto do_result(::std::int32_t fd, ::std::uint32_t) -> void override
             {
+                ::std::cout << "returned accept\n";
                 ::nstd::execution::set_value(::nstd::utility::move(this->d_receiver), fd);
             }
         };

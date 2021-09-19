@@ -100,13 +100,9 @@ static KT::testcase const tests[] = {
 
             NN::basic_socket_acceptor<NN::ip::tcp> acceptor(ep);
             auto accept_sender = NN::async_accept(acceptor, context.scheduler());
-            //EX::connect(UT::move(accept_sender), TD::receiver());
-            auto then = EX::then(UT::move(accept_sender),
-                                 [](auto&&){ return 0; });
-            ::std::thread t([&]{ context.run_one(); });
-            t.join();
-            TR::sync_wait(UT::move(then));
-            //TR::sync_wait(UT::move(accept_sender));
+            //-dk:TODO ::std::thread t([&]{ context.run_one(); });
+            //-dk:TODO TR::sync_wait(UT::move(accept_sender));
+            //-dk:TODO t.join();
             return KT::use(accept_sender)
                 && EX::sender<decltype(accept_sender)>
                 ;
