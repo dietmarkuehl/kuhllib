@@ -52,6 +52,7 @@ public:
 
     auto get() const -> int;
     explicit operator bool() const;
+    auto is_open() const noexcept -> bool;
 };
 
 // ----------------------------------------------------------------------------
@@ -86,6 +87,11 @@ inline nstd::file::descriptor::~descriptor()
 inline auto nstd::file::descriptor::get() const -> int
 {
     return this->d_fd;
+}
+
+inline auto nstd::file::descriptor::is_open() const noexcept -> bool
+{
+    return 0 <= this->d_fd;
 }
 
 inline nstd::file::descriptor::operator bool() const

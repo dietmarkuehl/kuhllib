@@ -27,6 +27,7 @@
 #define INCLUDED_NSTD_NET_SOCKET_BASE
 
 #include "nstd/hidden_names/boolean_socket_option.hpp"
+#include "nstd/file/descriptor.hpp"
 #include <sys/socket.h>
 
 // ----------------------------------------------------------------------------
@@ -39,6 +40,13 @@ namespace nstd::net {
 
 class nstd::net::socket_base
 {
+private:
+    ::nstd::file::descriptor d_descriptor;
+
+protected:
+    auto is_open() const noexcept -> bool { return this->d_descriptor.is_open(); }
+    auto open(int domain, int type, int protocol) -> int;
+
 public:
     using reuse_address = ::nstd::hidden_names::boolean_socket_option<SO_REUSEADDR>;
     //-dk:TODO define the various member types

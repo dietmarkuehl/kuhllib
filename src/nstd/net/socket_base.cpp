@@ -27,4 +27,12 @@
 
 // ----------------------------------------------------------------------------
 
+auto nstd::net::socket_base::open(int domain, int type, int protocol) -> int
+{
+    this->d_descriptor = ::nstd::file::descriptor(::socket(domain, type, protocol));
+    return this->d_descriptor.get();
+}
+
+// ----------------------------------------------------------------------------
+
 int socket_base_dummy = 0;
