@@ -30,6 +30,7 @@
 #include "nstd/file/mapped_memory.hpp"
 #include "nstd/file/ring.hpp"
 #include <linux/io_uring.h>
+#include <sys/socket.h>
 #include <chrono>
 #include <mutex>
 #include <cstddef>
@@ -106,6 +107,7 @@ public:
     auto restart() -> void;
 
     auto accept(int, void*, void*, int, io_base*) -> void;
+    auto connect(int, void const*, socklen_t, io_base*) -> void;
 };
 
 // ----------------------------------------------------------------------------

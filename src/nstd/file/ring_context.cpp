@@ -179,3 +179,19 @@ auto NF::ring_context::accept(int      fd,
         element.user_data = reinterpret_cast<::std::uint64_t>(continuation);
     });
 }
+
+auto NF::ring_context::connect(int         fd,
+                               void const* addr,
+                               socklen_t   len,
+                               io_base*    continuation)
+    -> void
+{
+    this->submit([=](::io_uring_sqe& element){
+        element = ::io_uring_sqe{};
+        element.opcode    = IORING_OP_CONNECT;
+        element.fd        = fd;
+        element.addr      = reinterpret_cast<::std::uint64_t>(addr);
+        element.off       = len;
+        element.user_data = reinterpret_cast<::std::uint64_t>(continuation);
+    });
+}

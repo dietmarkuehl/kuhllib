@@ -24,14 +24,23 @@
 // ----------------------------------------------------------------------------
 
 #include "nstd/net/basic_socket.hpp"
+#include "nstd/net/io_context.hpp"
+#include "nstd/net/ip/basic_endpoint.hpp"
 #include "nstd/net/ip/tcp.hpp"
+#include "nstd/execution/just.hpp"
+#include "nstd/thread/sync_wait.hpp"
+#include "nstd/utility/move.hpp"
 #include "kuhl/test.hpp"
+#include <thread>
 
 namespace test_declarations {}
 namespace TD = test_declarations;
 namespace KT = ::kuhl::test;
 namespace Net = ::nstd::net;
 namespace IP = ::nstd::net::ip;
+namespace EX = ::nstd::execution;
+namespace TR = ::nstd::this_thread;
+namespace UT = ::nstd::utility;
 
 // ----------------------------------------------------------------------------
 
@@ -60,6 +69,38 @@ static KT::testcase const tests[] = {
             return s.is_open()
                 && not s.non_blocking()
                 && s.protocol() == IP::tcp::v6()
+                ;
+        }),
+    KT::expect_success("async_connect from arguments", []{
+            ::std::cout << "async_connect\n";
+            Net::io_context context;
+            TD::socket s{IP::tcp::v4()};
+            auto connect_sender
+                = Net::async_connect(s, context.scheduler(),
+                                     IP::basic_endpoint<IP::tcp>(IP::address_v4::any(), 12345))
+                ;
+            ::std::thread t([&]{ context.run_one(); });
+            TR::sync_wait(UT::move(connect_sender));
+            t.join();
+            return KT::use(context)
+                && KT::use(s)
+                && KT::use(connect_sender)
+                ;
+        }),
+    KT::expect_success("async_connect from sender", []{
+            ::std::cout << "async_connect\n";
+            Net::io_context context;
+            TD::socket s{IP::tcp::v4()};
+            auto connect_sender
+                = EX::just(IP::basic_endpoint<IP::tcp>(IP::address_v4::any(), 12345))
+                | Net::async_connect(s, context.scheduler())
+                ;
+            ::std::thread t([&]{ context.run_one(); });
+            TR::sync_wait(UT::move(connect_sender));
+            t.join();
+            return KT::use(context)
+                && KT::use(s)
+                && KT::use(connect_sender)
                 ;
         }),
 };

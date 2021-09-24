@@ -65,6 +65,8 @@ public:
 
     constexpr auto operator== (basic_endpoint const&) const noexcept -> bool = default;
     constexpr auto operator<=>(basic_endpoint const&) const noexcept = default;
+
+    auto get_address(::sockaddr_storage*) const -> ::socklen_t; // implementation specific
 };
 
 // ----------------------------------------------------------------------------
@@ -109,6 +111,15 @@ constexpr auto nstd::net::ip::basic_endpoint<InternetProtocol>::port() const noe
     -> port_type
 {
     return this->d_port;
+}
+
+// ----------------------------------------------------------------------------
+
+template <typename InternetProtocol>
+auto nstd::net::ip::basic_endpoint<InternetProtocol>::get_address(::sockaddr_storage* storage) const
+    -> ::socklen_t
+{
+    return this->d_address.get_address(storage, this->d_port);
 }
 
 // ----------------------------------------------------------------------------

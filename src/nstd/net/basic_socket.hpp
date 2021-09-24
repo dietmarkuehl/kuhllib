@@ -28,19 +28,68 @@
 
 #include "nstd/net/netfwd.hpp"
 #include "nstd/net/socket_base.hpp"
+#include "nstd/file/ring_context.hpp"
+#include "nstd/hidden_names/operation.hpp"
+#include <iostream>
 #include <optional>
+#include <system_error>
+#include <tuple>
+#include <variant>
 
 // ----------------------------------------------------------------------------
 
 namespace nstd::net {
     template <typename> class basic_socket;
+
+    struct async_connect_t {
+        template <typename Receiver>
+        struct base
+            : public ::nstd::file::ring_context::io_base
+        {
+            Receiver           d_receiver;
+            ::sockaddr_storage d_address{};
+            ::socklen_t        d_len{sizeof(::sockaddr_storage)};
+
+            template <typename R>
+            explicit base(R&& receiver): d_receiver(::nstd::utility::forward<R>(receiver)) {}
+            template <typename P, typename S>
+            friend auto tag_invoke(::nstd::net::async_connect_t, base&& ob,
+                                   ::nstd::net::basic_socket<P>& socket,
+                                   S scheduler,
+                                   typename ::nstd::net::basic_socket<P>::endpoint_type const& endpoint) -> void
+            {
+                ob.d_len = endpoint.get_address(&ob.d_address);
+                ::std::cout << "scheduling connect\n";
+                scheduler.context()->connect(socket.native_handle(),
+                                             &ob.d_address,
+                                             ob.d_len,
+                                             &ob);
+            }
+            auto do_result(::std::int32_t rc, ::std::uint32_t) -> void override
+            {
+                if (0 == rc) {
+                    ::std::cout << "connect returned success" << rc << "\n";
+                    ::nstd::execution::set_value(::nstd::utility::move(this->d_receiver), rc);
+                }
+                else {
+                    ::std::cout << "connect returned: error=" << ::std::error_code(-rc, ::std::system_category()) << "\n";
+                    ::nstd::execution::set_value(::nstd::utility::move(this->d_receiver), -rc); //-dk:TODO wrap with error code
+                }
+            }
+        };
+    };
+    inline constexpr nstd::hidden_names::operation<
+        ::nstd::net::async_connect_t,
+        ::std::variant<::std::tuple<int>>,
+        ::std::variant<::std::exception_ptr>
+        > async_connect;
 }
 
 // ----------------------------------------------------------------------------
 
 template <typename Protocol>
 class nstd::net::basic_socket
-    : ::nstd::net::socket_base
+    : public ::nstd::net::socket_base
 {
 public:
     using native_handle_type = int;

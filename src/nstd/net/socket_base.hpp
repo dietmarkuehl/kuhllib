@@ -55,6 +55,9 @@ public:
 
     socket_base() = default;
     ~socket_base() = default;
+
+    using native_handle_type = int;
+    auto native_handle() const -> native_handle_type { return this->d_descriptor.get(); }
 };
 
 // ----------------------------------------------------------------------------
