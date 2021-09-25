@@ -38,6 +38,7 @@
 #include "nstd/utility/forward.hpp"
 #include "nstd/utility/move.hpp"
 #include "nstd/type_traits/declval.hpp"
+#include "nstd/type_traits/is_void.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
 #include <exception>
 #include <functional>
@@ -69,8 +70,14 @@ namespace nstd::execution {
             friend auto
             tag_invoke(::nstd::execution::set_value_t, lazy_then_receiver&& r, T&&... args) noexcept
                 try {
-                    ::nstd::execution::set_value(::nstd::utility::move(r.d_receiver),
-                                                 ::std::invoke(::nstd::utility::move(r.d_fun), ::nstd::utility::forward<T>(args)...));
+                    if constexpr (::nstd::type_traits::is_void_v<decltype(::std::invoke(::nstd::utility::move(r.d_fun), ::nstd::utility::forward<T>(args)...))>) {
+                        ::std::invoke(::nstd::utility::move(r.d_fun), ::nstd::utility::forward<T>(args)...);
+                        ::nstd::execution::set_value(::nstd::utility::move(r.d_receiver));
+                    }
+                    else {
+                        ::nstd::execution::set_value(::nstd::utility::move(r.d_receiver),
+                                                     ::std::invoke(::nstd::utility::move(r.d_fun), ::nstd::utility::forward<T>(args)...));
+                    }
                 }
                 catch (...) {
                     ::nstd::execution::set_error(::nstd::utility::move(r.d_receiver),

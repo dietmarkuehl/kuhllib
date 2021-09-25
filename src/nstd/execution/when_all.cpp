@@ -1,6 +1,6 @@
-// nstd/type_traits/is_void.hpp                                       -*-C++-*-
+// nstd/execution/when_all.cpp                                        -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
+//  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
 //  Permission is hereby granted, free of charge, to any person          
 //  obtaining a copy of this software and associated documentation       
@@ -23,24 +23,10 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_TYPE_TRAITS_IS_VOID
-#define INCLUDED_NSTD_TYPE_TRAITS_IS_VOID
-
-#include "nstd/type_traits/integral_constant.hpp"
+#include "nstd/execution/when_all.hpp"
 
 // ----------------------------------------------------------------------------
 
-namespace nstd
-{
-    namespace type_traits {
-        template <typename> struct is_void: nstd::type_traits::false_type {};
-        template <> struct is_void<void>: nstd::type_traits::true_type {};
-        template <typename T>
-        inline constexpr bool is_void_v = ::nstd::type_traits::is_void<T>::value;
-    }
-
+namespace nstd::execution {
+    int when_all_dummy = 0;
 }
-
-// ----------------------------------------------------------------------------
-
-#endif

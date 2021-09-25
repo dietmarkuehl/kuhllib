@@ -76,6 +76,7 @@ list(APPEND kuhllib_components
     src/nstd/execution/start
     src/nstd/execution/then
     src/nstd/execution/typed_sender
+    src/nstd/execution/when_all
     src/nstd/executor/associated_allocator
     src/nstd/executor/associated_executor
     src/nstd/executor/async_completion
