@@ -58,4 +58,19 @@ public:
 
 // ----------------------------------------------------------------------------
 
+template <typename Protocol>
+nstd::net::basic_stream_socket<Protocol>::basic_stream_socket(protocol_type const& protocol)
+    : ::nstd::net::basic_socket<Protocol>(protocol)
+{
+}
+
+template <typename Protocol>
+nstd::net::basic_stream_socket<Protocol>::basic_stream_socket(protocol_type const& protocol,
+                                                              native_handle_type const& fd)
+    : ::nstd::net::basic_socket<Protocol>(protocol, fd)
+{
+}
+
+// ----------------------------------------------------------------------------
+
 #endif

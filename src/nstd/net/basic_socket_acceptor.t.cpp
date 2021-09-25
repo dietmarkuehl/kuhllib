@@ -24,15 +24,17 @@
 // ----------------------------------------------------------------------------
 
 #include "nstd/net/basic_socket_acceptor.hpp"
+#include "nstd/net/basic_stream_socket.hpp"
 #include "nstd/net/ip/basic_endpoint.hpp"
 #include "nstd/net/ip/make_address_v4.hpp"
 #include "nstd/net/ip/tcp.hpp"
+#include "nstd/execution/run.hpp"
 #include "nstd/execution/then.hpp"
 #include "nstd/execution/sender.hpp"
+#include "nstd/execution/when_all.hpp"
 #include "nstd/thread/sync_wait.hpp"
 #include "nstd/utility/move.hpp"
 #include "nstd/type_traits/is_same.hpp"
-#include <thread>
 #include "kuhl/test.hpp"
 
 namespace test_declarations {}
@@ -42,7 +44,6 @@ namespace EX = ::nstd::execution;
 namespace NN = ::nstd::net;
 namespace NI = ::nstd::net::ip;
 namespace UT = ::nstd::utility;
-namespace TR = ::nstd::this_thread;
 namespace TT = ::nstd::type_traits;
 
 // ----------------------------------------------------------------------------
@@ -98,13 +99,17 @@ static KT::testcase const tests[] = {
             NN::io_context                         context;
             NI::basic_endpoint<NI::tcp>            ep(NI::address_v4::any(), 12345);
 
-            NN::basic_socket_acceptor<NN::ip::tcp> acceptor(ep);
-            auto accept_sender = NN::async_accept(acceptor, context.scheduler());
-            //-dk:TODO ::std::thread t([&]{ context.run_one(); });
-            //-dk:TODO TR::sync_wait(UT::move(accept_sender));
-            //-dk:TODO t.join();
-            return KT::use(accept_sender)
-                && EX::sender<decltype(accept_sender)>
+            NN::basic_socket_acceptor<NN::ip::tcp> server(ep);
+            NN::basic_stream_socket<NN::ip::tcp>   client(NI::tcp::v4());
+            EX::run(context, EX::when_all(
+                NN::async_accept(server, context.scheduler())
+                    | EX::then([](auto&&...){ ::std::cout << "accepted!\n"; }),
+                NN::async_connect(client, context.scheduler(), ep)
+                    | EX::then([](auto&&...){ ::std::cout << "connected!\n"; })
+                ));
+            return KT::use(server)
+                && KT::use(client)
+                && EX::sender<decltype(NN::async_accept(server, context.scheduler()))>
                 ;
         }),
 };

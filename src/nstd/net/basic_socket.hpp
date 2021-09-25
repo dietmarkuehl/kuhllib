@@ -101,10 +101,12 @@ public:
 private:
     ::std::optional<protocol_type> d_protocol;
 
-public:
+public: //-dk:TODO protocted:
     basic_socket();
     basic_socket(protocol_type const&);
+    basic_socket(protocol_type const&, native_handle_type const&);
 
+public:
     auto is_open() const noexcept -> bool { return this->::nstd::net::socket_base::is_open(); }
     auto non_blocking() const noexcept -> bool { return false; }
     auto protocol() const noexcept -> protocol_type { return *this->d_protocol; }
@@ -123,6 +125,14 @@ template <typename Protocol>
 nstd::net::basic_socket<Protocol>::basic_socket(Protocol const& proto)
 {
     this->open(proto);
+}
+
+template <typename Protocol>
+nstd::net::basic_socket<Protocol>::basic_socket(Protocol const& proto,
+                                                native_handle_type const& fd)
+    : ::nstd::net::socket_base(fd)
+    , d_protocol(proto)
+{
 }
 
 // ----------------------------------------------------------------------------

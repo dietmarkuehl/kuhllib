@@ -28,8 +28,8 @@
 #include "nstd/net/ip/basic_endpoint.hpp"
 #include "nstd/net/ip/tcp.hpp"
 #include "nstd/execution/just.hpp"
+#include "nstd/execution/run.hpp"
 #include "nstd/execution/then.hpp"
-#include "nstd/thread/sync_wait.hpp"
 #include "nstd/utility/move.hpp"
 #include "kuhl/test.hpp"
 #include <thread>
@@ -40,7 +40,6 @@ namespace KT = ::kuhl::test;
 namespace Net = ::nstd::net;
 namespace IP = ::nstd::net::ip;
 namespace EX = ::nstd::execution;
-namespace TR = ::nstd::this_thread;
 namespace UT = ::nstd::utility;
 
 // ----------------------------------------------------------------------------
@@ -79,16 +78,13 @@ static KT::testcase const tests[] = {
             auto connect_sender
                 = Net::async_connect(s, context.scheduler(),
                                      IP::basic_endpoint<IP::tcp>(IP::address_v4::any(), 12345))
-                | EX::then([](auto&&...)->int{ return 0; })
                 ;
-            ::std::thread t([&]{ context.run_one(); });
             try {
-                TR::sync_wait(UT::move(connect_sender));
+                EX::run(context, UT::move(connect_sender));
             }
             catch (...) {
 
             }
-            t.join();
             return KT::use(context)
                 && KT::use(s)
                 && KT::use(connect_sender)
@@ -101,16 +97,12 @@ static KT::testcase const tests[] = {
             auto connect_sender
                 = EX::just(IP::basic_endpoint<IP::tcp>(IP::address_v4::any(), 12345))
                 | Net::async_connect(s, context.scheduler())
-                | EX::then([](auto&&...)->int{ return 0; })
                 ;
-            ::std::thread t([&]{ context.run_one(); });
             try {
-                TR::sync_wait(UT::move(connect_sender));
+                EX::run(context, UT::move(connect_sender));
             }
             catch (...) {
-
             }
-            t.join();
             return KT::use(context)
                 && KT::use(s)
                 && KT::use(connect_sender)

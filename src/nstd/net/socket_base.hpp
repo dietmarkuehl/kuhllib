@@ -54,6 +54,7 @@ public:
     static constexpr int max_listen_connections = SOMAXCONN;
 
     socket_base() = default;
+    socket_base(int fd): d_descriptor(fd) {}
     ~socket_base() = default;
 
     using native_handle_type = int;

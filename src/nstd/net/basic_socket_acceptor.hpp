@@ -30,6 +30,7 @@
 #include "nstd/net/ip/tcp.hpp"
 #include "nstd/net/io_context.hpp"
 #include "nstd/net/socket_base.hpp"
+#include "nstd/net/basic_stream_socket.hpp"
 #include "nstd/file/descriptor.hpp"
 #include "nstd/hidden_names/operation.hpp"
 #include "nstd/execution/set_value.hpp"
@@ -75,14 +76,15 @@ namespace nstd::net {
             auto do_result(::std::int32_t fd, ::std::uint32_t) -> void override
             {
                 ::std::cout << "returned accept\n";
-                ::nstd::execution::set_value(::nstd::utility::move(this->d_receiver), fd);
+                ::nstd::execution::set_value(::nstd::utility::move(this->d_receiver),
+                                             ::nstd::net::basic_stream_socket<::nstd::net::ip::tcp>(::nstd::net::ip::tcp::v4(), fd));
             }
         };
     };
     inline constexpr nstd::hidden_names::operation<
         ::nstd::net::async_accept_t,
-        // ::std::variant<::std::tuple<::nstd::net::basic_stream_socket<::nstd::net::ip::tcp>>>,
-        ::std::variant<::std::tuple<int>>,
+        ::std::variant<::std::tuple<::nstd::net::basic_stream_socket<::nstd::net::ip::tcp>>>,
+        //::std::variant<::std::tuple<int>>,
         ::std::variant<::std::exception_ptr>
         > async_accept;
 }
