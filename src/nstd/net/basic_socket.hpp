@@ -73,7 +73,9 @@ namespace nstd::net {
                 }
                 else {
                     ::std::cout << "connect returned: error=" << ::std::error_code(-rc, ::std::system_category()) << "\n";
-                    ::nstd::execution::set_value(::nstd::utility::move(this->d_receiver), -rc); //-dk:TODO wrap with error code
+                    //-dk:TODO are these exceptional or actually results?
+                    ::nstd::execution::set_error(::nstd::utility::move(this->d_receiver),
+                                                 ::std::error_code(-rc, ::std::system_category()));
                 }
             }
         };
@@ -81,7 +83,7 @@ namespace nstd::net {
     inline constexpr nstd::hidden_names::operation<
         ::nstd::net::async_connect_t,
         ::std::variant<::std::tuple<int>>,
-        ::std::variant<::std::exception_ptr>
+        ::std::variant<::std::error_code, ::std::exception_ptr>
         > async_connect;
 }
 

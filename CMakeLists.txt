@@ -127,6 +127,7 @@ list(APPEND kuhllib_components
     src/nstd/net/ip/v4_mapped
     src/nstd/net/basic_socket
     src/nstd/net/basic_socket_acceptor
+    src/nstd/net/basic_stream_socket
     src/nstd/net/io_context
     src/nstd/net/netfwd
     src/nstd/net/socket_base
