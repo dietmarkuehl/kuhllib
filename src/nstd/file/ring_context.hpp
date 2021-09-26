@@ -108,6 +108,7 @@ public:
 
     auto accept(int, void*, void*, int, io_base*) -> void;
     auto connect(int, void const*, socklen_t, io_base*) -> void;
+    auto sendmsg(int, msghdr const*, int, io_base*) -> void;
 };
 
 // ----------------------------------------------------------------------------

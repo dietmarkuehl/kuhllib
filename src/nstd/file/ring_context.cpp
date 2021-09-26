@@ -195,3 +195,20 @@ auto NF::ring_context::connect(int         fd,
         element.user_data = reinterpret_cast<::std::uint64_t>(continuation);
     });
 }
+
+auto NF::ring_context::sendmsg(int fd,
+                               msghdr const* addr,
+                               int flags,
+                               io_base* continuation)
+    -> void
+{
+    this->submit([=](::io_uring_sqe& element){
+        element = ::io_uring_sqe{};
+        element.opcode    = IORING_OP_SENDMSG;
+        element.fd        = fd;
+        element.addr      = reinterpret_cast<::std::uint64_t>(addr);
+        element.flags     = flags;
+        element.user_data = reinterpret_cast<::std::uint64_t>(continuation);
+    });
+
+}

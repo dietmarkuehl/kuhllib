@@ -55,7 +55,11 @@ public:
 
     socket_base() = default;
     socket_base(int fd): d_descriptor(fd) {}
+    socket_base(socket_base const&) = delete;
+    socket_base(socket_base&&) = default;
     ~socket_base() = default;
+    auto operator= (socket_base const&) -> socket_base& = delete;
+    auto operator= (socket_base&&) -> socket_base& = default;
 
     using native_handle_type = int;
     auto native_handle() const -> native_handle_type { return this->d_descriptor.get(); }

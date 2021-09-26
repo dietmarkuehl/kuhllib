@@ -105,6 +105,8 @@ public: //-dk:TODO protocted:
     basic_socket();
     basic_socket(protocol_type const&);
     basic_socket(protocol_type const&, native_handle_type const&);
+    auto operator= (basic_socket const&) -> basic_socket& = delete;
+    auto operator= (basic_socket&&) -> basic_socket& = default;
 
 public:
     auto is_open() const noexcept -> bool { return this->::nstd::net::socket_base::is_open(); }
