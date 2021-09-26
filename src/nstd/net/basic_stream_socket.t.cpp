@@ -60,7 +60,9 @@ static KT::testcase const tests[] = {
                 ;
         }),
     KT::expect_success("async_write_some", []{
+            ::std::cout << ::std::unitbuf;
             char const message[] = { 'h', 'e', 'l', 'l', 'o', '\n' };
+            char       buffer[1024];
 
             NN::io_context                         context;
             NI::basic_endpoint<NI::tcp>            ep(NI::address_v4::any(), 12345);
@@ -78,8 +80,16 @@ static KT::testcase const tests[] = {
                 NN::async_connect(client, context.scheduler(), ep)
                 ));
 
-            auto write = NN::async_write_some(client, context.scheduler(), NN::buffer(message));
-            EX::run(context, UT::move(write));
+            auto write = NN::async_write_some(client,
+                                            context.scheduler(),
+                                            NN::buffer(message));
+            auto read = NN::async_read_some(server,
+                                            context.scheduler(),
+                                            NN::buffer(buffer))
+                | EX::then([&buffer](::std::size_t s){
+                        ::std::cout << "received: >>>" << ::std::string_view(buffer, s) << "<<<\n";
+                    });
+            EX::run(context, EX::when_all(UT::move(read), UT::move(write)));
 
             return KT::use(accept)
                 && KT::use(server)

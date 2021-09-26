@@ -34,16 +34,28 @@
 #include "nstd/execution/set_error.hpp"
 #include "nstd/execution/set_done.hpp"
 #include "nstd/buffer/const_buffer.hpp"
+#include "nstd/buffer/mutable_buffer.hpp"
 #include "nstd/utility/forward.hpp"
 #include "nstd/utility/move.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
-#include <iostream> //-dk:TODO remove
 #include <sys/socket.h>
 
 // ----------------------------------------------------------------------------
 
 namespace nstd::net {
     template <typename> class basic_stream_socket;
+
+    inline constexpr struct async_read_some_t {
+        template <typename R, typename Scheduler, typename MBS>
+        struct state;
+
+        template <typename Scheduler, typename MBS>
+        struct sender;
+
+        template <typename P, typename Scheduler, typename MBS>
+        auto operator()(basic_stream_socket<P>&, Scheduler, MBS const&) const
+            -> sender<Scheduler, MBS>;
+    } async_read_some;
 
     inline constexpr struct async_write_some_t {
         template <typename R, typename Scheduler, typename CBS>
@@ -102,6 +114,79 @@ nstd::net::basic_stream_socket<Protocol>::basic_stream_socket(protocol_type cons
 
 // ----------------------------------------------------------------------------
 
+template <typename Receiver, typename Scheduler, typename MBS>
+struct nstd::net::async_read_some_t::state
+    : public ::nstd::file::ring_context::io_base
+{
+    ::nstd::type_traits::remove_cvref_t<Receiver> d_receiver;
+    Scheduler                                     d_scheduler;
+    MBS                                           d_buffers;
+    ::nstd::net::socket_base::native_handle_type  d_handle;
+    ::msghdr                                      d_msg;
+
+    template <typename R>
+    state(R&& r,
+          Scheduler scheduler,
+          MBS const& buffers,
+          ::nstd::net::socket_base::native_handle_type handle)
+        : d_receiver(nstd::utility::forward<R>(r))
+        , d_scheduler(scheduler)
+        , d_buffers(buffers)
+        , d_handle(handle)
+        , d_msg()
+    {
+    }
+    friend auto tag_invoke(::nstd::execution::start_t, state& s)
+        noexcept -> void
+    {
+        iovec const* iov = reinterpret_cast<::iovec const*>(&*::nstd::net::buffer_sequence_begin(s.d_buffers));
+        s.d_msg.msg_iov = const_cast<::iovec*>(iov);
+        s.d_msg.msg_iovlen = 1u;
+        s.d_scheduler.context()->recvmsg(s.d_handle, &s.d_msg, int(), &s);
+    }
+
+    auto do_result(::std::int32_t size, ::std::uint32_t) -> void override
+    {
+        ::nstd::execution::set_value(::nstd::utility::move(this->d_receiver), size);
+    }
+};
+
+template <typename Scheduler, typename MBS>
+struct nstd::net::async_read_some_t::sender
+{
+    template <template <typename...> class V, template <typename...> class T>
+    using value_types = V<T<int>>;
+    template <template <typename...> class V>
+    using error_types = V<::std::exception_ptr>;
+    static constexpr bool sends_done = true;
+
+    Scheduler                                    d_scheduler;
+    MBS                                          d_buffers;
+    ::nstd::net::socket_base::native_handle_type d_handle;
+
+    template <typename Receiver>
+    friend auto tag_invoke(::nstd::execution::connect_t, sender&& s, Receiver&& r)
+        noexcept -> ::nstd::net::async_read_some_t::state<Receiver, Scheduler, MBS>
+    {
+        using result = ::nstd::net::async_read_some_t::state<Receiver, Scheduler, MBS>;
+        return result(::nstd::utility::forward<Receiver>(r),
+                      s.d_scheduler,
+                      s.d_buffers,
+                      s.d_handle);
+    }
+};
+
+template <typename P, typename Scheduler, typename MBS>
+auto nstd::net::async_read_some_t::operator()(basic_stream_socket<P>& socket,
+                                              Scheduler scheduler,
+                                              MBS const& mbs) const
+    -> sender<Scheduler, MBS>
+{
+    return sender<Scheduler, MBS>{scheduler, mbs, socket.native_handle()};
+}
+
+// ----------------------------------------------------------------------------
+
 template <typename Receiver, typename Scheduler, typename CBS>
 struct nstd::net::async_write_some_t::state
     : public ::nstd::file::ring_context::io_base
@@ -127,7 +212,6 @@ struct nstd::net::async_write_some_t::state
     friend auto tag_invoke(::nstd::execution::start_t, state& s)
         noexcept -> void
     {
-        std::cout << "sending sendmsg\n";
         iovec const* iov = reinterpret_cast<::iovec const*>(&*::nstd::net::buffer_sequence_begin(s.d_buffers));
         s.d_msg.msg_iov = const_cast<::iovec*>(iov);
         s.d_msg.msg_iovlen = 1u;
@@ -136,7 +220,6 @@ struct nstd::net::async_write_some_t::state
 
     auto do_result(::std::int32_t size, ::std::uint32_t) -> void override
     {
-        std::cout << "write_some result: size=" << size << "\n";
         ::nstd::execution::set_value(::nstd::utility::move(this->d_receiver), size);
     }
 };
