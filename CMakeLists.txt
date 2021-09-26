@@ -40,6 +40,7 @@ list(APPEND kuhllib_components
     src/nstd/algorithm/search
     src/nstd/atomic/atomic
     src/nstd/buffer/const_buffer
+    src/nstd/buffer/make_buffer
     src/nstd/buffer/mutable_buffer
     src/nstd/concepts/boolean_testable
     src/nstd/cursor/array

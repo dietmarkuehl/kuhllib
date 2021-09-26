@@ -27,7 +27,13 @@
 #define INCLUDED_NSTD_BUFFER_CONST_BUFFER
 
 #include "nstd/buffer/mutable_buffer.hpp"
+#include "nstd/buffer/make_buffer.hpp"
 #include "nstd/algorithm/min.hpp"
+#include "nstd/memory/addressof.hpp"
+#include <array>
+#include <string>
+#include <string_view>
+#include <vector>
 #include <cstddef>
 #include <sys/uio.h>
 
@@ -35,6 +41,57 @@
 
 namespace nstd::net {
     class const_buffer;
+
+    auto buffer_sequence_begin(const_buffer const&) noexcept
+        -> const_buffer const*;
+    auto buffer_sequence_end(const_buffer const&) noexcept
+        -> const_buffer const*;
+
+    auto buffer(void const*, ::std::size_t) noexcept
+        -> const_buffer;
+
+    auto buffer(const_buffer const&) noexcept
+        -> const_buffer;
+    template <typename T, ::std::size_t N>
+    auto buffer(T const (&)[N]) noexcept
+        -> const_buffer;
+    template <typename T, ::std::size_t N>
+    auto buffer(::std::array<T const, N>&) noexcept
+        -> const_buffer;
+    template <typename T, ::std::size_t N>
+    auto buffer(::std::array<T, N> const&) noexcept
+        -> const_buffer;
+    template <typename T, typename A>
+    auto buffer(::std::vector<T, A> const&) noexcept
+        -> const_buffer;
+    template <typename C, typename T, typename A>
+    auto buffer(::std::basic_string<C, T, A> const&) noexcept
+        -> const_buffer;
+    template <typename C, typename T>
+    auto buffer(::std::basic_string_view<C, T> const&) noexcept
+        -> const_buffer;
+
+
+    auto buffer(const_buffer const&, ::std::size_t) noexcept
+        -> const_buffer;
+    template <typename T, ::std::size_t N>
+    auto buffer(T const (&)[N], ::std::size_t) noexcept
+        -> const_buffer;
+    template <typename T, ::std::size_t N>
+    auto buffer(::std::array<T const, N>&, ::std::size_t) noexcept
+        -> const_buffer;
+    template <typename T, ::std::size_t N>
+    auto buffer(::std::array<T, N> const&, ::std::size_t) noexcept
+        -> const_buffer;
+    template <typename T, typename A>
+    auto buffer(::std::vector<T, A> const&, ::std::size_t) noexcept
+        -> const_buffer;
+    template <typename C, typename T, typename A>
+    auto buffer(::std::basic_string<C, T, A> const&, ::std::size_t) noexcept
+        -> const_buffer;
+    template <typename C, typename T>
+    auto buffer(::std::basic_string_view<C, T> const&, ::std::size_t) noexcept
+        -> const_buffer;
 }
 
 // ----------------------------------------------------------------------------
@@ -50,6 +107,11 @@ public:
     constexpr auto data() const noexcept -> void const*;
     constexpr auto size() const noexcept -> ::std::size_t;
     constexpr auto operator+= (::std::size_t) noexcept -> const_buffer& ;
+
+    friend auto operator+ (const_buffer const& b, ::std::size_t n) noexcept
+        -> const_buffer { return const_buffer(b) += n; }
+    friend auto operator+ (::std::size_t n, const_buffer const& b) noexcept
+        -> const_buffer { return const_buffer(b) += n; }
 };
 
 // ----------------------------------------------------------------------------
@@ -91,5 +153,122 @@ constexpr auto nstd::net::const_buffer::operator+= (::std::size_t n) noexcept
 }
 
 // ----------------------------------------------------------------------------
+
+inline auto nstd::net::buffer_sequence_begin(const_buffer const& buffer) noexcept
+    -> ::nstd::net::const_buffer const*
+{
+    return ::nstd::memory::addressof(buffer);
+}
+
+inline auto nstd::net::buffer_sequence_end(const_buffer const& buffer) noexcept
+    -> ::nstd::net::const_buffer const*
+{
+    return ::nstd::net::buffer_sequence_begin(buffer) + 1;
+}
+
+// ----------------------------------------------------------------------------
+
+inline auto nstd::net::buffer(void const* d, ::std::size_t n) noexcept
+    -> ::nstd::net::const_buffer
+{
+    return ::nstd::net::const_buffer(d, n);
+}
+
+inline auto nstd::net::buffer(::nstd::net::const_buffer const& b) noexcept
+    -> ::nstd::net::const_buffer
+{
+    return b;
+}
+
+template <typename T, ::std::size_t N>
+auto nstd::net::buffer(T const (& b)[N]) noexcept
+    -> ::nstd::net::const_buffer
+{
+    return ::nstd::net::const_buffer(+b, sizeof(b));
+}
+
+template <typename T, ::std::size_t N>
+auto nstd::net::buffer(::std::array<T const, N>& b) noexcept
+    -> ::nstd::net::const_buffer
+{
+    return nstd::net::hidden_names::make_buffer<::nstd::net::const_buffer>(b);
+}
+
+template <typename T, ::std::size_t N>
+auto nstd::net::buffer(::std::array<T, N> const& b) noexcept
+    -> ::nstd::net::const_buffer
+{
+    return nstd::net::hidden_names::make_buffer<::nstd::net::const_buffer>(b);
+}
+
+template <typename T, typename A>
+auto nstd::net::buffer(::std::vector<T, A> const& b) noexcept
+    -> ::nstd::net::const_buffer
+{
+    return nstd::net::hidden_names::make_buffer<::nstd::net::const_buffer>(b);
+}
+
+template <typename C, typename T, typename A>
+auto nstd::net::buffer(::std::basic_string<C, T, A> const& b) noexcept
+    -> ::nstd::net::const_buffer
+{
+    return nstd::net::hidden_names::make_buffer<::nstd::net::const_buffer>(b);
+}
+
+template <typename C, typename T>
+auto nstd::net::buffer(::std::basic_string_view<C, T> const& b) noexcept
+    -> ::nstd::net::const_buffer
+{
+    return nstd::net::hidden_names::make_buffer<::nstd::net::const_buffer>(b);
+}
+
+inline auto nstd::net::buffer(::nstd::net::const_buffer const& b, ::std::size_t n) noexcept
+    -> ::nstd::net::const_buffer
+{
+    return ::nstd::net::const_buffer(b.data(), ::nstd::algorithm::min(b.size(), n));
+}
+
+template <typename T, ::std::size_t N>
+auto nstd::net::buffer(T const (&b)[N], ::std::size_t n) noexcept
+    -> ::nstd::net::const_buffer
+{
+    return ::nstd::net::buffer(::nstd::net::buffer(b), n);
+}
+
+template <typename T, ::std::size_t N>
+auto nstd::net::buffer(::std::array<T const, N>& b, ::std::size_t n) noexcept
+    -> ::nstd::net::const_buffer
+{
+    return ::nstd::net::buffer(::nstd::net::buffer(b), n);
+}
+
+template <typename T, ::std::size_t N>
+auto nstd::net::buffer(::std::array<T, N> const& b, ::std::size_t n) noexcept
+    -> ::nstd::net::const_buffer
+{
+    return ::nstd::net::buffer(::nstd::net::buffer(b), n);
+}
+
+template <typename T, typename A>
+auto nstd::net::buffer(::std::vector<T, A> const& b, ::std::size_t n) noexcept
+    -> ::nstd::net::const_buffer
+{
+    return ::nstd::net::buffer(::nstd::net::buffer(b), n);
+}
+
+template <typename C, typename T, typename A>
+auto nstd::net::buffer(::std::basic_string<C, T, A> const& b, ::std::size_t n) noexcept
+    -> ::nstd::net::const_buffer
+{
+    return ::nstd::net::buffer(::nstd::net::buffer(b), n);
+}
+
+template <typename C, typename T>
+auto nstd::net::buffer(::std::basic_string_view<C, T> const& b, ::std::size_t n) noexcept
+    -> ::nstd::net::const_buffer
+{
+    return ::nstd::net::buffer(::nstd::net::buffer(b), n);
+}
+
 
 #endif

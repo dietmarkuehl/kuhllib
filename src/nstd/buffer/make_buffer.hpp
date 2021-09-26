@@ -1,6 +1,6 @@
-// nstd/memory/address_of.hpp                                         -*-C++-*-
+// nstd/buffer/make_buffer.hpp                                        -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2017 Dietmar Kuehl http://www.dietmar-kuehl.de         
+//  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
 //  Permission is hereby granted, free of charge, to any person          
 //  obtaining a copy of this software and associated documentation       
@@ -23,16 +23,27 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_MEMORY_ADDRESS_OF
-#define INCLUDED_NSTD_MEMORY_ADDRESS_OF
+#ifndef INCLUDED_NSTD_BUFFER_MAKE_BUFFER
+#define INCLUDED_NSTD_BUFFER_MAKE_BUFFER
 
-#include <memory>
+#include "nstd/memory/addressof.hpp"
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::memory {
-    //-dk:TODO use own version of addressof
-    using ::std::addressof;
+namespace nstd::net::hidden_names {
+    template <typename B, typename C>
+    auto make_buffer(C&& c) -> B;
+}
+
+// ----------------------------------------------------------------------------
+
+template <typename B, typename C>
+auto nstd::net::hidden_names::make_buffer(C&& c) -> B
+{
+    return c.begin() == c.end()
+        ? B()
+        : B(::nstd::memory::addressof(*c.begin()),
+            sizeof(*c.begin()) * (c.end() - c.begin()));
 }
 
 // ----------------------------------------------------------------------------
