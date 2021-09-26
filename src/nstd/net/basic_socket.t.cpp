@@ -72,7 +72,6 @@ static KT::testcase const tests[] = {
                 ;
         }),
     KT::expect_success("async_connect from arguments", []{
-            ::std::cout << "async_connect\n";
             Net::io_context context;
             TD::socket s{IP::tcp::v4()};
             auto connect_sender
@@ -91,7 +90,6 @@ static KT::testcase const tests[] = {
                 ;
         }),
     KT::expect_success("async_connect from sender", []{
-            ::std::cout << "async_connect\n";
             Net::io_context context;
             TD::socket s{IP::tcp::v4()};
             auto connect_sender

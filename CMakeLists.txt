@@ -34,10 +34,13 @@ list(APPEND kuhllib_components
     src/nstd/algorithm/find_if
     src/nstd/algorithm/find_if_not
     src/nstd/algorithm/for_each
+    src/nstd/algorithm/min
     src/nstd/algorithm/mismatch
     src/nstd/algorithm/none_of
     src/nstd/algorithm/search
     src/nstd/atomic/atomic
+    src/nstd/buffer/const_buffer
+    src/nstd/buffer/mutable_buffer
     src/nstd/concepts/boolean_testable
     src/nstd/cursor/array
     src/nstd/cursor/category

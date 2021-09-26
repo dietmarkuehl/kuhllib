@@ -1,4 +1,4 @@
-// nstd/file/open.t.cpp                                               -*-C++-*-
+// nstd/algorithm/min.t.cpp                                           -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,59 +23,42 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/file/open.hpp"
-#include "nstd/net/io_context.hpp"
-#include "nstd/execution/just.hpp"
-#include "nstd/execution/then.hpp"
-#include "nstd/thread/sync_wait.hpp"
-#include "nstd/utility/move.hpp"
+#include "nstd/algorithm/min.hpp"
 #include "kuhl/test.hpp"
-#include <string_view>
-#include <thread>
 
-namespace File = ::nstd::file;
-namespace EX   = ::nstd::execution;
-namespace TT   = ::nstd::this_thread;
-namespace UT   = ::nstd::utility;
-namespace NET  = ::nstd::net;
-namespace KT   = ::kuhl::test;
+namespace test_declarations {}
+namespace TD = ::test_declarations;
+namespace KT = ::kuhl::test;
+namespace NA = ::nstd::algorithm;
+
+// ----------------------------------------------------------------------------
+
+namespace test_declarations {
+    namespace {
+        struct value {
+            int v;
+            auto operator< (value const& o) const {
+                return this->v < o.v;
+            }
+        };
+    }
+}
 
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
-    KT::expect_success("file open() existing file", []{
-            bool            value(false);
-            NET::io_context ctxt;
-            ::std::jthread thread([&ctxt]{ ctxt.run_one(); });
-            auto x = EX::just(::std::string_view("/dev/null"))
-                   | File::open_in(ctxt)
-                   | EX::then([&value](File::descriptor&&){ return value = true; })
-                   ;
-            TT::sync_wait(UT::move(x));
-            return value;
+    KT::expect_success("LHS is less than RHS", []{
+            TD::value v0{1}, v1{2};
+            return &NA::min(v0, v1) == &v0;
         }),
-    KT::expect_success("file open() non-existing file", []{
-            bool            value(false);
-            NET::io_context ctxt;
-            ::std::jthread thread([&ctxt]{ ctxt.run_one(); });
-            auto x = EX::just(::std::string_view("/dev/nill"))
-                   | File::open_in(ctxt)
-                   | EX::then([&value](File::descriptor&&){ return value = true; })
-                   ;
-            try {
-                TT::sync_wait(UT::move(x));
-                return false;
-            }
-            catch (::std::error_code const&) {
-                return value == false;
-            }
-            catch (::std::system_error const&) {
-                return value == false;
-            }
-            catch (...) {
-                return false;
-            }
+    KT::expect_success("RHS is less than LHS", []{
+            TD::value v0{2}, v1{1};
+            return &NA::min(v0, v1) == &v1;
+        }),
+    KT::expect_success("LHS is equal to RHS", []{
+            TD::value v0{1}, v1{1};
+            return &NA::min(v0, v1) == &v0;
         }),
 };
 
-static KT::add_tests suite("open", ::tests);
+static KT::add_tests suite("min", ::tests);

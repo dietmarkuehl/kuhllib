@@ -66,7 +66,7 @@ namespace nstd::net {
                                    ::nstd::net::basic_socket_acceptor<P>& acceptor,
                                    S scheduler) -> void
             {
-                ::std::cout << "scheduling accept\n";
+                //-dk:TODO remove ::std::cout << "scheduling accept\n";
                 scheduler.context()->accept(acceptor.native_handle(),
                                             &ob.d_address,
                                             &ob.d_len,
@@ -75,7 +75,7 @@ namespace nstd::net {
             }
             auto do_result(::std::int32_t fd, ::std::uint32_t) -> void override
             {
-                ::std::cout << "returned accept\n";
+                //-dk:TODO remove ::std::cout << "returned accept\n";
                 ::nstd::execution::set_value(::nstd::utility::move(this->d_receiver),
                                              ::nstd::net::basic_stream_socket<::nstd::net::ip::tcp>(::nstd::net::ip::tcp::v4(), fd));
             }

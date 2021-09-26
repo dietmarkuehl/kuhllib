@@ -153,7 +153,7 @@ auto nstd::file::ring_context::submit(Op op) ->void
     this->d_submission.d_array[index] = index;
     ++this->d_outstanding;
     this->d_submission.advance_tail();
-    ::std::cout << "ring_context::submit()\n";
+    //-dk:TODO remove ::std::cout << "ring_context::submit()\n";
     this->intern_submit(1u);
 }
 

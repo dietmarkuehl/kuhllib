@@ -30,7 +30,7 @@
 #include "nstd/net/socket_base.hpp"
 #include "nstd/file/ring_context.hpp"
 #include "nstd/hidden_names/operation.hpp"
-#include <iostream>
+#include <iostream> //-dk:TODO remove
 #include <optional>
 #include <system_error>
 #include <tuple>
@@ -59,7 +59,7 @@ namespace nstd::net {
                                    typename ::nstd::net::basic_socket<P>::endpoint_type const& endpoint) -> void
             {
                 ob.d_len = endpoint.get_address(&ob.d_address);
-                ::std::cout << "scheduling connect\n";
+                //-dk:TODO remove ::std::cout << "scheduling connect\n";
                 scheduler.context()->connect(socket.native_handle(),
                                              &ob.d_address,
                                              ob.d_len,
@@ -68,11 +68,11 @@ namespace nstd::net {
             auto do_result(::std::int32_t rc, ::std::uint32_t) -> void override
             {
                 if (0 == rc) {
-                    ::std::cout << "connect returned success" << rc << "\n";
+                    //-dk:TODO remove ::std::cout << "connect returned success" << rc << "\n";
                     ::nstd::execution::set_value(::nstd::utility::move(this->d_receiver), rc);
                 }
                 else {
-                    ::std::cout << "connect returned: error=" << ::std::error_code(-rc, ::std::system_category()) << "\n";
+                    //-dk:TODO remove ::std::cout << "connect returned: error=" << ::std::error_code(-rc, ::std::system_category()) << "\n";
                     //-dk:TODO are these exceptional or actually results?
                     ::nstd::execution::set_error(::nstd::utility::move(this->d_receiver),
                                                  ::std::error_code(-rc, ::std::system_category()));
