@@ -22,9 +22,6 @@ list(APPEND kuhllib_test_components
     src/kuhl/test
     )
 
-list(APPEND temporary_removed
-)
-
 list(APPEND kuhllib_components
     src/nstd/algorithm/all_of
     src/nstd/algorithm/any_of
@@ -200,3 +197,6 @@ add_library(kuhllib STATIC ${kuhllib_libfiles})
 add_executable(kuhllib_test ${kuhllib_tstfiles})
 target_link_libraries(kuhllib_test PUBLIC kuhllib kuhltest pthread)
 add_test(NAME kuhllib_test COMMAND $<TARGET_FILE:kuhllib_test>)
+
+add_executable(echo_server src/examples/echo_server.cpp)
+target_link_libraries(echo_server PUBLIC kuhllib pthread)
