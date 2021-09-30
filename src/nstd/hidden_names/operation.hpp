@@ -147,6 +147,15 @@ struct nstd::hidden_names::operation<Tag, Results, Errors>::sender
                                   ::nstd::utility::move(s.d_args),
                               });
     }
+    template <typename Receiver>
+    friend auto tag_invoke(::nstd::execution::connect_t, const sender& s, Receiver&& r) noexcept {
+        return ::nstd::execution::connect(
+                              s.d_sender,
+                              operation_receiver<Tag, Receiver, Args...>{
+                                  ::nstd::utility::forward<Receiver>(r),
+                                  s.d_args,
+                              });
+    }
 };
 
 // ----------------------------------------------------------------------------

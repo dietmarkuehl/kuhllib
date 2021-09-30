@@ -136,7 +136,7 @@ inline auto nstd::file::ring_context::scheduler() noexcept
 class nstd::file::ring_context::io_base
 {
 protected:
-    ~io_base() = default;
+    virtual ~io_base() = default;
     virtual auto do_result(::std::int32_t, ::std::uint32_t) -> void = 0;
 
 public:

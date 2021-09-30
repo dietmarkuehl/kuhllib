@@ -171,50 +171,6 @@ namespace
     {
         client::read(outstanding, context, ::std::make_shared<client>(::std::move(socket)));
     }
-
-    auto run_accept(starter&         outstanding,
-                    NN::io_context&  context,
-                    socket_acceptor& server) -> void
-    {
-        static ::std::string welcome("welcome\n");
-        outstanding.start(
-              NN::async_accept(server, context.scheduler())
-            | EX::then([&outstanding, &context](stream_socket client){
-                    outstanding.start(NN::async_write_some(client, context.scheduler(), NN::buffer(welcome)));
-                    return client;
-                })
-            | EX::then([&outstanding, &context, &server](stream_socket client){
-                    run_accept(outstanding, context, server);
-                    return client;
-                })
-            | EX::then([&outstanding, &context](stream_socket client){
-                    run_client(outstanding, context, ::std::move(client));
-                })
-        );
-#if 0
-        outstanding.start(
-            EX::repeat_effect_until(
-                  NN::async_accept(server, context.scheduler())
-                | EX::then([](auto&&...){})
-#if 0
-                | EX::then([&outstanding, &context](stream_socket client){
-                        outstanding.start(NN::async_write_some(client, context.scheduler(), NN::buffer(welcome)));
-                        return client;
-                    })
-                | EX::then([&outstanding, &context, &server](stream_socket client){
-                        run_accept(outstanding, context, server);
-                        return client;
-                    })
-                | EX::then([&outstanding, &context](stream_socket client){
-                        run_client(outstanding, context, ::std::move(client));
-                    })
-#endif
-                ,
-                []{ return false; }
-            )
-        );
-#endif
-    }
 }
 
 // ----------------------------------------------------------------------------
@@ -226,6 +182,23 @@ int main()
     socket_acceptor server(endpoint(NI::address_v4::any(), 12345));
     starter         outstanding;
 
-    run_accept(outstanding, context, server);
-    context.run();
+    static ::std::string const welcome("welcome\n"); (void)welcome;
+    EX::run(context,
+            EX::repeat_effect_until(
+                  NN::async_accept(server, context.scheduler())
+#if 0
+                | EX::let_value([&context](stream_socket client){
+                        auto write = NN::async_write_some(client, context.scheduler(), NN::buffer(welcome));
+                        return ::std::move(write) | EX::then([client = ::std::move(client)](auto&&...) mutable {
+                            return ::std::move(client);
+                        });
+                    })
+#endif
+                | EX::then([&outstanding, &context](stream_socket client){
+                        run_client(outstanding, context, ::std::move(client));
+                    })
+                ,
+                []{ return false; }
+            )
+        );
 }
