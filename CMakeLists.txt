@@ -58,6 +58,7 @@ list(APPEND kuhllib_components
     src/nstd/execution/is_execution_policy
     src/nstd/execution/just
     src/nstd/execution/lazy_then
+    src/nstd/execution/let_value
     src/nstd/execution/operation_state
     src/nstd/execution/parallel_policy
     src/nstd/execution/parallel_unsequenced_policy

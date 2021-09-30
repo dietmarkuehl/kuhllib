@@ -9,3 +9,7 @@ build:
 
 clean:
 	cd ..; $(MAKE) clean
+
+.PHONY: echo
+echo:
+	../build-$(COMPILER)/echo_server

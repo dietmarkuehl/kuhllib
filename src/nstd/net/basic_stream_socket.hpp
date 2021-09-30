@@ -170,6 +170,16 @@ struct nstd::net::async_read_some_t::sender
     {
         using result = ::nstd::net::async_read_some_t::state<Receiver, Scheduler, MBS>;
         return result(::nstd::utility::forward<Receiver>(r),
+                      ::nstd::utility::move(s.d_scheduler),
+                      ::nstd::utility::move(s.d_buffers),
+                      ::nstd::utility::move(s.d_handle));
+    }
+    template <typename Receiver>
+    friend auto tag_invoke(::nstd::execution::connect_t, sender const& s, Receiver&& r)
+        noexcept -> ::nstd::net::async_read_some_t::state<Receiver, Scheduler, MBS>
+    {
+        using result = ::nstd::net::async_read_some_t::state<Receiver, Scheduler, MBS>;
+        return result(::nstd::utility::forward<Receiver>(r),
                       s.d_scheduler,
                       s.d_buffers,
                       s.d_handle);

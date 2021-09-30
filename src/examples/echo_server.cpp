@@ -30,6 +30,7 @@
 #include "../nstd/execution/start.hpp"
 #include "../nstd/execution/sender.hpp"
 #include "../nstd/execution/then.hpp"
+#include "../nstd/execution/repeat_effect_until.hpp"
 #include "../nstd/net/io_context.hpp"
 #include "../nstd/net/basic_socket_acceptor.hpp"
 #include "../nstd/net/basic_stream_socket.hpp"
@@ -98,6 +99,7 @@ namespace
     struct client
     {
         stream_socket d_socket;
+        bool          d_done = false;
         char          d_buffer[1024];
         client(stream_socket&& socket): d_socket(::std::move(socket)) {
             ::std::cout << "client connected\n";
@@ -105,10 +107,11 @@ namespace
         ~client() {
             ::std::cout << "client disconnected\n";
         }
-        static auto read(starter& outstanding, NN::io_context& context, ::std::unique_ptr<client>&& ptr)
+        static auto read(starter& outstanding, NN::io_context& context, ::std::shared_ptr<client>&& ptr)
             -> void
         {
             client& cl(*ptr);
+            #if 0
             outstanding.start(
                 NN::async_read_some(cl.d_socket,
                                     context.scheduler(),
@@ -121,8 +124,31 @@ namespace
                     }
                     })
                 );
+            #endif
 
+            ::std::string s;
+            outstanding.start(
+                EX::repeat_effect_until(
+                      NN::async_read_some(cl.d_socket,
+                                          context.scheduler(),
+                                           NN::buffer(cl.d_buffer))
+                    | EX::then([ptr](::std::size_t n){
+                        ::std::cout << "read='" << ::std::string_view(ptr->d_buffer, n) << "'\n";
+                        ptr->d_done = n == 0;
+                        //return n;
+                      })
+#if 0
+                    | EX::let_value([&context, ptr](::std::size_t n){
+                        return NN::async_write_some(ptr->d_socket,
+                                                    context.scheduler(),
+                                                    NN::buffer(ptr->d_buffer, n);
+                      })
+#endif
+                    , [ptr]{ return ptr->d_done; }
+                )
+            );
         }
+#if 0
         static auto write(starter& outstanding, NN::io_context& context, ::std::unique_ptr<client>&& ptr, ::std::size_t n)
             -> void
         {
@@ -136,13 +162,14 @@ namespace
                     })
                 );
         }
+#endif
     };
 
     auto run_client(starter&         outstanding,
                     NN::io_context&  context,
                     stream_socket&&  socket)
     {
-        client::read(outstanding, context, ::std::make_unique<client>(::std::move(socket)));
+        client::read(outstanding, context, ::std::make_shared<client>(::std::move(socket)));
     }
 
     auto run_accept(starter&         outstanding,
@@ -163,7 +190,30 @@ namespace
             | EX::then([&outstanding, &context](stream_socket client){
                     run_client(outstanding, context, ::std::move(client));
                 })
-            );
+        );
+#if 0
+        outstanding.start(
+            EX::repeat_effect_until(
+                  NN::async_accept(server, context.scheduler())
+                | EX::then([](auto&&...){})
+#if 0
+                | EX::then([&outstanding, &context](stream_socket client){
+                        outstanding.start(NN::async_write_some(client, context.scheduler(), NN::buffer(welcome)));
+                        return client;
+                    })
+                | EX::then([&outstanding, &context, &server](stream_socket client){
+                        run_accept(outstanding, context, server);
+                        return client;
+                    })
+                | EX::then([&outstanding, &context](stream_socket client){
+                        run_client(outstanding, context, ::std::move(client));
+                    })
+#endif
+                ,
+                []{ return false; }
+            )
+        );
+#endif
     }
 }
 
@@ -171,6 +221,7 @@ namespace
 
 int main()
 {
+    ::std::cout << ::std::unitbuf;
     NN::io_context  context;
     socket_acceptor server(endpoint(NI::address_v4::any(), 12345));
     starter         outstanding;

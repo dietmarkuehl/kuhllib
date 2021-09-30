@@ -69,6 +69,7 @@ namespace nstd::execution {
             bool d_engaged = false;
             union holder {
                 holder(){}
+                ~holder(){}
                 internal_state d_state;
             } d_internal_state;
 
