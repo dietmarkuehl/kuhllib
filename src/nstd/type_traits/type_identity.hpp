@@ -35,6 +35,11 @@ namespace nstd::type_traits {
         type_identity() = default;
         type_identity(type did_you_mean_to_use_type_identity_t) = delete;
     };
+    template <>
+    struct type_identity<void> {
+        using type = void;
+        type_identity() = default;
+    };
     template <typename T>
     using type_identity_t = typename ::nstd::type_traits::type_identity<T>::type;
 }

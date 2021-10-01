@@ -28,17 +28,13 @@
 
 // ----------------------------------------------------------------------------
 
-namespace nstd
-{
-    namespace type_traits {
-        template <bool, typename T0, typename T1> struct condition;
-        template <typename T0, typename T1> struct condition<true, T0, T1>;
-        template <typename T0, typename T1> struct condition<false, T0, T1>;
+namespace nstd::type_traits {
+    template <bool, typename T0, typename T1> struct condition;
+    template <typename T0, typename T1> struct condition<true, T0, T1>;
+    template <typename T0, typename T1> struct condition<false, T0, T1>;
         
-        template <bool Condition, typename T0, typename T1>
-        using condition_t = typename condition<Condition, T0, T1>::type;
-    }
-
+    template <bool Condition, typename T0, typename T1>
+    using condition_t = typename ::nstd::type_traits::condition<Condition, T0, T1>::type;
 }
 
 // ----------------------------------------------------------------------------

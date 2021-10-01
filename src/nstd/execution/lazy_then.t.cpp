@@ -145,6 +145,17 @@ static KT::testcase const tests[] = {
                 && ::std::get<0>(*res).value == 12
                 ;
         }),
+    KT::expect_success("lazy_then with void fun", []{
+            auto sender = EX::lazy_then(EX::lazy_then(EX::just(), [](){ }), [](auto&&...){ return 1; });
+            auto res = TT::sync_wait(UT::move(sender));
+            return KT::use(sender)
+                && EX::sender<decltype(sender)>
+                && EX::typed_sender<decltype(sender)>
+                && KT::use(res)
+                && KT::type<decltype(res)> == KT::type<::std::optional<::std::variant<int>>>
+                && res
+                ;
+        }),
 };
 
 static KT::add_tests suite("lazy_then", ::tests);

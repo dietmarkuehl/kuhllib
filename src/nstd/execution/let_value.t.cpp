@@ -26,6 +26,7 @@
 #include "nstd/execution/let_value.hpp"
 #include "nstd/execution/just.hpp"
 #include "nstd/execution/then.hpp"
+#include "nstd/execution/repeat_effect_until.hpp"
 #include "nstd/thread/sync_wait.hpp"
 #include "nstd/utility/move.hpp"
 #include "kuhl/test.hpp"
@@ -39,15 +40,8 @@ namespace UT = ::nstd::utility;
 
 // ----------------------------------------------------------------------------
 
-namespace test_declarations {
-    namespace {
-    }
-}
-
-// ----------------------------------------------------------------------------
-
 static KT::testcase const tests[] = {
-    KT::expect_success("breathing", []{
+    KT::expect_success("send one value", []{
         ::std::optional<::std::variant<::std::string>> value;
             auto sender = EX::let_value(EX::just(::std::string("hello, "), ::std::string("world")),
                                     [](auto&&... a){ return EX::just((a + ...)); })
@@ -57,6 +51,20 @@ static KT::testcase const tests[] = {
                 && value
                 && value->index() == 0
                 && ::std::get<0>(*value) == "hello, world"
+                ;
+        }),
+    KT::expect_success("repeat send one value", []{
+            auto sender =
+                EX::repeat_effect_until(
+                      EX::let_value(EX::just(::std::string("hello, "), ::std::string("world")),
+                                    [](auto&&... a){ return EX::just((a + ...)); })
+                    | EX::then([](auto&&...){ })
+                    , []{ return true; }
+                )
+                | EX::then([](auto&&...){ return 0; })
+                ;
+            TT::sync_wait(UT::move(sender));
+            return KT::use(sender)
                 ;
         }),
 };

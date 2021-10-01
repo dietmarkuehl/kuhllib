@@ -204,7 +204,7 @@ struct nstd::execution::let_value_t::sender
             };
     }
     template <typename Receiver>
-    friend auto tag_invoke(::nstd::execution::connect_t, sender& sndr, Receiver&& receiver)
+    friend auto tag_invoke(::nstd::execution::connect_t, sender const& sndr, Receiver&& receiver)
         noexcept {
         return state<Sender, Function, Receiver>{
             sndr.d_sender,

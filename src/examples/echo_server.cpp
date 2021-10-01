@@ -27,6 +27,7 @@
 
 #include "../nstd/execution/run.hpp"
 #include "../nstd/execution/connect.hpp"
+#include "../nstd/execution/let_value.hpp"
 #include "../nstd/execution/start.hpp"
 #include "../nstd/execution/sender.hpp"
 #include "../nstd/execution/then.hpp"
@@ -111,58 +112,29 @@ namespace
             -> void
         {
             client& cl(*ptr);
-            #if 0
-            outstanding.start(
-                NN::async_read_some(cl.d_socket,
-                                    context.scheduler(),
-                                 NN::buffer(cl.d_buffer))
-                | EX::then([&outstanding, &context, ptr = ::std::move(ptr)](::std::size_t n) mutable {
-                    if (n != 0u)
-                    {
-                        ::std::string_view view(ptr->d_buffer, n);
-                        client::write(outstanding, context, ::std::move(ptr), n);
-                    }
-                    })
-                );
-            #endif
 
             ::std::string s;
             outstanding.start(
                 EX::repeat_effect_until(
+                      EX::let_value(
                       NN::async_read_some(cl.d_socket,
                                           context.scheduler(),
                                            NN::buffer(cl.d_buffer))
                     | EX::then([ptr](::std::size_t n){
                         ::std::cout << "read='" << ::std::string_view(ptr->d_buffer, n) << "'\n";
                         ptr->d_done = n == 0;
-                        //return n;
-                      })
-#if 0
-                    | EX::let_value([&context, ptr](::std::size_t n){
+                        return n;
+                      }),
+                        [&context, ptr](::std::size_t n){
                         return NN::async_write_some(ptr->d_socket,
                                                     context.scheduler(),
-                                                    NN::buffer(ptr->d_buffer, n);
+                                                    NN::buffer(ptr->d_buffer, n));
                       })
-#endif
+                      | EX::then([](auto&&...){})
                     , [ptr]{ return ptr->d_done; }
                 )
             );
         }
-#if 0
-        static auto write(starter& outstanding, NN::io_context& context, ::std::unique_ptr<client>&& ptr, ::std::size_t n)
-            -> void
-        {
-            client& cl(*ptr);
-            outstanding.start(
-                NN::async_write_some(cl.d_socket,
-                                     context.scheduler(),
-                                     NN::buffer(cl.d_buffer, n))
-                | EX::then([&outstanding, &context, ptr = ::std::move(ptr)](::std::size_t) mutable {
-                    client::read(outstanding, context, ::std::move(ptr));
-                    })
-                );
-        }
-#endif
     };
 
     auto run_client(starter&         outstanding,
