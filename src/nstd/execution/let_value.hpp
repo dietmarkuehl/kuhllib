@@ -66,6 +66,13 @@ namespace nstd::execution {
                                       ::nstd::utility::forward<Sender>(sender),
                                       ::nstd::utility::forward<Function>(fun));
         }
+        template <typename Function>
+        auto operator()(Function&& fun) const {
+            return [this, fun = ::nstd::utility::forward<Function>(fun)](::nstd::execution::sender auto&& sender) mutable{
+                return (*this)(::nstd::utility::forward<decltype(sender)>(sender),
+                               ::nstd::utility::move(fun));
+            };
+        }
     } let_value;
 }
 

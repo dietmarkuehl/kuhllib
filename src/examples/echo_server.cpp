@@ -108,40 +108,35 @@ namespace
         ~client() {
             ::std::cout << "client disconnected\n";
         }
-        static auto read(starter& outstanding, NN::io_context& context, ::std::shared_ptr<client>&& ptr)
-            -> void
-        {
-            client& cl(*ptr);
-
-            ::std::string s;
-            outstanding.start(
-                EX::repeat_effect_until(
-                      EX::let_value(
-                      NN::async_read_some(cl.d_socket,
-                                          context.scheduler(),
-                                           NN::buffer(cl.d_buffer))
-                    | EX::then([ptr](::std::size_t n){
-                        ::std::cout << "read='" << ::std::string_view(ptr->d_buffer, n) << "'\n";
-                        ptr->d_done = n == 0;
-                        return n;
-                      }),
-                        [&context, ptr](::std::size_t n){
-                        return NN::async_write_some(ptr->d_socket,
-                                                    context.scheduler(),
-                                                    NN::buffer(ptr->d_buffer, n));
-                      })
-                      | EX::then([](auto&&...){})
-                    , [ptr]{ return ptr->d_done; }
-                )
-            );
-        }
     };
 
     auto run_client(starter&         outstanding,
                     NN::io_context&  context,
                     stream_socket&&  socket)
     {
-        client::read(outstanding, context, ::std::make_shared<client>(::std::move(socket)));
+        auto owner = ::std::make_unique<client>(::std::move(socket));
+        auto ptr = owner.get();
+
+        outstanding.start(
+            EX::repeat_effect_until(
+                  EX::let_value(
+                      NN::async_read_some(ptr->d_socket,
+                                          context.scheduler(),
+                                           NN::buffer(ptr->d_buffer))
+                | EX::then([ptr](::std::size_t n){
+                    ::std::cout << "read='" << ::std::string_view(ptr->d_buffer, n) << "'\n";
+                    ptr->d_done = n == 0;
+                    return n;
+                }),
+                  [&context, ptr](::std::size_t n){
+                    return NN::async_write_some(ptr->d_socket,
+                                                context.scheduler(),
+                                                NN::buffer(ptr->d_buffer, n));
+                  })
+                | EX::then([](auto&&...){})
+                , [owner = ::std::move(owner)]{ return owner->d_done; }
+            )
+        );
     }
 }
 
@@ -158,14 +153,6 @@ int main()
     EX::run(context,
             EX::repeat_effect_until(
                   NN::async_accept(server, context.scheduler())
-#if 0
-                | EX::let_value([&context](stream_socket client){
-                        auto write = NN::async_write_some(client, context.scheduler(), NN::buffer(welcome));
-                        return ::std::move(write) | EX::then([client = ::std::move(client)](auto&&...) mutable {
-                            return ::std::move(client);
-                        });
-                    })
-#endif
                 | EX::then([&outstanding, &context](stream_socket client){
                         run_client(outstanding, context, ::std::move(client));
                     })
