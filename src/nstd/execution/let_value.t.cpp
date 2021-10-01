@@ -48,12 +48,15 @@ namespace test_declarations {
 
 static KT::testcase const tests[] = {
     KT::expect_success("breathing", []{
-            auto sender = EX::let_value(EX::just(17),
-                                    [](int){ return EX::just(::std::string("value)")); })
-                | EX::then([](auto&&){ return 0; });
-            //TT::sync_wait(UT::move(sender));
+        ::std::optional<::std::variant<::std::string>> value;
+            auto sender = EX::let_value(EX::just(::std::string("hello, "), ::std::string("world")),
+                                    [](auto&&... a){ return EX::just((a + ...)); })
+                                    ;
+            value = TT::sync_wait(UT::move(sender));
             return KT::use(sender)
-                && false
+                && value
+                && value->index() == 0
+                && ::std::get<0>(*value) == "hello, world"
                 ;
         }),
 };
