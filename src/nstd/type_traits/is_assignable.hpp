@@ -26,7 +26,7 @@
 #ifndef INCLUDED_NSTD_TYPE_TRAITS_IS_ASSIGNABLE
 #define INCLUDED_NSTD_TYPE_TRAITS_IS_ASSIGNABLE
 
-#include "nstd/type_traits/condition.hpp"
+#include "nstd/type_traits/conditional.hpp"
 #include "nstd/type_traits/declval.hpp"
 #include "nstd/type_traits/integral_constant.hpp"
 #include "nstd/type_traits/is_void.hpp"
@@ -40,12 +40,12 @@ namespace nstd
         namespace detail {
             template <typename S, typename T,
                       typename = decltype(nstd::type_traits::declval<
-                                              nstd::type_traits::condition_t<
+                                              nstd::type_traits::conditional_t<
                                                   nstd::type_traits::is_void<
                                                       nstd::type_traits::remove_cv_t<S>
                                                       >::value, int const, S>
                                               >() = nstd::type_traits::declval<
-                                                  nstd::type_traits::condition_t<
+                                                  nstd::type_traits::conditional_t<
                                                       nstd::type_traits::is_void<
                                                           nstd::type_traits::remove_cv_t<T>
                                                           >::value, int const, T>

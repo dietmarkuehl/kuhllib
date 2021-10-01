@@ -1,6 +1,6 @@
-// nstd/type_traits/condition.hpp                                     -*-C++-*-
+// nstd/type_traits/conditional.cpp                                   -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
+//  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
 //  Permission is hereby granted, free of charge, to any person          
 //  obtaining a copy of this software and associated documentation       
@@ -23,31 +23,10 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_TYPE_TRAITS_CONDITION
-#define INCLUDED_NSTD_TYPE_TRAITS_CONDITION
+#include "nstd/type_traits/conditional.hpp"
 
 // ----------------------------------------------------------------------------
 
 namespace nstd::type_traits {
-    template <bool, typename T0, typename T1> struct condition;
-    template <typename T0, typename T1> struct condition<true, T0, T1>;
-    template <typename T0, typename T1> struct condition<false, T0, T1>;
-        
-    template <bool Condition, typename T0, typename T1>
-    using condition_t = typename ::nstd::type_traits::condition<Condition, T0, T1>::type;
+    int conditional_dummy = 0;
 }
-
-// ----------------------------------------------------------------------------
-
-template <typename T0, typename T1>
-struct nstd::type_traits::condition<true, T0, T1> {
-    using type = T0;
-};
-template <typename T0, typename T1>
-struct nstd::type_traits::condition<false, T0, T1> {
-    using type = T1;
-};
-
-// ----------------------------------------------------------------------------
-
-#endif

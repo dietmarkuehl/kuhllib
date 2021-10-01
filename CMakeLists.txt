@@ -150,7 +150,7 @@ list(APPEND kuhllib_components
     src/nstd/type_traits/add_lvalue_reference
     src/nstd/type_traits/add_rvalue_reference
     src/nstd/type_traits/choose_type
-    src/nstd/type_traits/condition
+    src/nstd/type_traits/conditional
     src/nstd/type_traits/decay
     src/nstd/type_traits/declval
     src/nstd/type_traits/enable_if

@@ -1,4 +1,4 @@
-// nstd/type_traits/condition.t.cpp                                   -*-C++-*-
+// nstd/type_traits/conditional.hpp                                   -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,33 +23,31 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/type_traits/condition.hpp"
-#include "kuhl/test.hpp"
-
-namespace NT = nstd::type_traits;
-namespace KT = kuhl::test;
+#ifndef INCLUDED_NSTD_TYPE_TRAITS_CONDITIONAL
+#define INCLUDED_NSTD_TYPE_TRAITS_CONDITIONAL
 
 // ----------------------------------------------------------------------------
 
-namespace
-{
-    struct foo;
-    struct bar;
+namespace nstd::type_traits {
+    template <bool, typename T0, typename T1> struct conditional;
+    template <typename T0, typename T1> struct conditional<true, T0, T1>;
+    template <typename T0, typename T1> struct conditional<false, T0, T1>;
+        
+    template <bool Condition, typename T0, typename T1>
+    using conditional_t = typename ::nstd::type_traits::conditional<Condition, T0, T1>::type;
 }
 
 // ----------------------------------------------------------------------------
 
-static KT::testcase const tests[] = {
-    KT::expect_success("condition<true, foo, bar>", [](KT::context& c)->bool{
-            return KT::assert_type<foo, NT::condition<true, foo, bar>::type>(c, "expect foo")
-                && KT::assert_type<foo, NT::condition_t<true, foo, bar>>(c, "expect foo")
-                ;
-        }),
-    KT::expect_success("condition<false, foo, bar>", [](KT::context& c)->bool{
-            return KT::assert_type<bar, NT::condition<false, foo, bar>::type>(c, "expect bar")
-                && KT::assert_type<bar, NT::condition_t<false, foo, bar>>(c, "expect bar")
-                ;
-        }),
+template <typename T0, typename T1>
+struct nstd::type_traits::conditional<true, T0, T1> {
+    using type = T0;
+};
+template <typename T0, typename T1>
+struct nstd::type_traits::conditional<false, T0, T1> {
+    using type = T1;
 };
 
-static KT::add_tests suite("type_traits::condition", ::tests);
+// ----------------------------------------------------------------------------
+
+#endif

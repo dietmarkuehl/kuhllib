@@ -1,6 +1,6 @@
-// nstd/type_traits/condition.cpp                                     -*-C++-*-
+// nstd/type_traits/conditional.t.cpp                                 -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
+//  Copyright (C) 2014 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
 //  Permission is hereby granted, free of charge, to any person          
 //  obtaining a copy of this software and associated documentation       
@@ -23,8 +23,33 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/type_traits/condition.hpp"
+#include "nstd/type_traits/conditional.hpp"
+#include "kuhl/test.hpp"
+
+namespace NT = nstd::type_traits;
+namespace KT = kuhl::test;
 
 // ----------------------------------------------------------------------------
 
-int condition_dummy = 0;
+namespace
+{
+    struct foo;
+    struct bar;
+}
+
+// ----------------------------------------------------------------------------
+
+static KT::testcase const tests[] = {
+    KT::expect_success("conditional<true, foo, bar>", [](KT::context& c)->bool{
+            return KT::assert_type<foo, NT::conditional<true, foo, bar>::type>(c, "expect foo")
+                && KT::assert_type<foo, NT::conditional_t<true, foo, bar>>(c, "expect foo")
+                ;
+        }),
+    KT::expect_success("conditional<false, foo, bar>", [](KT::context& c)->bool{
+            return KT::assert_type<bar, NT::conditional<false, foo, bar>::type>(c, "expect bar")
+                && KT::assert_type<bar, NT::conditional_t<false, foo, bar>>(c, "expect bar")
+                ;
+        }),
+};
+
+static KT::add_tests suite("type_traits::conditional", ::tests);
