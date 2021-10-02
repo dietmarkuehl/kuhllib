@@ -155,6 +155,22 @@ static KT::testcase const tests[] = {
         EX::let_value(EX::just(), []{ return EX::just(); });
         return true;
     }),
+    KT::expect_success("when_all", []{
+        EX::when_all(EX::just(), EX::just());
+        return true;
+    }),
+    KT::expect_success("repeat_effect_until", []{
+        EX::repeat_effect_until(EX::just(), []{ return true; });
+        return true;
+    }),
+    KT::expect_success("repeat_effect", []{
+        EX::repeat_effect(EX::just());
+        return true;
+    }),
+    KT::expect_success("repeat_effect", []{
+        struct { auto run_one() -> int { return 0; } } context;
+        return KT::assert_type_exists<decltype(EX::run(context, EX::just()))>;
+    }),
 };
 
 static KT::add_tests suite("execution", ::tests);

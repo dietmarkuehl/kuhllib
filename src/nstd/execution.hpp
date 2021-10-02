@@ -55,6 +55,11 @@
 #include "nstd/execution/lazy_then.hpp"
 #include "nstd/execution/then.hpp"
 #include "nstd/execution/let_value.hpp"
+#include "nstd/execution/when_all.hpp"
+
+#include "nstd/execution/repeat_effect.hpp"
+#include "nstd/execution/repeat_effect_until.hpp"
+#include "nstd/execution/run.hpp"
 
 #if 0
 //-dk:TODO
@@ -78,7 +83,6 @@
 #include "nstd/execution/lazy_bulk.hpp"
 #include "nstd/execution/split.hpp"
 #include "nstd/execution/lazy_split.hpp"
-#include "nstd/execution/when_all.hpp"
 #include "nstd/execution/when_all_with_variant.hpp"
 #include "nstd/execution/transfer_when_all.hpp"
 #include "nstd/execution/lazy_transfer_when_all.hpp"

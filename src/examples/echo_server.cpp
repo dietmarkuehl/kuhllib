@@ -25,20 +25,12 @@
 
 #include <iostream>
 
-#include "../nstd/execution/run.hpp"
-#include "../nstd/execution/connect.hpp"
-#include "../nstd/execution/let_value.hpp"
-#include "../nstd/execution/start.hpp"
-#include "../nstd/execution/sender.hpp"
-#include "../nstd/execution/then.hpp"
-#include "../nstd/execution/repeat_effect.hpp"
-#include "../nstd/execution/repeat_effect_until.hpp"
-#include "../nstd/execution/just.hpp"
-#include "../nstd/net/io_context.hpp"
-#include "../nstd/net/basic_socket_acceptor.hpp"
-#include "../nstd/net/basic_stream_socket.hpp"
-#include "../nstd/net/ip/basic_endpoint.hpp"
-#include "../nstd/net/ip/tcp.hpp"
+#include "nstd/execution.hpp"
+#include "nstd/net/io_context.hpp"
+#include "nstd/net/basic_socket_acceptor.hpp"
+#include "nstd/net/basic_stream_socket.hpp"
+#include "nstd/net/ip/basic_endpoint.hpp"
+#include "nstd/net/ip/tcp.hpp"
 #include <list>
 #include <memory>
 #include <string>

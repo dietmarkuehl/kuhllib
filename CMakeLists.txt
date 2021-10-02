@@ -8,7 +8,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Werror -std=c++20")
 endif()
 
-include_directories(src)
+include_directories(${CMAKE_SOURCE_DIR}/src)
 enable_testing()
 
 set(KUHLLIB_HEADER_SUFFIX .hpp)
