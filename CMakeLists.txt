@@ -64,6 +64,7 @@ list(APPEND kuhllib_components
     src/nstd/execution/parallel_unsequenced_policy
     src/nstd/execution/receiver
     src/nstd/execution/receiver_of
+    src/nstd/execution/repeat_effect
     src/nstd/execution/repeat_effect_until
     src/nstd/execution/run
     src/nstd/execution/schedule

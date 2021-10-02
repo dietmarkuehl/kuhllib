@@ -1,4 +1,4 @@
-// nstd/execution/repeat_effect_until.t.cpp                           -*-C++-*-
+// nstd/execution/repeat_effect.t.cpp                                 -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,15 +23,18 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/execution/repeat_effect_until.hpp"
-#include "nstd/execution/just.hpp"
-#include "nstd/execution/connect.hpp"
+#include "nstd/execution/repeat_effect.hpp"
 #include "nstd/execution/receiver.hpp"
+#include "nstd/execution/sender.hpp"
+#include "nstd/execution/start.hpp"
+#include "nstd/execution/connect.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/set_error.hpp"
 #include "nstd/execution/set_done.hpp"
 #include "nstd/execution/then.hpp"
 #include "nstd/thread/sync_wait.hpp"
+#include "nstd/type_traits/remove_cvref.hpp"
+#include "nstd/utility/forward.hpp"
 #include "nstd/utility/move.hpp"
 #include "kuhl/test.hpp"
 
@@ -91,23 +94,10 @@ namespace test_declarations {
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
-    KT::expect_success("run to success", []{
-            int value = 0;
-            auto sender = EX::repeat_effect_until(
-                EX::just() | EX::then([&value]{ ++value; }),
-                [&value]{ return value == 3; }
-                );
-            TR::sync_wait(UT::move(sender) | EX::then([]{ return 0; }));
-            return value == 3
-                ;
-        }),
     KT::expect_success("run till error", []{
             int  value = 4;
             bool caught = false;
-            auto sender = EX::repeat_effect_until(
-                TD::sender{&value},
-                [&value]{ return value == 3; }
-                );
+            auto sender = EX::repeat_effect(TD::sender{&value});
             try {
                 TR::sync_wait(UT::move(sender) | EX::then([]{ return 0; }));
             }
@@ -120,14 +110,11 @@ static KT::testcase const tests[] = {
         }),
     KT::expect_success("run till cancelled", []{
             int value = 6;
-            auto sender = EX::repeat_effect_until(
-                TD::sender{&value},
-                [&value]{ return value == 3; }
-                );
+            auto sender = EX::repeat_effect(TD::sender{&value});
             TR::sync_wait(UT::move(sender) | EX::then([]{ return 0; }));
             return value == 8
                 ;
         }),
 };
 
-static KT::add_tests suite("repeat_effect_until", ::tests);
+static KT::add_tests suite("repeat_effect", ::tests);

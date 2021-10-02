@@ -31,6 +31,7 @@
 #include "../nstd/execution/start.hpp"
 #include "../nstd/execution/sender.hpp"
 #include "../nstd/execution/then.hpp"
+#include "../nstd/execution/repeat_effect.hpp"
 #include "../nstd/execution/repeat_effect_until.hpp"
 #include "../nstd/net/io_context.hpp"
 #include "../nstd/net/basic_socket_acceptor.hpp"
@@ -151,13 +152,11 @@ int main()
 
     static ::std::string const welcome("welcome\n"); (void)welcome;
     EX::run(context,
-            EX::repeat_effect_until(
+            EX::repeat_effect(
                   NN::async_accept(server, context.scheduler())
                 | EX::then([&outstanding, &context](stream_socket client){
                         run_client(outstanding, context, ::std::move(client));
                     })
-                ,
-                []{ return false; }
             )
         );
 }
