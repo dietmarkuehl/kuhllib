@@ -27,4 +27,6 @@
 
 // ----------------------------------------------------------------------------
 
-int execution_dummy = 0;
+namespace nstd {
+    int execution_dummy = 0;
+}

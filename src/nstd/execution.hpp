@@ -52,6 +52,9 @@
 #include "nstd/execution/schedule.hpp"
 #include "nstd/execution/just.hpp"
 #include "nstd/thread/sync_wait.hpp"
+#include "nstd/execution/lazy_then.hpp"
+#include "nstd/execution/then.hpp"
+#include "nstd/execution/let_value.hpp"
 
 #if 0
 //-dk:TODO
@@ -62,13 +65,10 @@
 #include "nstd/execution/lazy_transfer.hpp"
 #include "nstd/execution/schedule_from.hpp"
 #include "nstd/execution/lazy_schedule_from.hpp"
-#include "nstd/execution/then.hpp"
-#include "nstd/execution/lazy_then.hpp"
 #include "nstd/execution/upon_error.hpp"
 #include "nstd/execution/lazy_upon_error.hpp"
 #include "nstd/execution/upon_done.hpp"
 #include "nstd/execution/lazy_upon_done.hpp"
-#include "nstd/execution/let_value.hpp"
 #include "nstd/execution/lazy_let_value.hpp"
 #include "nstd/execution/let_error.hpp"
 #include "nstd/execution/lazy_let_error.hpp"

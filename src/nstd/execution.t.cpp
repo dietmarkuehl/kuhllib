@@ -143,6 +143,15 @@ static KT::testcase const tests[] = {
     KT::expect_success("just", []{
         return KT::assert_type_exists<decltype(EX::just(0))>;
     }),
+    KT::expect_success("lazy_then", []{
+        return KT::assert_type_exists<decltype(EX::lazy_then(EX::just(), []{}))>;
+    }),
+    KT::expect_success("then", []{
+        return KT::assert_type_exists<decltype(EX::then(EX::just(), []{}))>;
+    }),
+    KT::expect_success("let_value", []{
+        return KT::assert_type_exists<decltype(EX::let_value(EX::just(), []{ return EX::just(); }))>;
+    }),
 };
 
 static KT::add_tests suite("execution", ::tests);
