@@ -57,7 +57,7 @@ static KT::testcase const tests[] = {
             using Sender = decltype(sender);
             bool called = false;
             TR::sync_wait(UT::move(sender)
-                          | EX::then([&]{ called = true; return 0; }));
+                          | EX::then([&]{ called = true; }));
 
             return KT::use(sender)
                 && EX::sender<Sender>
@@ -76,7 +76,7 @@ static KT::testcase const tests[] = {
             using Sender = TT::remove_cvref_t<decltype(sender)>;
             bool called = false;
             TR::sync_wait(UT::move(sender)
-                          | EX::then([&](auto&&...){ called = true; return 0; }));
+                          | EX::then([&](auto&&...){ called = true; }));
 
             return KT::use(sender)
                 && EX::sender<Sender>

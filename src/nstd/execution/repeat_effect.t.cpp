@@ -99,7 +99,7 @@ static KT::testcase const tests[] = {
             bool caught = false;
             auto sender = EX::repeat_effect(TD::sender{&value});
             try {
-                TR::sync_wait(UT::move(sender) | EX::then([]{ return 0; }));
+                TR::sync_wait(UT::move(sender));
             }
             catch (TD::error const&) {
                 caught = true;
@@ -111,8 +111,9 @@ static KT::testcase const tests[] = {
     KT::expect_success("run till cancelled", []{
             int value = 6;
             auto sender = EX::repeat_effect(TD::sender{&value});
-            TR::sync_wait(UT::move(sender) | EX::then([]{ return 0; }));
+            auto rc = TR::sync_wait(UT::move(sender));
             return value == 8
+                && !rc
                 ;
         }),
 };

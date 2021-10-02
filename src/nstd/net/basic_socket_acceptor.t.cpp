@@ -32,7 +32,6 @@
 #include "nstd/execution/then.hpp"
 #include "nstd/execution/sender.hpp"
 #include "nstd/execution/when_all.hpp"
-#include "nstd/thread/sync_wait.hpp"
 #include "nstd/utility/move.hpp"
 #include "nstd/type_traits/is_same.hpp"
 #include "kuhl/test.hpp"

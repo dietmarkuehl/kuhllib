@@ -114,7 +114,7 @@ static KT::testcase const tests[] = {
         }),
     KT::expect_success("factory creation of a 3 arg sender", []{
             auto sender = TD::action2(TD::type<0>{42}, TD::type<1>{1}, TD::type<2>{17});
-            TT::sync_wait(UT::move(sender)| EX::then([](auto, auto, auto){ return 0; }));
+            TT::sync_wait(UT::move(sender)| EX::then([](auto, auto, auto){ }));
             return EX::sender<decltype(sender)>
                 && KT::type<decltype(sender)::value_types<TD::var, TD::tup>>
                     == KT::type<TD::var<TD::tup<TD::type<0>, TD::type<1>, TD::type<2>>>>
@@ -124,7 +124,7 @@ static KT::testcase const tests[] = {
         }),
     KT::expect_success("combining 1 arg sender with 2 args for a 3 arg sender", []{
             auto sender = EX::just(TD::type<2>{17}) | TD::action2(TD::type<0>{42}, TD::type<1>{1});
-            TT::sync_wait(UT::move(sender)| EX::then([](auto, auto, auto){ return 0; }));
+            TT::sync_wait(UT::move(sender)| EX::then([](auto, auto, auto){ }));
             return EX::sender<decltype(sender)>
                 && KT::type<decltype(sender)::value_types<TD::var, TD::tup>>
                     == KT::type<TD::var<TD::tup<TD::type<0>, TD::type<1>, TD::type<2>>>>
@@ -134,7 +134,7 @@ static KT::testcase const tests[] = {
         }),
     KT::expect_success("combining 2 arg sender with 1 args for a 3 arg sender", []{
             auto sender = EX::just(TD::type<1>{1}, TD::type<2>{17}) | TD::action2(TD::type<0>{42});
-            TT::sync_wait(UT::move(sender)| EX::then([](auto, auto, auto){ return 0; }));
+            TT::sync_wait(UT::move(sender)| EX::then([](auto, auto, auto){ }));
             return EX::sender<decltype(sender)>
                 && KT::type<decltype(sender)::value_types<TD::var, TD::tup>>
                     == KT::type<TD::var<TD::tup<TD::type<0>, TD::type<1>, TD::type<2>>>>
@@ -144,7 +144,7 @@ static KT::testcase const tests[] = {
         }),
     KT::expect_success("combining 3 arg sender with 0 args for a 3 arg sender", []{
             auto sender = EX::just(TD::type<0>{0}, TD::type<1>{1}, TD::type<2>{17}) | TD::action2();
-            TT::sync_wait(UT::move(sender)| EX::then([](auto, auto, auto){ return 0; }));
+            TT::sync_wait(UT::move(sender)| EX::then([](auto, auto, auto){ }));
             return EX::sender<decltype(sender)>
                 && KT::type<decltype(sender)::value_types<TD::var, TD::tup>>
                     == KT::type<TD::var<TD::tup<TD::type<0>, TD::type<1>, TD::type<2>>>>

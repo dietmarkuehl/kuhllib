@@ -47,10 +47,17 @@
 // ----------------------------------------------------------------------------
 
 namespace nstd::hidden_names {
+    template <typename...> struct type_identity_or_monostate;
+    template <> struct type_identity_or_monostate<> { using type = ::std::monostate; };
+    template <typename T> struct type_identity_or_monostate<T> { using type = T; };
+
+    template <typename... T>
+    using type_identity_or_monostate_t = typename ::nstd::hidden_names::type_identity_or_monostate<T...>::type;
+
     template <::nstd::execution::typed_sender S>
     using sync_wait_type = ::std::optional<
             typename ::nstd::execution::sender_traits<::nstd::type_traits::remove_cvref_t<S>>
-                ::template value_types<::std::variant, ::nstd::type_traits::type_identity_t>
+                ::template value_types<::std::variant, ::nstd::hidden_names::type_identity_or_monostate_t>
         >;
 }
 namespace nstd::this_thread {
@@ -93,6 +100,10 @@ namespace nstd::this_thread {
                 condition->notify_one();
             }
 
+            friend auto tag_invoke(::nstd::execution::set_value_t, receiver  r) noexcept {
+                (*r.res) = {};
+                r.complete();
+            }
             friend auto tag_invoke(::nstd::execution::set_value_t, receiver  r, Type const& t) noexcept {
                 (*r.res) = t;
                 r.complete();

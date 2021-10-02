@@ -97,7 +97,7 @@ static KT::testcase const tests[] = {
                 EX::just() | EX::then([&value]{ ++value; }),
                 [&value]{ return value == 3; }
                 );
-            TR::sync_wait(UT::move(sender) | EX::then([]{ return 0; }));
+            TR::sync_wait(UT::move(sender));
             return value == 3
                 ;
         }),
@@ -109,7 +109,7 @@ static KT::testcase const tests[] = {
                 [&value]{ return value == 3; }
                 );
             try {
-                TR::sync_wait(UT::move(sender) | EX::then([]{ return 0; }));
+                TR::sync_wait(UT::move(sender));
             }
             catch (TD::error const&) {
                 caught = true;
@@ -124,7 +124,7 @@ static KT::testcase const tests[] = {
                 TD::sender{&value},
                 [&value]{ return value == 3; }
                 );
-            TR::sync_wait(UT::move(sender) | EX::then([]{ return 0; }));
+            TR::sync_wait(UT::move(sender));
             return value == 8
                 ;
         }),

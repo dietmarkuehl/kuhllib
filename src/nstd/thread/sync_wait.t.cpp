@@ -108,6 +108,10 @@ static KT::testcase const tests[] = {
             return false;
         }
     }),
+    KT::expect_success("sync_wait with void result", []{
+        TT::sync_wait(EX::just());
+        return true;
+    }),
 };
 
 static KT::add_tests suite("sync_wait", ::tests);

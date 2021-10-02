@@ -61,7 +61,6 @@ static KT::testcase const tests[] = {
                     | EX::then([](auto&&...){ })
                     , []{ return true; }
                 )
-                | EX::then([](auto&&...){ return 0; })
                 ;
             TT::sync_wait(UT::move(sender));
             return KT::use(sender)

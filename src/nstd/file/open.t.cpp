@@ -49,7 +49,7 @@ static KT::testcase const tests[] = {
             ::std::jthread thread([&ctxt]{ ctxt.run_one(); });
             auto x = EX::just(::std::string_view("/dev/null"))
                    | File::open_in(ctxt)
-                   | EX::then([&value](File::descriptor&&){ return value = true; })
+                   | EX::then([&value](File::descriptor&&){ value = true; })
                    ;
             TT::sync_wait(UT::move(x));
             return value;
@@ -60,7 +60,7 @@ static KT::testcase const tests[] = {
             ::std::jthread thread([&ctxt]{ ctxt.run_one(); });
             auto x = EX::just(::std::string_view("/dev/nill"))
                    | File::open_in(ctxt)
-                   | EX::then([&value](File::descriptor&&){ return value = true; })
+                   | EX::then([&value](File::descriptor&&){ value = true; })
                    ;
             try {
                 TT::sync_wait(UT::move(x));
