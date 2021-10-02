@@ -33,6 +33,7 @@
 #include "../nstd/execution/then.hpp"
 #include "../nstd/execution/repeat_effect.hpp"
 #include "../nstd/execution/repeat_effect_until.hpp"
+#include "../nstd/execution/just.hpp"
 #include "../nstd/net/io_context.hpp"
 #include "../nstd/net/basic_socket_acceptor.hpp"
 #include "../nstd/net/basic_stream_socket.hpp"
@@ -62,6 +63,12 @@ namespace
         struct state_base { virtual ~state_base() = default; };
         using container = ::std::list<::std::unique_ptr<state_base>>;
         container d_container;
+        // starter is only usable for apps that never exit
+        ~starter() {
+            if (!d_container.empty()) {
+              ::std::terminate();
+            }
+        }
 
         struct receiver
         {
@@ -103,41 +110,96 @@ namespace
         stream_socket d_socket;
         bool          d_done = false;
         char          d_buffer[1024];
-        client(stream_socket&& socket): d_socket(::std::move(socket)) {
-            ::std::cout << "client connected\n";
+        explicit client(stream_socket&& socket): d_socket(::std::move(socket)) {}
+        // required to keep in the capture of a lambda passed to an algo
+        client(client&& o) : 
+            d_socket(::std::move(o.d_socket)),
+            d_done(::std::move(o.d_done))
+            // do not copy d_buffer contents
+        {
         }
-        ~client() {
-            ::std::cout << "client disconnected\n";
-        }
+        client& operator=(client&&) = delete;
     };
-
+    
+    template <typename Fn>
+    auto compose(Fn&& fn) {
+        return EX::let_value(::std::forward<Fn>(fn));
+    }
+    template <typename Fn>
+    auto defer(Fn&& fn) {
+        return EX::let_value(EX::just(), ::std::forward<Fn>(fn));
+    }
+    auto write(
+        client& owner,
+        NN::io_context&  context,
+        ::std::size_t n) 
+    {
+        return 
+            // capture buffer to write
+            defer(
+                [&context, &owner, remaining = NN::buffer(owner.d_buffer, n)]() mutable {
+                    return
+                        EX::repeat_effect_until(
+                            // use updated buffer, not original buffer
+                            defer(
+                                [&context, &owner, &remaining]{
+                                    return
+                                        NN::async_write_some(owner.d_socket,
+                                                            context.scheduler(),
+                                                            remaining);
+                                })
+                            // update buffer
+                            | EX::then([&remaining](::std::size_t w){
+                                remaining += w;
+                            }),
+                            [&remaining]{ return remaining.size() == 0; }
+                        );
+                });
+    }
+    auto read_some_write(
+        client& owner,
+        NN::io_context&  context) 
+    {
+        return 
+            EX::repeat_effect_until(
+                NN::async_read_some(owner.d_socket,
+                                    context.scheduler(),
+                                    NN::buffer(owner.d_buffer))
+                | compose(
+                    [&context, &owner](::std::size_t n){
+                        ::std::cout << "read='" << ::std::string_view(owner.d_buffer, n) << "'\n";
+                        owner.d_done = n == 0;
+                        return write(owner, context, n);
+                    }),
+                [&owner]{ return owner.d_done; }
+            );
+    }
     auto run_client(starter&         outstanding,
                     NN::io_context&  context,
                     stream_socket&&  socket)
     {
-        auto owner = ::std::make_unique<client>(::std::move(socket));
-        auto ptr = owner.get();
-
         outstanding.start(
-            EX::repeat_effect_until(
-                  EX::let_value(
-                      NN::async_read_some(ptr->d_socket,
-                                          context.scheduler(),
-                                           NN::buffer(ptr->d_buffer))
-                | EX::then([ptr](::std::size_t n){
-                    ::std::cout << "read='" << ::std::string_view(ptr->d_buffer, n) << "'\n";
-                    ptr->d_done = n == 0;
-                    return n;
-                }),
-                  [&context, ptr](::std::size_t n){
-                    return NN::async_write_some(ptr->d_socket,
-                                                context.scheduler(),
-                                                NN::buffer(ptr->d_buffer, n));
-                  })
-                | EX::then([](auto&&...){})
-                , [owner = ::std::move(owner)]{ return owner->d_done; }
-            )
+            defer(
+                [&context, owner = client{::std::move(socket)}]() mutable {
+                    ::std::cout << "client connected\n";
+                    return read_some_write(owner, context);
+                })
+            | EX::then([](auto&&...){
+                ::std::cout << "client disconnected\n";
+            })
         );
+    }
+    auto run_server(starter&         outstanding,
+                    NN::io_context&  context,
+                    socket_acceptor& server)
+    {
+        return
+            EX::repeat_effect(
+                NN::async_accept(server, context.scheduler())
+                | EX::then([&outstanding, &context](stream_socket client){
+                        run_client(outstanding, context, ::std::move(client));
+                    })
+            );
     }
 }
 
@@ -146,17 +208,16 @@ namespace
 int main()
 {
     ::std::cout << ::std::unitbuf;
+#if 0
+    // if the setup of the iouring fails due to a lack of kernel resources
+    // use this constructor to reduce the size of the ring
+    NN::io_context  context(nstd::file::ring_context::queue_size{512});
+#else
+    // default ring is 1024 at the time this was written
     NN::io_context  context;
+#endif
     socket_acceptor server(endpoint(NI::address_v4::any(), 12345));
     starter         outstanding;
 
-    static ::std::string const welcome("welcome\n"); (void)welcome;
-    EX::run(context,
-            EX::repeat_effect(
-                  NN::async_accept(server, context.scheduler())
-                | EX::then([&outstanding, &context](stream_socket client){
-                        run_client(outstanding, context, ::std::move(client));
-                    })
-            )
-        );
+    EX::run(context, run_server(outstanding, context, server));
 }
