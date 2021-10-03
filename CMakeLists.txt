@@ -114,7 +114,6 @@ list(APPEND kuhllib_components
     src/nstd/hidden_names/derives_from_sender_base
     src/nstd/hidden_names/has_sender_types
     src/nstd/hidden_names/movable_value
-    src/nstd/hidden_names/operation
     src/nstd/hidden_names/type_list
     src/nstd/iterator/bidirectional_iterator
     src/nstd/iterator/bidirectional_iterator_tag

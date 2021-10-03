@@ -103,6 +103,7 @@ namespace
         bool          d_done = false;
         char          d_buffer[1024];
         explicit client(stream_socket&& socket): d_socket(::std::move(socket)) {}
+        client(client const&) = delete;
         // required to keep in the capture of a lambda passed to an algo
         client(client&& o) : 
             d_socket(::std::move(o.d_socket)),
@@ -188,7 +189,8 @@ namespace
         return
             EX::repeat_effect(
                 NN::async_accept(server, context.scheduler())
-                | EX::then([&outstanding, &context](stream_socket client){
+                | EX::then([&outstanding, &context](::std::error_code, stream_socket client){
+                        ::std::cout << "client.is_open()=" << ::std::boolalpha << client.is_open() << "\n";
                         run_client(outstanding, context, ::std::move(client));
                     })
             );

@@ -37,7 +37,7 @@
 #include <concepts>
 
 namespace test_declarations {}
-namespace TD = test_declarations;
+namespace TD = ::test_declarations;
 namespace KT = ::kuhl::test;
 namespace NN = ::nstd::net;
 namespace NI = NN::ip;
@@ -73,7 +73,7 @@ static KT::testcase const tests[] = {
 
             EX::run(context, EX::when_all(
                 NN::async_accept(accept, context.scheduler())
-                | EX::then([&server](NN::basic_stream_socket<NN::ip::tcp>&& stream){
+                | EX::then([&server](::std::error_code, NN::basic_stream_socket<NN::ip::tcp>&& stream){
                     std::cout << "accepted\n";
                     server = UT::move(stream);
                     }),

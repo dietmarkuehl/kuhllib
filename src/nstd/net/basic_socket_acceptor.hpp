@@ -32,8 +32,14 @@
 #include "nstd/net/socket_base.hpp"
 #include "nstd/net/basic_stream_socket.hpp"
 #include "nstd/file/descriptor.hpp"
-#include "nstd/hidden_names/operation.hpp"
 #include "nstd/execution/set_value.hpp"
+#include "nstd/execution/operation_state.hpp"
+#include "nstd/execution/start.hpp"
+#include "nstd/execution/connect.hpp"
+#include "nstd/execution/set_error.hpp"
+#include "nstd/execution/set_done.hpp"
+#include "nstd/execution/receiver_of.hpp"
+#include "nstd/execution/sender.hpp"
 #include <optional>
 #include <tuple>
 #include <variant>
@@ -50,42 +56,13 @@ namespace nstd::net {
     template <typename AcceptableProtocol>
     class basic_socket_acceptor;
 
-    struct async_accept_t {
-        template <typename Receiver>
-        struct base
-            : public ::nstd::file::ring_context::io_base
-        {
-            Receiver           d_receiver;
-            ::sockaddr_storage d_address{};
-            ::socklen_t        d_len{sizeof(::sockaddr_storage)};
-
-            template <typename R>
-            explicit base(R&& receiver): d_receiver(::nstd::utility::forward<R>(receiver)) {}
-            template <typename P, typename S>
-            friend auto tag_invoke(::nstd::net::async_accept_t, base&& ob,
-                                   ::nstd::net::basic_socket_acceptor<P>& acceptor,
-                                   S scheduler) -> void
-            {
-                //-dk:TODO remove ::std::cout << "scheduling accept\n";
-                scheduler.context()->accept(acceptor.native_handle(),
-                                            &ob.d_address,
-                                            &ob.d_len,
-                                            0,
-                                            &ob);
-            }
-            auto do_result(::std::int32_t fd, ::std::uint32_t) -> void override
-            {
-                //-dk:TODO remove ::std::cout << "returned accept\n";
-                ::nstd::execution::set_value(::nstd::utility::move(this->d_receiver),
-                                             ::nstd::net::basic_stream_socket<::nstd::net::ip::tcp>(::nstd::net::ip::tcp::v4(), fd));
-            }
-        };
-    };
-    inline constexpr nstd::hidden_names::operation<
-        ::nstd::net::async_accept_t,
-        ::std::variant<::std::tuple<::nstd::net::basic_stream_socket<::nstd::net::ip::tcp>>>,
-        ::std::variant<::std::exception_ptr>
-        > async_accept;
+    inline constexpr struct async_accept_t {
+        template <typename Socket, ::nstd::execution::receiver_of<::std::error_code, Socket&&> Receiver> struct state;
+        template <typename > struct sender;
+        template <typename Acceptor, typename Scheduler>
+        auto operator()(Acceptor&, Scheduler scheduler) const
+            -> sender<typename Acceptor::socket_type>;
+    } async_accept;
 }
 
 // ----------------------------------------------------------------------------
@@ -187,6 +164,100 @@ auto nstd::net::basic_socket_acceptor<AcceptableProtocol>::bind(endpoint_type co
     if (int rc = ::bind(this->native_handle(), reinterpret_cast<::sockaddr const*>(&storage), size)) {
         throw ::std::system_error(::std::error_code(errno, ::std::system_category()));
     }
+}
+
+// ----------------------------------------------------------------------------
+
+template <typename Socket, ::nstd::execution::receiver_of<::std::error_code, Socket&&> Receiver>
+struct nstd::net::async_accept_t::state
+    : public ::nstd::file::ring_context::io_base
+{
+    ::nstd::type_traits::remove_cvref_t<Receiver> d_receiver;
+    ::nstd::file::ring_context*                   d_context;
+    typename Socket::protocol_type                d_protocol;
+    typename Socket::native_handle_type           d_fd;
+    ::sockaddr_storage                            d_address;
+    ::socklen_t                                   d_length;
+
+    template <::nstd::execution::receiver R>
+    state(R&&                                    receiver,
+          ::nstd::file::ring_context*            context,
+          typename Socket::protocol_type const&  protocol,
+          typename Socket::native_handle_type    fd)
+        : d_receiver(::nstd::utility::forward<R>(receiver))
+        , d_context(context)
+        , d_protocol(protocol)
+        , d_fd(fd)
+        , d_length(sizeof(this->d_address))
+    {
+    }
+
+    friend auto tag_invoke(::nstd::execution::start_t, state& s)
+        noexcept -> void {
+        s.d_context->accept(s.d_fd, &s.d_address, &s.d_length, 0, &s);
+    }
+    auto do_result(::std::int32_t rc, ::std::uint32_t)
+        -> void override
+    {
+        if (rc < 0) {
+            ::nstd::execution::set_value(::nstd::utility::move(this->d_receiver),
+                                         ::std::error_code(-rc, ::std::system_category()),
+                                         Socket());
+        }
+        else {
+            ::nstd::execution::set_value(::nstd::utility::move(this->d_receiver),
+                                         ::std::error_code(),
+                                         Socket(this->d_protocol, rc));
+
+        }
+    }
+};
+
+static_assert(::nstd::execution::operation_state<
+                  ::nstd::net::async_accept_t::state<
+                      ::nstd::net::basic_stream_socket<::nstd::net::ip::tcp>,
+                      ::nstd::execution::test_receiver_of<::std::error_code,
+                                                          ::nstd::net::basic_stream_socket<::nstd::net::ip::tcp>&&>>>);
+
+template <typename Socket>
+struct nstd::net::async_accept_t::sender
+{
+    template <template <typename...> class V, template <typename...> class T>
+    using value_types = V<T<::std::error_code, Socket>>;
+    template <template <typename...> class V>
+    using error_types = V<::std::exception_ptr>;
+    static constexpr bool sends_done = true;
+
+    ::nstd::file::ring_context*            d_context;
+    typename Socket::protocol_type const&  d_protocol;
+    typename Socket::native_handle_type    d_fd;
+
+    template <::nstd::execution::receiver_of<::std::error_code, Socket&&> Receiver>
+    friend auto tag_invoke(::nstd::execution::connect_t, sender const& sndr, Receiver&& receiver)
+        noexcept -> ::nstd::net::async_accept_t::state<Socket, Receiver>
+    {
+        return ::nstd::net::async_accept_t::state<Socket, Receiver>{
+            ::nstd::utility::forward<Receiver>(receiver),
+            sndr.d_context,
+            sndr.d_protocol,
+            sndr.d_fd
+        };
+    }
+};
+
+static_assert(::nstd::execution::sender<
+                 ::nstd::net::async_accept_t::sender<
+                     ::nstd::net::basic_stream_socket<::nstd::net::ip::tcp>>>);
+
+template <typename Acceptor, typename Scheduler>
+auto nstd::net::async_accept_t::operator()(Acceptor& socket, Scheduler scheduler) const
+    -> nstd::net::async_accept_t::sender<typename Acceptor::socket_type>
+{
+    return nstd::net::async_accept_t::sender<typename Acceptor::socket_type>{
+        scheduler.context(),
+        socket.protocol(),
+        socket.native_handle()
+        };
 }
 
 // ----------------------------------------------------------------------------
