@@ -40,6 +40,10 @@
 #include "nstd/execution/set_done.hpp"
 #include "nstd/execution/receiver_of.hpp"
 #include "nstd/execution/sender.hpp"
+#include "nstd/functional/tag_invoke.hpp"
+#include "nstd/utility/move.hpp"
+#include "nstd/utility/forward.hpp"
+#include "nstd/type_traits/remove_cvref.hpp"
 #include <optional>
 #include <tuple>
 #include <variant>
@@ -57,11 +61,21 @@ namespace nstd::net {
     class basic_socket_acceptor;
 
     inline constexpr struct async_accept_t {
-        template <typename Socket, ::nstd::execution::receiver_of<::std::error_code, Socket&&> Receiver> struct state;
+        template <typename Socket, ::nstd::execution::receiver_of<::std::error_code, Socket&&>> struct state;
         template <typename > struct sender;
         template <typename Acceptor, typename Scheduler>
-        auto operator()(Acceptor&, Scheduler scheduler) const
-            -> sender<typename Acceptor::socket_type>;
+        friend auto tag_invoke(async_accept_t, Acceptor& acceptor, Scheduler scheduler)
+            -> sender<typename Acceptor::socket_type> {
+            return nstd::net::async_accept_t::sender<typename Acceptor::socket_type>{
+                scheduler.context(),
+                acceptor.protocol(),
+                acceptor.native_handle()
+                };
+        }
+        template <typename Acceptor, typename Scheduler>
+        auto operator()(Acceptor& acceptor, Scheduler scheduler) const {
+            return ::nstd::tag_invoke(*this, acceptor, scheduler);
+        }
     } async_accept;
 }
 
@@ -248,17 +262,6 @@ struct nstd::net::async_accept_t::sender
 static_assert(::nstd::execution::sender<
                  ::nstd::net::async_accept_t::sender<
                      ::nstd::net::basic_stream_socket<::nstd::net::ip::tcp>>>);
-
-template <typename Acceptor, typename Scheduler>
-auto nstd::net::async_accept_t::operator()(Acceptor& socket, Scheduler scheduler) const
-    -> nstd::net::async_accept_t::sender<typename Acceptor::socket_type>
-{
-    return nstd::net::async_accept_t::sender<typename Acceptor::socket_type>{
-        scheduler.context(),
-        socket.protocol(),
-        socket.native_handle()
-        };
-}
 
 // ----------------------------------------------------------------------------
 

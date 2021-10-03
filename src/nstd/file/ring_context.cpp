@@ -163,6 +163,21 @@ auto NF::ring_context::run()
 
 // ----------------------------------------------------------------------------
 
+auto NF::ring_context::timer(::__kernel_timespec* time, io_base* continuation)
+    -> void
+{
+    this->submit([=](::io_uring_sqe& element){
+        element = ::io_uring_sqe{};
+        element.opcode        = IORING_OP_TIMEOUT;
+        element.timeout_flags = 0;
+        element.addr          = reinterpret_cast<::std::uint64_t>(time);
+        element.len           = 1u;
+        element.off           = 0u;
+        element.user_data     = reinterpret_cast<::std::uint64_t>(continuation);
+    });
+}
+// ----------------------------------------------------------------------------
+
 auto NF::ring_context::accept(int      fd,
                               void*    addr,
                               void*    len,

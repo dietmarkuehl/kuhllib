@@ -74,7 +74,6 @@ static KT::testcase const tests[] = {
             EX::run(context, EX::when_all(
                 NN::async_accept(accept, context.scheduler())
                 | EX::then([&server](::std::error_code, NN::basic_stream_socket<NN::ip::tcp>&& stream){
-                    std::cout << "accepted\n";
                     server = UT::move(stream);
                     }),
                 NN::async_connect(client, ep, context.scheduler())
@@ -85,10 +84,7 @@ static KT::testcase const tests[] = {
                                             NN::buffer(message));
             auto read = NN::async_read_some(server,
                                             context.scheduler(),
-                                            NN::buffer(buffer))
-                | EX::then([&buffer](::std::size_t s){
-                        ::std::cout << "received: >>>" << ::std::string_view(buffer, s) << "<<<\n";
-                    });
+                                            NN::buffer(buffer));
             EX::run(context, EX::when_all(UT::move(read), UT::move(write)));
 
             return KT::use(accept)

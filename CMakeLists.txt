@@ -136,6 +136,7 @@ list(APPEND kuhllib_components
     src/nstd/net/io_context
     src/nstd/net/netfwd
     src/nstd/net/socket_base
+    src/nstd/net/timer
     src/nstd/new/new
     src/nstd/operators/equality
     src/nstd/operators/relational

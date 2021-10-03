@@ -31,6 +31,8 @@
 #include "nstd/file/ring.hpp"
 #include <linux/io_uring.h>
 #include <sys/socket.h>
+#include <sys/types.h>
+#include <linux/time_types.h>
 #include <chrono>
 #include <mutex>
 #include <cstddef>
@@ -106,6 +108,7 @@ public:
     auto stopped() const noexcept -> bool;
     auto restart() -> void;
 
+    auto timer(::__kernel_timespec*, io_base*) -> void;
     auto accept(int, void*, void*, int, io_base*) -> void;
     auto connect(int, void const*, socklen_t, io_base*) -> void;
     auto sendmsg(int, msghdr const*, int, io_base*) -> void;
@@ -123,6 +126,8 @@ private:
 
 public:
     auto context() noexcept -> ::nstd::file::ring_context* { return this->d_context; }
+
+    auto operator== (scheduler_type const& other) const -> bool = default;
 };
 
 inline auto nstd::file::ring_context::scheduler() noexcept
