@@ -28,9 +28,11 @@
 
 #include "nstd/net/netfwd.hpp"
 #include "nstd/net/socket_base.hpp"
+#include "nstd/execution/connect.hpp"
+#include "nstd/execution/set_value.hpp"
+#include "nstd/execution/start.hpp"
+#include "nstd/execution/receiver.hpp"
 #include "nstd/file/ring_context.hpp"
-#include "nstd/hidden_names/operation.hpp"
-#include <iostream> //-dk:TODO remove
 #include <optional>
 #include <system_error>
 #include <tuple>
@@ -41,50 +43,14 @@
 namespace nstd::net {
     template <typename> class basic_socket;
 
-    struct async_connect_t {
-        template <typename Receiver>
-        struct base
-            : public ::nstd::file::ring_context::io_base
-        {
-            Receiver           d_receiver;
-            ::sockaddr_storage d_address{};
-            ::socklen_t        d_len{sizeof(::sockaddr_storage)};
+    inline constexpr struct async_connect_t {
+        template <::nstd::execution::receiver Receiver> struct state;
+        template <typename Endpoint> struct sender;
 
-            template <typename R>
-            explicit base(R&& receiver): d_receiver(::nstd::utility::forward<R>(receiver)) {}
-            template <typename P, typename S>
-            friend auto tag_invoke(::nstd::net::async_connect_t, base&& ob,
-                                   ::nstd::net::basic_socket<P>& socket,
-                                   S scheduler,
-                                   typename ::nstd::net::basic_socket<P>::endpoint_type const& endpoint) -> void
-            {
-                ob.d_len = endpoint.get_address(&ob.d_address);
-                //-dk:TODO remove ::std::cout << "scheduling connect\n";
-                scheduler.context()->connect(socket.native_handle(),
-                                             &ob.d_address,
-                                             ob.d_len,
-                                             &ob);
-            }
-            auto do_result(::std::int32_t rc, ::std::uint32_t) -> void override
-            {
-                if (0 == rc) {
-                    //-dk:TODO remove ::std::cout << "connect returned success" << rc << "\n";
-                    ::nstd::execution::set_value(::nstd::utility::move(this->d_receiver), rc);
-                }
-                else {
-                    //-dk:TODO remove ::std::cout << "connect returned: error=" << ::std::error_code(-rc, ::std::system_category()) << "\n";
-                    //-dk:TODO are these exceptional or actually results?
-                    ::nstd::execution::set_error(::nstd::utility::move(this->d_receiver),
-                                                 ::std::error_code(-rc, ::std::system_category()));
-                }
-            }
-        };
-    };
-    inline constexpr nstd::hidden_names::operation<
-        ::nstd::net::async_connect_t,
-        ::std::variant<::std::tuple<int>>,
-        ::std::variant<::std::error_code, ::std::exception_ptr>
-        > async_connect;
+        template <typename Socket, typename Scheduler>
+        auto operator()(Socket&, typename Socket::endpoint_type const&, Scheduler) const
+            -> sender<typename Socket::endpoint_type>;
+    } async_connect;
 }
 
 // ----------------------------------------------------------------------------
@@ -149,6 +115,72 @@ auto nstd::net::basic_socket<Protocol>::open(Protocol const& proto)
     this->::nstd::net::socket_base::open(proto.family(),
                                          proto.type(),
                                          proto.protocol());
+}
+
+// ----------------------------------------------------------------------------
+
+template <::nstd::execution::receiver Receiver>
+struct nstd::net::async_connect_t::state
+    : public ::nstd::file::ring_context::io_base
+{
+    ::nstd::type_traits::remove_cvref_t<Receiver> d_receiver;
+    ::nstd::file::ring_context*                   d_context;
+    int                                           d_fd;
+    ::sockaddr_storage                            d_address;
+    ::socklen_t                                   d_length;
+
+    template <::nstd::execution::receiver R, typename Endpoint>
+    state(R&& receiver, ::nstd::file::ring_context* context, int fd, Endpoint const& endpoint)
+        : d_receiver(receiver)
+        , d_context(context)
+        , d_fd(fd)
+    {
+        this->d_length = endpoint.get_address(&this->d_address);
+    }
+
+    auto do_result(::std::int32_t rc, ::std::uint32_t)
+        -> void override
+    {
+        ::nstd::execution::set_value(::nstd::utility::move(this->d_receiver),
+                                     ::std::error_code(-rc, ::std::system_category()));
+    }
+
+    friend auto tag_invoke(::nstd::execution::start_t, state& s)
+        noexcept -> void
+    {
+        s.d_context->connect(s.d_fd, &s.d_address, s.d_length, &s);
+    }
+};
+
+template <typename Endpoint>
+struct nstd::net::async_connect_t::sender
+{
+    template <template <typename...> class V, template <typename...> class T>
+    using value_types = V<T<::std::error_code>>;
+    template <template <typename...> class V>
+    using error_types = V<::std::exception_ptr>;
+    static constexpr bool sends_done = true;
+
+    ::nstd::file::ring_context*  d_context;
+    int                          d_fd;
+    Endpoint                     d_endpoint;
+
+    template <::nstd::execution::receiver Receiver>
+    friend auto tag_invoke(::nstd::execution::connect_t, sender const& s, Receiver&& receiver)
+        noexcept -> ::nstd::net::async_connect_t::state<Receiver>
+    {
+        return ::nstd::net::async_connect_t::state<Receiver>(::nstd::utility::forward<Receiver>(receiver),
+                                                              s.d_context,
+                                                              s.d_fd,
+                                                              s.d_endpoint);
+    }
+};
+
+template <typename Socket, typename Scheduler>
+auto nstd::net::async_connect_t::operator()(Socket& socket, typename Socket::endpoint_type const& ep, Scheduler scheduler) const
+    -> ::nstd::net::async_connect_t::sender<typename Socket::endpoint_type>
+{
+    return { scheduler.context(), socket.native_handle(), ep };
 }
 
 // ----------------------------------------------------------------------------

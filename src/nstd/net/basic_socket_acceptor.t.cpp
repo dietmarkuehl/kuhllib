@@ -102,7 +102,7 @@ static KT::testcase const tests[] = {
             NN::basic_stream_socket<NN::ip::tcp>   client(NI::tcp::v4());
             EX::run(context, EX::when_all(
                 NN::async_accept(server, context.scheduler()),
-                NN::async_connect(client, context.scheduler(), ep)
+                NN::async_connect(client, ep, context.scheduler())
                 ));
             return KT::use(server)
                 && KT::use(client)

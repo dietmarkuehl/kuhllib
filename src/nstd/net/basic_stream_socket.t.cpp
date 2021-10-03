@@ -77,7 +77,7 @@ static KT::testcase const tests[] = {
                     std::cout << "accepted\n";
                     server = UT::move(stream);
                     }),
-                NN::async_connect(client, context.scheduler(), ep)
+                NN::async_connect(client, ep, context.scheduler())
                 ));
 
             auto write = NN::async_write_some(client,

@@ -203,3 +203,5 @@ add_test(NAME kuhllib_test COMMAND $<TARGET_FILE:kuhllib_test>)
 
 add_executable(echo_server src/examples/echo_server.cpp)
 target_link_libraries(echo_server PUBLIC kuhllib pthread)
+# add_executable(chat_server src/examples/chat_server.cpp)
+# target_link_libraries(chat_server PUBLIC kuhllib pthread)

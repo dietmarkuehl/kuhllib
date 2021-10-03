@@ -71,35 +71,20 @@ static KT::testcase const tests[] = {
                 && s.protocol() == IP::tcp::v6()
                 ;
         }),
-    KT::expect_success("async_connect from arguments", []{
+    KT::expect_success("async_connect ", []{
             Net::io_context context;
             TD::socket s{IP::tcp::v4()};
             auto connect_sender
-                = Net::async_connect(s, context.scheduler(),
-                                     IP::basic_endpoint<IP::tcp>(IP::address_v4::any(), 12345))
+                = Net::async_connect(s,
+                                    IP::basic_endpoint<IP::tcp>(IP::address_v4::any(), 12345),
+                                    context.scheduler()
+                                    )
                 ;
             try {
                 EX::run(context, UT::move(connect_sender));
             }
             catch (...) {
 
-            }
-            return KT::use(context)
-                && KT::use(s)
-                && KT::use(connect_sender)
-                ;
-        }),
-    KT::expect_success("async_connect from sender", []{
-            Net::io_context context;
-            TD::socket s{IP::tcp::v4()};
-            auto connect_sender
-                = EX::just(IP::basic_endpoint<IP::tcp>(IP::address_v4::any(), 12345))
-                | Net::async_connect(s, context.scheduler())
-                ;
-            try {
-                EX::run(context, UT::move(connect_sender));
-            }
-            catch (...) {
             }
             return KT::use(context)
                 && KT::use(s)
