@@ -48,6 +48,7 @@ private:
 
 public:
     constexpr address() noexcept = default;
+    constexpr address(address const&) noexcept = default;
     constexpr address(::nstd::net::ip::address_v4 const&) noexcept;
     constexpr address(::nstd::net::ip::address_v6 const&) noexcept;
     auto operator=(address const&) noexcept -> ::nstd::net::ip::address& = default;
