@@ -26,6 +26,10 @@
 #ifndef INCLUDED_NSTD_EXECUTION_INPLACE_STOP_TOKEN
 #define INCLUDED_NSTD_EXECUTION_INPLACE_STOP_TOKEN
 
+#include "nstd/execution/stoppable_token.hpp"
+#include "nstd/utility/move.hpp"
+#include <atomic>
+
 // ----------------------------------------------------------------------------
 
 namespace nstd::execution {
@@ -37,10 +41,83 @@ namespace nstd::execution {
 
 class nstd::execution::inplace_stop_state
 {
+private:
+    class callback_base
+    {
+    private:
+        virtual auto do_call() -> void {}
+    public:
+        callback_base*      d_next = nullptr;
+
+        auto call() -> void { this->do_call(); }
+    };
+
+    callback_base                 d_marker;
+    callback_base                 d_end;
+    ::std::atomic<callback_base*> d_list = &this->d_end;
+    ::std::atomic<bool>           d_stop_requested{false};
+
 public:
     friend class ::nstd::execution::inplace_stop_token;
 
-    auto token() const -> ::nstd::execution::inplace_stop_token;
+    auto stop_requested() const noexcept -> bool { return this->d_stop_requested; }
+    auto token() -> ::nstd::execution::inplace_stop_token;
+    auto stop() -> void {
+        this->d_stop_requested = true;
+        callback_base* head = this->d_list;
+        // The marker is set while calling the callbacks to avoid registered
+        // callbacks being destroyed after they realized that they didn't need
+        // to do anything during remove() but while being called.
+        while (head && (head == &this->d_marker || !this->d_list.compare_exchange_strong(head, &this->d_marker))) {
+        }
+        if (head) {
+            for (auto node = head; node; node = node->d_next) {
+                node->call();
+            }
+            this->d_list = nullptr;
+        }
+    }
+    auto insert(callback_base* callback) -> void {
+        for (callback_base* head = this->d_list; head; ) {
+            callback->d_next = head;
+            if (   head != &this->d_marker
+                && this->d_list.compare_exchange_strong(head, callback)) {
+                return;
+            }
+        }
+        callback->call();
+    }
+    auto remove(callback_base* callback) -> void {
+        callback_base* head = this->d_list;
+        for (; ; head = this->d_list) {
+            if (head == nullptr) {
+                return;
+            }
+            if (head == &this->d_marker) {
+                continue;
+            }
+            if (this->d_list.compare_exchange_strong(head, &this->d_marker)) {
+                break;
+            }
+        }
+        if (head == callback) {
+            head = head->d_next;
+        }
+        else {
+            callback_base* node = head;
+            while (node && node->d_next != callback) {
+                node = node->d_next;
+            }
+            if (node) {
+                // node->d_next must be non-null because the last node is &this->d_end
+                callback_base* next = node->d_next;
+                callback_base* keep = next->d_next;
+                node->d_next = keep;
+            }
+        }
+
+        this->d_list = head;
+    }
 };
 
 // ----------------------------------------------------------------------------
@@ -49,18 +126,43 @@ class nstd::execution::inplace_stop_token
 {
     friend class ::nstd::execution::inplace_stop_state;
 private:
-    ::nstd::execution::inplace_stop_state* d_stop;
+    ::nstd::execution::inplace_stop_state* d_state;
 
-    explicit inplace_stop_token(::nstd::execution::inplace_stop_state* stop)
-        : d_stop(stop)
+    explicit inplace_stop_token(::nstd::execution::inplace_stop_state* state)
+        : d_state(state)
     {
     }
 public:
-    auto operator== (inplace_stop_token const& other) const noexcept -> bool = default;
-    auto stop_requested() const noexcept -> bool;
-    auto stop_possible() const noexcept -> bool;
+    template <typename Callable>
+    struct callback_type
+        : ::nstd::execution::inplace_stop_state::callback_base
+    {
+        inplace_stop_state* d_state;
+        Callable            d_callback;
+        callback_type(inplace_stop_token token, Callable callback)
+            : d_state(token.d_state)
+            , d_callback(::nstd::utility::move(callback)) {
+            this->d_state->insert(this);
+        }
+        ~callback_type() {
+            this->d_state->remove(this);
+        }
+        auto do_call() ->void override { this->d_callback(); }
+    };
+    auto operator== (inplace_stop_token const&) const noexcept -> bool = default;
+    auto stop_requested() const noexcept -> bool { return this->d_state->stop_requested(); }
+    constexpr auto stop_possible() const noexcept -> bool { return true; }
 };
 
+static_assert(::nstd::execution::stoppable_token<::nstd::execution::inplace_stop_token>);
+
+// ----------------------------------------------------------------------------
+
+inline auto nstd::execution::inplace_stop_state::token()
+    -> ::nstd::execution::inplace_stop_token
+{
+    return ::nstd::execution::inplace_stop_token(this);
+}
 
 // ----------------------------------------------------------------------------
 
