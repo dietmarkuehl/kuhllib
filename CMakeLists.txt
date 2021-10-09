@@ -55,6 +55,7 @@ list(APPEND kuhllib_components
     src/nstd/execution/get_completion_scheduler
     src/nstd/execution/get_scheduler
     src/nstd/execution/get_stop_token
+    src/nstd/execution/inplace_stop_token
     src/nstd/execution/is_execution_policy
     src/nstd/execution/just
     src/nstd/execution/lazy_then
@@ -78,6 +79,7 @@ list(APPEND kuhllib_components
     src/nstd/execution/set_error
     src/nstd/execution/set_value
     src/nstd/execution/start
+    src/nstd/execution/stoppable_token
     src/nstd/execution/then
     src/nstd/execution/typed_sender
     src/nstd/execution/when_all
