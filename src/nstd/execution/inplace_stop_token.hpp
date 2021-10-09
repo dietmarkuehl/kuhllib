@@ -51,12 +51,12 @@ class nstd::execution::inplace_stop_token
 private:
     ::nstd::execution::inplace_stop_state* d_stop;
 
-    explicit token(::nstd::execution::inplace_stop_state* stop)
+    explicit inplace_stop_token(::nstd::execution::inplace_stop_state* stop)
         : d_stop(stop)
     {
     }
 public:
-    auto operator== (token const& other) const noexcept -> bool = default;
+    auto operator== (inplace_stop_token const& other) const noexcept -> bool = default;
     auto stop_requested() const noexcept -> bool;
     auto stop_possible() const noexcept -> bool;
 };

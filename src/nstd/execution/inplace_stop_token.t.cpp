@@ -44,9 +44,6 @@ static KT::testcase const tests[] = {
             return true
                 ;
         }),
-    KT::expect_failure("placeholder", [](KT::context& )->bool{
-            return false;
-        }),
 };
 
 static KT::add_tests suite("inplace_stop_token", ::tests);
