@@ -27,25 +27,28 @@
 #include "kuhl/test.hpp"
 
 namespace test_declarations {}
-namespace TD = test_declarations;
+namespace TD = ::test_declarations;
 namespace KT = ::kuhl::test;
+namespace EX = ::nstd::execution;
 
 // ----------------------------------------------------------------------------
 
 namespace test_declarations {
     namespace {
+        struct stop_token {
+            auto operator==(stop_token const&) const -> bool = default;
+            auto stop_requested() const noexcept -> bool;
+            auto stop_possible() const noexcept -> bool;
+            template <typename> struct callback_type;
+        };
     }
 }
 
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
-    KT::expect_success("breathing", []{
-            return true
-                ;
-        }),
-    KT::expect_failure("placeholder", [](KT::context& )->bool{
-            return false;
+    KT::expect_success("matching stop token", []{
+            return EX::stoppable_token<TD::stop_token>;
         }),
 };
 

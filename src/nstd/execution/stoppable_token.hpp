@@ -26,11 +26,26 @@
 #ifndef INCLUDED_NSTD_EXECUTION_STOPPABLE_TOKEN
 #define INCLUDED_NSTD_EXECUTION_STOPPABLE_TOKEN
 
+#include "nstd/concepts/boolean_testable.hpp"
+#include <concepts>
+#include <type_traits>
+
 // ----------------------------------------------------------------------------
 
-namespace nstd {
-    namespace xxx {
-    }
+namespace nstd::execution {
+    template <typename Token>
+    concept stoppable_token
+        =  ::std::copy_constructible<Token>
+        && ::std::move_constructible<Token>
+        && ::std::is_nothrow_copy_constructible_v<Token>
+        && ::std::is_nothrow_move_constructible_v<Token>
+        && ::std::equality_comparable<Token>
+        && requires(Token const& token) {
+            { token.stop_requested() } noexcept -> ::nstd::concepts::boolean_testable;
+            { token.stop_possible() } noexcept -> ::nstd::concepts::boolean_testable;
+            //-dk:TODO typename Token::template callback_type<decltype([]{})>;
+        }
+        ;
 }
 
 // ----------------------------------------------------------------------------

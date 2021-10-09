@@ -27,4 +27,6 @@
 
 // ----------------------------------------------------------------------------
 
-int stoppable_token_dummy = 0;
+namespace nstd::execution {
+    int stoppable_token_dummy = 0;
+}
