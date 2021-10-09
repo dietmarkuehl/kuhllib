@@ -60,6 +60,11 @@ private:
 public:
     friend class ::nstd::execution::inplace_stop_token;
 
+    inplace_stop_state() = default;
+    inplace_stop_state(inplace_stop_state const&) = delete;
+    auto operator= (inplace_stop_state const&) -> inplace_stop_state& = delete;
+    ~inplace_stop_state() = default;
+
     auto stop_requested() const noexcept -> bool { return this->d_stop_requested; }
     auto token() -> ::nstd::execution::inplace_stop_token;
     auto stop() -> void {
@@ -144,6 +149,8 @@ public:
             , d_callback(::nstd::utility::move(callback)) {
             this->d_state->insert(this);
         }
+        callback_type(callback_type const&) = delete;
+        auto operator= (callback_type const&) -> callback_type = delete;
         ~callback_type() {
             this->d_state->remove(this);
         }
