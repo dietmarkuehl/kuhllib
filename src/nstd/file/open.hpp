@@ -33,6 +33,7 @@
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/set_error.hpp"
 #include "nstd/execution/set_done.hpp"
+#include "nstd/file/context.hpp"
 #include "nstd/net/io_context.hpp"
 #include "nstd/utility/move.hpp"
 #include "nstd/utility/forward.hpp"
@@ -47,13 +48,13 @@
 // ----------------------------------------------------------------------------
 
 namespace nstd::file {
-    template <typename, typename> struct open_sender;
+    template <typename> struct open_sender;
 
     template <typename Context>
     auto open(Context& context, ::nstd::file::open_flags flags) {
         return [ctxt=&context, flags](auto&& sender){
-            return ::nstd::file::open_sender<Context, decltype(sender)>{
-                    {}, std::forward<decltype(sender)>(sender), ctxt, flags
+            return ::nstd::file::open_sender<decltype(sender)>{
+                    {}, std::forward<decltype(sender)>(sender), ctxt->hidden_context(), flags
                 };
         };
     }
@@ -64,7 +65,7 @@ namespace nstd::file {
 
 // ----------------------------------------------------------------------------
 
-template <typename Context, typename Sender>
+template <typename Sender>
 struct nstd::file::open_sender
     : ::nstd::execution::sender_base
 {
@@ -75,21 +76,21 @@ struct nstd::file::open_sender
     static constexpr bool sends_done = true;
 
     Sender                   d_sender;
-    Context*                 d_context;
+    ::nstd::file::context*   d_context;
     ::nstd::file::open_flags d_flags;
 
     template <typename Receiver>
     struct receiver
-        : ::nstd::net::io_context::io_base
+        : ::nstd::file::context::io_base
     {
-        Context*                 d_context;
+        ::nstd::file::context*   d_context;
         ::nstd::file::open_flags d_flags;
         Receiver                 d_receiver;
         ::std::string            d_name;
 
         template <typename R>
-        receiver(Context* context, ::nstd::file::open_flags flags, R&& receiver)
-            : ::nstd::net::io_context::io_base()
+        receiver(::nstd::file::context* context, ::nstd::file::open_flags flags, R&& receiver)
+            : ::nstd::file::context::io_base()
             , d_context(context)
             , d_flags(flags)
             , d_receiver(::nstd::utility::forward<R>(receiver))
@@ -112,21 +113,7 @@ struct nstd::file::open_sender
 
         friend auto tag_invoke(::nstd::execution::set_value_t, receiver&& r, ::std::string_view name) noexcept -> void {
             r.d_name = name;
-            r.d_context->submit([&r](io_uring_sqe& elem){
-                elem = io_uring_sqe{
-                    .opcode     = IORING_OP_OPENAT,
-                    .flags      = {},
-                    .ioprio     = {},
-                    .fd         = AT_FDCWD,
-                    .off        = {},
-                    .addr       = reinterpret_cast<decltype(elem.addr)>(r.d_name.c_str()),
-                    .len        = 0,
-                    .open_flags = ::nstd::file::to_system(r.d_flags),
-                    .user_data  = reinterpret_cast<decltype(elem.user_data)>(static_cast<::nstd::net::io_context::io_base*>(&r)),
-                    .__pad2     = {}
-                };
-
-            });
+            r.d_context->open_at(AT_FDCWD, r.d_name.c_str(), ::nstd::file::to_system(r.d_flags), &r);
         }
         template <typename Error>
         friend auto tag_invoke(::nstd::execution::set_error_t, receiver&& r, Error&& error) noexcept -> void {

@@ -32,7 +32,7 @@
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/start.hpp"
 #include "nstd/execution/receiver.hpp"
-#include "nstd/file/ring_context.hpp"
+#include "nstd/file/context.hpp"
 #include <optional>
 #include <system_error>
 #include <tuple>
@@ -121,16 +121,16 @@ auto nstd::net::basic_socket<Protocol>::open(Protocol const& proto)
 
 template <::nstd::execution::receiver Receiver>
 struct nstd::net::async_connect_t::state
-    : public ::nstd::file::ring_context::io_base
+    : public ::nstd::file::context::io_base
 {
     ::nstd::type_traits::remove_cvref_t<Receiver> d_receiver;
-    ::nstd::file::ring_context*                   d_context;
+    ::nstd::file::context*                        d_context;
     int                                           d_fd;
     ::sockaddr_storage                            d_address;
     ::socklen_t                                   d_length;
 
     template <::nstd::execution::receiver R, typename Endpoint>
-    state(R&& receiver, ::nstd::file::ring_context* context, int fd, Endpoint const& endpoint)
+    state(R&& receiver, ::nstd::file::context* context, int fd, Endpoint const& endpoint)
         : d_receiver(receiver)
         , d_context(context)
         , d_fd(fd)
@@ -148,7 +148,7 @@ struct nstd::net::async_connect_t::state
     friend auto tag_invoke(::nstd::execution::start_t, state& s)
         noexcept -> void
     {
-        s.d_context->connect(s.d_fd, &s.d_address, s.d_length, &s);
+        s.d_context->connect(s.d_fd, reinterpret_cast<::sockaddr*>(&s.d_address), s.d_length, &s);
     }
 };
 
@@ -161,9 +161,9 @@ struct nstd::net::async_connect_t::sender
     using error_types = V<::std::exception_ptr>;
     static constexpr bool sends_done = true;
 
-    ::nstd::file::ring_context*  d_context;
-    int                          d_fd;
-    Endpoint                     d_endpoint;
+    ::nstd::file::context*    d_context;
+    int                       d_fd;
+    Endpoint                  d_endpoint;
 
     template <::nstd::execution::receiver Receiver>
     friend auto tag_invoke(::nstd::execution::connect_t, sender const& s, Receiver&& receiver)
@@ -180,7 +180,7 @@ template <typename Socket, typename Scheduler>
 auto nstd::net::async_connect_t::operator()(Socket& socket, typename Socket::endpoint_type const& ep, Scheduler scheduler) const
     -> ::nstd::net::async_connect_t::sender<typename Socket::endpoint_type>
 {
-    return { scheduler.context(), socket.native_handle(), ep };
+    return { scheduler.context()->hidden_context(), socket.native_handle(), ep };
 }
 
 // ----------------------------------------------------------------------------

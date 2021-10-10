@@ -93,6 +93,7 @@ list(APPEND kuhllib_components
     src/nstd/executor/fork_event
     src/nstd/executor/service_already_exists
     src/nstd/executor/system_executor
+    src/nstd/file/context
     src/nstd/file/descriptor
     src/nstd/file/mapped_memory
     src/nstd/file/open

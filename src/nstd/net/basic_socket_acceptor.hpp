@@ -28,7 +28,7 @@
 
 #include "nstd/net/netfwd.hpp"
 #include "nstd/net/ip/tcp.hpp"
-#include "nstd/net/io_context.hpp"
+#include "nstd/file/context.hpp"
 #include "nstd/net/socket_base.hpp"
 #include "nstd/net/basic_stream_socket.hpp"
 #include "nstd/file/descriptor.hpp"
@@ -67,7 +67,7 @@ namespace nstd::net {
         friend auto tag_invoke(async_accept_t, Acceptor& acceptor, Scheduler scheduler)
             -> sender<typename Acceptor::socket_type> {
             return nstd::net::async_accept_t::sender<typename Acceptor::socket_type>{
-                scheduler.context(),
+                scheduler.context()->hidden_context(),
                 acceptor.protocol(),
                 acceptor.native_handle()
                 };
@@ -184,10 +184,10 @@ auto nstd::net::basic_socket_acceptor<AcceptableProtocol>::bind(endpoint_type co
 
 template <typename Socket, ::nstd::execution::receiver_of<::std::error_code, Socket&&> Receiver>
 struct nstd::net::async_accept_t::state
-    : public ::nstd::file::ring_context::io_base
+    : public ::nstd::file::context::io_base
 {
     ::nstd::type_traits::remove_cvref_t<Receiver> d_receiver;
-    ::nstd::file::ring_context*                   d_context;
+    ::nstd::file::context*                        d_context;
     typename Socket::protocol_type                d_protocol;
     typename Socket::native_handle_type           d_fd;
     ::sockaddr_storage                            d_address;
@@ -195,7 +195,7 @@ struct nstd::net::async_accept_t::state
 
     template <::nstd::execution::receiver R>
     state(R&&                                    receiver,
-          ::nstd::file::ring_context*            context,
+          ::nstd::file::context*                 context,
           typename Socket::protocol_type const&  protocol,
           typename Socket::native_handle_type    fd)
         : d_receiver(::nstd::utility::forward<R>(receiver))
@@ -208,7 +208,7 @@ struct nstd::net::async_accept_t::state
 
     friend auto tag_invoke(::nstd::execution::start_t, state& s)
         noexcept -> void {
-        s.d_context->accept(s.d_fd, &s.d_address, &s.d_length, 0, &s);
+        s.d_context->accept(s.d_fd, reinterpret_cast<::sockaddr*>(&s.d_address), &s.d_length, 0, &s);
     }
     auto do_result(::std::int32_t rc, ::std::uint32_t)
         -> void override
@@ -242,7 +242,7 @@ struct nstd::net::async_accept_t::sender
     using error_types = V<::std::exception_ptr>;
     static constexpr bool sends_done = true;
 
-    ::nstd::file::ring_context*            d_context;
+    ::nstd::file::context*                 d_context;
     typename Socket::protocol_type const&  d_protocol;
     typename Socket::native_handle_type    d_fd;
 

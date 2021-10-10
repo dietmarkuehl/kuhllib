@@ -27,6 +27,7 @@
 #define INCLUDED_NSTD_NET_IO_CONTEXT
 
 #include "nstd/net/netfwd.hpp"
+#include "nstd/file/context.hpp"
 #include "nstd/file/ring_context.hpp"
 
 // ----------------------------------------------------------------------------
@@ -38,11 +39,76 @@ namespace nstd::net {
 // ----------------------------------------------------------------------------
 
 class nstd::net::io_context
-    : public ::nstd::file::ring_context
 {
+private:
+    ::std::unique_ptr<::nstd::file::context> d_context;
+
 public:
-    using ::nstd::file::ring_context::ring_context;
+    using count_type = ::nstd::file::context::count_type;
+
+    io_context();
+    explicit io_context(::nstd::file::ring_context::queue_size);
+    explicit io_context(::std::size_t);
+    io_context(io_context const&) = delete;
+    io_context(io_context&&) = delete;
+    auto operator=(io_context const&) -> io_context& = delete;
+    auto operator=(io_context&&) -> io_context& = delete;
+
+    class scheduler_type;
+    auto hidden_context() -> ::nstd::file::context* { return this->d_context.get(); }
+
+    auto scheduler() noexcept -> ::nstd::net::io_context::scheduler_type;
+
+    auto run_one() -> count_type { return this->d_context->run_one(); }
+    auto run() -> count_type {
+        count_type count{};
+        while (1u == this->d_context->run_one()) {
+            ++count;
+        }
+        return count;
+    }
+
+    template <typename Rep, typename Period>
+        auto run_for(::std::chrono::duration<Rep, Period> const&)
+            -> ::nstd::file::ring_context::count_type;
+    template <typename Clock, typename Duration>
+        auto run_until(::std::chrono::time_point<Clock, Duration> const&)
+            -> ::nstd::file::ring_context::count_type;
+    template <typename Rep, typename Period>
+        auto run_one_for(::std::chrono::duration<Rep, Period> const&)
+            -> ::nstd::file::ring_context::count_type;
+    template <typename Clock, typename Duration>
+        auto run_one_until(::std::chrono::time_point<Clock, Duration> const&)
+            -> ::nstd::file::ring_context::count_type;
+
+    auto poll() -> ::nstd::file::ring_context::count_type;
+    auto poll_one() -> ::nstd::file::ring_context::count_type;
+    auto stop() -> void;
+    auto stopped() const noexcept -> bool;
+    auto restart() -> void;
+
 };
+
+// ----------------------------------------------------------------------------
+
+class nstd::net::io_context::scheduler_type
+{
+private:
+    friend class ::nstd::net::io_context;
+    ::nstd::net::io_context* d_context;
+    explicit scheduler_type(::nstd::net::io_context* context) noexcept: d_context(context) {}
+
+public:
+    auto context() noexcept -> ::nstd::net::io_context* { return this->d_context; }
+
+    auto operator== (scheduler_type const& other) const -> bool = default;
+};
+
+inline auto nstd::net::io_context::scheduler() noexcept
+    -> ::nstd::net::io_context::scheduler_type
+{
+    return ::nstd::net::io_context::scheduler_type(this);
+}
 
 // ----------------------------------------------------------------------------
 

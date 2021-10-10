@@ -57,7 +57,7 @@ namespace nstd::net {
         template <typename Clock, typename Traits>
         friend auto tag_invoke(async_wait_t, ::nstd::net::basic_waitable_timer<Clock, Traits> const& timer)
             -> sender<Clock, Traits> {
-                return { timer.get_scheduler().context(), timer.expiry() };
+                return { timer.get_scheduler().context()->hidden_context(), timer.expiry() };
         }
         template <typename Clock, typename Traits>
         auto operator()(::nstd::net::basic_waitable_timer<Clock, Traits> const& timer) const {
@@ -166,15 +166,15 @@ auto nstd::net::basic_waitable_timer<Clock, Traits>::expiry() const
 
 template <::nstd::execution::receiver_of<::std::error_code> Receiver, typename Clock, typename Traits>
 struct nstd::net::async_wait_t::state
-    : public ::nstd::file::ring_context::io_base
+    : public ::nstd::file::context::io_base
 {
     ::nstd::type_traits::remove_cvref_t<Receiver> d_receiver;
-    ::nstd::file::ring_context*                   d_context;
+    ::nstd::file::context*                        d_context;
     typename Clock::time_point                    d_time_point;
     ::__kernel_timespec                           d_time; // tv_sec, tv_usec
 
     template <::nstd::execution::receiver_of<::std::error_code> R>
-    state(R&& receiver, ::nstd::file::ring_context* context, typename Clock::time_point time_point)
+    state(R&& receiver, ::nstd::file::context* context, typename Clock::time_point time_point)
         : d_receiver(::nstd::utility::forward<R>(receiver))
         , d_context(context)
         , d_time_point(time_point)
@@ -211,7 +211,7 @@ struct nstd::net::async_wait_t::sender
     using error_types = V<::std::exception_ptr>;
     static constexpr bool sends_done = true;
 
-    ::nstd::file::ring_context*                                           d_context;
+    ::nstd::file::context*                                                d_context;
     typename ::nstd::net::basic_waitable_timer<Clock, Traits>::time_point d_timepoint;
 
     template <::nstd::execution::receiver_of<::std::error_code> Receiver>

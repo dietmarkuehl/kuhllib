@@ -94,14 +94,21 @@ static KT::testcase const tests[] = {
                 ;
         }),
     KT::expect_success("basic_waitable_timer ctor from context only", []{
+            try {
             using clock = ::std::chrono::system_clock;
             NN::io_context   context;
             NN::system_timer timer(context);
             return timer.get_scheduler() == context.scheduler()
                 && timer.expiry() == clock::time_point()
                 ;
+            }
+            catch (std::exception const& ex) {
+                ::std::cout << "exception: " << ex.what() << "\n";
+                return false;
+            }
         }),
     KT::expect_success("basic_waitable_timer ctor from time_point", []{
+            try {
             using clock = ::std::chrono::system_clock;
             auto now = clock::now();
             NN::io_context   context;
@@ -109,8 +116,14 @@ static KT::testcase const tests[] = {
             return timer.get_scheduler() == context.scheduler()
                 && timer.expiry() == now
                 ;
+            }
+            catch (std::exception const& ex) {
+                ::std::cout << "exception: " << ex.what() << "\n";
+                return false;
+            }
         }),
     KT::expect_success("basic_waitable_timer ctor from duration", []{
+            try {
             using clock = ::std::chrono::system_clock;
             NN::io_context   context;
             clock::duration  d(300);
@@ -120,8 +133,14 @@ static KT::testcase const tests[] = {
             return timer.get_scheduler() == context.scheduler()
                 && (before + d <= timer.expiry()) && (timer.expiry() <= after + d)
                 ;
+            }
+            catch (std::exception const& ex) {
+                ::std::cout << "exception: " << ex.what() << "\n";
+                return false;
+            }
         }),
     KT::expect_success("async_wait", []{
+            try {
             using namespace std::chrono_literals;
             using clock = ::std::chrono::system_clock;
             NN::io_context   context;
@@ -137,6 +156,11 @@ static KT::testcase const tests[] = {
                 }));
 
             return 13 <= count;
+            }
+            catch (std::exception const& ex) {
+                ::std::cout << "exception: " << ex.what() << "\n";
+                return false;
+            }
         }),
             
 };

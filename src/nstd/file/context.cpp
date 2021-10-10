@@ -1,4 +1,4 @@
-// nstd/net/io_context.cpp                                            -*-C++-*-
+// nstd/file/context.cpp                                              -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,20 +23,14 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/net/io_context.hpp"
-
-namespace nstd::net {
-    int io_context_dummy = 0;
-}
+#include "nstd/file/context.hpp"
 
 // ----------------------------------------------------------------------------
 
-nstd::net::io_context::io_context()
-    : nstd::net::io_context(nstd::file::ring_context::queue_size(1024))
-{
-}
+nstd::file::context::~context() = default;
 
-nstd::net::io_context::io_context(::nstd::file::ring_context::queue_size size)
-    : d_context(new ::nstd::file::ring_context(size))
-{
+// ----------------------------------------------------------------------------
+
+namespace nstd::file {
+    int context_dummy = 0;
 }

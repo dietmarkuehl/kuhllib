@@ -28,6 +28,7 @@
 #include "nstd/net/ip/basic_endpoint.hpp"
 #include "nstd/net/ip/make_address_v4.hpp"
 #include "nstd/net/ip/tcp.hpp"
+#include "nstd/net/io_context.hpp"
 #include "nstd/execution/run.hpp"
 #include "nstd/execution/then.hpp"
 #include "nstd/execution/sender.hpp"

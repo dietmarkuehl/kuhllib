@@ -116,7 +116,7 @@ nstd::net::basic_stream_socket<Protocol>::basic_stream_socket(protocol_type cons
 
 template <typename Receiver, typename Scheduler, typename MBS>
 struct nstd::net::async_read_some_t::state
-    : public ::nstd::file::ring_context::io_base
+    : public ::nstd::file::context::io_base
 {
     ::nstd::type_traits::remove_cvref_t<Receiver> d_receiver;
     Scheduler                                     d_scheduler;
@@ -142,7 +142,7 @@ struct nstd::net::async_read_some_t::state
         iovec const* iov = reinterpret_cast<::iovec const*>(&*::nstd::net::buffer_sequence_begin(s.d_buffers));
         s.d_msg.msg_iov = const_cast<::iovec*>(iov);
         s.d_msg.msg_iovlen = 1u;
-        s.d_scheduler.context()->recvmsg(s.d_handle, &s.d_msg, int(), &s);
+        s.d_scheduler.context()->hidden_context()->recvmsg(s.d_handle, &s.d_msg, int(), &s);
     }
 
     auto do_result(::std::int32_t size, ::std::uint32_t) -> void override
@@ -199,7 +199,7 @@ auto nstd::net::async_read_some_t::operator()(basic_stream_socket<P>& socket,
 
 template <typename Receiver, typename Scheduler, typename CBS>
 struct nstd::net::async_write_some_t::state
-    : public ::nstd::file::ring_context::io_base
+    : public ::nstd::file::context::io_base
 {
     ::nstd::type_traits::remove_cvref_t<Receiver> d_receiver;
     Scheduler                                     d_scheduler;
@@ -225,7 +225,7 @@ struct nstd::net::async_write_some_t::state
         iovec const* iov = reinterpret_cast<::iovec const*>(&*::nstd::net::buffer_sequence_begin(s.d_buffers));
         s.d_msg.msg_iov = const_cast<::iovec*>(iov);
         s.d_msg.msg_iovlen = 1u;
-        s.d_scheduler.context()->sendmsg(s.d_handle, &s.d_msg, int(), &s);
+        s.d_scheduler.context()->hidden_context()->sendmsg(s.d_handle, &s.d_msg, int(), &s);
     }
 
     auto do_result(::std::int32_t size, ::std::uint32_t) -> void override

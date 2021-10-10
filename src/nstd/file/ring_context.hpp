@@ -26,6 +26,7 @@
 #ifndef INCLUDED_NSTD_FILE_RING_CONTEXT
 #define INCLUDED_NSTD_FILE_RING_CONTEXT
 
+#include "nstd/file/context.hpp"
 #include "nstd/file/descriptor.hpp"
 #include "nstd/file/mapped_memory.hpp"
 #include "nstd/file/ring.hpp"
@@ -48,6 +49,7 @@ namespace nstd::file {
 // ----------------------------------------------------------------------------
 
 class nstd::file::ring_context
+    : public ::nstd::file::context
 {
 private:
     ::nstd::file::descriptor            d_fd;
@@ -65,7 +67,6 @@ private:
     auto process_result() -> ::std::size_t;
 
 public:
-    class io_base;
     class run_guard;
 
     template <typename Op>
@@ -108,11 +109,15 @@ public:
     auto stopped() const noexcept -> bool;
     auto restart() -> void;
 
-    auto timer(::__kernel_timespec*, io_base*) -> void;
-    auto accept(int, void*, void*, int, io_base*) -> void;
-    auto connect(int, void const*, socklen_t, io_base*) -> void;
-    auto sendmsg(int, msghdr const*, int, io_base*) -> void;
-    auto recvmsg(int, msghdr*, int, io_base*) -> void;
+    auto do_run_one() -> ::nstd::file::ring_context::count_type override;
+
+    auto do_timer(::__kernel_timespec*, io_base*) -> void override;
+    auto do_accept(int, ::sockaddr*, ::socklen_t*, int, io_base*) -> void override;
+    auto do_connect(int, ::sockaddr const*, ::socklen_t, io_base*) -> void override;
+    auto do_sendmsg(int, ::msghdr const*, int, io_base*) -> void override;
+    auto do_recvmsg(int, ::msghdr*, int, io_base*) -> void override;
+    auto do_read(int, ::iovec*, ::std::size_t, io_base*) -> void override;
+    auto do_open_at(int, char const*, int, io_base*) -> void override;
 };
 
 // ----------------------------------------------------------------------------
@@ -135,18 +140,6 @@ inline auto nstd::file::ring_context::scheduler() noexcept
 {
     return ::nstd::file::ring_context::scheduler_type(this);
 }
-
-// ----------------------------------------------------------------------------
-
-class nstd::file::ring_context::io_base
-{
-protected:
-    virtual ~io_base() = default;
-    virtual auto do_result(::std::int32_t, ::std::uint32_t) -> void = 0;
-
-public:
-    auto result(::std::int32_t res, ::std::uint32_t flags) -> void { this->do_result(res, flags); }
-};
 
 // ----------------------------------------------------------------------------
 

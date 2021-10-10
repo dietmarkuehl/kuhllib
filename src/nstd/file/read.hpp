@@ -32,7 +32,7 @@
 #include "nstd/execution/set_error.hpp"
 #include "nstd/execution/set_done.hpp"
 #include "nstd/execution/sender_base.hpp"
-#include "nstd/net/io_context.hpp"
+#include "nstd/file/context.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
 #include "nstd/utility/forward.hpp"
 #include "nstd/utility/move.hpp"
@@ -48,7 +48,7 @@
 namespace nstd::file {
     template <typename Buffer, typename Context, typename Receiver>
     struct read_receiver
-        : ::nstd::net::io_context::io_base
+        : ::nstd::file::context::io_base
     {
         Buffer                          d_buffer;
         ::iovec                         d_iovec[1];
@@ -57,7 +57,7 @@ namespace nstd::file {
         ::nstd::file::descriptor        d_fd;
 
         read_receiver(Context* context, Receiver&& receiver)
-            : ::nstd::net::io_context::io_base()
+            : ::nstd::file::context::io_base()
             , d_iovec()
             , d_context(context)
             , d_receiver(::nstd::utility::forward<Receiver>(receiver)) {
@@ -90,22 +90,10 @@ namespace nstd::file {
             r.submit(fd.get());
         }
         auto submit(int fd) {
+            this->d_context->read(fd, this->d_iovec, 1u, this);
             this->d_iovec[0] = ::iovec{ .iov_base = this->d_buffer, .iov_len = sizeof(this->d_buffer) };
             ::std::cout << "buffer=" << +this->d_buffer << " "
                         << "iovec=" << this->d_iovec[0].iov_base << "/" << this->d_iovec[0].iov_len << "\n";
-            this->d_context->submit([this, fd](io_uring_sqe& elem){
-                elem = io_uring_sqe{};
-                elem.opcode     = IORING_OP_READV;
-                //    .flags      = {},
-                //    .ioprio     = {},
-                elem.fd         = fd,
-                //    .off        = {},
-                elem.addr       = reinterpret_cast<decltype(elem.addr)>(+this->d_iovec);
-                elem.len        = 1u;
-                //    .open_flags = {},
-                elem.user_data  = reinterpret_cast<decltype(elem.user_data)>(static_cast<::nstd::net::io_context::io_base*>(this));
-                //    .__pad2     = {}
-            });
         }
         friend auto tag_invoke(::nstd::execution::set_error_t, read_receiver&& r, auto&& err) noexcept -> void {
             ::nstd::execution::set_error(::nstd::utility::move(r.d_receiver),

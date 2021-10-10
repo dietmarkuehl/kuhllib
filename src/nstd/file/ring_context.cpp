@@ -163,7 +163,14 @@ auto NF::ring_context::run()
 
 // ----------------------------------------------------------------------------
 
-auto NF::ring_context::timer(::__kernel_timespec* time, io_base* continuation)
+auto NF::ring_context::do_run_one() -> NF::ring_context::count_type
+{
+    return this->run_one();
+}
+
+// ----------------------------------------------------------------------------
+
+auto NF::ring_context::do_timer(::__kernel_timespec* time, io_base* continuation)
     -> void
 {
     this->submit([=](::io_uring_sqe& element){
@@ -178,9 +185,9 @@ auto NF::ring_context::timer(::__kernel_timespec* time, io_base* continuation)
 }
 // ----------------------------------------------------------------------------
 
-auto NF::ring_context::accept(int      fd,
-                              void*    addr,
-                              void*    len,
+auto NF::ring_context::do_accept(int      fd,
+                              ::sockaddr*    addr,
+                              ::socklen_t*    len,
                               int      flags,
                               io_base* continuation) -> void
 {
@@ -195,9 +202,9 @@ auto NF::ring_context::accept(int      fd,
     });
 }
 
-auto NF::ring_context::connect(int         fd,
-                               void const* addr,
-                               socklen_t   len,
+auto NF::ring_context::do_connect(int         fd,
+                               ::sockaddr const* addr,
+                               ::socklen_t   len,
                                io_base*    continuation)
     -> void
 {
@@ -211,8 +218,8 @@ auto NF::ring_context::connect(int         fd,
     });
 }
 
-auto NF::ring_context::sendmsg(int fd,
-                               msghdr const* addr,
+auto NF::ring_context::do_sendmsg(int fd,
+                               ::msghdr const* addr,
                                int flags,
                                io_base* continuation)
     -> void
@@ -228,8 +235,8 @@ auto NF::ring_context::sendmsg(int fd,
 
 }
 
-auto NF::ring_context::recvmsg(int fd,
-                               msghdr* addr,
+auto NF::ring_context::do_recvmsg(int fd,
+                               ::msghdr* addr,
                                int flags,
                                io_base* continuation)
     -> void
@@ -243,4 +250,36 @@ auto NF::ring_context::recvmsg(int fd,
         element.user_data = reinterpret_cast<::std::uint64_t>(continuation);
     });
 
+}
+
+auto NF::ring_context::do_read(int fd,
+                               ::iovec* vec,
+                               ::std::size_t size,
+                               io_base* continuation)
+    -> void
+{
+    this->submit([=](io_uring_sqe& element){
+        element = ::io_uring_sqe{};
+        element.opcode     = IORING_OP_READV;
+        element.fd         = fd;
+        element.addr       = reinterpret_cast<decltype(element.addr)>(vec);
+        element.len        = size;
+        element.user_data  = reinterpret_cast<decltype(element.user_data)>(continuation);
+        });
+}
+
+auto NF::ring_context::do_open_at(int fd,
+                                  char const* name,
+                                  int flags,
+                                  io_base* continuation)
+    -> void
+{
+    this->submit([=](io_uring_sqe& element){
+        element = ::io_uring_sqe{};
+        element.opcode     = IORING_OP_OPENAT;
+        element.fd         = fd;
+        element.addr       = reinterpret_cast<decltype(element.addr)>(name);
+        element.open_flags = flags;
+        element.user_data  = reinterpret_cast<decltype(element.user_data)>(continuation);
+        });
 }

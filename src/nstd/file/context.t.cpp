@@ -1,4 +1,4 @@
-// nstd/net/io_context.cpp                                            -*-C++-*-
+// nstd/file/context.t.cpp                                            -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,20 +23,41 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/net/io_context.hpp"
+#include "nstd/file/context.hpp"
+#include "kuhl/test.hpp"
 
-namespace nstd::net {
-    int io_context_dummy = 0;
+namespace test_declarations {}
+namespace TD = ::test_declarations;
+namespace KT = ::kuhl::test;
+namespace NF = ::nstd::file;
+
+// ----------------------------------------------------------------------------
+
+namespace test_declarations {
+    namespace {
+        class context
+            : public NF::context
+        {
+            auto do_run_one() -> NF::context::count_type { return NF::context::count_type(); }
+            auto do_timer(::__kernel_timespec*, io_base*) -> void {}
+            auto do_accept(native_handle_type, ::sockaddr*, ::socklen_t*, int, io_base*) -> void {}
+            auto do_connect(native_handle_type, ::sockaddr const*, ::socklen_t, io_base*) -> void {}
+            auto do_sendmsg(native_handle_type, ::msghdr const*, int, io_base*) -> void {}
+            auto do_recvmsg(native_handle_type, ::msghdr*, int, io_base*) -> void {}
+            auto do_read(int, ::iovec*, ::std::size_t, io_base*) -> void {}
+            auto do_open_at(int, char const*, int, io_base*) -> void {}
+        };
+    }
 }
 
 // ----------------------------------------------------------------------------
 
-nstd::net::io_context::io_context()
-    : nstd::net::io_context(nstd::file::ring_context::queue_size(1024))
-{
-}
+static KT::testcase const tests[] = {
+    KT::expect_success("breathing", []{
+            TD::context context;
+            return true
+                ;
+        }),
+};
 
-nstd::net::io_context::io_context(::nstd::file::ring_context::queue_size size)
-    : d_context(new ::nstd::file::ring_context(size))
-{
-}
+static KT::add_tests suite("context", ::tests);
