@@ -112,6 +112,7 @@ list(APPEND kuhllib_components
     src/nstd/functional/tag_invoke
     src/nstd/functional/tuple_invoke
     src/nstd/hidden_names/boolean_socket_option
+    src/nstd/hidden_names/check_type_alias_exists
     src/nstd/hidden_names/derives_from_sender_base
     src/nstd/hidden_names/has_sender_types
     src/nstd/hidden_names/movable_value

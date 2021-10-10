@@ -1,4 +1,4 @@
-// nstd/stop_token/stoppable_token.hpp                                -*-C++-*-
+// nstd/hidden_names/check_type_alias_exists.t.cpp                    -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,32 +23,43 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_STOP_TOKEN_STOPPABLE_TOKEN
-#define INCLUDED_NSTD_STOP_TOKEN_STOPPABLE_TOKEN
-
-#include "nstd/concepts/boolean_testable.hpp"
 #include "nstd/hidden_names/check_type_alias_exists.hpp"
-#include <concepts>
-#include <type_traits>
+#include "kuhl/test.hpp"
+
+namespace test_declarations {}
+namespace TD = ::test_declarations;
+namespace KT = ::kuhl::test;
+namespace HN = ::nstd::hidden_names;
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::stop_token {
-    template <typename StopToken>
-    concept stoppable_token
-        =  ::std::copy_constructible<StopToken>
-        && ::std::move_constructible<StopToken>
-        && ::std::is_nothrow_copy_constructible_v<StopToken>
-        && ::std::is_nothrow_move_constructible_v<StopToken>
-        && ::std::equality_comparable<StopToken>
-        && requires(StopToken const& st) {
-                { st.stop_requested() } noexcept -> ::nstd::concepts::boolean_testable;
-                { st.stop_possible() } noexcept -> ::nstd::concepts::boolean_testable;
-                typename ::nstd::hidden_names::check_type_alias_exists<StopToken::template callback_type>;
+namespace test_declarations {
+    namespace {
+        struct no_alias {};
+        struct alias { using name = int; };
+        struct alias_template { template <typename> using name = int; };
+
+        template <typename T>
+        concept has_name_alias
+            = requires(T const&){
+                typename HN::check_type_alias_exists<T::template name>;
             }
-        ;
+            ;
+    }
 }
 
 // ----------------------------------------------------------------------------
 
-#endif
+static KT::testcase const tests[] = {
+    KT::expect_success("type without nested name doesn't have a type alias", []{
+            return not TD::has_name_alias<TD::no_alias>;
+        }),
+    KT::expect_success("type with nested non-template name doesn't have a type alias", []{
+            return not TD::has_name_alias<TD::alias>;
+        }),
+    KT::expect_success("type with nested template name does have a type alias", []{
+            return TD::has_name_alias<TD::alias_template>;
+        }),
+};
+
+static KT::add_tests suite("check_type_alias_exists", ::tests);

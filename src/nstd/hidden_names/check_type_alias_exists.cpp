@@ -1,4 +1,4 @@
-// nstd/stop_token/stoppable_token.hpp                                -*-C++-*-
+// nstd/hidden_names/check_type_alias_exists.cpp                      -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,32 +23,11 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_STOP_TOKEN_STOPPABLE_TOKEN
-#define INCLUDED_NSTD_STOP_TOKEN_STOPPABLE_TOKEN
-
-#include "nstd/concepts/boolean_testable.hpp"
 #include "nstd/hidden_names/check_type_alias_exists.hpp"
-#include <concepts>
-#include <type_traits>
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::stop_token {
-    template <typename StopToken>
-    concept stoppable_token
-        =  ::std::copy_constructible<StopToken>
-        && ::std::move_constructible<StopToken>
-        && ::std::is_nothrow_copy_constructible_v<StopToken>
-        && ::std::is_nothrow_move_constructible_v<StopToken>
-        && ::std::equality_comparable<StopToken>
-        && requires(StopToken const& st) {
-                { st.stop_requested() } noexcept -> ::nstd::concepts::boolean_testable;
-                { st.stop_possible() } noexcept -> ::nstd::concepts::boolean_testable;
-                typename ::nstd::hidden_names::check_type_alias_exists<StopToken::template callback_type>;
-            }
-        ;
+namespace nstd::hidden_names
+{
+    int check_type_alias_exists_dummy = 0;
 }
-
-// ----------------------------------------------------------------------------
-
-#endif
