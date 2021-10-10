@@ -1,4 +1,4 @@
-// nstd/hidden_names/check_type_alias_exists.t.cpp                    -*-C++-*-
+// nstd/stop_token/stoppable_token_for.hpp                            -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,43 +23,30 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/hidden_names/check_type_alias_exists.hpp"
-#include "kuhl/test.hpp"
+#ifndef INCLUDED_NSTD_STOP_TOKEN_STOPPABLE_TOKEN_FOR
+#define INCLUDED_NSTD_STOP_TOKEN_STOPPABLE_TOKEN_FOR
 
-namespace test_declarations {}
-namespace TD = ::test_declarations;
-namespace KT = ::kuhl::test;
-namespace HN = ::nstd::hidden_names;
+#include "nstd/stop_token/stoppable_token.hpp"
+#include <concepts>
 
 // ----------------------------------------------------------------------------
 
-namespace test_declarations {
-    namespace {
-        struct no_alias {};
-        struct alias { using name = int; };
-        struct alias_template { template <typename> using name = int; };
-
-        template <typename T>
-        concept has_name_alias
-            = requires{
-                typename HN::check_type_alias_exists<T::template name>;
-            }
-            ;
-    }
+namespace nstd::stop_token {
+    template<typename Token, typename Callback, typename Initializer = Callback>
+    concept stoppable_token_for
+        =  ::nstd::stop_token::stoppable_token<Token>
+        && ::std::invocable<Callback>
+        && requires {
+            typename Token::template callback_type<Callback>;
+        }
+        && ::std::constructible_from<Callback, Initializer>
+        && ::std::constructible_from<typename Token::template callback_type<Callback>, Token, Initializer>
+        && ::std::constructible_from<typename Token::template callback_type<Callback>, Token&, Initializer>
+        && ::std::constructible_from<typename Token::template callback_type<Callback>, Token const, Initializer>
+        && ::std::constructible_from<typename Token::template callback_type<Callback>, Token const&, Initializer>
+        ;
 }
 
 // ----------------------------------------------------------------------------
 
-static KT::testcase const tests[] = {
-    KT::expect_success("type without nested name doesn't have a type alias", []{
-            return not TD::has_name_alias<TD::no_alias>;
-        }),
-    KT::expect_success("type with nested non-template name doesn't have a type alias", []{
-            return not TD::has_name_alias<TD::alias>;
-        }),
-    KT::expect_success("type with nested template name does have a type alias", []{
-            return TD::has_name_alias<TD::alias_template>;
-        }),
-};
-
-static KT::add_tests suite("check_type_alias_exists", ::tests);
+#endif

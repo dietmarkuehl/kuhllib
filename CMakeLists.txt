@@ -149,6 +149,7 @@ list(APPEND kuhllib_components
     src/nstd/sender/just_error
     src/nstd/stop_token/inplace_stop_token
     src/nstd/stop_token/stoppable_token
+    src/nstd/stop_token/stoppable_token_for
     src/nstd/thread/sync_wait
     src/nstd/type_traits/add_const
     src/nstd/type_traits/add_lvalue_reference
