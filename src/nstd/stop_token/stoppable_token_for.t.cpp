@@ -110,10 +110,6 @@ static KT::testcase const tests[] = {
                 && not ST::stoppable_token_for<TD::stop_token_with_const_callback, TD::callback, int>
                 ;
         }),
-    KT::expect_success("stoppable token with callback", []{
-            return true
-                ;
-        }),
 };
 
 static KT::add_tests suite("stoppable_token_for", ::tests);

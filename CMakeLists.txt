@@ -113,6 +113,7 @@ list(APPEND kuhllib_components
     src/nstd/functional/tuple_invoke
     src/nstd/hidden_names/boolean_socket_option
     src/nstd/hidden_names/check_type_alias_exists
+    src/nstd/hidden_names/constexpr_expression
     src/nstd/hidden_names/derives_from_sender_base
     src/nstd/hidden_names/has_sender_types
     src/nstd/hidden_names/movable_value
@@ -150,6 +151,7 @@ list(APPEND kuhllib_components
     src/nstd/stop_token/inplace_stop_token
     src/nstd/stop_token/stoppable_token
     src/nstd/stop_token/stoppable_token_for
+    src/nstd/stop_token/unstoppable_token
     src/nstd/thread/sync_wait
     src/nstd/type_traits/add_const
     src/nstd/type_traits/add_lvalue_reference
