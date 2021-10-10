@@ -59,14 +59,8 @@ public:
 
     auto scheduler() noexcept -> ::nstd::net::io_context::scheduler_type;
 
-    auto run_one() -> count_type { return this->d_context->run_one(); }
-    auto run() -> count_type {
-        count_type count{};
-        while (1u == this->d_context->run_one()) {
-            ++count;
-        }
-        return count;
-    }
+    auto run_one() -> count_type;
+    auto run() -> count_type;
 
     template <typename Rep, typename Period>
         auto run_for(::std::chrono::duration<Rep, Period> const&)

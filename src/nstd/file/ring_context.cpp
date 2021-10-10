@@ -29,8 +29,8 @@
 #include <stdexcept>
 #include <iostream> //-dk:TODO
 #include <cstring> //-dk:TODO
-#include <cerrno> //-dk:TODO
-#include <unistd.h> // requires a new enough kernel
+#include <cerrno>
+#include <unistd.h>
 #include <linux/io_uring.h> // requires a new enough kernel
 
 #include <sys/syscall.h>
@@ -50,8 +50,7 @@ namespace
     int io_uring_enter(int fd, unsigned int count, unsigned int min_complete, unsigned int flags, sigset_t)
     {
         //-dk:TODO do something with the sigset?
-        int rc(syscall(__NR_io_uring_enter, fd, count, min_complete, flags, NULL, 0));
-        return rc;
+        return ::syscall(__NR_io_uring_enter, fd, count, min_complete, flags, NULL, 0);
     }
 }
 
@@ -64,8 +63,8 @@ NF::ring_context::ring_context()
 
 NF::ring_context::ring_context(NF::ring_context::queue_size size)
 {
-    if (this->setup(size) < 0) {
-        throw ::std::runtime_error("failed to create io_uring"); //-dk:TODO throw a better error?
+    if (int rc = this->setup(size)) {
+        throw ::std::system_error(rc, ::std::system_category(), "failed to create io_uring");
     }
 }
 
@@ -80,7 +79,7 @@ auto NF::ring_context::setup(NF::ring_context::queue_size size) -> int
     io_uring_params params{};
     this->d_fd = ::nstd::file::descriptor(io_uring_setup(static_cast<int>(size), &params));
     if (not this->d_fd) {
-        return this->d_fd.get();
+        return errno;
     }
 
     ::std::size_t const smap(params.sq_off.array + params.sq_entries * sizeof(::std::uint32_t));
@@ -93,8 +92,7 @@ auto NF::ring_context::setup(NF::ring_context::queue_size size) -> int
         || (!single_mmap && !this->d_cmem.map(cmap, this->d_fd.get(), IORING_OFF_CQ_RING))
         || !this->d_emem.map(sqmap, this->d_fd.get(), IORING_OFF_SQES)
         ) {
-            //-dk:TODO remove ::std::cout << "mmap error=" << ::std::strerror(errno) << "\n";
-        return -1;
+        return errno;
     }
     
     this->d_submission = ::nstd::file::ring<unsigned int>(this->d_smem,
@@ -109,7 +107,7 @@ auto NF::ring_context::setup(NF::ring_context::queue_size size) -> int
                                                             params.cq_off.cqes);
     this->d_submission_elements = this->d_emem.at_offset<::io_uring_sqe>(0u);
 
-    return this->d_fd.get();
+    return 0;
 }
 
 // ----------------------------------------------------------------------------

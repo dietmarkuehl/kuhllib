@@ -35,14 +35,13 @@
 
 namespace nstd::execution::inline customization_points {
     inline constexpr struct get_stop_token_t {
-        template <typename Receiver>
+        template <::nstd::execution::receiver Receiver>
         constexpr auto operator()(Receiver&& receiver) const
             noexcept(noexcept(::nstd::tag_invoke(*this, ::nstd::utility::as_const(receiver))))
-            requires ::nstd::execution::receiver<Receiver>
-                && requires(Receiver&& receiver) {
+            requires requires(Receiver&& receiver) {
                         { ::nstd::tag_invoke(*this, ::nstd::utility::as_const(receiver)) } noexcept;
                     }
-                && ::nstd::stoppable_token<decltype(::nstd::tag_invoke(*this, ::nstd::utility::as_const(receiver)))>
+                && ::nstd::stop_token::stoppable_token<decltype(::nstd::tag_invoke(*this, ::nstd::utility::as_const(receiver)))>
         {
             return ::nstd::tag_invoke(*this, ::nstd::utility::as_const(receiver));
         }

@@ -40,3 +40,17 @@ nstd::net::io_context::io_context(::nstd::file::ring_context::queue_size size)
     : d_context(new ::nstd::file::ring_context(size))
 {
 }
+
+auto nstd::net::io_context::run_one() -> nstd::net::io_context::count_type
+{
+    return this->d_context->run_one();
+}
+
+auto nstd::net::io_context::run() -> nstd::net::io_context::count_type
+{
+    count_type count{};
+    while (1u == this->d_context->run_one()) {
+        ++count;
+    }
+    return count;
+}

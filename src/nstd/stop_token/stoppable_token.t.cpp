@@ -27,8 +27,8 @@
 #include "kuhl/test.hpp"
 
 namespace test_declarations {}
-namespace TD = test_declarations;
-namespace ST = ::nstd;
+namespace TD = ::test_declarations;
+namespace ST = ::nstd::stop_token;
 namespace KT = ::kuhl::test;
 
 // ----------------------------------------------------------------------------

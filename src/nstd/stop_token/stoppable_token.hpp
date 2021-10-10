@@ -32,13 +32,13 @@
 
 // ----------------------------------------------------------------------------
 
-namespace nstd {
-    namespace hidden_names {
-        template <template <typename...> class>
-        class check_type_alias_exists {
-        };
-    }
+namespace nstd::hidden_names {
+    template <template <typename...> class>
+    class check_type_alias_exists {
+    };
+}
 
+namespace nstd::stop_token {
     template <typename StopToken>
     concept stoppable_token
         =  ::std::copy_constructible<StopToken>
