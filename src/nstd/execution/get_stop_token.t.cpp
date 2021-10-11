@@ -25,11 +25,13 @@
 
 #include "nstd/execution/get_stop_token.hpp"
 #include "nstd/execution/receiver.hpp"
+#include "nstd/stop_token/never_stop_token.hpp"
 #include "kuhl/test.hpp"
 
 namespace test_declarations {}
-namespace TD = test_declarations;
+namespace TD = ::test_declarations;
 namespace EX = ::nstd::execution;
+namespace ST = ::nstd::stop_token;
 namespace KT = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
@@ -97,11 +99,15 @@ static KT::testcase const tests[] = {
                 ;
         }),
     KT::expect_success("throwing get_stop_token isn't allowed ", []{
-            return !TD::has_get_stop_token<TD::receiver<TD::stop_token, false>>
+            return TD::has_get_stop_token<TD::receiver<TD::stop_token, false>>
+                && KT::type<decltype(EX::get_stop_token(TD::receiver<TD::stop_token, false>{nullptr}))>
+                    == KT::type<ST::never_stop_token>
                 ;
         }),
     KT::expect_success("return a non-stop_token from get_stop_token isn't allowed ", []{
-            return !TD::has_get_stop_token<TD::receiver<TD::non_stop_token, true>>
+            return TD::has_get_stop_token<TD::receiver<TD::non_stop_token, true>>
+                && KT::type<decltype(EX::get_stop_token(TD::receiver<TD::non_stop_token, true>{nullptr}))>
+                    == KT::type<ST::never_stop_token>
                 ;
         }),
 };

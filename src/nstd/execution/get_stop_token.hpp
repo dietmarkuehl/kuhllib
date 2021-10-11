@@ -29,6 +29,7 @@
 #include "nstd/functional/tag_invoke.hpp"
 #include "nstd/execution/receiver.hpp"
 #include "nstd/stop_token/stoppable_token.hpp"
+#include "nstd/stop_token/never_stop_token.hpp"
 #include "nstd/utility/as_const.hpp"
 
 // ----------------------------------------------------------------------------
@@ -44,6 +45,11 @@ namespace nstd::execution::inline customization_points {
                 && ::nstd::stop_token::stoppable_token<decltype(::nstd::tag_invoke(*this, ::nstd::utility::as_const(receiver)))>
         {
             return ::nstd::tag_invoke(*this, ::nstd::utility::as_const(receiver));
+        }
+        template <::nstd::execution::receiver Receiver>
+        constexpr auto operator()(Receiver&& ) const noexcept
+        {
+            return ::nstd::stop_token::never_stop_token();
         }
     } get_stop_token;
 }

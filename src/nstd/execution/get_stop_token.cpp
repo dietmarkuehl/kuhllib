@@ -27,4 +27,7 @@
 
 // ----------------------------------------------------------------------------
 
-int get_stop_token_dummy = 0;
+namespace nstd::execution
+{
+    int get_stop_token_dummy = 0;
+}
