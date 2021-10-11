@@ -1,4 +1,4 @@
-// nstd/stop_token/inplace_stop_token.hpp                             -*-C++-*-
+// nstd/stop_token/in_place_stop_token.hpp                            -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,8 +23,8 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_STOP_TOKEN_INPLACE_STOP_TOKEN
-#define INCLUDED_NSTD_STOP_TOKEN_INPLACE_STOP_TOKEN
+#ifndef INCLUDED_NSTD_STOP_TOKEN_IN_PLACE_STOP_TOKEN
+#define INCLUDED_NSTD_STOP_TOKEN_IN_PLACE_STOP_TOKEN
 
 #include "nstd/stop_token/stoppable_token.hpp"
 #include "nstd/utility/move.hpp"
@@ -33,13 +33,13 @@
 // ----------------------------------------------------------------------------
 
 namespace nstd::stop_token {
-    class inplace_stop_state;
-    class inplace_stop_token;
+    class in_place_stop_source;
+    class in_place_stop_token;
 }
 
 // ----------------------------------------------------------------------------
 
-class nstd::stop_token::inplace_stop_state
+class nstd::stop_token::in_place_stop_source
 {
 private:
     class callback_base
@@ -59,15 +59,15 @@ private:
     ::std::atomic<bool>           d_stop_requested{false};
 
 public:
-    friend class ::nstd::stop_token::inplace_stop_token;
+    friend class ::nstd::stop_token::in_place_stop_token;
 
-    inplace_stop_state() = default;
-    inplace_stop_state(inplace_stop_state const&) = delete;
-    auto operator= (inplace_stop_state const&) -> inplace_stop_state& = delete;
-    ~inplace_stop_state() = default;
+    in_place_stop_source() = default;
+    in_place_stop_source(in_place_stop_source const&) = delete;
+    auto operator= (in_place_stop_source const&) -> in_place_stop_source& = delete;
+    ~in_place_stop_source() = default;
 
     auto stop_requested() const noexcept -> bool { return this->d_stop_requested; }
-    auto token() -> ::nstd::stop_token::inplace_stop_token;
+    auto token() -> ::nstd::stop_token::in_place_stop_token;
     auto stop() -> void {
         this->d_stop_requested = true;
         callback_base* head = this->d_list;
@@ -128,24 +128,24 @@ public:
 
 // ----------------------------------------------------------------------------
 
-class nstd::stop_token::inplace_stop_token
+class nstd::stop_token::in_place_stop_token
 {
-    friend class ::nstd::stop_token::inplace_stop_state;
+    friend class ::nstd::stop_token::in_place_stop_source;
 private:
-    ::nstd::stop_token::inplace_stop_state* d_state;
+    ::nstd::stop_token::in_place_stop_source* d_state;
 
-    explicit inplace_stop_token(::nstd::stop_token::inplace_stop_state* state)
+    explicit in_place_stop_token(::nstd::stop_token::in_place_stop_source* state)
         : d_state(state)
     {
     }
 public:
     template <typename Callable>
     struct callback_type
-        : ::nstd::stop_token::inplace_stop_state::callback_base
+        : ::nstd::stop_token::in_place_stop_source::callback_base
     {
-        inplace_stop_state* d_state;
+        in_place_stop_source* d_state;
         Callable            d_callback;
-        callback_type(inplace_stop_token token, Callable callback)
+        callback_type(in_place_stop_token token, Callable callback)
             : d_state(token.d_state)
             , d_callback(::nstd::utility::move(callback)) {
             this->d_state->insert(this);
@@ -157,19 +157,19 @@ public:
         }
         auto do_call() ->void override { this->d_callback(); }
     };
-    auto operator== (inplace_stop_token const&) const noexcept -> bool = default;
+    auto operator== (in_place_stop_token const&) const noexcept -> bool = default;
     auto stop_requested() const noexcept -> bool { return this->d_state->stop_requested(); }
     constexpr auto stop_possible() const noexcept -> bool { return true; }
 };
 
-static_assert(::nstd::stop_token::stoppable_token<::nstd::stop_token::inplace_stop_token>);
+static_assert(::nstd::stop_token::stoppable_token<::nstd::stop_token::in_place_stop_token>);
 
 // ----------------------------------------------------------------------------
 
-inline auto nstd::stop_token::inplace_stop_state::token()
-    -> ::nstd::stop_token::inplace_stop_token
+inline auto nstd::stop_token::in_place_stop_source::token()
+    -> ::nstd::stop_token::in_place_stop_token
 {
-    return ::nstd::stop_token::inplace_stop_token(this);
+    return ::nstd::stop_token::in_place_stop_token(this);
 }
 
 // ----------------------------------------------------------------------------

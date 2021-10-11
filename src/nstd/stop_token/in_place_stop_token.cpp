@@ -1,4 +1,4 @@
-// nstd/stop_token/inplace_stop_token.cpp                             -*-C++-*-
+// nstd/stop_token/in_place_stop_token.cpp                            -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,10 +23,10 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/stop_token/inplace_stop_token.hpp"
+#include "nstd/stop_token/in_place_stop_token.hpp"
 
 // ----------------------------------------------------------------------------
 
 namespace nstd::stop_token {
-    int inplace_stop_token_dummy = 0;
+    int in_place_stop_token_dummy = 0;
 }
