@@ -80,6 +80,7 @@ list(APPEND kuhllib_components
     src/nstd/execution/start
     src/nstd/execution/stop_token_type
     src/nstd/execution/then
+    src/nstd/execution/timeout
     src/nstd/execution/typed_sender
     src/nstd/execution/when_all
     src/nstd/executor/associated_allocator

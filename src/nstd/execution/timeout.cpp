@@ -27,4 +27,6 @@
 
 // ----------------------------------------------------------------------------
 
-int timeout_dummy = 0;
+namespace nstd::execution {
+    int timeout_dummy = 0;
+}

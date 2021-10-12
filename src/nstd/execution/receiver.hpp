@@ -54,8 +54,6 @@ namespace nstd::execution {
 // ----------------------------------------------------------------------------
 
 struct nstd::execution::test_receiver {
-    test_receiver(test_receiver&&) = default;
-
     template <typename Error>
     friend auto tag_invoke(::nstd::execution::set_error_t, test_receiver&&, Error&&) noexcept -> void {};
     friend auto tag_invoke(::nstd::execution::set_done_t, test_receiver&&) noexcept -> void {};

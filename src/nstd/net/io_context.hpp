@@ -27,8 +27,15 @@
 #define INCLUDED_NSTD_NET_IO_CONTEXT
 
 #include "nstd/net/netfwd.hpp"
+#include "nstd/execution/operation_state.hpp"
+#include "nstd/execution/schedule.hpp"
+#include "nstd/execution/scheduler.hpp"
+#include "nstd/execution/connect.hpp"
+#include "nstd/execution/start.hpp"
+#include "nstd/execution/receiver.hpp"
 #include "nstd/file/context.hpp"
 #include "nstd/file/ring_context.hpp"
+#include <exception>
 
 // ----------------------------------------------------------------------------
 
@@ -94,9 +101,30 @@ private:
 
 public:
     auto context() noexcept -> ::nstd::net::io_context* { return this->d_context; }
-
     auto operator== (scheduler_type const& other) const -> bool = default;
+
+    struct state {
+        friend auto tag_invoke(::nstd::execution::start_t, state&) noexcept -> void;
+    };
+    struct sender {
+        template <template <typename...> class V, template <typename...> class T>
+        using value_types = V<T<>>;
+        template <template <typename...> class V>
+        using error_types = V<::std::exception_ptr>;
+        static constexpr bool sends_done = true;
+
+        template <::nstd::execution::receiver Receiver>
+        friend auto tag_invoke(::nstd::execution::connect_t, sender&&, Receiver&&) noexcept
+            -> state;
+    };
+
+    friend auto tag_invoke(::nstd::execution::schedule_t,
+                           scheduler_type&&) -> sender;
 };
+
+static_assert(::nstd::execution::operation_state<::nstd::net::io_context::scheduler_type::state>);
+static_assert(::nstd::execution::sender<::nstd::net::io_context::scheduler_type::sender>);
+static_assert(::nstd::execution::scheduler<::nstd::net::io_context::scheduler_type>);
 
 inline auto nstd::net::io_context::scheduler() noexcept
     -> ::nstd::net::io_context::scheduler_type

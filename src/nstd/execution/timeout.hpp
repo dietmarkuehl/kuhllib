@@ -26,11 +26,48 @@
 #ifndef INCLUDED_NSTD_EXECUTION_TIMEOUT
 #define INCLUDED_NSTD_EXECUTION_TIMEOUT
 
+#include "nstd/execution/receiver.hpp"
+#include "nstd/execution/scheduler.hpp"
+#include "nstd/execution/sender.hpp"
+
 // ----------------------------------------------------------------------------
 
-namespace nstd {
-    namespace xxx {
-    }
+namespace nstd::execution {
+    inline constexpr struct timeout_t
+    {
+        template <::nstd::execution::receiver>
+        struct receiver;
+        template <::nstd::execution::receiver>
+        struct state;
+        template <::nstd::execution::sender, ::nstd::execution::sender>
+        struct sender;
+
+        template <::nstd::execution::sender Sender,
+                  ::nstd::execution::scheduler Scheduler,
+                  typename Time>
+        auto operator()(Sender&&, Scheduler&&, Time&&) const
+            -> sender<Sender, Sender>;
+    } timeout;
+}
+
+// ----------------------------------------------------------------------------
+
+template <::nstd::execution::sender Sender, ::nstd::execution::sender Timer>
+struct nstd::execution::timeout_t::sender
+{
+};
+
+// ----------------------------------------------------------------------------
+
+template <::nstd::execution::sender Sender,
+          ::nstd::execution::scheduler Scheduler,
+          typename Time>
+auto ::nstd::execution::timeout_t::operator()(Sender&&    ,
+                                              Scheduler&& ,
+                                              Time&&      ) const
+    -> sender<Sender, Sender>
+{
+    return {};
 }
 
 // ----------------------------------------------------------------------------
