@@ -25,6 +25,7 @@
 
 #include "nstd/execution/timeout.hpp"
 #include "nstd/execution/connect.hpp"
+#include "nstd/execution/run.hpp"
 #include "nstd/execution/sender.hpp"
 #include "nstd/execution/start.hpp"
 #include "nstd/execution/set_done.hpp"
@@ -65,7 +66,10 @@ namespace test_declarations {
                 struct stopper {
                     state* d_state;
                     auto operator()() noexcept -> void {
-                        EX::set_done(UT::move(this->d_state->d_receiver));
+                        ::std::cout << "stopper::callback\n";
+                        state* s = this->d_state;
+                        s->d_callback.reset(); 
+                        EX::set_done(UT::move(s->d_receiver));
                     }
                 };
                 using stop_token = EX::stop_token_type_t<TT::remove_cvref_t<Receiver>>;
@@ -74,14 +78,17 @@ namespace test_declarations {
                 ::std::optional<callback>    d_callback;
                 friend auto tag_invoke(EX::start_t, state& s) noexcept -> void {
                     EX::get_stop_token(s.d_receiver);
+                    ::std::cout << "creating callback: "
+                                << ::std::boolalpha << EX::get_stop_token(s.d_receiver).stop_possible() << "\n";
                     s.d_callback.emplace(EX::get_stop_token(s.d_receiver), stopper{&s});
+                    ::std::cout << "creating callback: done\n";
                 }
             };
 
             template <EX::receiver Receiver>
             friend auto tag_invoke(EX::connect_t, never&&, Receiver&& receiver) noexcept
                 -> state<Receiver> {
-                    return { UT::forward<Receiver>(receiver) };
+                    return { UT::forward<Receiver>(receiver), {} };
             }
         };
         static_assert(EX::operation_state<never::state<EX::test_receiver>>);
@@ -93,9 +100,11 @@ namespace test_declarations {
 
 static KT::testcase const tests[] = {
     KT::expect_success("breathing", []{
+            ::std::cout << ::std::unitbuf;
             using namespace ::std::chrono_literals;
             NN::io_context context;
             auto sender = EX::timeout(TD::never(), context.scheduler(), 1ms); 
+            EX::run(context, UT::move(sender));
             return KT::use(sender)
                 ;
         }),

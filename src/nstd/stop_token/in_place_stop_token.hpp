@@ -29,6 +29,7 @@
 #include "nstd/stop_token/stoppable_token.hpp"
 #include "nstd/utility/move.hpp"
 #include <atomic>
+#include <iostream>
 
 // ----------------------------------------------------------------------------
 
@@ -49,8 +50,9 @@ private:
     public:
         virtual ~callback_base() = default;
         callback_base*      d_next = nullptr;
+        ::std::atomic<bool> d_called = false;
 
-        auto call() -> void { this->do_call(); }
+        auto call() -> void { this->d_called = true; this->do_call(); }
     };
 
     callback_base                 d_marker;
@@ -69,7 +71,12 @@ public:
     auto stop_requested() const noexcept -> bool { return this->d_stop_requested; }
     auto token() -> ::nstd::stop_token::in_place_stop_token;
     auto stop() -> void {
-        this->d_stop_requested = true;
+        ::std::cout << "stopping stop state\n";
+        bool expect{false};
+        if (!this->d_stop_requested.compare_exchange_strong(expect, true)) {
+            ::std::cout << "stop state already stopped\n";
+            return;
+        }
         callback_base* head = this->d_list;
         // The marker is set while calling the callbacks to avoid registered
         // callbacks being destroyed after they realized that they didn't need
@@ -78,25 +85,36 @@ public:
         }
         if (head) {
             for (auto node = head; node; node = node->d_next) {
+                ::std::cout << "stop state: calling calback cllient\n";
                 node->call();
             }
             this->d_list = nullptr;
         }
+        ::std::cout << "stopping stop state: done\n";
     }
     auto insert(callback_base* callback) -> void {
+        ::std::cout << "inserting callback\n";
         for (callback_base* head = this->d_list; head; ) {
             callback->d_next = head;
             if (   head != &this->d_marker
                 && this->d_list.compare_exchange_strong(head, callback)) {
+                ::std::cout << "inserting callback done\n";
                 return;
             }
         }
+        ::std::cout << "inserting callback into stopped state: calling callback instead\n";
         callback->call();
     }
     auto remove(callback_base* callback) -> void {
+        ::std::cout << "removing callback\n";
+        if (callback->d_called) {
+            ::std::cout << "removing callback which was called: do nothing\n";
+            return;
+        }
         callback_base* head = this->d_list;
         for (; ; head = this->d_list) {
             if (head == nullptr) {
+                ::std::cout << "removing callback from stopped list: done\n";
                 return;
             }
             if (head == &this->d_marker) {
@@ -123,6 +141,7 @@ public:
         }
 
         this->d_list = head;
+        ::std::cout << "removing callback done\n";
     }
 };
 
@@ -148,12 +167,16 @@ public:
         callback_type(in_place_stop_token token, Callable callback)
             : d_state(token.d_state)
             , d_callback(::nstd::utility::move(callback)) {
+            std::cout << "constructing callback_type\n";
             this->d_state->insert(this);
+            std::cout << "constructing callback_type: done\n";
         }
         callback_type(callback_type const&) = delete;
         auto operator= (callback_type const&) -> callback_type = delete;
         ~callback_type() {
+            std::cout << "destroying callback_type\n";
             this->d_state->remove(this);
+            std::cout << "destroying callback_type: done\n";
         }
         auto do_call() ->void override { this->d_callback(); }
     };

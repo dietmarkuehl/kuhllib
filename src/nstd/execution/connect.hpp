@@ -36,14 +36,12 @@
 
 namespace nstd::execution::inline customization_points {
     inline constexpr struct connect_t {
-        template <typename Sender, typename Receiver>
+        template <::nstd::execution::sender Sender, ::nstd::execution::receiver Receiver>
         constexpr auto operator()(Sender&& sender, Receiver&& receiver) const
             noexcept(noexcept(::nstd::tag_invoke(*this,
                                                  ::nstd::utility::forward<Sender>(sender),
                                                  ::nstd::utility::forward<Receiver>(receiver))))
-            requires ::nstd::execution::sender<Sender>
-                  && ::nstd::execution::receiver<Receiver>
-                  && requires(Sender&& sender, Receiver&& receiver) {
+                requires requires(Sender&& sender, Receiver&& receiver) {
                 {
                     ::nstd::tag_invoke(*this,
                                        ::nstd::utility::forward<Sender>(sender),
