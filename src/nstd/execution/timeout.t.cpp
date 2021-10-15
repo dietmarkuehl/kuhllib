@@ -66,7 +66,6 @@ namespace test_declarations {
                 struct stopper {
                     state* d_state;
                     auto operator()() noexcept -> void {
-                        ::std::cout << "stopper::callback\n";
                         state* s = this->d_state;
                         s->d_callback.reset(); 
                         EX::set_done(UT::move(s->d_receiver));
@@ -78,10 +77,7 @@ namespace test_declarations {
                 ::std::optional<callback>    d_callback;
                 friend auto tag_invoke(EX::start_t, state& s) noexcept -> void {
                     EX::get_stop_token(s.d_receiver);
-                    ::std::cout << "creating callback: "
-                                << ::std::boolalpha << EX::get_stop_token(s.d_receiver).stop_possible() << "\n";
                     s.d_callback.emplace(EX::get_stop_token(s.d_receiver), stopper{&s});
-                    ::std::cout << "creating callback: done\n";
                 }
             };
 
@@ -100,7 +96,6 @@ namespace test_declarations {
 
 static KT::testcase const tests[] = {
     KT::expect_success("breathing", []{
-            ::std::cout << ::std::unitbuf;
             using namespace ::std::chrono_literals;
             NN::io_context context;
             auto sender = EX::timeout(TD::never(), context.scheduler(), 1ms); 

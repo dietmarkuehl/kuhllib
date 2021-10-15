@@ -103,7 +103,6 @@ static KT::testcase const tests[] = {
                 ;
             }
             catch (std::exception const& ex) {
-                ::std::cout << "exception: " << ex.what() << "\n";
                 return false;
             }
         }),
@@ -118,7 +117,6 @@ static KT::testcase const tests[] = {
                 ;
             }
             catch (std::exception const& ex) {
-                ::std::cout << "exception: " << ex.what() << "\n";
                 return false;
             }
         }),
@@ -135,7 +133,6 @@ static KT::testcase const tests[] = {
                 ;
             }
             catch (std::exception const& ex) {
-                ::std::cout << "exception: " << ex.what() << "\n";
                 return false;
             }
         }),
@@ -147,7 +144,6 @@ static KT::testcase const tests[] = {
             clock::duration  d(13ms);
 
             auto before = clock::now();
-            ::std::cout << "waiting...\n";
             auto count = 100000;
             NN::system_timer timer(context, d);
             EX::run(context, NN::async_wait(timer) | EX::then([before, &count](auto&&...){
@@ -155,10 +151,10 @@ static KT::testcase const tests[] = {
                 count = ::std::chrono::duration_cast<::std::chrono::milliseconds>(dur).count();
                 }));
 
+            ::std::cout << "count=" << count << "\n";
             return 13 <= count;
             }
             catch (std::exception const& ex) {
-                ::std::cout << "exception: " << ex.what() << "\n";
                 return false;
             }
         }),

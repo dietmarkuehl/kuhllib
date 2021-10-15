@@ -43,7 +43,6 @@
 #include <optional>
 #include <tuple>
 #include <variant>
-#include <iostream> //-dk:TODO remove
 
 // ----------------------------------------------------------------------------
 
@@ -113,21 +112,15 @@ struct nstd::execution::timeout_t::sender_receiver
     struct nstd::execution::timeout_t::state_base<Receiver, Sender>* d_state;
 
     friend auto tag_invoke(::nstd::execution::get_stop_token_t, sender_receiver const& r) noexcept {
-        ::std::cout << "sender_receiver::get_stop_token: "
-                   << ::std::boolalpha << r.d_state->d_source.token().stop_possible() << "\n";
         return r.d_state->d_source.token();
     }
     friend auto tag_invoke(::nstd::execution::set_value_t, sender_receiver&&, auto&&...) noexcept -> void {
-        ::std::cout << "sender_receiver::set_value\n";
     }
     friend auto tag_invoke(::nstd::execution::set_error_t, sender_receiver&&, auto&&) noexcept -> void {
-        ::std::cout << "sender_receiver::set_error\n";
     }
     friend auto tag_invoke(::nstd::execution::set_done_t, sender_receiver&& r) noexcept -> void {
-        ::std::cout << "sender_receiver::set_done\n";
         r.d_state->d_source.stop();
         unsigned done = ++r.d_state->d_done;
-        ::std::cout << "sender_receiver::set_done: done=" << done << "\n";
         if (2u == done) { // ++r.d_state->d_done) {
             ::nstd::execution::set_done(::nstd::utility::move(r.d_state->d_receiver));
         }
@@ -142,20 +135,15 @@ struct nstd::execution::timeout_t::timer_receiver
     struct nstd::execution::timeout_t::state_base<Receiver, Sender>* d_state;
 
     friend auto tag_invoke(::nstd::execution::get_stop_token_t, timer_receiver const& r) noexcept {
-        ::std::cout << "timer_receiver::get_stop_token: "
-                   << ::std::boolalpha << r.d_state->d_source.token().stop_possible() << "\n";
         return r.d_state->d_source.token();
     }
     friend auto tag_invoke(::nstd::execution::set_value_t, timer_receiver&& r, auto&&...) noexcept -> void {
-        ::std::cout << "timer_receiver::set_value\n";
         r.d_state->timer_done();
     }
     friend auto tag_invoke(::nstd::execution::set_error_t, timer_receiver&& r, auto&&) noexcept -> void {
-        ::std::cout << "timer_receiver::set_error\n";
         r.d_state->timer_done();
     }
     friend auto tag_invoke(::nstd::execution::set_done_t, timer_receiver&& r) noexcept -> void {
-        ::std::cout << "timer_receiver::set_done\n";
         r.d_state->timer_done();
     }
 };
