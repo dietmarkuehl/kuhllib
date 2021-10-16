@@ -26,6 +26,7 @@
 #ifndef INCLUDED_NSTD_EXECUTION_START_DETACHED
 #define INCLUDED_NSTD_EXECUTION_START_DETACHED
 
+#include "nstd/concepts/same_as.hpp"
 #include "nstd/execution/connect.hpp"
 #include "nstd/execution/get_completion_scheduler.hpp"
 #include "nstd/execution/sender.hpp"
@@ -38,10 +39,8 @@
 #include "nstd/utility/move.hpp"
 #include "nstd/type_traits/declval.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
-#include <concepts>
 #include <exception>
 #include <memory>
-#include <iostream>
 
 // ----------------------------------------------------------------------------
 
@@ -58,7 +57,7 @@ namespace nstd::execution {
                     ::nstd::tag_invoke(::nstd::type_traits::declval<start_detached_t>(),
                                        ::nstd::execution::get_completion_scheduler<::nstd::execution::set_value_t>(sender),
                                        ::nstd::utility::forward<Sender>(sender))
-                } -> ::std::same_as<void>;
+                } -> ::nstd::concepts::same_as<void>;
             }
         auto operator()(Sender&& sender) const -> void {
             ::nstd::tag_invoke(*this,
@@ -70,14 +69,14 @@ namespace nstd::execution {
                 {
                     ::nstd::tag_invoke(::nstd::type_traits::declval<start_detached_t>(),
                                        ::nstd::utility::forward<Sender>(sender))
-                } -> ::std::same_as<void>;
+                } -> ::nstd::concepts::same_as<void>;
             }
             && (not requires(Sender&& sender) {
                 {
                     ::nstd::tag_invoke(::nstd::type_traits::declval<start_detached_t>(),
                                        ::nstd::execution::get_completion_scheduler<::nstd::execution::set_value_t>(sender),
                                        ::nstd::utility::forward<Sender>(sender))
-                } -> ::std::same_as<void>;
+                } -> ::nstd::concepts::same_as<void>;
             })
         auto operator()(Sender&& sender) const -> void {
             ::nstd::tag_invoke(*this, ::nstd::utility::forward<Sender>(sender));

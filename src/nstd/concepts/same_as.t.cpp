@@ -1,4 +1,4 @@
-// nstd/execution/get_completion_scheduler.hpp                        -*-C++-*-
+// nstd/concepts/same_as.t.cpp                                        -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,43 +23,60 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_EXECUTION_GET_COMPLETION_SCHEDULER
-#define INCLUDED_NSTD_EXECUTION_GET_COMPLETION_SCHEDULER
-
 #include "nstd/concepts/same_as.hpp"
-#include "nstd/execution/scheduler.hpp"
-#include "nstd/execution/sender.hpp"
-#include "nstd/execution/set_value.hpp"
-#include "nstd/execution/set_error.hpp"
-#include "nstd/execution/set_done.hpp"
-#include "nstd/functional/tag_invoke.hpp"
-#include "nstd/utility/as_const.hpp"
+#include "nstd/type_traits/integral_constant.hpp"
+#include "kuhl/test.hpp"
+
+namespace test_declarations {}
+namespace TD = ::test_declarations;
+namespace KT = ::kuhl::test;
+namespace NC = ::nstd::concepts;
+namespace TT = ::nstd::type_traits;
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::execution {
-    template <typename CPO>
-        requires ::nstd::concepts::same_as<::nstd::execution::set_value_t, CPO>
-              || ::nstd::concepts::same_as<::nstd::execution::set_error_t, CPO>
-              || ::nstd::concepts::same_as<::nstd::execution::set_done_t, CPO>
-    struct get_completion_scheduler_t {
-        template <::nstd::execution::sender Sender>
-            requires requires(get_completion_scheduler_t<CPO> const& cpo, Sender&& sender) {
-                { ::nstd::tag_invoke(cpo, ::nstd::utility::as_const(sender)) } noexcept -> ::nstd::execution::scheduler;
-            }
-        auto operator()(Sender&& sender) const
-        {
-            return ::nstd::tag_invoke(*this, ::nstd::utility::as_const(sender));
-        }
-    };
+namespace test_declarations {
+    namespace {
+        template <int> struct type {};
+        struct derived: type<0>{};
 
-    template <typename CPO>
-        requires ::nstd::concepts::same_as<::nstd::execution::set_value_t, CPO>
-              || ::nstd::concepts::same_as<::nstd::execution::set_error_t, CPO>
-              || ::nstd::concepts::same_as<::nstd::execution::set_done_t, CPO>
-    inline constexpr get_completion_scheduler_t<CPO> get_completion_scheduler;
+        template <typename T0, typename T1>
+            requires NC::same_as<T0, T1>
+        auto f() -> TT::true_type { return {}; }
+
+        template <typename T0, typename T1>
+            requires (not NC::same_as<T0, T1>)
+        auto f() -> TT::false_type { return {}; }
+
+        template <typename T0, typename T1>
+            requires NC::same_as<T1, T0>
+                && NC::same_as<int, T0>
+        auto f() -> int { return 17; }
+
+        template <typename T0, typename T1>
+        auto f() -> void {}
+    }
 }
 
 // ----------------------------------------------------------------------------
 
-#endif
+static KT::testcase const tests[] = {
+    KT::expect_success("basic operation", []{
+            return NC::same_as<int, int>
+                && NC::same_as<TD::type<0>, TD::type<0>>
+                && not NC::same_as<TD::type<0>, TD::type<1>>
+                && not NC::same_as<TD::type<0>, TD::derived>
+                ;
+        }),
+    KT::expect_success("use in constraints", []{
+            return true
+                && TD::f<int, int>()
+                && TD::f<TD::type<0>, TD::type<0>>()
+                && not TD::f<TD::type<0>, TD::type<1>>()
+                && not TD::f<int, TD::type<1>>()
+                && 17 == TD::f<int, int>()
+                ;
+        }),
+};
+
+static KT::add_tests suite("same_as", ::tests);

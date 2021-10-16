@@ -40,6 +40,7 @@ list(APPEND kuhllib_components
     src/nstd/buffer/make_buffer
     src/nstd/buffer/mutable_buffer
     src/nstd/concepts/boolean_testable
+    src/nstd/concepts/same_as
     src/nstd/cursor/array
     src/nstd/cursor/category
     src/nstd/cursor/model_key
