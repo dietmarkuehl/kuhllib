@@ -73,6 +73,13 @@ namespace nstd::execution {
                                        ::nstd::utility::forward<Sender>(sender))
                 } -> ::std::same_as<void>;
             }
+            && (not requires(Sender&& sender) {
+                {
+                    ::nstd::tag_invoke(::nstd::type_traits::declval<start_detached_t>(),
+                                       ::nstd::execution::get_completion_scheduler<::nstd::execution::set_value_t>(sender),
+                                       ::nstd::utility::forward<Sender>(sender))
+                } -> ::std::same_as<void>;
+            })
         auto operator()(Sender&& sender) const -> void {
             ::nstd::tag_invoke(*this, ::nstd::utility::forward<Sender>(sender));
         }

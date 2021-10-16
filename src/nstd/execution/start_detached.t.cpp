@@ -66,6 +66,32 @@ namespace test_declarations {
 
         static_assert(EX::operation_state<TD::state<EX::test_receiver>>);
 
+        struct scheduler {
+            struct state {
+                friend auto tag_invoke(EX::start_t, state&) noexcept {}
+            };
+            struct sender {
+                template <template <typename...> class V, template <typename...> class T>
+                using value_types = V<T<>>;
+                template <template <typename...> class V>
+                using error_types = V<::std::exception_ptr>;
+                static constexpr bool sends_done = false;
+
+                template <EX::receiver Receiver>
+                friend auto tag_invoke(EX::connect_t, sender&&, Receiver&&)
+                    -> state {
+                    return {};
+                }
+            };
+            auto operator== (scheduler const&) const -> bool = default;
+            friend auto tag_invoke(EX::schedule_t, scheduler&&) noexcept -> sender {
+                return {};
+            }
+        };
+        static_assert(EX::operation_state<TD::scheduler::state>);
+        static_assert(EX::sender<TD::scheduler::sender>);
+        static_assert(EX::scheduler<TD::scheduler>);
+
         struct sender
         {
             template <template <typename...> class V, template <typename...> class T>
@@ -83,6 +109,7 @@ namespace test_declarations {
                 return TD::state<Receiver>{ UT::forward<Receiver>(receiver), sndr.result, sndr.value, sndr.destroyed };
             }
         };
+        static_assert(EX::sender<TD::sender>);
 
         template <typename RC>
         struct detached_sender
@@ -110,32 +137,8 @@ namespace test_declarations {
                 }
             }
         };
-
-        struct scheduler {
-            struct state {
-                friend auto tag_invoke(EX::start_t, state&) noexcept {}
-            };
-            struct sender {
-                template <template <typename...> class V, template <typename...> class T>
-                using value_types = V<T<>>;
-                template <template <typename...> class V>
-                using error_types = V<::std::exception_ptr>;
-                static constexpr bool sends_done = false;
-
-                template <EX::receiver Receiver>
-                friend auto tag_invoke(EX::connect_t, sender&&, Receiver&&)
-                    -> state {
-                    return {};
-                }
-            };
-            auto operator== (scheduler const&) const -> bool = default;
-            friend auto tag_invoke(EX::schedule_t, scheduler&&) noexcept -> sender {
-                return {};
-            }
-        };
-        static_assert(EX::operation_state<TD::scheduler::state>);
-        static_assert(EX::sender<TD::scheduler::sender>);
-        static_assert(EX::scheduler<TD::scheduler>);
+        static_assert(EX::sender<TD::detached_sender<void>>);
+        static_assert(EX::sender<TD::detached_sender<int>>);
 
         template <typename RC>
         struct completion_sender
@@ -167,8 +170,47 @@ namespace test_declarations {
                 }
             }
         };
+        static_assert(EX::sender<TD::completion_sender<void>>);
+        static_assert(EX::sender<TD::completion_sender<int>>);
 
-        static_assert(EX::sender<TD::sender>);
+        template <typename RC>
+        struct detached_completion_sender
+        {
+            template <template <typename...> class V, template <typename...> class T>
+            using value_types = V<T<>>;
+            template <template <typename...> class V>
+            using error_types = V<::std::exception_ptr>;
+            static constexpr bool sends_done = false;
+
+            int*  result;
+            int   value;
+            bool* destroyed;
+            bool* started_detached;
+
+            template <EX::receiver Receiver>
+            friend auto tag_invoke(EX::connect_t, detached_completion_sender&& sndr, Receiver&& receiver) {
+                return TD::state<Receiver>{ UT::forward<Receiver>(receiver), sndr.result, sndr.value, sndr.destroyed };
+            }
+            friend auto tag_invoke(EX::get_completion_scheduler_t<EX::set_value_t>, detached_completion_sender const&)
+                noexcept -> TD::scheduler {
+                return TD::scheduler{};
+            }
+            friend auto tag_invoke(EX::start_detached_t, detached_completion_sender&& sndr) -> RC {
+                NT::sync_wait(UT::move(sndr));
+                if constexpr (not TT::is_same_v<RC, void>) {
+                    return RC{};
+                }
+            }
+            friend auto tag_invoke(EX::start_detached_t, TD::scheduler&&, detached_completion_sender&& sndr) -> RC {
+                *sndr.started_detached = true;
+                NT::sync_wait(UT::move(sndr));
+                if constexpr (not TT::is_same_v<RC, void>) {
+                    return RC{};
+                }
+            }
+        };
+        static_assert(EX::sender<TD::detached_completion_sender<void>>);
+        static_assert(EX::sender<TD::detached_completion_sender<int>>);
     }
 }
 
@@ -221,7 +263,7 @@ static KT::testcase const tests[] = {
             return result == value
                 && destroyed
                 && not started_detached
-                && KT::type<decltype(EX::start_detached(TD::detached_sender<int>{&result, value, &destroyed, &started_detached}))>
+                && KT::type<decltype(EX::start_detached(TD::completion_sender<int>{&result, value, &destroyed, &started_detached}))>
                     == KT::type<void>
                 ;
         }),
@@ -234,7 +276,20 @@ static KT::testcase const tests[] = {
             return result == value
                 && destroyed
                 && started_detached
-                && KT::type<decltype(EX::start_detached(TD::detached_sender<void>{&result, value, &destroyed, &started_detached}))>
+                && KT::type<decltype(EX::start_detached(TD::completion_sender<void>{&result, value, &destroyed, &started_detached}))>
+                    == KT::type<void>
+                ;
+        }),
+    KT::expect_success("sender with get_completion_scheduler and start_detached gets run", []{
+            int result{};
+            int value{123};
+            bool destroyed{false};
+            bool started_detached{false};
+            EX::start_detached(TD::detached_completion_sender<void>{&result, value, &destroyed, &started_detached});
+            return result == value
+                && destroyed
+                && started_detached
+                && KT::type<decltype(EX::start_detached(TD::detached_completion_sender<void>{&result, value, &destroyed, &started_detached}))>
                     == KT::type<void>
                 ;
         }),
