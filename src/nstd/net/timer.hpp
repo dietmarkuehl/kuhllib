@@ -171,7 +171,7 @@ struct nstd::net::async_wait_t::state
     ::nstd::type_traits::remove_cvref_t<Receiver> d_receiver;
     ::nstd::file::context*                        d_context;
     typename Clock::time_point                    d_time_point;
-    ::__kernel_timespec                           d_time; // tv_sec, tv_usec
+    ::nstd::file::context::time_spec              d_time;
 
     template <::nstd::execution::receiver_of<::std::error_code> R>
     state(R&& receiver, ::nstd::file::context* context, typename Clock::time_point time_point)
@@ -184,8 +184,8 @@ struct nstd::net::async_wait_t::state
         noexcept -> void {
         auto duration = Traits::to_wait_duration(s.d_time_point);
         auto nsec = ::std::chrono::duration_cast<::std::chrono::nanoseconds>(duration);
-        s.d_time.tv_sec  = nsec.count() / 1000000000;
-        s.d_time.tv_nsec = nsec.count() % 1000000000;
+        s.d_time.sec  = nsec.count() / 1000000000;
+        s.d_time.nsec = nsec.count() % 1000000000;
         s.d_context->timer(&s.d_time, &s);
     }
     auto do_result(::std::int32_t, ::std::uint32_t)

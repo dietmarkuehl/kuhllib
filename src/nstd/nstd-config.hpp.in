@@ -1,4 +1,4 @@
-// nstd/file/ring_context.t.cpp                                       -*-C++-*-
+// nstd/nstd-config.hpp                                               -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,33 +23,14 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/file/ring_context.hpp"
-#include "kuhl/test.hpp"
-
-namespace test_declarations {}
-namespace TD = ::test_declarations;
-namespace KT = ::kuhl::test;
-namespace NF = ::nstd::file;
+#ifndef INCLUDED_NSTD_NSTD_CONFIG
+#define INCLUDED_NSTD_NSTD_CONFIG
 
 // ----------------------------------------------------------------------------
 
-namespace test_declarations {
-    namespace {
-    }
-}
+#cmakedefine NSTD_HAS_LINUX_IO_URING
+#cmakedefine NSTD_HAS_LINUX_TIME_TYPES
 
 // ----------------------------------------------------------------------------
 
-static KT::testcase const tests[] = {
-#ifdef NSTD_HAS_LINUX_IO_URING
-    KT::expect_success("breathing", []{
-            NF::ring_context context;
-            return KT::use(context)
-                ;
-        }),
-#else
-    KT::expect_success("breathing", []{ return true; })
 #endif
-};
-
-static KT::add_tests suite("ring_context", ::tests);

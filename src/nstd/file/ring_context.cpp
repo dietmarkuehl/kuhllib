@@ -24,14 +24,21 @@
 // ----------------------------------------------------------------------------
 
 #include "nstd/file/ring_context.hpp"
+
+#ifdef NSTD_HAS_LINUX_IO_URING
+
 #include <algorithm>
 #include <functional>
 #include <stdexcept>
+#include <type_traits>
 #include <iostream> //-dk:TODO
 #include <cstring> //-dk:TODO
 #include <cerrno>
 #include <unistd.h>
 #include <linux/io_uring.h> // requires a new enough kernel
+#ifdef NSTD_HAS_LINUX_TIME_TYPES
+#include <linux/time_types.h>
+#endif
 
 #include <sys/syscall.h>
 #include <sys/mman.h>
@@ -168,7 +175,14 @@ auto NF::ring_context::do_run_one() -> NF::ring_context::count_type
 
 // ----------------------------------------------------------------------------
 
-auto NF::ring_context::do_timer(::__kernel_timespec* time, io_base* continuation)
+#if 0
+#ifdef HAS_NSTD_LINUX_TIME_TYPES
+//-dk:TODO add static check for layout compatibility
+static_assert(::std::is_layout_compatible_v<::nstd::file::context::time_spec, ::_kernel_timespec>);
+#endif
+#endif
+
+auto NF::ring_context::do_timer(::nstd::file::context::time_spec* time, io_base* continuation)
     -> void
 {
     this->submit([=](::io_uring_sqe& element){
@@ -281,3 +295,11 @@ auto NF::ring_context::do_open_at(int fd,
         element.user_data  = reinterpret_cast<decltype(element.user_data)>(continuation);
         });
 }
+
+#else
+
+namespace nstd::file {
+    int ring_context_dummy = 0;
+}
+
+#endif

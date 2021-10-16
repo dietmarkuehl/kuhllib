@@ -44,6 +44,11 @@ namespace nstd::file {
 class nstd::file::context
 {
 public:
+    struct time_spec {
+        ::std::uint64_t  sec;
+        long long        nsec;
+    };
+
     class io_base;
     using count_type = ::std::size_t;
     using native_handle_type = int;
@@ -51,7 +56,7 @@ public:
 protected:
     virtual auto do_run_one() -> count_type = 0;
 
-    virtual auto do_timer(::__kernel_timespec*, io_base*) -> void = 0;
+    virtual auto do_timer(time_spec*, io_base*) -> void = 0;
     virtual auto do_accept(native_handle_type, ::sockaddr*, ::socklen_t*, int, io_base*) -> void = 0;
     virtual auto do_connect(native_handle_type, ::sockaddr const*, ::socklen_t, io_base*) -> void = 0;
     virtual auto do_sendmsg(native_handle_type, ::msghdr const*, int, io_base*) -> void = 0;
@@ -68,7 +73,7 @@ public:
 
     auto run_one() -> count_type;
 
-    auto timer(::__kernel_timespec*, io_base*) -> void;
+    auto timer(time_spec*, io_base*) -> void;
     auto accept(native_handle_type, ::sockaddr*, ::socklen_t*, int, io_base*) -> void;
     auto connect(native_handle_type, ::sockaddr const*, socklen_t, io_base*) -> void;
     auto sendmsg(native_handle_type, ::msghdr const*, int, io_base*) -> void;
@@ -96,7 +101,7 @@ inline auto nstd::file::context::run_one() -> count_type
     return this->do_run_one();
 }
 
-inline auto nstd::file::context::timer(::__kernel_timespec* time,
+inline auto nstd::file::context::timer(::nstd::file::context::time_spec* time,
                                        ::nstd::file::context::io_base* handler)
     -> void
 {

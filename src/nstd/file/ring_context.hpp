@@ -26,6 +26,10 @@
 #ifndef INCLUDED_NSTD_FILE_RING_CONTEXT
 #define INCLUDED_NSTD_FILE_RING_CONTEXT
 
+#include "nstd/nstd-config.hpp"
+
+#ifdef NSTD_HAS_LINUX_IO_URING
+
 #include "nstd/file/context.hpp"
 #include "nstd/file/descriptor.hpp"
 #include "nstd/file/mapped_memory.hpp"
@@ -33,7 +37,6 @@
 #include <linux/io_uring.h>
 #include <sys/socket.h>
 #include <sys/types.h>
-#include <linux/time_types.h>
 #include <chrono>
 #include <mutex>
 #include <cstddef>
@@ -111,7 +114,7 @@ public:
 
     auto do_run_one() -> ::nstd::file::ring_context::count_type override;
 
-    auto do_timer(::__kernel_timespec*, io_base*) -> void override;
+    auto do_timer(::nstd::file::context::time_spec*, io_base*) -> void override;
     auto do_accept(int, ::sockaddr*, ::socklen_t*, int, io_base*) -> void override;
     auto do_connect(int, ::sockaddr const*, ::socklen_t, io_base*) -> void override;
     auto do_sendmsg(int, ::msghdr const*, int, io_base*) -> void override;
@@ -156,6 +159,8 @@ auto nstd::file::ring_context::submit(Op op) ->void
     //-dk:TODO remove ::std::cout << "ring_context::submit()\n";
     this->intern_submit(1u);
 }
+
+#endif
 
 // ----------------------------------------------------------------------------
 
