@@ -61,9 +61,8 @@ namespace nstd::execution {
                 } -> ::std::same_as<void>;
             }
         auto operator()(Sender&& sender) const -> void {
-            auto scheduler{::nstd::execution::get_completion_scheduler<::nstd::execution::set_value_t>(sender)};
             ::nstd::tag_invoke(*this,
-                               ::nstd::utility::move(scheduler),
+                               ::nstd::execution::get_completion_scheduler<::nstd::execution::set_value_t>(sender),
                                ::nstd::utility::forward<Sender>(sender));
         }
         template <::nstd::execution::sender Sender>
