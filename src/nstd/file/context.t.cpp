@@ -38,14 +38,15 @@ namespace test_declarations {
         class context
             : public NF::context
         {
-            auto do_run_one() -> NF::context::count_type { return NF::context::count_type(); }
-            auto do_timer(::nstd::file::context::time_spec*, io_base*) -> void {}
-            auto do_accept(native_handle_type, ::sockaddr*, ::socklen_t*, int, io_base*) -> void {}
-            auto do_connect(native_handle_type, ::sockaddr const*, ::socklen_t, io_base*) -> void {}
-            auto do_sendmsg(native_handle_type, ::msghdr const*, int, io_base*) -> void {}
-            auto do_recvmsg(native_handle_type, ::msghdr*, int, io_base*) -> void {}
-            auto do_read(int, ::iovec*, ::std::size_t, io_base*) -> void {}
-            auto do_open_at(int, char const*, int, io_base*) -> void {}
+            auto do_run_one() -> NF::context::count_type override { return NF::context::count_type(); }
+            auto do_nop(io_base*) -> void override {}
+            auto do_timer(::nstd::file::context::time_spec*, io_base*) -> void override {}
+            auto do_accept(native_handle_type, ::sockaddr*, ::socklen_t*, int, io_base*) -> void override {}
+            auto do_connect(native_handle_type, ::sockaddr const*, ::socklen_t, io_base*) -> void override {}
+            auto do_sendmsg(native_handle_type, ::msghdr const*, int, io_base*) -> void override {}
+            auto do_recvmsg(native_handle_type, ::msghdr*, int, io_base*) -> void override {}
+            auto do_read(int, ::iovec*, ::std::size_t, io_base*) -> void override {}
+            auto do_open_at(int, char const*, int, io_base*) -> void override {}
         };
     }
 }

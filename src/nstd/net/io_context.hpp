@@ -31,10 +31,13 @@
 #include "nstd/execution/schedule.hpp"
 #include "nstd/execution/scheduler.hpp"
 #include "nstd/execution/connect.hpp"
+#include "nstd/execution/set_value.hpp"
 #include "nstd/execution/start.hpp"
 #include "nstd/execution/receiver.hpp"
 #include "nstd/file/context.hpp"
 #include "nstd/file/ring_context.hpp"
+#include "nstd/utility/forward.hpp"
+#include "nstd/utility/move.hpp"
 #include <exception>
 
 // ----------------------------------------------------------------------------
@@ -103,8 +106,23 @@ public:
     auto context() noexcept -> ::nstd::net::io_context* { return this->d_context; }
     auto operator== (scheduler_type const& other) const -> bool = default;
 
-    struct state {
-        friend auto tag_invoke(::nstd::execution::start_t, state&) noexcept -> void;
+    template <::nstd::execution::receiver Receiver>
+    struct state
+        : ::nstd::file::context::io_base
+    {
+        ::nstd::type_traits::remove_cvref_t<Receiver> d_receiver;
+        ::nstd::net::io_context*                      d_context;
+        template <::nstd::execution::receiver R>
+        state(R&& receiver, ::nstd::net::io_context* context)
+            : d_receiver(::nstd::utility::forward<R>(receiver))
+            , d_context(context) {
+        }
+        friend auto tag_invoke(::nstd::execution::start_t, state& s) noexcept -> void {
+            s.d_context->hidden_context()->nop(&s);
+        }
+        auto do_result(::std::int32_t, ::std::uint32_t) -> void override {
+            ::nstd::execution::set_value(::nstd::utility::move(this->d_receiver));
+        }
     };
     struct sender {
         template <template <typename...> class V, template <typename...> class T>
@@ -113,16 +131,22 @@ public:
         using error_types = V<::std::exception_ptr>;
         static constexpr bool sends_done = true;
 
+        ::nstd::net::io_context* d_context;
+
         template <::nstd::execution::receiver Receiver>
-        friend auto tag_invoke(::nstd::execution::connect_t, sender&&, Receiver&&) noexcept
-            -> state;
+        friend auto tag_invoke(::nstd::execution::connect_t, sender&& sndr, Receiver&& receiver) noexcept
+            -> state<Receiver> {
+            return state<Receiver>(::nstd::utility::forward<Receiver>(receiver), sndr.d_context);
+        }
     };
 
     friend auto tag_invoke(::nstd::execution::schedule_t,
-                           scheduler_type&&) -> sender;
+                           scheduler_type&& scheduler) -> sender {
+        return { scheduler.d_context };
+    }
 };
 
-static_assert(::nstd::execution::operation_state<::nstd::net::io_context::scheduler_type::state>);
+static_assert(::nstd::execution::operation_state<::nstd::net::io_context::scheduler_type::state<::nstd::execution::test_receiver>>);
 static_assert(::nstd::execution::sender<::nstd::net::io_context::scheduler_type::sender>);
 static_assert(::nstd::execution::scheduler<::nstd::net::io_context::scheduler_type>);
 

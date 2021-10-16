@@ -114,6 +114,7 @@ public:
 
     auto do_run_one() -> ::nstd::file::ring_context::count_type override;
 
+    auto do_nop(io_base*) -> void override;
     auto do_timer(::nstd::file::context::time_spec*, io_base*) -> void override;
     auto do_accept(int, ::sockaddr*, ::socklen_t*, int, io_base*) -> void override;
     auto do_connect(int, ::sockaddr const*, ::socklen_t, io_base*) -> void override;
