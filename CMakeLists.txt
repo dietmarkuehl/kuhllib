@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.0.0)
 project(kuhllib VERSION 0.1.0)
 include(CheckIncludeFiles)
+include(CheckSymbolExists)
 
 if(CMAKE_COMPILER_IS_GNUCXX)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Werror -std=c++2a -fconcepts-diagnostics-depth=4")
@@ -11,6 +12,7 @@ endif()
 
 CHECK_INCLUDE_FILES(linux/io_uring.h NSTD_HAS_LINUX_IO_URING)
 CHECK_INCLUDE_FILES(linux/time_types.h NSTD_HAS_LINUX_TIME_TYPES)
+CHECK_SYMBOL_EXISTS(sys/mmapn.h MAP_POPULATE NSTD_HAS_MAP_POPULATE)
 CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/src/nstd/nstd-config.hpp.in ${CMAKE_BINARY_DIR}/include/nstd/nstd-config.hpp)
 
 include_directories(${CMAKE_BINARY_DIR}/include ${CMAKE_SOURCE_DIR}/src)

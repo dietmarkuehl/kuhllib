@@ -90,9 +90,9 @@ struct nstd::execution::timeout_t::state_base
                 }, *this->d_errors);
             }
             else if (this->d_values) {
-                ::std::visit([this](auto&& values){
-                    ::std::apply([this](auto&&... args){
-                        ::nstd::execution::set_value(::nstd::utility::move(this->d_receiver),
+                ::std::visit([&receiver = this->d_receiver](auto&& values)->void{
+                    ::std::apply([&receiver](auto&&... args)->void{
+                        ::nstd::execution::set_value(::nstd::utility::move(receiver),
                                                      ::nstd::utility::forward<decltype(args)>(args)...);
                     }, values);
                 }, *this->d_values);

@@ -48,9 +48,15 @@ auto nstd::file::mapped_memory::map(::std::size_t length,
     -> bool
 {
     this->d_length = length;
+    (void)fd;
+    (void)offset;
     this->d_base = ::mmap(nullptr, length,
                           PROT_READ | PROT_WRITE,
-                          MAP_SHARED | MAP_POPULATE,
+                          MAP_SHARED
+#ifdef NSTD_HAS_MAP_POPULATE
+                          | MAP_POPULATE
+#endif
+                          ,
                           fd, offset);
     if (this->d_base == MAP_FAILED) {
         this->d_base = nullptr;
