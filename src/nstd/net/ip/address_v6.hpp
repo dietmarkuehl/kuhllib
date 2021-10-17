@@ -126,7 +126,12 @@ inline constexpr nstd::net::ip::address_v6::address_v6(
 inline constexpr auto nstd::net::ip::address_v6::operator<=> (address_v6 const& other) const
     -> std::strong_ordering
 {
-    return this->d_bytes <=> other.d_bytes;
+    return this->d_bytes == other.d_bytes
+        ?  ::std::strong_ordering::equal
+        :  this->d_bytes <  other.d_bytes
+           ?  ::std::strong_ordering::less
+           :  ::std::strong_ordering::greater
+        ;
 }
 
 // ----------------------------------------------------------------------------

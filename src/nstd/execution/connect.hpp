@@ -30,6 +30,7 @@
 #include "nstd/execution/receiver.hpp"
 #include "nstd/execution/sender.hpp"
 #include "nstd/functional/tag_invoke.hpp"
+#include "nstd/type_traits/declval.hpp"
 #include "nstd/utility/forward.hpp"
 
 // ----------------------------------------------------------------------------
@@ -37,19 +38,18 @@
 namespace nstd::execution::inline customization_points {
     inline constexpr struct connect_t {
         template <::nstd::execution::sender Sender, ::nstd::execution::receiver Receiver>
-        constexpr auto operator()(Sender&& sender, Receiver&& receiver) const
-            noexcept(noexcept(::nstd::tag_invoke(*this,
-                                                 ::nstd::utility::forward<Sender>(sender),
-                                                 ::nstd::utility::forward<Receiver>(receiver))))
-                requires requires(Sender&& sender, Receiver&& receiver) {
+            requires requires(Sender&& sender, Receiver&& receiver) {
                 {
-                    ::nstd::tag_invoke(*this, //connect_t
+                    ::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::execution::connect_t>(),
                                        ::nstd::utility::forward<Sender>(sender),
                                        ::nstd::utility::forward<Receiver>(receiver))
                 }
-                -> ::nstd::execution::operation_state
-                ;
+                -> ::nstd::execution::operation_state;
             }
+        constexpr auto operator()(Sender&& sender, Receiver&& receiver) const
+            noexcept(noexcept(::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::execution::connect_t>(),
+                                                 ::nstd::utility::forward<Sender>(sender),
+                                                 ::nstd::utility::forward<Receiver>(receiver))))
         {
             return ::nstd::tag_invoke(*this, //connect_t
                                      ::nstd::utility::forward<Sender>(sender),

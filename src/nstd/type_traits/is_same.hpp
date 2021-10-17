@@ -30,16 +30,13 @@
 
 // ----------------------------------------------------------------------------
 
-namespace nstd
+namespace nstd::type_traits
 {
-    namespace type_traits
-    {
-        template <typename S, typename T> struct is_same;
-        template <typename T> struct is_same<T, T>;
+    template <typename S, typename T> struct is_same;
+    template <typename T> struct is_same<T, T>;
 
-        template <typename S, typename T>
-        inline constexpr bool is_same_v = ::nstd::type_traits::is_same<S, T>::value;
-    }
+    template <typename S, typename T>
+    inline constexpr bool is_same_v = ::nstd::type_traits::is_same<S, T>::value;
 }
 
 // ----------------------------------------------------------------------------

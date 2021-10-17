@@ -29,20 +29,20 @@
 #include "nstd/execution/receiver.hpp"
 #include "nstd/execution/scheduler.hpp"
 #include "nstd/functional/tag_invoke.hpp"
+#include "nstd/type_traits/declval.hpp"
 #include "nstd/utility/as_const.hpp"
 
 // ----------------------------------------------------------------------------
 
 namespace nstd::execution::inline customization_points {
     inline constexpr struct get_scheduler_t {
-        template <typename Receiver>
+        template <nstd::execution::receiver Receiver>
+            requires requires(Receiver&& receiver) {
+                    { ::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::execution::get_scheduler_t>(), ::nstd::utility::as_const(receiver)) } noexcept
+                        -> ::nstd::execution::scheduler;
+                }
         constexpr auto operator()(Receiver&& receiver) const
-            noexcept(noexcept(::nstd::tag_invoke(*this, ::nstd::utility::as_const(receiver))))
-            requires ::nstd::execution::receiver<Receiver>
-                && requires(Receiver&& receiver) {
-                    { ::nstd::tag_invoke(*this, ::nstd::utility::as_const(receiver)) } noexcept;
-                   }
-                && ::nstd::execution::scheduler<decltype(::nstd::tag_invoke(*this, ::nstd::utility::as_const(receiver)))>
+            noexcept(noexcept(::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::execution::get_scheduler_t>(), ::nstd::utility::as_const(receiver))))
         {
             return ::nstd::tag_invoke(*this, ::nstd::utility::as_const(receiver));
         }

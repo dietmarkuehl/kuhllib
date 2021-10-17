@@ -38,7 +38,7 @@ namespace nstd::execution::inline customization_points {
                 ::nstd::tag_invoke(::nstd::type_traits::declval<start_t>(), state); // start_t
             }
         constexpr auto operator()(State& state) const
-            noexcept(noexcept(::nstd::tag_invoke(*this, state)))
+            noexcept(noexcept(::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::execution::start_t>(), state)))
             -> void //-dk:TODO verify if expression-equivalent may mean it can have a [reference?] return type
         {
             ::nstd::tag_invoke(*this, state); // start_t

@@ -123,7 +123,12 @@ inline constexpr nstd::net::ip::address_v4::address_v4(
 inline constexpr auto nstd::net::ip::address_v4::operator<=> (address_v4 const& other) const
     -> std::strong_ordering
 {
-    return this->d_bytes <=> other.d_bytes;
+    return this->d_bytes == other.d_bytes
+        ?  ::std::strong_ordering::equal
+        :  this->d_bytes <  other.d_bytes
+           ?  ::std::strong_ordering::less
+           :  ::std::strong_ordering::greater
+        ;
 }
 
 // ----------------------------------------------------------------------------

@@ -28,20 +28,20 @@
 
 #include "nstd/functional/tag_invoke.hpp"
 #include "nstd/execution/receiver.hpp"
+#include "nstd/type_traits/declval.hpp"
 #include "nstd/utility/as_const.hpp"
 
 // ----------------------------------------------------------------------------
 
 namespace nstd::execution::inline customization_points {
     inline constexpr struct get_allocator_t {
-        template <typename Receiver>
-        constexpr auto operator()(Receiver&& receiver) const
-            noexcept(noexcept(::nstd::tag_invoke(*this, ::nstd::utility::as_const(receiver))))
-            requires ::nstd::execution::receiver<Receiver>
-                && requires(Receiver&& receiver) {
-                    { ::nstd::tag_invoke(*this, ::nstd::utility::as_const(receiver)) } noexcept;
-                   }
+        template <::nstd::execution::receiver Receiver>
+            requires requires(Receiver&& receiver) {
+                    { ::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::execution::get_allocator_t>(), ::nstd::utility::as_const(receiver)) } noexcept;
+                }
                 //-dk:TODO && ::nstd::execution::allocator<decltype(::nstd::tag_invoke(*this, ::nstd::utility::as_const(receiver)))>
+        constexpr auto operator()(Receiver&& receiver) const
+            noexcept(noexcept(::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::execution::get_allocator_t>(), ::nstd::utility::as_const(receiver))))
         {
             return ::nstd::tag_invoke(*this, ::nstd::utility::as_const(receiver));
         }

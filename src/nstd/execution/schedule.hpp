@@ -28,6 +28,7 @@
 
 #include "nstd/functional/tag_invoke.hpp"
 #include "nstd/execution/sender.hpp"
+#include "nstd/type_traits/declval.hpp"
 #include "nstd/utility/forward.hpp"
 
 // ----------------------------------------------------------------------------
@@ -35,13 +36,12 @@
 namespace nstd::execution {
     struct schedule_t {
         template <typename Scheduler>
-        auto operator()(Scheduler&& s) const
-            noexcept(noexcept(::nstd::tag_invoke(*this, ::nstd::utility::forward<Scheduler>(s))))
             requires requires(Scheduler&& s){
-                { ::nstd::tag_invoke(*this, ::nstd::utility::forward<Scheduler>(s)) }
-                    -> nstd::execution::sender
-                    ; 
+                { ::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::execution::schedule_t>(), ::nstd::utility::forward<Scheduler>(s)) }
+                    -> nstd::execution::sender; 
             }
+        auto operator()(Scheduler&& s) const
+            noexcept(noexcept(::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::execution::schedule_t>(), ::nstd::utility::forward<Scheduler>(s))))
         {
             return ::nstd::tag_invoke(*this, ::nstd::utility::forward<Scheduler>(s));
         }
