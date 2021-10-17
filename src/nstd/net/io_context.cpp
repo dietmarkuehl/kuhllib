@@ -33,7 +33,7 @@ namespace nstd::net {
 // ----------------------------------------------------------------------------
 
 nstd::net::io_context::io_context()
-#if NSTD_HAS_LINUX_IO_URING
+#ifdef NSTD_HAS_LINUX_IO_URING
     : nstd::net::io_context(nstd::file::ring_context::queue_size(1024))
 #else
     : d_context(nullptr)
@@ -43,7 +43,7 @@ nstd::net::io_context::io_context()
 }
 
 nstd::net::io_context::io_context(::nstd::file::ring_context::queue_size size)
-#if NSTD_HAS_LINUX_IO_URING
+#ifdef NSTD_HAS_LINUX_IO_URING
     : d_context(new ::nstd::file::ring_context(size))
 #else
     : d_context(nullptr)

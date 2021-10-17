@@ -38,7 +38,7 @@ namespace nstd::execution {
         = ::std::destructible<State>
         && ::std::is_object_v<State>
         && requires(State& state) {
-            ::nstd::execution::start(state);
+	    { ::nstd::execution::start(state) } noexcept;
         }
         ;
 }
