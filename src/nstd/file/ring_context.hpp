@@ -133,7 +133,7 @@ public:
 
 // ----------------------------------------------------------------------------
 
-#ifdef NSTD_HAS_IO_URING
+#ifdef NSTD_HAS_LINUX_IO_URING
 class nstd::file::ring_context::scheduler_type
 {
 private:

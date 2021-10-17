@@ -120,6 +120,14 @@ inline constexpr nstd::net::ip::address_v4::address_v4(
 
 // ----------------------------------------------------------------------------
 
+inline constexpr auto nstd::net::ip::address_v4::operator<=> (address_v4 const& other) const
+    -> std::strong_ordering
+{
+    return this->d_bytes <=> other.d_bytes;
+}
+
+// ----------------------------------------------------------------------------
+
 inline constexpr auto nstd::net::ip::address_v4::to_bytes() const noexcept
     -> ::nstd::net::ip::address_v4::bytes_type
 {

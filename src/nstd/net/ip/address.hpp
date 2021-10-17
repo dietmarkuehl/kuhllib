@@ -56,8 +56,8 @@ public:
     auto operator=(::nstd::net::ip::address_v4 const&) noexcept -> ::nstd::net::ip::address& ;
     auto operator=(::nstd::net::ip::address_v6 const&) noexcept -> ::nstd::net::ip::address& ;
 
+    constexpr auto operator<=> (::nstd::net::ip::address const&) const noexcept -> ::std::partial_ordering;
     constexpr auto operator== (::nstd::net::ip::address const&) const noexcept -> bool = default;
-    constexpr auto operator<=> (::nstd::net::ip::address const&) const noexcept -> ::std::strong_ordering;
 
     auto get_address(::sockaddr_storage*, ::nstd::net::ip::port_type) const -> ::socklen_t;
 
@@ -105,6 +105,18 @@ inline auto nstd::net::ip::address::operator=(::nstd::net::ip::address_v6 const&
 }
 
 // ----------------------------------------------------------------------------
+
+inline constexpr auto nstd::net::ip::address::operator<=> (::nstd::net::ip::address const& other) const noexcept
+    -> ::std::partial_ordering
+{
+    return this->d_address.index() == other.d_address.index()
+	    ?  (this->d_address.index() == 0
+	   	? ::std::get<0>(this->d_address) <=> ::std::get<0>(other.d_address)
+	   	: ::std::get<1>(this->d_address) <=> ::std::get<1>(other.d_address)
+	   	)
+	    : ::std::partial_ordering::unordered;
+	;
+}
 
 inline constexpr auto nstd::net::ip::address::is_v4() const noexcept
     -> bool
