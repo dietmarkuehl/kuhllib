@@ -30,6 +30,7 @@
 
 #cmakedefine NSTD_HAS_LINUX_IO_URING
 #cmakedefine NSTD_HAS_LINUX_TIME_TYPES
+#cmakedefine NSTD_HAS_MAP_POPULATE
 
 // ----------------------------------------------------------------------------
 

@@ -12,7 +12,7 @@ endif()
 
 CHECK_INCLUDE_FILES(linux/io_uring.h NSTD_HAS_LINUX_IO_URING)
 CHECK_INCLUDE_FILES(linux/time_types.h NSTD_HAS_LINUX_TIME_TYPES)
-CHECK_SYMBOL_EXISTS(sys/mmapn.h MAP_POPULATE NSTD_HAS_MAP_POPULATE)
+CHECK_SYMBOL_EXISTS("unistd.h;sys/mman.h" MAP_POPULATE NSTD_HAS_MAP_POPULATE)
 CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/src/nstd/nstd-config.hpp.in ${CMAKE_BINARY_DIR}/include/nstd/nstd-config.hpp)
 
 include_directories(${CMAKE_BINARY_DIR}/include ${CMAKE_SOURCE_DIR}/src)
