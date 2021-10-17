@@ -74,19 +74,19 @@ public:
 
     template <typename Rep, typename Period>
         auto run_for(::std::chrono::duration<Rep, Period> const&)
-            -> ::nstd::file::ring_context::count_type;
+            -> ::nstd::file::context::count_type;
     template <typename Clock, typename Duration>
         auto run_until(::std::chrono::time_point<Clock, Duration> const&)
-            -> ::nstd::file::ring_context::count_type;
+            -> ::nstd::file::context::count_type;
     template <typename Rep, typename Period>
         auto run_one_for(::std::chrono::duration<Rep, Period> const&)
-            -> ::nstd::file::ring_context::count_type;
+            -> ::nstd::file::context::count_type;
     template <typename Clock, typename Duration>
         auto run_one_until(::std::chrono::time_point<Clock, Duration> const&)
-            -> ::nstd::file::ring_context::count_type;
+            -> ::nstd::file::context::count_type;
 
-    auto poll() -> ::nstd::file::ring_context::count_type;
-    auto poll_one() -> ::nstd::file::ring_context::count_type;
+    auto poll() -> ::nstd::file::context::count_type;
+    auto poll_one() -> ::nstd::file::context::count_type;
     auto stop() -> void;
     auto stopped() const noexcept -> bool;
     auto restart() -> void;

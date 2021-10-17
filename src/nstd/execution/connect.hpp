@@ -43,7 +43,7 @@ namespace nstd::execution::inline customization_points {
                                                  ::nstd::utility::forward<Receiver>(receiver))))
                 requires requires(Sender&& sender, Receiver&& receiver) {
                 {
-                    ::nstd::tag_invoke(*this,
+                    ::nstd::tag_invoke(*this, //connect_t
                                        ::nstd::utility::forward<Sender>(sender),
                                        ::nstd::utility::forward<Receiver>(receiver))
                 }
@@ -51,7 +51,7 @@ namespace nstd::execution::inline customization_points {
                 ;
             }
         {
-            return ::nstd::tag_invoke(*this,
+            return ::nstd::tag_invoke(*this, //connect_t
                                      ::nstd::utility::forward<Sender>(sender),
                                      ::nstd::utility::forward<Receiver>(receiver));
         }

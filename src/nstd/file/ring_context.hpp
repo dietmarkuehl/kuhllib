@@ -28,13 +28,14 @@
 
 #include "nstd/nstd-config.hpp"
 
-#ifdef NSTD_HAS_LINUX_IO_URING
 
 #include "nstd/file/context.hpp"
 #include "nstd/file/descriptor.hpp"
 #include "nstd/file/mapped_memory.hpp"
 #include "nstd/file/ring.hpp"
+#ifdef NSTD_HAS_LINUX_IO_URING
 #include <linux/io_uring.h>
+#endif
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <chrono>
@@ -54,6 +55,11 @@ namespace nstd::file {
 class nstd::file::ring_context
     : public ::nstd::file::context
 {
+public:
+    using count_type = ::std::size_t;
+    enum queue_size: int { max = ::std::numeric_limits<int>::max() }; // extension
+
+#ifdef NSTD_HAS_LINUX_IO_URING
 private:
     ::nstd::file::descriptor            d_fd;
     ::nstd::file::mapped_memory         d_smem; // submission ring memory
@@ -76,8 +82,7 @@ public:
     auto submit(Op op) -> void;
 
     class scheduler_type;
-    using count_type = ::std::size_t;
-    enum queue_size: int { max = ::std::numeric_limits<int>::max() }; // extension
+#endif
 
     ring_context();
     explicit ring_context(queue_size size); // extension
@@ -86,6 +91,7 @@ public:
     auto operator=(ring_context const&) -> ring_context& = delete;
     ~ring_context();
 
+#ifdef NSTD_HAS_LINUX_IO_URING
     auto setup(queue_size size) -> int; // extension; return better error?
     auto is_setup() const -> bool;      // extension
 
@@ -122,10 +128,12 @@ public:
     auto do_recvmsg(int, ::msghdr*, int, io_base*) -> void override;
     auto do_read(int, ::iovec*, ::std::size_t, io_base*) -> void override;
     auto do_open_at(int, char const*, int, io_base*) -> void override;
+#endif
 };
 
 // ----------------------------------------------------------------------------
 
+#ifdef NSTD_HAS_IO_URING
 class nstd::file::ring_context::scheduler_type
 {
 private:

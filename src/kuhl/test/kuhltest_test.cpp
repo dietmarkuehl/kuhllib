@@ -24,6 +24,7 @@
 // ----------------------------------------------------------------------------
 
 #include "kuhl/test/kuhltest_test.hpp"
+#include <sstream>
 
 namespace KT = kuhl::test;
 

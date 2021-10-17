@@ -33,6 +33,8 @@
 #include <string_view>
 #include <thread>
 
+namespace test_declarations {}
+namespace TD   = ::test_declarations;
 namespace File = ::nstd::file;
 namespace EX   = ::nstd::execution;
 namespace TT   = ::nstd::this_thread;
@@ -42,11 +44,23 @@ namespace KT   = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
 
+namespace test_declarations {
+    inline namespace {
+        struct jthread
+            : ::std::thread {
+            using ::std::thread::thread;
+            ~jthread() { this->join(); }
+        };
+    }
+}
+
+// ----------------------------------------------------------------------------
+
 static KT::testcase const tests[] = {
     KT::expect_success("file open() existing file", []{
             bool            value(false);
             NET::io_context ctxt;
-            ::std::jthread thread([&ctxt]{ ctxt.run_one(); });
+            TD::jthread thread([&ctxt]{ ctxt.run_one(); });
             auto x = EX::just(::std::string_view("/dev/null"))
                    | File::open_in(ctxt)
                    | EX::then([&value](File::descriptor&&){ value = true; })
@@ -57,7 +71,7 @@ static KT::testcase const tests[] = {
     KT::expect_success("file open() non-existing file", []{
             bool            value(false);
             NET::io_context ctxt;
-            ::std::jthread thread([&ctxt]{ ctxt.run_one(); });
+            TD::jthread thread([&ctxt]{ ctxt.run_one(); });
             auto x = EX::just(::std::string_view("/dev/nill"))
                    | File::open_in(ctxt)
                    | EX::then([&value](File::descriptor&&){ value = true; })

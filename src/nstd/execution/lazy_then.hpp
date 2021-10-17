@@ -28,6 +28,7 @@
 
 #include "nstd/functional/tag_invoke.hpp"
 #include "nstd/execution/get_completion_scheduler.hpp"
+#include "nstd/execution/receiver.hpp"
 #include "nstd/execution/sender.hpp"
 #include "nstd/execution/typed_sender.hpp"
 #include "nstd/execution/sender_base.hpp"
@@ -139,7 +140,7 @@ namespace nstd::execution {
             Sender  d_sender;
             Fun     d_fun;
 
-            template <typename Receiver>
+            template <::nstd::execution::receiver Receiver>
             friend auto tag_invoke(::nstd::execution::connect_t, lazy_then_sender<Sender, Fun> const& s, Receiver&& r) noexcept {
                 return ::nstd::execution::connect(s.d_sender,
                                                   lazy_then_receiver<Fun, ::nstd::type_traits::remove_cvref_t<Receiver>>{
@@ -148,7 +149,7 @@ namespace nstd::execution {
                                                       });
             }
 
-            template <typename Receiver>
+            template <::nstd::execution::receiver Receiver>
             friend auto tag_invoke(::nstd::execution::connect_t, lazy_then_sender<Sender, Fun>&& s, Receiver&& r) noexcept {
                 return ::nstd::execution::connect(::nstd::utility::move(s.d_sender),
                                                   lazy_then_receiver<Fun, ::nstd::type_traits::remove_cvref_t<Receiver>>{

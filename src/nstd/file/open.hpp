@@ -42,7 +42,6 @@
 #include <system_error>
 #include <chrono> //-dk:TODO remove
 #include <thread> //-dk:TODO remove
-#include <linux/io_uring.h>
 #include <fcntl.h>
 
 // ----------------------------------------------------------------------------

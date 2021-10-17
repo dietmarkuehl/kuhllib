@@ -28,6 +28,7 @@
 
 #include "nstd/net/ip/address_v4.hpp"
 #include "nstd/net/ip/address_v6.hpp"
+#include <compare>
 #include <variant>
 #include <sys/socket.h>
 
@@ -56,7 +57,7 @@ public:
     auto operator=(::nstd::net::ip::address_v6 const&) noexcept -> ::nstd::net::ip::address& ;
 
     constexpr auto operator== (::nstd::net::ip::address const&) const noexcept -> bool = default;
-    constexpr auto operator<=> (::nstd::net::ip::address const&) const noexcept = default;
+    constexpr auto operator<=> (::nstd::net::ip::address const&) const noexcept -> ::std::strong_ordering;
 
     auto get_address(::sockaddr_storage*, ::nstd::net::ip::port_type) const -> ::socklen_t;
 

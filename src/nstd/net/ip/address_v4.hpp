@@ -33,6 +33,7 @@
 #include <system_error>
 #include <iosfwd>
 #include <array>
+#include <compare>
 #include <string>
 #include <string_view>
 #include <sstream>
@@ -40,6 +41,7 @@
 #include <cstring>
 #include <sys/socket.h>
 #include <netinet/ip.h>
+#include <arpa/inet.h>
 
 // ----------------------------------------------------------------------------
 
@@ -83,7 +85,7 @@ public:
 
     auto operator= (address_v4 const&) noexcept -> address_v4& = default;
     constexpr auto operator== (address_v4 const&) const -> bool = default;
-    constexpr auto operator<=> (address_v4 const&) const = default;
+    constexpr auto operator<=> (address_v4 const&) const -> std::strong_ordering;
 
     auto get_address(::sockaddr_storage*, ::nstd::net::ip::port_type) const -> ::socklen_t;
 
@@ -196,7 +198,7 @@ inline auto nstd::net::ip::address_v4::get_address(::sockaddr_storage*        st
     static_assert(4u == sizeof(::in_addr_t));
     ::sockaddr_in addr;
     addr.sin_family = AF_INET;
-    addr.sin_port   = ::htons(port);
+    addr.sin_port   = htons(port); // htons may be a macro => no qualication
     bytes_type tmp(this->d_bytes);
     ::std::reverse(tmp.begin(), tmp.end());
     ::std::memcpy(&addr.sin_addr, &tmp[0], this->d_bytes.size());

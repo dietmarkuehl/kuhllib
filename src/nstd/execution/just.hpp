@@ -53,12 +53,13 @@ namespace nstd::hidden_names {
         using error_types = V<::std::exception_ptr>;
         static constexpr bool sends_done = false;
 
-        template <typename Receiver>
+        template <::nstd::execution::receiver Receiver>
         struct operation_state {
             ::std::tuple<A...>  d_value;
             Receiver            d_receiver;
-            friend auto tag_invoke(::nstd::execution::start_t, operation_state& s) noexcept
+            friend auto tag_invoke(::nstd::execution::start_t, operation_state& s) noexcept -> void
                 try {
+                    (void)s;
                     ::std::apply([&s](A&&... a){
                                        nstd::execution::set_value(::nstd::utility::move(s.d_receiver),
                                                                   ::nstd::utility::forward<decltype(a)>(a)...);
@@ -91,6 +92,8 @@ namespace nstd::hidden_names {
                                              ::nstd::utility::forward<Receiver>(receiver)};
         }
     };
+
+    static_assert(::nstd::execution::operation_state<::nstd::hidden_names::just_sender<int>::operation_state<::nstd::execution::test_receiver>>);
 }
 
 namespace nstd::execution {

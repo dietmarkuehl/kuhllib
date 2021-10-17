@@ -28,8 +28,8 @@
 
 #include <sys/socket.h>
 #include <sys/types.h>
-#include <linux/time_types.h>
 #include <cstdint>
+#include <cstddef>
 
 // ----------------------------------------------------------------------------
 

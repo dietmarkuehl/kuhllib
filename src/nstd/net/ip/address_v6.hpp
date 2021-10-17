@@ -31,6 +31,7 @@
 #include <system_error>
 #include <iosfwd>
 #include <array>
+#include <compare>
 #include <string>
 #include <string_view>
 #include <sstream>
@@ -81,7 +82,7 @@ public:
 
     auto operator= (address_v6 const&) noexcept -> address_v6& = default;
     constexpr auto operator== (address_v6 const&) const -> bool = default;
-    constexpr auto operator<=> (address_v6 const&) const = default;
+    constexpr auto operator<=> (address_v6 const&) const -> ::std::strong_ordering;
 
     auto get_address(::sockaddr_storage*, ::nstd::net::ip::port_type) const -> ::socklen_t;
 
@@ -195,7 +196,7 @@ inline auto nstd::net::ip::address_v6::get_address(::sockaddr_storage*        st
 {
     ::sockaddr_in6 addr;
     addr.sin6_family = AF_INET6;
-    addr.sin6_port   = ::htons(port);
+    addr.sin6_port   = htons(port);
     ::std::memcpy(&addr.sin6_addr, &this->d_bytes[0], this->d_bytes.size());
     ::std::memcpy(storage, &addr, sizeof addr);
     return sizeof addr;

@@ -100,29 +100,29 @@ namespace nstd::this_thread {
                 condition->notify_one();
             }
 
-            friend auto tag_invoke(::nstd::execution::set_value_t, receiver  r) noexcept {
+            friend auto tag_invoke(::nstd::execution::set_value_t, receiver&&  r) noexcept {
                 (*r.res) = {};
                 r.complete();
             }
-            friend auto tag_invoke(::nstd::execution::set_value_t, receiver  r, Type const& t) noexcept {
+            friend auto tag_invoke(::nstd::execution::set_value_t, receiver&&  r, Type const& t) noexcept {
                 (*r.res) = t;
                 r.complete();
             }
-            friend auto tag_invoke(::nstd::execution::set_value_t, receiver  r, Type&& t) noexcept {
+            friend auto tag_invoke(::nstd::execution::set_value_t, receiver&&  r, Type&& t) noexcept {
                 (*r.res) = ::nstd::utility::move(t);
                 r.complete();
             }
-            friend auto tag_invoke(::nstd::execution::set_error_t, receiver r, ::std::exception_ptr ex) noexcept {
+            friend auto tag_invoke(::nstd::execution::set_error_t, receiver&& r, ::std::exception_ptr ex) noexcept {
                 (*r.ex) = ex;
                 r.complete();
             }
             template <typename E>
-            friend auto tag_invoke(::nstd::execution::set_error_t, receiver r, E ex) noexcept {
+            friend auto tag_invoke(::nstd::execution::set_error_t, receiver&& r, E ex) noexcept {
                 try { throw ex; }
                 catch (...) { (*r.ex) = ::std::current_exception(); }
                 r.complete();
             }
-            friend auto tag_invoke(::nstd::execution::set_done_t, receiver const& r) noexcept {
+            friend auto tag_invoke(::nstd::execution::set_done_t, receiver&& r) noexcept {
                 r.complete();
             }
         };
