@@ -119,7 +119,7 @@ auto NF::ring_context::setup(NF::ring_context::queue_size size) -> int
 
 // ----------------------------------------------------------------------------
 
-auto NF::ring_context::process_result() -> unsigned int
+auto NF::ring_context::process_result() -> ::std::size_t
 {
     auto head(this->d_completion.head());
     auto tail(this->d_completion.tail());
