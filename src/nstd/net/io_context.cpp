@@ -24,6 +24,7 @@
 // ----------------------------------------------------------------------------
 
 #include "nstd/net/io_context.hpp"
+#include "nstd/file/poll_context.hpp"
 #include <cassert>
 
 namespace nstd::net {
@@ -33,11 +34,7 @@ namespace nstd::net {
 // ----------------------------------------------------------------------------
 
 nstd::net::io_context::io_context()
-#ifdef NSTD_HAS_LINUX_IO_URING
     : nstd::net::io_context(nstd::file::ring_context::queue_size(1024))
-#else
-    : d_context(nullptr)
-#endif
 {
     assert(this->d_context && "install poll_context if ring_context can't be used");
 }
@@ -46,7 +43,7 @@ nstd::net::io_context::io_context(::nstd::file::ring_context::queue_size size)
 #ifdef NSTD_HAS_LINUX_IO_URING
     : d_context(new ::nstd::file::ring_context(size))
 #else
-    : d_context(nullptr)
+    : d_context(new ::nstd::file::poll_context())
 #endif
 {
     (void)size;

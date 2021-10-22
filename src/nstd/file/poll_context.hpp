@@ -26,6 +26,12 @@
 #ifndef INCLUDED_NSTD_FILE_POLL_CONTEXT
 #define INCLUDED_NSTD_FILE_POLL_CONTEXT
 
+#include "nstd/file/context.hpp"
+#include <poll.h>
+#include <functional>
+#include <list>
+#include <vector>
+
 // ----------------------------------------------------------------------------
 
 namespace nstd::file {
@@ -35,7 +41,35 @@ namespace nstd::file {
 // ----------------------------------------------------------------------------
 
 class nstd::file::poll_context
+    : public ::nstd::file::context
 {
+private:
+    struct operation {
+        int                           d_fd;
+        short                         d_events;
+        ::std::function<auto()->bool> d_operation;
+        operation(int, short, ::std::function<auto()->bool>);
+    };
+    ::std::vector<::pollfd>           d_poll;
+    ::std::vector<::pollfd>::iterator d_next_poll;
+    ::std::list<operation>            d_outstanding;
+
+    auto submit_io(int, short, ::std::function<auto()->bool>) -> void;
+
+protected:
+    auto do_run_one() -> count_type override;
+
+    auto do_nop(io_base*) -> void override;
+    auto do_timer(time_spec*, io_base*) -> void override;
+    auto do_accept(native_handle_type, ::sockaddr*, ::socklen_t*, int, io_base*) -> void override;
+    auto do_connect(native_handle_type, ::sockaddr const*, ::socklen_t, io_base*) -> void override;
+    auto do_sendmsg(native_handle_type, ::msghdr const*, int, io_base*) -> void override;
+    auto do_recvmsg(native_handle_type, ::msghdr*, int, io_base*) -> void override;
+    auto do_read(int, ::iovec*, ::std::size_t, io_base*) -> void override;
+    auto do_open_at(int, char const*, int, io_base*) -> void override;
+
+public:
+    poll_context();
 };
 
 // ----------------------------------------------------------------------------
