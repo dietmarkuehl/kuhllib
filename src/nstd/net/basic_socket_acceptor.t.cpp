@@ -73,14 +73,14 @@ static KT::testcase const tests[] = {
                 && acceptor.is_open() == false
                 ;
         }),
-    KT::expect_success("construction with protocol", []{
+    KT::expect_success("construction with protocol", [](KT::context& ctx){
             NN::io_context                         context;
             NN::basic_socket_acceptor<NN::ip::tcp> acceptor(NN::ip::tcp::v4());
             return KT::use(acceptor)
-                && acceptor.is_open() == true
-                && acceptor.non_blocking() == false
-                && acceptor.enable_connection_aborted() == false
-                && acceptor.protocol() == NN::ip::tcp::v4()
+                && KT::assert_true(ctx, "is_open()", acceptor.is_open())
+                && KT::assert_false(ctx, "non_blocking()", acceptor.non_blocking())
+                && KT::assert_false(ctx, "enable_connection_aborted()", acceptor.enable_connection_aborted())
+                && KT::assert_true(ctx, "v4", acceptor.protocol() == NN::ip::tcp::v4())
                 ;
         }),
     KT::expect_success("construction with endpoint", []{

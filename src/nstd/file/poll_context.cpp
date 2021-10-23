@@ -37,6 +37,14 @@ namespace UT = ::nstd::utility;
 
 // ----------------------------------------------------------------------------
 
+auto NF::poll_context::timer_event::operator< (timer_event const& other) const
+    -> bool
+{
+    return other.d_expiry < this->d_expiry;
+}
+
+// ----------------------------------------------------------------------------
+
 NF::poll_context::operation::operation(int fd, short events, ::std::function<auto()->bool> operation)
     : d_fd(fd)
     , d_events(events)
@@ -55,7 +63,8 @@ NF::poll_context::poll_context()
 
 auto NF::poll_context::submit_io(int fd, short events, ::std::function<auto()->bool> op) -> void
 {
-    this->d_outstanding.emplace_back(fd, events, UT::move(op));
+    this->d_outstanding.emplace_front(fd, events, UT::move(op));
+    //-dk:TODO trigger the new work to be picked up
 }
 
 template <typename Fun>
@@ -68,33 +77,47 @@ auto NF::poll_context::submit(int fd, short events, Fun&& fun) -> void
 
 // ----------------------------------------------------------------------------
 
+auto NF::poll_context::handle_timer() -> NF::context::count_type {
+    return 0u;
+}
+
+auto NF::poll_context::handle_scheduled() -> NF::context::count_type {
+    if (!this->d_outstanding.empty() && this->d_outstanding.back().d_fd == -1) {
+        this->d_outstanding.back().d_operation();
+        this->d_outstanding.pop_back();
+        return 1u;
+    }
+    return 0u;
+}
+
+auto NF::poll_context::handle_io() -> NF::context::count_type {
+    for (; this->d_poll.end() != (this->d_next_poll = ::std::find_if(this->d_next_poll, this->d_poll.end(), [](pollfd const& p){ return p.revents; }));
+         ++this->d_next_poll) {
+        for (auto rit{this->d_outstanding.begin()}; rit != this->d_outstanding.end(); ++rit) {
+            if (this->d_next_poll->fd == rit->d_fd
+                && 0 != (this->d_next_poll->revents & rit->d_events)
+                && rit->d_operation())
+            {
+   this->d_outstanding.erase(rit);
+                 return 1u;
+            }
+        }
+    }
+    return 0u;
+}
+
 auto NF::poll_context::do_run_one() -> NF::context::count_type
 {
     while (true) {
-        auto oit{::std::find_if(this->d_outstanding.begin(), this->d_outstanding.end(),
-                                [](operation const& op){ return op.d_fd == -1; })};
-        if (oit != this->d_outstanding.end()) {
-            oit->d_operation();
-            this->d_outstanding.erase(oit);
+	if (this->handle_timer() || this->handle_scheduled() || this->handle_io()) {
             return 1u;
-        }
-        for (; this->d_poll.end() != (this->d_next_poll = ::std::find_if(this->d_next_poll, this->d_poll.end(), [](pollfd const& p){ return p.revents; }));
-             ++this->d_next_poll) {
-            for (auto rit{this->d_outstanding.begin()}; rit != this->d_outstanding.end(); ++rit) {
-                if (this->d_next_poll->fd == rit->d_fd
-                    && 0 != (this->d_next_poll->revents & rit->d_events)
-                    && rit->d_operation())
-                {
-		     this->d_outstanding.erase(rit);
-                     return 1u;
-                }
-            }
         }
         this->d_poll.clear();
         for (auto const& operation: this->d_outstanding) {
-            if (0 <= operation.d_fd) {
-                this->d_poll.push_back(::pollfd{ operation.d_fd, operation.d_events, 0 });
+            if (operation.d_fd < 0) {
+	        break;
             }
+            this->d_poll.push_back(::pollfd{ operation.d_fd, operation.d_events, 0 });
         }
         if (this->d_poll.empty()) {
             return 0u;
@@ -111,16 +134,19 @@ auto NF::poll_context::do_run_one() -> NF::context::count_type
 
 // ----------------------------------------------------------------------------
 
-auto NF::poll_context::do_nop(NF::context::io_base*) -> void
+auto NF::poll_context::do_nop(NF::context::io_base* continuation) -> void
 {
-    ::std::cout << "poll_context::do_nop isn't implemented\n" << ::std::flush;
-    assert("poll_context::do_nop isn't implemented" == nullptr);
+    this->submit_io(-1, 0, [continuation]{
+        continuation->result(0, 0);
+        return true;
+    });
 }
 
-auto NF::poll_context::do_timer(NF::context::time_spec*, NF::context::io_base*) -> void
+auto NF::poll_context::do_timer(NF::context::time_spec* ts, NF::context::io_base* continuation) -> void
 {
-    ::std::cout << "poll_context::do_timer isn't implemented\n" << ::std::flush;
-    assert("poll_context::do_timer isn't implemented" == nullptr);
+    ::std::chrono::duration<::std::uint64_t, ::std::nano> offset(::std::uint64_t(ts->sec) * 1000000000 + ts->nsec);
+    this->d_timers.emplace(::std::chrono::steady_clock::now() + offset, continuation);
+    //-dk:TODO possible retrigger poll
 }
 
 auto NF::poll_context::do_accept(NF::context::native_handle_type fd,

@@ -142,6 +142,7 @@ nstd::net::basic_socket_acceptor<AcceptableProtocol>::basic_socket_acceptor(
     : ::nstd::net::socket_base(protocol.family(),
                                protocol.type(),
                                protocol.protocol())
+    , d_protocol(protocol)
 {
 }
 

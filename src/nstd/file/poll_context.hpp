@@ -27,6 +27,8 @@
 #define INCLUDED_NSTD_FILE_POLL_CONTEXT
 
 #include "nstd/file/context.hpp"
+#include <chrono>
+#include <queue>
 #include <poll.h>
 #include <functional>
 #include <list>
@@ -50,9 +52,19 @@ private:
         ::std::function<auto()->bool> d_operation;
         operation(int, short, ::std::function<auto()->bool>);
     };
+    struct timer_event {
+        ::std::chrono::steady_clock::time_point d_expiry;
+	io_base*                                d_continuation;
+	auto operator< (timer_event const&) const -> bool;
+    };
     ::std::vector<::pollfd>           d_poll;
     ::std::vector<::pollfd>::iterator d_next_poll;
     ::std::list<operation>            d_outstanding;
+    ::std::priority_queue<timer_event> d_timers;
+
+    auto handle_scheduled() -> count_type;
+    auto handle_timer() -> count_type;
+    auto handle_io() -> count_type;
 
     auto submit_io(int, short, ::std::function<auto()->bool>) -> void;
     template <typename Fun>
