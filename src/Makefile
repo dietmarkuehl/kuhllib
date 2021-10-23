@@ -1,16 +1,13 @@
 JOBS = 4
 
-.PHONY: default run build clean
-default: build
+.PHONY: default run check build clean
+default: check
 
 run:
 	../build-$(COMPILER)/kuhllib_test
 
-build:
-	cd ..; $(MAKE) -j$(JOBS)
-
-clean:
-	cd ..; $(MAKE) clean
+clean check build:
+	cd ..; $(MAKE) -j$(JOBS) $@
 
 .PHONY: echo
 echo:

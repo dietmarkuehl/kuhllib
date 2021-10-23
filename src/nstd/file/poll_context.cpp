@@ -24,6 +24,7 @@
 // ----------------------------------------------------------------------------
 
 #include "nstd/file/poll_context.hpp"
+#include "nstd/utility/forward.hpp"
 #include "nstd/utility/move.hpp"
 #include <algorithm>
 #include <iostream>
@@ -57,6 +58,14 @@ auto NF::poll_context::submit_io(int fd, short events, ::std::function<auto()->b
     this->d_outstanding.emplace_back(fd, events, UT::move(op));
 }
 
+template <typename Fun>
+auto NF::poll_context::submit(int fd, short events, Fun&& fun) -> void
+{
+    if (!fun()) {
+        this->submit_io(fd, events, UT::forward<Fun>(fun));
+    }
+}
+
 // ----------------------------------------------------------------------------
 
 auto NF::poll_context::do_run_one() -> NF::context::count_type
@@ -76,6 +85,7 @@ auto NF::poll_context::do_run_one() -> NF::context::count_type
                     && 0 != (this->d_next_poll->revents & rit->d_events)
                     && rit->d_operation())
                 {
+		     this->d_outstanding.erase(rit);
                      return 1u;
                 }
             }
@@ -90,8 +100,11 @@ auto NF::poll_context::do_run_one() -> NF::context::count_type
             return 0u;
         }
         int rc{::poll(this->d_poll.data(), this->d_poll.size(), -1)};
-        if (0 < rc) {
+        if (rc < 0) {
             return 0u;
+        }
+	else {
+	    this->d_next_poll = this->d_poll.begin();
         }
     }
 }
@@ -116,7 +129,7 @@ auto NF::poll_context::do_accept(NF::context::native_handle_type fd,
                                  int                             /*flags*/,
                                  NF::context::io_base*           continuation) -> void
 {
-    auto tryAccept = [fd, address, length, continuation]{
+    this->submit(fd, POLLIN, [fd, address, length, continuation]{
         int rc{::accept(fd, address, length)};
         if (0 <= rc) {
             continuation->result(rc, 0);
@@ -127,20 +140,28 @@ auto NF::poll_context::do_accept(NF::context::native_handle_type fd,
             continuation->result(-errno, 0);
             return true;
         case EINTR:
-        case EWOULDBLOCK:
+        case EAGAIN:
+        case (EAGAIN != EWOULDBLOCK? EWOULDBLOCK: 0):
+	// Already pending errors on the new socket (Linux specific):
+        case ENETDOWN:
+	case EPROTO:
+	case ENOPROTOOPT:
+	case EHOSTDOWN:
+	case ENONET:
+	case EHOSTUNREACH:
+	case EOPNOTSUPP:
+	case ENETUNREACH:
             return false;
         }
-    };
-    if (!tryAccept()) {
-        this->submit_io(fd, POLLIN, UT::move(tryAccept));
-    }
+    });
 }
 
 auto NF::poll_context::do_connect(NF::context::native_handle_type fd, ::sockaddr const* address, ::socklen_t length, NF::context::io_base* continuation)
     -> void
 {
-    auto tryConnect = [fd, address, length, continuation]{
-        if (0 == ::connect(fd, address, length)) {
+    this->submit(fd, POLLOUT, [fd, address, length, continuation]{
+	auto rc = ::connect(fd, address, length);
+        if (0 == rc) {
             continuation->result(0, 0);
             return true;
         }
@@ -148,27 +169,60 @@ auto NF::poll_context::do_connect(NF::context::native_handle_type fd, ::sockaddr
         default:
             continuation->result(-errno, 0);
             return true;
+        case EAGAIN:
         case EALREADY:
         case EINPROGRESS:
         case EINTR:
             return false;
         }
-    };
-    if (!tryConnect()) {
-        this->submit_io(fd, POLLOUT, UT::move(tryConnect));
-    }
+    });
 }
 
-auto NF::poll_context::do_sendmsg(NF::context::native_handle_type, ::msghdr const*, int, NF::context::io_base*) -> void
+auto NF::poll_context::do_sendmsg(NF::context::native_handle_type fd,
+                                  ::msghdr const*                 msg,
+                                  int                             flags,
+                                  NF::context::io_base*           continuation) -> void
 {
-    ::std::cout << "poll_context::do_sendmsg isn't implemented\n" << ::std::flush;
-    assert("poll_context::do_sendmsg isn't implemented" == nullptr);
+    this->submit(fd, POLLOUT, [fd, msg, flags, continuation]{
+	auto rc{::sendmsg(fd, msg, flags | MSG_DONTWAIT | MSG_NOSIGNAL)};
+	if (0 <= rc) {
+	   continuation->result(rc, 0);
+	   return true;
+	}
+	switch (errno) {
+	default:
+	    continuation->result(-errno, 0);
+	    return true;
+	case EAGAIN:
+        case (EAGAIN != EWOULDBLOCK? EWOULDBLOCK: 0):
+	case EALREADY:
+	case EINTR:
+	    return false;
+        }
+    });
 }
 
-auto NF::poll_context::do_recvmsg(NF::context::native_handle_type, ::msghdr*, int, NF::context::io_base*) -> void
+auto NF::poll_context::do_recvmsg(NF::context::native_handle_type fd,
+                                  ::msghdr*                       msg,
+				  int                             flags,
+				  NF::context::io_base*           continuation) -> void
 {
-    ::std::cout << "poll_context::do_recvmsg isn't implemented\n" << ::std::flush;
-    assert("poll_context::do_recvmsg isn't implemented" == nullptr);
+    this->submit(fd, POLLIN, [fd, msg, flags, continuation]{
+    	auto rc{::recvmsg(fd, msg, MSG_DONTWAIT)};
+	if (0 <= rc) {
+	    continuation->result(rc, 0);
+	    return true;
+	}
+	switch (errno) {
+	default:
+	    continuation->result(-errno, 0);
+	    return true;
+	case EAGAIN:
+        case (EAGAIN != EWOULDBLOCK? EWOULDBLOCK: 0):
+	case EINTR:
+	    return false;
+	}
+    });
 }
 
 auto NF::poll_context::do_read(int, ::iovec*, ::std::size_t, NF::context::io_base*) -> void

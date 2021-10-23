@@ -96,6 +96,7 @@ static KT::testcase const tests[] = {
                 ;
         }),
     KT::expect_success("async_accept", []{
+	::std::cout << "test async_accept\n" << ::std::flush;
             NN::io_context                         context;
             NI::basic_endpoint<NI::tcp>            ep(NI::address_v4::any(), 12345);
 

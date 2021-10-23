@@ -55,6 +55,8 @@ private:
     ::std::list<operation>            d_outstanding;
 
     auto submit_io(int, short, ::std::function<auto()->bool>) -> void;
+    template <typename Fun>
+    auto submit(int, short, Fun&& fun) -> void;
 
 protected:
     auto do_run_one() -> count_type override;

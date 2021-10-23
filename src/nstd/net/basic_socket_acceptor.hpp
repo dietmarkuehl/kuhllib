@@ -93,7 +93,6 @@ public:
 
 private:
     ::std::optional<protocol_type> d_protocol;
-    ::nstd::file::descriptor       d_fd;
 
     static auto internal_open(protocol_type) -> ::nstd::file::descriptor;
 
@@ -117,11 +116,9 @@ public:
     auto listen(int n = max_listen_connections) -> void;
     auto bind(endpoint_type const&) -> void;
 
-    auto is_open() const -> bool { return bool(this->d_fd); }
     auto non_blocking() const -> bool { return false; }
     auto enable_connection_aborted() const -> bool { return false; }
     auto protocol() const -> protocol_type { return *this->d_protocol; }
-    auto native_handle() const noexcept -> native_handle_type { return this->d_fd.get(); }
 };
 
 // ----------------------------------------------------------------------------
@@ -142,16 +139,16 @@ nstd::net::basic_socket_acceptor<AcceptableProtocol>::basic_socket_acceptor() = 
 template <typename AcceptableProtocol>
 nstd::net::basic_socket_acceptor<AcceptableProtocol>::basic_socket_acceptor(
         protocol_type const& protocol)
-    : d_protocol(protocol)
-    , d_fd(internal_open(*this->d_protocol))
+    : ::nstd::net::socket_base(protocol.family(),
+                               protocol.type(),
+                               protocol.protocol())
 {
 }
 
 template <typename AcceptableProtocol>
 nstd::net::basic_socket_acceptor<AcceptableProtocol>::basic_socket_acceptor(
     endpoint_type const& endpoint, bool reuse)
-    : d_protocol(endpoint.protocol())
-    , d_fd(internal_open(*this->d_protocol))
+    : ::nstd::net::basic_socket_acceptor<AcceptableProtocol>(endpoint.protocol())
 {
     if (reuse) {
         this->set_option(reuse_address(true));

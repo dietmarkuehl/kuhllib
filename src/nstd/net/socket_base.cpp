@@ -24,13 +24,29 @@
 // ----------------------------------------------------------------------------
 
 #include "nstd/net/socket_base.hpp"
+#include <unistd.h>
+#include <fcntl.h>
+#include <iostream>
 
 // ----------------------------------------------------------------------------
 
 auto nstd::net::socket_base::open(int domain, int type, int protocol) -> int
 {
     this->d_descriptor = ::nstd::file::descriptor(::socket(domain, type, protocol));
+    int fd{this->d_descriptor.get()};
+    if (0 <= fd && -1 == ::fcntl(fd, F_SETFL, ::fcntl(fd, F_GETFL, 0) | O_NONBLOCK)) {
+	this->d_descriptor = ::nstd::file::descriptor();
+    }
     return this->d_descriptor.get();
+}
+
+// ----------------------------------------------------------------------------
+
+nstd::net::socket_base::socket_base(int domain, int type, int protocol)
+{
+    if (this->open(domain, type, protocol) < 0) {
+        throw ::std::system_error(errno, ::std::system_category());
+    }
 }
 
 // ----------------------------------------------------------------------------

@@ -44,7 +44,6 @@ private:
     ::nstd::file::descriptor d_descriptor;
 
 protected:
-    auto is_open() const noexcept -> bool { return this->d_descriptor.is_open(); }
     auto open(int domain, int type, int protocol) -> int;
 
 public:
@@ -55,6 +54,7 @@ public:
 
     socket_base() = default;
     socket_base(int fd): d_descriptor(fd) {}
+    socket_base(int, int, int);
     socket_base(socket_base const&) = delete;
     socket_base(socket_base&&) = default;
     ~socket_base() = default;
@@ -63,6 +63,7 @@ public:
 
     using native_handle_type = int;
     auto native_handle() const -> native_handle_type { return this->d_descriptor.get(); }
+    auto is_open() const noexcept -> bool { return this->d_descriptor.is_open(); }
 };
 
 // ----------------------------------------------------------------------------
