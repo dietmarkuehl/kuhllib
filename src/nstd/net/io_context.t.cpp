@@ -94,7 +94,7 @@ static KT::testcase const tests[] = {
             bool value = false;
             NN::io_context ctxt{};
             auto sender = EX::schedule(ctxt.scheduler())
-                | EX::then([&value]{ ::std::cout << "then called\n"; value = true; })
+                | EX::then([&value]{ value = true; })
                 ;
             EX::start_detached(UT::move(sender));
             ctxt.run_one();

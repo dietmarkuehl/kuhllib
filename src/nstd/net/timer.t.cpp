@@ -150,9 +150,7 @@ static KT::testcase const tests[] = {
                 auto dur = clock::now() - before;
                 count = ::std::chrono::duration_cast<::std::chrono::milliseconds>(dur).count();
                 }));
-
-            ::std::cout << "count=" << count << "\n";
-            return 13 <= count;
+                return 13 <= count;
             }
             catch (std::exception const& ex) {
                 return false;

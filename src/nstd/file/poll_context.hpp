@@ -55,6 +55,11 @@ private:
     struct timer_event {
         ::std::chrono::steady_clock::time_point d_expiry;
 	io_base*                                d_continuation;
+	timer_event(::std::chrono::steady_clock::time_point expiry,
+	            io_base*                                continuation)
+            : d_expiry(expiry)
+            , d_continuation(continuation) {
+        }
 	auto operator< (timer_event const&) const -> bool;
     };
     ::std::vector<::pollfd>           d_poll;
@@ -65,6 +70,7 @@ private:
     auto handle_scheduled() -> count_type;
     auto handle_timer() -> count_type;
     auto handle_io() -> count_type;
+    auto poll() -> bool;
 
     auto submit_io(int, short, ::std::function<auto()->bool>) -> void;
     template <typename Fun>
