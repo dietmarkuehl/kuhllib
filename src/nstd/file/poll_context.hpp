@@ -66,6 +66,7 @@ private:
     auto handle_scheduled() -> count_type;
     auto handle_timer() -> count_type;
     auto handle_io() -> count_type;
+    auto poll() -> bool;
 
     auto submit_io(int, short, ::std::function<auto()->bool>) -> void;
     template <typename Fun>

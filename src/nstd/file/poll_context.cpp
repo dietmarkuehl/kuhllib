@@ -104,13 +104,43 @@ auto NF::poll_context::handle_io() -> NF::context::count_type {
                 && 0 != (this->d_next_poll->revents & rit->d_events)
                 && rit->d_operation())
             {
-   this->d_outstanding.erase(rit);
-                 return 1u;
+                this->d_outstanding.erase(rit);
+                ++this->d_next_poll;
+                return 1u;
             }
         }
     }
     return 0u;
 }
+
+// ----------------------------------------------------------------------------
+
+auto NF::poll_context::poll() -> bool
+{
+    this->d_poll.clear();
+    for (auto const& operation: this->d_outstanding) {
+        if (operation.d_fd < 0) {
+            break;
+        }
+        this->d_poll.push_back(::pollfd{ operation.d_fd, operation.d_events, 0 });
+    }
+    if (this->d_poll.empty()) {
+        return 0u;
+    }
+    while (true)
+    {
+        int rc{::poll(this->d_poll.data(), this->d_poll.size(), -1)};
+        if (0 <= rc) {
+            this->d_next_poll = this->d_poll.begin();
+            return true;
+        }
+        else if (errno != EINVAL) {
+            return false;
+        }
+    }
+}
+
+// ----------------------------------------------------------------------------
 
 auto NF::poll_context::do_run_one() -> NF::context::count_type
 {
@@ -118,22 +148,8 @@ auto NF::poll_context::do_run_one() -> NF::context::count_type
 	if (this->handle_timer() || this->handle_scheduled() || this->handle_io()) {
             return 1u;
         }
-        this->d_poll.clear();
-        for (auto const& operation: this->d_outstanding) {
-            if (operation.d_fd < 0) {
-	        break;
-            }
-            this->d_poll.push_back(::pollfd{ operation.d_fd, operation.d_events, 0 });
-        }
-        if (this->d_poll.empty()) {
+        if (!this->poll()) {
             return 0u;
-        }
-        int rc{::poll(this->d_poll.data(), this->d_poll.size(), -1)};
-        if (rc < 0) {
-            return 0u;
-        }
-	else {
-	    this->d_next_poll = this->d_poll.begin();
         }
     }
 }
@@ -161,7 +177,7 @@ auto NF::poll_context::do_accept(NF::context::native_handle_type fd,
                                  int                             /*flags*/,
                                  NF::context::io_base*           continuation) -> void
 {
-    this->submit(fd, POLLIN, [fd, address, length, continuation]{
+    this->submit_io(fd, POLLIN, [fd, address, length, continuation]{
         int rc{::accept(fd, address, length)};
         if (0 <= rc) {
             continuation->result(rc, 0);
@@ -191,7 +207,7 @@ auto NF::poll_context::do_accept(NF::context::native_handle_type fd,
 auto NF::poll_context::do_connect(NF::context::native_handle_type fd, ::sockaddr const* address, ::socklen_t length, NF::context::io_base* continuation)
     -> void
 {
-    this->submit(fd, POLLOUT, [fd, address, length, continuation]{
+    this->submit_io(fd, POLLOUT, [fd, address, length, continuation]{
 	auto rc = ::connect(fd, address, length);
         if (0 == rc) {
             continuation->result(0, 0);

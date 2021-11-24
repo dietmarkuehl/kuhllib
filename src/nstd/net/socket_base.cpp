@@ -33,10 +33,12 @@
 auto nstd::net::socket_base::open(int domain, int type, int protocol) -> int
 {
     this->d_descriptor = ::nstd::file::descriptor(::socket(domain, type, protocol));
+#if 0
     int fd{this->d_descriptor.get()};
     if (0 <= fd) {
         this->d_flags = ::fcntl(fd, F_GETFL, 0);
     }
+#endif
     return this->d_descriptor.get();
 }
 
