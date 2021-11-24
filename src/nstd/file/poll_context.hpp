@@ -55,6 +55,7 @@ private:
     struct timer_event {
         ::std::chrono::steady_clock::time_point d_expiry;
 	io_base*                                d_continuation;
+	timer_event(::std::chrono::steady_clock::time_point const&, io_base*);
 	auto operator< (timer_event const&) const -> bool;
     };
     ::std::vector<::pollfd>           d_poll;

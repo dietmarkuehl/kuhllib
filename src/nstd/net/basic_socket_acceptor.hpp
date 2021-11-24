@@ -116,7 +116,6 @@ public:
     auto listen(int n = max_listen_connections) -> void;
     auto bind(endpoint_type const&) -> void;
 
-    auto non_blocking() const -> bool { return false; }
     auto enable_connection_aborted() const -> bool { return false; }
     auto protocol() const -> protocol_type { return *this->d_protocol; }
 };

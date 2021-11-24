@@ -34,8 +34,8 @@ auto nstd::net::socket_base::open(int domain, int type, int protocol) -> int
 {
     this->d_descriptor = ::nstd::file::descriptor(::socket(domain, type, protocol));
     int fd{this->d_descriptor.get()};
-    if (0 <= fd && -1 == ::fcntl(fd, F_SETFL, ::fcntl(fd, F_GETFL, 0) | O_NONBLOCK)) {
-	this->d_descriptor = ::nstd::file::descriptor();
+    if (0 <= fd) {
+        this->d_flags = ::fcntl(fd, F_GETFL, 0);
     }
     return this->d_descriptor.get();
 }
@@ -43,10 +43,19 @@ auto nstd::net::socket_base::open(int domain, int type, int protocol) -> int
 // ----------------------------------------------------------------------------
 
 nstd::net::socket_base::socket_base(int domain, int type, int protocol)
+    : d_flags()
 {
     if (this->open(domain, type, protocol) < 0) {
         throw ::std::system_error(errno, ::std::system_category());
     }
+}
+
+// ----------------------------------------------------------------------------
+// ::fcntl(fd, F_SETFL, this->d_flags)
+
+auto nstd::net::socket_base::non_blocking() const noexcept -> bool
+{
+    return this->d_flags & O_NONBLOCK;
 }
 
 // ----------------------------------------------------------------------------

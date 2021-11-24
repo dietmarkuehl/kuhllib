@@ -37,6 +37,12 @@ namespace UT = ::nstd::utility;
 
 // ----------------------------------------------------------------------------
 
+NF::poll_context::timer_event::timer_event(::std::chrono::steady_clock::time_point const& expiry,
+                                           io_base*                                       continuation)
+    : d_expiry(expiry)
+    , d_continuation(continuation) {
+}
+
 auto NF::poll_context::timer_event::operator< (timer_event const& other) const
     -> bool
 {
@@ -234,7 +240,7 @@ auto NF::poll_context::do_recvmsg(NF::context::native_handle_type fd,
 				  NF::context::io_base*           continuation) -> void
 {
     this->submit(fd, POLLIN, [fd, msg, flags, continuation]{
-    	auto rc{::recvmsg(fd, msg, MSG_DONTWAIT)};
+    	auto rc{::recvmsg(fd, msg, flags | MSG_DONTWAIT)};
 	if (0 <= rc) {
 	    continuation->result(rc, 0);
 	    return true;

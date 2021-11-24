@@ -42,6 +42,7 @@ class nstd::net::socket_base
 {
 private:
     ::nstd::file::descriptor d_descriptor;
+    int                      d_flags;
 
 protected:
     auto open(int domain, int type, int protocol) -> int;
@@ -64,6 +65,8 @@ public:
     using native_handle_type = int;
     auto native_handle() const -> native_handle_type { return this->d_descriptor.get(); }
     auto is_open() const noexcept -> bool { return this->d_descriptor.is_open(); }
+
+    auto non_blocking() const noexcept -> bool;
 };
 
 // ----------------------------------------------------------------------------

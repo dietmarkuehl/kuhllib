@@ -40,7 +40,7 @@ nstd::net::io_context::io_context()
 }
 
 nstd::net::io_context::io_context(::nstd::file::ring_context::queue_size size)
-#if defined(NSTD_HAS_LINUX_IO_URING) && 0
+#if defined(NSTD_HAS_LINUX_IO_URING)
     : d_context(new ::nstd::file::ring_context(size))
 #else
     : d_context(new ::nstd::file::poll_context())
