@@ -134,14 +134,13 @@ public:
         ::nstd::net::io_context* d_context;
 
         template <::nstd::execution::receiver Receiver>
-        friend auto tag_invoke(::nstd::execution::connect_t, sender&& sndr, Receiver&& receiver) noexcept
+        friend auto tag_invoke(::nstd::execution::connect_t, sender const& sndr, Receiver&& receiver) noexcept
             -> state<Receiver> {
             return state<Receiver>(::nstd::utility::forward<Receiver>(receiver), sndr.d_context);
         }
     };
 
-    friend auto tag_invoke(::nstd::execution::schedule_t,
-                           scheduler_type&& scheduler) -> sender {
+    friend auto tag_invoke(::nstd::execution::schedule_t, scheduler_type const& scheduler) -> sender {
         return { scheduler.d_context };
     }
 };
