@@ -33,6 +33,10 @@
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/set_error.hpp"
 #include "nstd/execution/set_done.hpp"
+#include "nstd/execution/repeat_effect_until.hpp"
+#include "nstd/execution/let_value.hpp"
+#include "nstd/execution/then.hpp"
+#include "nstd/execution/just.hpp"
 #include "nstd/buffer/const_buffer.hpp"
 #include "nstd/buffer/mutable_buffer.hpp"
 #include "nstd/utility/forward.hpp"
@@ -68,6 +72,11 @@ namespace nstd::net {
         auto operator()(basic_stream_socket<P>&, Scheduler, CBS const&) const
             -> sender<Scheduler, CBS>;
     } async_write_some;
+
+    inline constexpr struct async_write_t {
+        template <typename P, typename Scheduler, typename CBS>
+        auto operator()(basic_stream_socket<P>&, Scheduler, CBS const&) const;
+    } async_write;
 }
 
 // ----------------------------------------------------------------------------
@@ -266,6 +275,26 @@ auto nstd::net::async_write_some_t::operator()(basic_stream_socket<P>& socket,
     -> sender<Scheduler, CBS>
 {
     return sender<Scheduler, CBS>{scheduler, cbs, socket.native_handle()};
+}
+
+// ----------------------------------------------------------------------------
+
+template <typename P, typename Scheduler, typename CBS>
+auto nstd::net::async_write_t::operator()(basic_stream_socket<P>& socket, Scheduler scheduler, CBS const& cbs) const
+{
+    return ::nstd::execution::let_value(::nstd::execution::just(),
+        [scheduler, &socket, buffer = cbs]() mutable {
+            return ::nstd::execution::repeat_effect_until(
+                ::nstd::execution::let_value(::nstd::execution::just(),
+                    [scheduler, &socket, &buffer]{
+                        return ::nstd::net::async_write_some(socket, scheduler, buffer)
+                            |  ::nstd::execution::then([&buffer](::std::size_t n){
+                                buffer += n;
+                            });
+                    }),
+                [&buffer]{ return buffer.size() == 0; }
+            );
+        });
 }
 
 // ----------------------------------------------------------------------------

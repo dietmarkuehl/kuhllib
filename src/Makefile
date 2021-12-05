@@ -9,6 +9,6 @@ run:
 clean check build:
 	cd ..; $(MAKE) -j$(JOBS) $@
 
-.PHONY: echo
-echo:
-	../build-$(COMPILER)/echo_server
+.PHONY: echo chat
+echo chat:
+	../build-$(COMPILER)/$@_server

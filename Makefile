@@ -29,7 +29,7 @@ ifneq ($(CMAKE_CXX),)
     CMAKE_CXX_ARG += -DCMAKE_CXX_COMPILER=$(CMAKE_CXX)
 endif
 ifneq ($(CMAKE_CC),)
-    CMAKE_CXX_ARG += -DCMAKE_CC_COMPILER=$(CMAKE_CC)
+    CMAKE_CXX_ARG += -DCMAKE_C_COMPILER=$(CMAKE_CC)
 endif
 
 .PHONY: default

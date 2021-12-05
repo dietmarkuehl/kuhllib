@@ -25,6 +25,7 @@
 
 #include <iostream>
 
+#include "nstd/concepts/same_as.hpp"
 #include "nstd/execution.hpp"
 #include "nstd/net/io_context.hpp"
 #include "nstd/net/basic_socket_acceptor.hpp"
@@ -39,6 +40,7 @@
 #include <utility>
 
 namespace EX = ::nstd::execution;
+namespace NC = ::nstd::concepts;
 namespace NN = ::nstd::net;
 namespace NI = ::nstd::net::ip;
 
@@ -67,7 +69,9 @@ namespace
             container*          d_container;
             container::iterator d_iterator;
 
-            friend auto tag_invoke(auto, receiver&& r, auto&&...)
+            template <typename Tag>
+                requires NC::same_as<Tag, EX::set_value_t> || NC::same_as<Tag, EX::set_error_t> || NC::same_as<Tag, EX::set_done_t>
+            friend auto tag_invoke(Tag, receiver&& r, auto&&...)
                 noexcept -> void
             {
                 r.d_container->erase(r.d_iterator);
@@ -122,33 +126,6 @@ namespace
     auto defer(Fn&& fn) {
         return EX::let_value(EX::just(), ::std::forward<Fn>(fn));
     }
-    auto write(
-        client& owner,
-        NN::io_context&  context,
-        ::std::size_t n) 
-    {
-        return 
-            // capture buffer to write
-            defer(
-                [&context, &owner, remaining = NN::buffer(owner.d_buffer, n)]() mutable {
-                    return
-                        EX::repeat_effect_until(
-                            // use updated buffer, not original buffer
-                            defer(
-                                [&context, &owner, &remaining]{
-                                    return
-                                        NN::async_write_some(owner.d_socket,
-                                                            context.scheduler(),
-                                                            remaining);
-                                })
-                            // update buffer
-                            | EX::then([&remaining](::std::size_t w){
-                                remaining += w;
-                            }),
-                            [&remaining]{ return remaining.size() == 0; }
-                        );
-                });
-    }
     auto read_some_write(
         client& owner,
         NN::io_context&  context) 
@@ -162,7 +139,7 @@ namespace
                     [&context, &owner](::std::size_t n){
                         ::std::cout << "read='" << ::std::string_view(owner.d_buffer, n) << "'\n";
                         owner.d_done = n == 0;
-                        return write(owner, context, n);
+                        return NN::async_write(owner.d_socket, context.scheduler(), NN::buffer(owner.d_buffer, n));
                     }),
                 [&owner]{ return owner.d_done; }
             );

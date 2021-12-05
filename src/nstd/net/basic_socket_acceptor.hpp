@@ -76,6 +76,12 @@ namespace nstd::net {
         auto operator()(Acceptor& acceptor, Scheduler scheduler) const {
             return ::nstd::tag_invoke(*this, acceptor, scheduler);
         }
+        template <typename Acceptor>
+        auto operator()(Acceptor& acceptor) const {
+            return [&acceptor, this](auto scheduler){
+                return ::nstd::tag_invoke(this, acceptor, scheduler);
+                };
+        }
     } async_accept;
 }
 
