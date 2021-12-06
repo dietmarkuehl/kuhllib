@@ -95,6 +95,19 @@ static KT::testcase const tests[] = {
                 && EX::sender<decltype(write)>
                 ;
         }),
+    KT::expect_success("async_write", []{
+            char message[] = { 'h', 'e', 'l', 'l', 'o', '\n' };
+            NN::basic_stream_socket<NN::ip::tcp>  client(NI::tcp::v4());
+            NN::io_context                        context;
+            auto write
+                = EX::schedule(context.scheduler())
+                | NN::async_write(client, NN::buffer(message))
+                ;
+            return true
+                && KT::use(client)
+                && KT::use(write)
+                ;
+        }),
 };
 
 static KT::add_tests suite("basic_stream_socket", ::tests);

@@ -28,6 +28,7 @@
 
 #include "nstd/net/netfwd.hpp"
 #include "nstd/execution/operation_state.hpp"
+#include "nstd/execution/get_completion_scheduler.hpp"
 #include "nstd/execution/schedule.hpp"
 #include "nstd/execution/scheduler.hpp"
 #include "nstd/execution/connect.hpp"
@@ -124,7 +125,11 @@ public:
             ::nstd::execution::set_value(::nstd::utility::move(this->d_receiver));
         }
     };
-    struct sender {
+    struct sender;
+    friend struct sender;
+    struct sender
+        : ::nstd::execution::piped_sender_base
+    {
         template <template <typename...> class V, template <typename...> class T>
         using value_types = V<T<>>;
         template <template <typename...> class V>
@@ -132,6 +137,13 @@ public:
         static constexpr bool sends_done = true;
 
         ::nstd::net::io_context* d_context;
+        private:
+            auto make_scheduler() const noexcept -> scheduler_type { return scheduler_type(this->d_context); }
+        public:
+
+        friend auto tag_invoke(::nstd::execution::get_completion_scheduler_t<::nstd::execution::set_value_t>, sender const& self) noexcept -> scheduler_type {
+            return self.make_scheduler();
+        }
 
         template <::nstd::execution::receiver Receiver>
         friend auto tag_invoke(::nstd::execution::connect_t, sender const& sndr, Receiver&& receiver) noexcept
@@ -141,7 +153,7 @@ public:
     };
 
     friend auto tag_invoke(::nstd::execution::schedule_t, scheduler_type const& scheduler) -> sender {
-        return { scheduler.d_context };
+        return { {}, scheduler.d_context };
     }
 };
 

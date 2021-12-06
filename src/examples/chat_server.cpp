@@ -180,8 +180,10 @@ namespace {
                 | EX::let_value([this, scheduler, buffer]{
                     return when_each(this->d_clients, [this, scheduler, &buffer](auto it){
                         ++(it->users);
-                        return NN::async_write(it->first, scheduler, NN::buffer(buffer))
-                            | EX::then([this, it](auto&&...){ this->remove_client(it); });
+                        return EX::schedule(scheduler)
+                            |  NN::async_write(it->first, NN::buffer(buffer))
+                            |  EX::then([this, it](auto&&...){ this->remove_client(it); });
+                            ;
                     });
                 }));
         }
