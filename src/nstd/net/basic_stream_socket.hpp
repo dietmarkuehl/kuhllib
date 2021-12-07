@@ -69,21 +69,17 @@ namespace nstd::net {
         template <typename Scheduler, typename CBS>
         struct sender;
 
-        template <typename P, typename Scheduler, typename CBS>
-        auto operator()(basic_stream_socket<P>&, Scheduler, CBS const&) const
+        template <typename Scheduler, typename P, typename CBS>
+        auto operator()(Scheduler, basic_stream_socket<P>&, CBS const&) const
             -> sender<Scheduler, CBS>;
     } async_write_some;
 
     inline constexpr struct async_write_t {
-        template <typename Scheduler, typename P, typename CBS>
-        auto operator()(Scheduler, basic_stream_socket<P>&, CBS const&) const;
+        template <::nstd::execution::sender Sender, typename P, typename CBS>
+        auto operator()(Sender&&, basic_stream_socket<P>&, CBS const&) const;
 
         template <typename P, typename CBS>
-        auto operator()(basic_stream_socket<P>& socket, CBS const& buffer) const {
-            return [this, &socket, buffer](::nstd::execution::sender auto&& sender) {
-                return this->operator()(::nstd::execution::get_completion_scheduler<::nstd::execution::set_value_t>(::nstd::utility::forward<decltype(sender)>(sender)), socket, buffer);
-            };
-        }
+        auto operator()(basic_stream_socket<P>& socket, CBS const& buffer) const;
     } async_write;
 }
 
@@ -276,10 +272,10 @@ struct nstd::net::async_write_some_t::sender
     }
 };
 
-template <typename P, typename Scheduler, typename CBS>
+template <typename Scheduler, typename P, typename CBS>
 auto nstd::net::async_write_some_t::operator()(
-                                               basic_stream_socket<P>& socket,
                                                Scheduler scheduler,
+                                               basic_stream_socket<P>& socket,
                                                CBS const& cbs) const
     -> sender<Scheduler, CBS>
 {
@@ -288,17 +284,18 @@ auto nstd::net::async_write_some_t::operator()(
 
 // ----------------------------------------------------------------------------
 
-template <typename Scheduler, typename P, typename CBS>
-auto nstd::net::async_write_t::operator()(Scheduler scheduler,
+template <::nstd::execution::sender Sender, typename P, typename CBS>
+auto nstd::net::async_write_t::operator()(Sender&& sender,
                                           basic_stream_socket<P>& socket,
                                           CBS const& cbs) const
 {
-    return ::nstd::execution::let_value(::nstd::execution::just(),
+    auto scheduler = ::nstd::execution::get_completion_scheduler<::nstd::execution::set_value_t>(sender);
+    return ::nstd::execution::let_value(::nstd::utility::forward<Sender>(sender),
         [scheduler, &socket, buffer = cbs]() mutable {
             return ::nstd::execution::repeat_effect_until(
                 ::nstd::execution::let_value(::nstd::execution::just(),
                     [scheduler, &socket, &buffer]{
-                        return ::nstd::net::async_write_some(socket, scheduler, buffer)
+                        return ::nstd::net::async_write_some(scheduler, socket, buffer)
                             |  ::nstd::execution::then([&buffer](::std::size_t n){
                                 buffer += n;
                             });
@@ -306,6 +303,15 @@ auto nstd::net::async_write_t::operator()(Scheduler scheduler,
                 [&buffer]{ return buffer.size() == 0; }
             );
         });
+}
+
+template <typename P, typename CBS>
+auto nstd::net::async_write_t::operator()(::nstd::net::basic_stream_socket<P>& socket,
+                                          CBS const& buffer) const
+{
+    return [this, &socket, buffer](::nstd::execution::sender auto&& sender) {
+        return this->operator()(sender, socket, buffer);
+    };
 }
 
 // ----------------------------------------------------------------------------

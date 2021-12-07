@@ -54,7 +54,7 @@ namespace nstd::execution {
 
         template <::nstd::execution::sender Sender, typename Function>
         friend auto tag_invoke(let_value_t, Sender&& sndr, Function&& fun) {
-            return sender<Sender, Function>{
+            return sender<::nstd::type_traits::remove_cvref_t<Sender>, ::nstd::type_traits::remove_cvref_t<Function>>{
                 ::nstd::utility::forward<Sender>(sndr),
                 ::nstd::utility::forward<Function>(fun)
                 };
@@ -199,8 +199,8 @@ struct nstd::execution::let_value_t::sender
     using error_types = V<::std::exception_ptr>;
     static constexpr bool sends_done = true;
 
-    ::nstd::type_traits::remove_cvref_t<Sender>   d_sender;
-    ::nstd::type_traits::remove_cvref_t<Function> d_function;
+    Sender   d_sender;
+    Function d_function;
     template <typename Receiver>
     friend auto tag_invoke(::nstd::execution::connect_t, sender&& sndr, Receiver&& receiver)
         noexcept {

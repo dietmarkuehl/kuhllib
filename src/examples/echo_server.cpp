@@ -139,7 +139,9 @@ namespace
                     [&context, &owner](::std::size_t n){
                         ::std::cout << "read='" << ::std::string_view(owner.d_buffer, n) << "'\n";
                         owner.d_done = n == 0;
-                        return NN::async_write(context.scheduler(), owner.d_socket, NN::buffer(owner.d_buffer, n));
+                        return EX::schedule(context.scheduler())
+                            |  NN::async_write(owner.d_socket, NN::buffer(owner.d_buffer, n))
+                            ;
                     }),
                 [&owner]{ return owner.d_done; }
             );
