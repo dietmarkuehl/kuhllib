@@ -1,4 +1,4 @@
-// nstd/net/io_context.cpp                                            -*-C++-*-
+// nstd/file/observer_context.t.cpp                                   -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,48 +23,21 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/net/io_context.hpp"
+#include "kuhl/test.hpp"
+#include "nstd/file/observer_context.hpp"
 #include "nstd/file/poll_context.hpp"
-#include "nstd/utility/move.hpp"
-#include <cassert>
 
-namespace nstd::net {
-    int io_context_dummy = 0;
-}
+namespace KT = ::kuhl::test;
+namespace NF = ::nstd::file;
 
 // ----------------------------------------------------------------------------
 
-nstd::net::io_context::io_context()
-    : nstd::net::io_context(nstd::file::ring_context::queue_size(1024))
-{
-    assert(this->d_context && "install poll_context if ring_context can't be used");
-}
+static KT::testcase const tests[] = {
+    KT::expect_success("breathing", []{
+           NF::poll_context     poll;
+           NF::observer_context context(poll);
+           return KT::use(context);
+        }),
+};
 
-nstd::net::io_context::io_context(::std::unique_ptr<::nstd::file::context> ctxt)
-    : d_context(::nstd::utility::move(ctxt))
-{
-}
-
-nstd::net::io_context::io_context(::nstd::file::ring_context::queue_size size)
-#if defined(NSTD_HAS_LINUX_IO_URING)
-    : d_context(new ::nstd::file::ring_context(size))
-#else
-    : d_context(new ::nstd::file::poll_context())
-#endif
-{
-    (void)size;
-}
-
-auto nstd::net::io_context::run_one() -> nstd::net::io_context::count_type
-{
-    return this->d_context->run_one();
-}
-
-auto nstd::net::io_context::run() -> nstd::net::io_context::count_type
-{
-    count_type count{};
-    while (1u == this->d_context->run_one()) {
-        ++count;
-    }
-    return count;
-}
+static KT::add_tests suite("observer_context", ::tests);

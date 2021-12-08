@@ -58,6 +58,7 @@ public:
     using count_type = ::nstd::file::context::count_type;
 
     io_context();
+    explicit io_context(::std::unique_ptr<::nstd::file::context> ctxt);
     explicit io_context(::nstd::file::ring_context::queue_size);
     explicit io_context(::std::size_t);
     io_context(io_context const&) = delete;

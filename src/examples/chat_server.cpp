@@ -24,6 +24,8 @@
 // ----------------------------------------------------------------------------
 
 #include "nstd/net/io_context.hpp"
+#include "nstd/file/observer_context.hpp"
+#include "nstd/file/ring_context.hpp"
 #include "nstd/net/basic_socket_acceptor.hpp"
 #include "nstd/net/basic_stream_socket.hpp"
 #include "nstd/net/ip/basic_endpoint.hpp"
@@ -45,6 +47,7 @@
 #include <utility>
 
 namespace EX = ::nstd::execution;
+namespace NF = ::nstd::file;
 namespace NN = ::nstd::net;
 namespace NI = ::nstd::net::ip;
 namespace TT = ::nstd::type_traits;
@@ -248,7 +251,8 @@ int main()
     clients         cs;
     ::std::cout << "using port=" << port << "\n";
 
-    NN::io_context context(nstd::file::ring_context::queue_size{64});
+    NF::ring_context     ring(nstd::file::ring_context::queue_size{64});
+    NN::io_context       context(::std::make_unique<NF::observer_context>(ring));
     EX::run(context, run_server(cs, context.scheduler(), server));
 
     ::std::cout << "done\n";

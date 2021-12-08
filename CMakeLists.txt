@@ -105,6 +105,7 @@ list(APPEND kuhllib_components
     src/nstd/file/context
     src/nstd/file/descriptor
     src/nstd/file/mapped_memory
+    src/nstd/file/observer_context
     src/nstd/file/open
     src/nstd/file/open_flags
     src/nstd/file/read
