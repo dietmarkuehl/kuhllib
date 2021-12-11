@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.0.0)
 project(kuhllib VERSION 0.1.0)
 include(CheckIncludeFiles)
 include(CheckSymbolExists)
+include(CTest)
 
 if(CMAKE_COMPILER_IS_GNUCXX)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Werror -std=c++2a -fconcepts-diagnostics-depth=4")
