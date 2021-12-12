@@ -237,7 +237,8 @@ namespace {
 namespace {
     auto run_server(clients& cs, NN::io_context::scheduler_type scheduler, socket_acceptor& server) {
         return EX::repeat_effect(
-                NN::async_accept(server, scheduler)
+                  EX::schedule(scheduler)
+                | NN::async_accept(server)
                 | EX::then([&cs, scheduler](::std::error_code, stream_socket client) {
                     ::std::cout << "accepted a new client\n";
                     cs.add_client(::std::move(client), scheduler);

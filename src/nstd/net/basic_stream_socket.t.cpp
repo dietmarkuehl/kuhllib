@@ -72,7 +72,7 @@ static KT::testcase const tests[] = {
             NN::basic_stream_socket<NN::ip::tcp>   client(NI::tcp::v4());
 
             EX::run(context, EX::when_all(
-                NN::async_accept(accept, context.scheduler())
+                NN::async_accept(EX::schedule(context.scheduler()), accept)
                 | EX::then([&server](::std::error_code, NN::basic_stream_socket<NN::ip::tcp>&& stream){
                     server = UT::move(stream);
                     }),
@@ -91,7 +91,7 @@ static KT::testcase const tests[] = {
                 && KT::use(server)
                 && KT::use(client)
                 && KT::use(write)
-                && EX::sender<decltype(NN::async_accept(accept, context.scheduler()))>
+                && EX::sender<decltype(NN::async_accept(EX::schedule(context.scheduler()), accept))>
                 && EX::sender<decltype(write)>
                 ;
         }),

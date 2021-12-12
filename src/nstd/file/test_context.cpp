@@ -51,7 +51,14 @@ NF::test_context::test_context()
 
 auto NF::test_context::do_run_one() -> ::nstd::file::context::count_type
 {
-    return {};
+    if (this->d_ready.empty()) {
+        return 0;
+    }
+
+    auto[rc, flags, cont] = this->d_ready.back();
+    this->d_ready.pop_back();
+    cont->result(rc, flags);
+    return 1;
 }
 
 auto NF::test_context::do_nop(io_base* cont) -> void
@@ -98,5 +105,5 @@ auto NF::test_context::do_open_at(int fd, char const* path, int flags, io_base* 
 
 auto NF::test_context::make_ready(int rc, int flags, ::nstd::file::context::io_base* cont) -> void
 {
-    this->d_ready.emplace_back(rc, flags, cont);
+    this->d_ready.emplace_front(rc, flags, cont);
 }

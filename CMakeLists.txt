@@ -140,6 +140,7 @@ list(APPEND kuhllib_components
     src/nstd/iterator/iterator_traits
     src/nstd/memory/addressof
     src/nstd/memory/uninitialized_default_construct
+    src/nstd/net/async_accept
     src/nstd/net/ip/address
     src/nstd/net/ip/address_v4
     src/nstd/net/ip/address_v6

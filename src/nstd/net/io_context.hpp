@@ -52,12 +52,14 @@ namespace nstd::net {
 class nstd::net::io_context
 {
 private:
-    ::std::unique_ptr<::nstd::file::context> d_context;
+    ::std::unique_ptr<::nstd::file::context> d_manager;
+    ::nstd::file::context*                   d_context;
 
 public:
     using count_type = ::nstd::file::context::count_type;
 
     io_context();
+    explicit io_context(::nstd::file::context* ctxt); // ctxt isn't owned
     explicit io_context(::std::unique_ptr<::nstd::file::context> ctxt);
     explicit io_context(::nstd::file::ring_context::queue_size);
     explicit io_context(::std::size_t);
@@ -67,7 +69,7 @@ public:
     auto operator=(io_context&&) -> io_context& = delete;
 
     class scheduler_type;
-    auto hidden_context() -> ::nstd::file::context* { return this->d_context.get(); }
+    auto hidden_context() -> ::nstd::file::context* { return this->d_context; }
 
     auto scheduler() noexcept -> ::nstd::net::io_context::scheduler_type;
 

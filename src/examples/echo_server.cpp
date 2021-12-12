@@ -167,7 +167,8 @@ namespace
     {
         return
             EX::repeat_effect(
-                NN::async_accept(server, context.scheduler())
+                  EX::schedule(context.scheduler())
+                | NN::async_accept(server)
                 | EX::then([&outstanding, &context](::std::error_code, stream_socket client){
                         ::std::cout << "client.is_open()=" << ::std::boolalpha << client.is_open() << "\n";
                         run_client(outstanding, context, ::std::move(client));

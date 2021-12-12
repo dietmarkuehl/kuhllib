@@ -40,17 +40,26 @@ nstd::net::io_context::io_context()
     assert(this->d_context && "install poll_context if ring_context can't be used");
 }
 
+nstd::net::io_context::io_context(::nstd::file::context* ctxt)
+    : d_manager()
+    , d_context(ctxt)
+{
+    assert(this->d_context && "install poll_context if ring_context can't be used");
+}
+
 nstd::net::io_context::io_context(::std::unique_ptr<::nstd::file::context> ctxt)
-    : d_context(::nstd::utility::move(ctxt))
+    : d_manager(::nstd::utility::move(ctxt))
+    , d_context(this->d_manager.get())
 {
 }
 
 nstd::net::io_context::io_context(::nstd::file::ring_context::queue_size size)
 #if defined(NSTD_HAS_LINUX_IO_URING)
-    : d_context(new ::nstd::file::ring_context(size))
+    : d_manager(new ::nstd::file::ring_context(size))
 #else
-    : d_context(new ::nstd::file::poll_context())
+    : d_manager(new ::nstd::file::poll_context())
 #endif
+    , d_context(this->d_manager.get())
 {
     (void)size;
 }

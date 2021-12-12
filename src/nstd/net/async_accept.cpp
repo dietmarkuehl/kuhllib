@@ -1,4 +1,4 @@
-// nstd/net/basic_socket_acceptor.cpp                                 -*-C++-*-
+// nstd/net/async_accept.cpp                                          -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,10 +23,10 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/net/basic_socket_acceptor.hpp"
+#include <nstd/net/async_accept.hpp>
 
 // ----------------------------------------------------------------------------
 
 namespace nstd::net {
-    int basic_socket_acceptor_dummy = 0;
+    int async_accept_dummy = 0;
 }

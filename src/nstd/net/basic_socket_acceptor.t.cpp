@@ -31,6 +31,7 @@
 #include "nstd/net/io_context.hpp"
 #include "nstd/execution/run.hpp"
 #include "nstd/execution/then.hpp"
+#include "nstd/execution/schedule.hpp"
 #include "nstd/execution/sender.hpp"
 #include "nstd/execution/when_all.hpp"
 #include "nstd/utility/move.hpp"
@@ -102,12 +103,12 @@ static KT::testcase const tests[] = {
             NN::basic_socket_acceptor<NN::ip::tcp> server(ep);
             NN::basic_stream_socket<NN::ip::tcp>   client(NI::tcp::v4());
             EX::run(context, EX::when_all(
-                NN::async_accept(server, context.scheduler()),
+                NN::async_accept(EX::schedule(context.scheduler()), server),
                 NN::async_connect(client, ep, context.scheduler())
                 ));
             return KT::use(server)
                 && KT::use(client)
-                && EX::sender<decltype(NN::async_accept(server, context.scheduler()))>
+                && EX::sender<decltype(NN::async_accept(EX::schedule(context.scheduler()), server))>
                 ;
         }),
 };
