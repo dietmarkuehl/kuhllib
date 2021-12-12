@@ -39,8 +39,9 @@ namespace nstd::container {
 // ----------------------------------------------------------------------------
 
 template <typename T>
-struct nstd::container::intrusive_list_node
+class nstd::container::intrusive_list_node
 {
+public:
     T* d_next;
     T* d_prev;
 };

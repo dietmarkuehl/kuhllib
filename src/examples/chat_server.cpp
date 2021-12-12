@@ -120,7 +120,7 @@ namespace {
             {
                 auto end(::std::end(range));
                 for (auto it(::std::begin(range)); it != end; ++it) {
-                    this->d_states.emplace_back(fun(it), receiver<Receiver>(this));
+                    this->d_states.emplace_back(fun(it), receiver<Receiver>{this});
                 }
             }
             friend auto tag_invoke(EX::start_t, state& self) noexcept -> void {
@@ -165,6 +165,12 @@ namespace {
     {
     private:
         struct client {
+            client(stream_socket&& socket, bool done, ::std::size_t users)
+                : first(::std::move(socket))
+                , second(done)
+                , users(users)
+            {
+            }
             stream_socket first;
             bool          second;
             ::std::size_t users;
