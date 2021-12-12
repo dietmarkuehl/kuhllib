@@ -114,6 +114,7 @@ list(APPEND kuhllib_components
     src/nstd/file/poll_context
     src/nstd/file/ring
     src/nstd/file/ring_context
+    src/nstd/file/test_context
     src/nstd/functional/bind
     src/nstd/functional/equal_to
     src/nstd/functional/invoke
