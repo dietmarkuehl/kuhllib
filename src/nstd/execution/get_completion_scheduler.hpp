@@ -47,7 +47,7 @@ namespace nstd::execution {
             requires requires(get_completion_scheduler_t<CPO> const& cpo, Sender&& sender) {
                 { ::nstd::tag_invoke(cpo, ::nstd::utility::as_const(sender)) } noexcept -> ::nstd::execution::scheduler;
             }
-        auto operator()(Sender&& sender) const
+        auto operator()(Sender&& sender) const noexcept
         {
             return ::nstd::tag_invoke(*this, ::nstd::utility::as_const(sender));
         }

@@ -157,6 +157,13 @@ namespace nstd::execution {
                                                       ::nstd::utility::forward<Receiver>(r)
                                                       });
             }
+            template <typename Tag>
+                requires requires {
+                    { ::nstd::execution::get_completion_scheduler<Tag>(::nstd::type_traits::declval<Sender>()) } noexcept -> ::nstd::execution::scheduler;
+                }
+            friend auto tag_invoke(::nstd::execution::get_completion_scheduler_t<Tag> const&, lazy_then_sender const& self) noexcept {
+                return ::nstd::execution::get_completion_scheduler<Tag>(self.d_sender);
+            }
         };
 
         template <::nstd::execution::sender Sender, typename Fun>

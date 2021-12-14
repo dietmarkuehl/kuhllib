@@ -72,25 +72,30 @@ static KT::testcase const tests[] = {
     KT::expect_success("breathing", []{
             NF::test_context test_context;
             NN::io_context   context(&test_context);
-            test_context.on_accept = [&test_context](int, ::sockaddr*, ::socklen_t*, int, ::nstd::file::context::io_base* cont){
-                ::std::cout << "on_accept\n";
+            test_context.on_accept = [&test_context](int, ::sockaddr*, ::socklen_t*, int, NF::context::io_base* cont){
                 test_context.make_ready(1, 0, cont);
             };
+            test_context.on_nop = [&test_context](NF::context::io_base* cont){
+                test_context.make_ready(0, 0, cont);
+            };
 
+            bool predecessor_called(false);
+            bool completion_called(false);
             TD::acceptor acceptor;
             auto accept
                 = EX::schedule(context.scheduler())
+                | EX::then([&]{ predecessor_called = true; })
                 | NN::async_accept(acceptor)
-                | EX::then([](auto, TD::stream){ ::std::cout << "exepted!\n"; })
+                | EX::then([&](auto, TD::stream){ completion_called = true; })
                 ;
-            ::std::cout << "created accept\n";
             EX::start_detached(accept);
-            ::std::cout << "started accept\n";
-            auto rc(context.run_one());
-            ::std::cout << "run one=" << rc << "\n";
+            auto rc(context.run());
             return true
+                && KT::use(acceptor)
                 && KT::use(accept)
-                && rc == 1
+                && rc == 2
+                && predecessor_called
+                && completion_called
                 ;
         }),
 };
