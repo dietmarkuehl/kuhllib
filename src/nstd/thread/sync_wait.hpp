@@ -57,7 +57,7 @@ namespace nstd::hidden_names {
     template <::nstd::execution::typed_sender S>
     using sync_wait_type = ::std::optional<
             typename ::nstd::execution::sender_traits<::nstd::type_traits::remove_cvref_t<S>>
-                ::template value_types<::std::variant, ::nstd::hidden_names::type_identity_or_monostate_t>
+                ::template value_types<::nstd::hidden_names::type_identity_or_monostate_t, ::std::variant>
         >;
 }
 namespace nstd::this_thread {

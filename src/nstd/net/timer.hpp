@@ -205,7 +205,7 @@ static_assert(::nstd::execution::operation_state<
 template <typename Clock, typename Traits>
 struct nstd::net::async_wait_t::sender
 {
-    template <template <typename...> class V, template <typename...> class T>
+    template <template <typename...> class T, template <typename...> class V>
     using value_types = V<T<::std::error_code>>;
     template <template <typename...> class V>
     using error_types = V<::std::exception_ptr>;

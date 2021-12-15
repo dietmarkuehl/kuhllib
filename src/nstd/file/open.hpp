@@ -68,7 +68,7 @@ template <typename Sender>
 struct nstd::file::open_sender
     : ::nstd::execution::sender_base
 {
-    template <template <typename...> class V, template <typename...> class T>
+    template <template <typename...> class T, template <typename...> class V>
     using value_types = V<T<::nstd::file::descriptor>>;
     template <template <typename...> class V>
     using error_types = V<::std::exception_ptr, std::error_code>;

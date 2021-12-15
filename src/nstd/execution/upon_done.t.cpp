@@ -1,4 +1,4 @@
-// nstd/sender/just_done.hpp                                          -*-C++-*-
+// nstd/execution/upon_done.t.cpp                                     -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,58 +23,51 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_SENDER_JUST_DONE
-#define INCLUDED_NSTD_SENDER_JUST_DONE
-
-#include "nstd/execution/sender_base.hpp"
-#include "nstd/execution/connect.hpp"
-#include "nstd/execution/set_done.hpp"
-#include "nstd/execution/start.hpp"
-#include "nstd/type_traits/remove_cvref.hpp"
+#include "nstd/execution/upon_done.hpp"
+#include "nstd/execution/just_done.hpp"
+#include "nstd/execution/then.hpp"
+#include "nstd/thread/sync_wait.hpp"
 #include "nstd/utility/move.hpp"
-#include "nstd/utility/forward.hpp"
-#include <exception>
+#include "kuhl/test.hpp"
+
+namespace EX = ::nstd::execution;
+namespace TT = ::nstd::this_thread;
+namespace UT = ::nstd::utility;
+namespace KT = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::net {
-    class just_done;
-    template <typename Receiver> struct just_done_state;
-}
+static KT::testcase const tests[] = {
+    KT::expect_success("breathing", []{
+            bool called{false};
+            auto just = EX::just_done();
+            auto sender = EX::upon_done(UT::move(just), [&called]{ called = true; return true; });
+            auto rc = TT::sync_wait(UT::move(sender));
 
-// ----------------------------------------------------------------------------
+            return KT::use(sender)
+                && KT::use(rc)
+                && called
+                ;
+        }),
+    KT::expect_success("pipe", []{
+            bool first_then_called{false};
+            bool second_then_called{false};
+            bool upon_done_called{false};
+            auto sender
+                = EX::just_done()
+                | EX::then([&first_then_called]{ first_then_called = true; return true; })
+                | EX::upon_done([&upon_done_called]{ upon_done_called = true; return true; })
+                | EX::then([&second_then_called](auto&&...){ second_then_called = true; return true; })
+                ;
+            auto rc = TT::sync_wait(UT::move(sender));
 
-template <typename Receiver>
-struct nstd::net::just_done_state
-{
-    ::nstd::type_traits::remove_cvref_t<Receiver> d_receiver;
-
-    friend auto tag_invoke(::nstd::execution::start_t, just_done_state& state) noexcept -> void {
-        ::nstd::execution::set_done(::nstd::utility::move(state.d_receiver));
-    }
+            return KT::use(sender)
+                && KT::use(rc)
+                && not first_then_called
+                && second_then_called
+                && upon_done_called
+                ;
+        }),
 };
 
-// ----------------------------------------------------------------------------
-
-class nstd::net::just_done
-    : public ::nstd::execution::piped_sender_base
-{
-public:
-    template <template <typename...> class T, template <typename...> class V>
-    using value_types = V<T<int>>;
-    template <template <typename...> class V>
-    using error_types = V<::std::exception_ptr>;
-    static constexpr bool sends_done = true;
-
-    template <typename Receiver>
-    friend auto tag_invoke(::nstd::execution::connect_t, just_done&&, Receiver&& receiver)
-         -> ::nstd::net::just_done_state<Receiver> {
-        return ::nstd::net::just_done_state<Receiver>{
-            ::nstd::utility::forward<Receiver>(receiver)
-            };
-    }
-};
-
-// ----------------------------------------------------------------------------
-
-#endif
+static KT::add_tests suite("just_done", ::tests);

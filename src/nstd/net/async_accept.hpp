@@ -137,7 +137,7 @@ struct nstd::net::async_accept_t::receiver
 template <typename Socket, typename Sender>
 struct nstd::net::async_accept_t::sender
 {
-    template <template <typename...> class V, template <typename...> class T>
+    template <template <typename...> class T, template <typename...> class V>
     using value_types = V<T<::std::error_code, Socket>>;
     template <template <typename...> class V>
     using error_types = V<::std::exception_ptr>;

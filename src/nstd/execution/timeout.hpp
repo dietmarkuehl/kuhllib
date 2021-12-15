@@ -76,7 +76,7 @@ struct nstd::execution::timeout_t::state_base
 {
     ::nstd::type_traits::remove_cvref_t<Receiver> d_receiver;
     ::nstd::stop_token::in_place_stop_source      d_source;
-    ::std::optional<typename Sender::template value_types<::std::variant, ::std::tuple>> d_values;
+    ::std::optional<typename Sender::template value_types<::std::tuple, ::std::variant>> d_values;
     ::std::optional<typename Sender::template error_types<::std::variant>>               d_errors;
     ::std::atomic<unsigned> d_done{0u};
     auto timer_done() -> void {
@@ -189,8 +189,8 @@ struct nstd::execution::timeout_t::state
 template <::nstd::execution::sender Sender, ::nstd::execution::sender Timer>
 struct nstd::execution::timeout_t::sender
 {
-    template <template <typename...> class V, template <typename...> class T>
-    using value_types = typename Sender::template value_types<V, T>;
+    template <template <typename...> class T, template <typename...> class V>
+    using value_types = typename Sender::template value_types<T, V>;
     template <template <typename...> class V>
     using error_types = typename Sender::template error_types<V>; //-dk:TODO merge with own errors
     static constexpr bool sends_done = true;

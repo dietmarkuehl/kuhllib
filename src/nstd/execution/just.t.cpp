@@ -172,7 +172,7 @@ static KT::testcase const tests[] = {
             return EX::typed_sender<decltype(EX::just(true, 0))>;
         }),
     KT::expect_success("just(true, 0)::value_types is V<T<bool, int>>", []{
-            return KT::type<decltype(EX::just(true, 0))::value_types<TD::var, TD::tup>>
+            return KT::type<decltype(EX::just(true, 0))::value_types<TD::tup, TD::var>>
                 == KT::type<TD::var<TD::tup<bool, int>>>;
         }),
     KT::expect_success("just(true, 0)::error_types is V<>", []{

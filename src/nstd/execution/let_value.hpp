@@ -106,12 +106,12 @@ struct nstd::execution::let_value_t::state
 {
     template <typename... A>
     using value_tuple = ::std::tuple<::nstd::type_traits::remove_cvref_t<A>...>;
-    using upstream_result_type = typename Sender::template value_types<::std::variant, value_tuple>;
+    using upstream_result_type = typename Sender::template value_types<value_tuple, ::std::variant>;
 
     template <typename ... T>
     using call_type = decltype(::nstd::type_traits::declval<Function>()(::nstd::type_traits::declval<T>()...));
     using downstream_sender = 
-        typename Sender::template value_types<::nstd::type_traits::type_identity_t, call_type>;
+        typename Sender::template value_types<call_type, ::nstd::type_traits::type_identity_t>;
 
     struct upstream_receiver {
         state* d_state;
@@ -191,10 +191,10 @@ struct nstd::execution::let_value_t::sender
     template <typename ... T>
     using call_type = decltype(::nstd::type_traits::declval<Function>()(::nstd::type_traits::declval<T>()...));
     using returned_sender = 
-        typename Sender::template value_types<::nstd::type_traits::type_identity_t, call_type>;
+        typename Sender::template value_types<call_type, ::nstd::type_traits::type_identity_t>;
 
-    template <template <typename...> class V, template <typename...> class T>
-    using value_types = typename returned_sender::template value_types<V, T>;
+    template <template <typename...> class T, template <typename...> class V>
+    using value_types = typename returned_sender::template value_types<T, V>;
     template <template <typename...> class V>
     using error_types = V<::std::exception_ptr>;
     static constexpr bool sends_done = true;

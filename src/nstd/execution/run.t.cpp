@@ -67,7 +67,7 @@ namespace test_declarations {
         class sender
         {
         public:
-            template <template <typename...> class V, template <typename...> class T>
+            template <template <typename...> class T, template <typename...> class V>
             using value_types = V<T<>>;
             template <template <typename...> class V>
             using error_types = V<>;

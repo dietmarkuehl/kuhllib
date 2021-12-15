@@ -112,7 +112,7 @@ namespace nstd::execution {
         };
         template <::nstd::execution::sender Sender, typename Predicate>
         struct sender {
-            template <template <typename...> class V, template <typename...> class T>
+            template <template <typename...> class T, template <typename...> class V>
             using value_types = V<T<>>;
             template <template <typename...> class V>
             using error_types = V<::std::exception_ptr>;

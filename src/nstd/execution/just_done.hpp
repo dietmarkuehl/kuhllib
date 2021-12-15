@@ -1,4 +1,4 @@
-// nstd/sender/just_done.hpp                                          -*-C++-*-
+// nstd/execution/just_done.hpp                                       -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,57 +23,61 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_SENDER_JUST_DONE
-#define INCLUDED_NSTD_SENDER_JUST_DONE
+#ifndef INCLUDED_NSTD_EXECUTION_JUST_DONE
+#define INCLUDED_NSTD_EXECUTION_JUST_DONE
 
-#include "nstd/execution/sender_base.hpp"
 #include "nstd/execution/connect.hpp"
+#include "nstd/execution/receiver.hpp"
 #include "nstd/execution/set_done.hpp"
 #include "nstd/execution/start.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
-#include "nstd/utility/move.hpp"
 #include "nstd/utility/forward.hpp"
-#include <exception>
+#include "nstd/utility/move.hpp"
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::net {
-    class just_done;
-    template <typename Receiver> struct just_done_state;
+namespace nstd::execution {
+    inline constexpr struct just_done_t {
+        template <::nstd::execution::receiver> struct state;
+        struct sender;
+        inline auto operator()() const noexcept -> sender;
+    } just_done;
 }
 
 // ----------------------------------------------------------------------------
 
-template <typename Receiver>
-struct nstd::net::just_done_state
+template <::nstd::execution::receiver Receiver>
+struct nstd::execution::just_done_t::state
 {
-    ::nstd::type_traits::remove_cvref_t<Receiver> d_receiver;
-
-    friend auto tag_invoke(::nstd::execution::start_t, just_done_state& state) noexcept -> void {
-        ::nstd::execution::set_done(::nstd::utility::move(state.d_receiver));
+    Receiver d_receiver;
+    friend auto tag_invoke(::nstd::execution::start_t, state& self) noexcept -> void {
+        ::nstd::execution::set_done(::nstd::utility::move(self.d_receiver));
     }
 };
 
 // ----------------------------------------------------------------------------
 
-class nstd::net::just_done
-    : public ::nstd::execution::piped_sender_base
-{
-public:
+struct nstd::execution::just_done_t::sender {
     template <template <typename...> class T, template <typename...> class V>
-    using value_types = V<T<int>>;
+    using value_types = V<T<>>;
     template <template <typename...> class V>
-    using error_types = V<::std::exception_ptr>;
-    static constexpr bool sends_done = true;
+    using error_types = V<>;
+    static constexpr bool sends_done{true};
 
-    template <typename Receiver>
-    friend auto tag_invoke(::nstd::execution::connect_t, just_done&&, Receiver&& receiver)
-         -> ::nstd::net::just_done_state<Receiver> {
-        return ::nstd::net::just_done_state<Receiver>{
-            ::nstd::utility::forward<Receiver>(receiver)
-            };
+    template <::nstd::execution::receiver Receiver>
+    friend auto tag_invoke(::nstd::execution::connect_t, sender const&, Receiver&& receiver)
+        -> ::nstd::execution::just_done_t::state<::nstd::type_traits::remove_cvref_t<Receiver>>
+    {
+        return {::nstd::utility::forward<Receiver>(receiver)};
     }
 };
+
+// ----------------------------------------------------------------------------
+
+inline auto nstd::execution::just_done_t::operator()() const noexcept -> sender
+{
+    return {};
+}
 
 // ----------------------------------------------------------------------------
 

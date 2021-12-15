@@ -98,6 +98,37 @@ static KT::testcase const tests[] = {
                 && completion_called
                 ;
         }),
+#if 0
+    KT::expect_success("cancelation", []{
+        {
+            NF::test_context test_context;
+            NN::io_context   context(&test_context);
+            test_context.on_accept = [&test_context](int, ::sockaddr*, ::socklen_t*, int, NF::context::io_base* cont){
+                ::std::cout << "on_accept\n";
+            };
+            test_context.on_nop = [&test_context](NF::context::io_base* cont){
+                test_context.make_ready(0, 0, cont);
+            };
+
+            TD::acceptor acceptor;
+            auto accept
+                = EX::schedule(context.scheduler())
+                | EX::then([&]{ predecessor_called = true; })
+                | NN::async_accept(acceptor)
+                | EX::then([&](auto, TD::stream){ completion_called = true; })
+                | EX::on_done
+                ;
+            EX::start_detached(accept);
+            auto rc(context.run());
+            return true
+                && KT::use(acceptor)
+                && KT::use(accept)
+                && rc == 2
+                && predecessor_called
+                && completion_called
+                ;
+        }),
+#endif
 };
 
 static KT::add_tests suite("async_accept", ::tests);

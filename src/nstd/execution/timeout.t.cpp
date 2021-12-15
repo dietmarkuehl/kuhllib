@@ -55,7 +55,7 @@ namespace test_declarations {
     namespace {
         struct never
         {
-            template <template <typename...> class V, template <typename...> class T>
+            template <template <typename...> class T, template <typename...> class V>
             using value_types = V<T<>>;
             template <template <typename...> class V>
             using error_types = V<::std::exception_ptr>;

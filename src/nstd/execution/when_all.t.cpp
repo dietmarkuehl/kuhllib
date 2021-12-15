@@ -61,7 +61,7 @@ static KT::testcase const tests[] = {
 
             return KT::use(sender)
                 && EX::sender<Sender>
-                && KT::type<Sender::value_types<TD::variant, TD::tuple>>
+                && KT::type<Sender::value_types<TD::tuple, TD::variant>>
                    == KT::type<TD::variant<TD::tuple<>>>
                 && called
                 ;

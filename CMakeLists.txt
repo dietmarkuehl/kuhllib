@@ -5,10 +5,10 @@ include(CheckSymbolExists)
 include(CTest)
 
 if(CMAKE_COMPILER_IS_GNUCXX)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Werror -std=c++2a -fconcepts-diagnostics-depth=4")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -W -Wall -Werror -std=c++2a -fconcepts-diagnostics-depth=4")
 endif()
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Werror -std=c++20")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -W -Wall -Werror -std=c++20")
 endif()
 
 CHECK_INCLUDE_FILES(linux/io_uring.h NSTD_HAS_LINUX_IO_URING)
@@ -67,6 +67,7 @@ list(APPEND kuhllib_components
     src/nstd/execution/get_stop_token
     src/nstd/execution/is_execution_policy
     src/nstd/execution/just
+    src/nstd/execution/just_done
     src/nstd/execution/lazy_then
     src/nstd/execution/let_value
     src/nstd/execution/operation_state
@@ -93,6 +94,7 @@ list(APPEND kuhllib_components
     src/nstd/execution/then
     src/nstd/execution/timeout
     src/nstd/execution/typed_sender
+    src/nstd/execution/upon_done
     src/nstd/execution/when_all
     src/nstd/executor/associated_allocator
     src/nstd/executor/associated_executor

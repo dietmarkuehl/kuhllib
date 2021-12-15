@@ -167,7 +167,7 @@ struct nstd::net::async_read_some_t::state
 template <typename Scheduler, typename MBS>
 struct nstd::net::async_read_some_t::sender
 {
-    template <template <typename...> class V, template <typename...> class T>
+    template <template <typename...> class T, template <typename...> class V>
     using value_types = V<T<int>>;
     template <template <typename...> class V>
     using error_types = V<::std::exception_ptr>;
@@ -250,7 +250,7 @@ struct nstd::net::async_write_some_t::state
 template <typename Scheduler, typename CBS>
 struct nstd::net::async_write_some_t::sender
 {
-    template <template <typename...> class V, template <typename...> class T>
+    template <template <typename...> class T, template <typename...> class V>
     using value_types = V<T<int>>;
     template <template <typename...> class V>
     using error_types = V<::std::exception_ptr>;

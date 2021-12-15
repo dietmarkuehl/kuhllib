@@ -66,7 +66,7 @@ namespace test_declarations {
 
         template <bool Eager, bool HasScheduler>
         struct scheduled_sender {
-            template <template <typename...> class V, template <typename...> class T>
+            template <template <typename...> class T, template <typename...> class V>
             using value_types = V<T<int>>;
             template <template <typename...> class V>
             using error_types = V<::std::exception_ptr>;
@@ -84,7 +84,7 @@ namespace test_declarations {
 
         template <int>
         struct lazy_sender {
-            template <template <typename...> class V, template <typename...> class T>
+            template <template <typename...> class T, template <typename...> class V>
             using value_types = V<T<int>>;
             template <template <typename...> class V>
             using error_types = V<::std::exception_ptr>;
@@ -103,7 +103,7 @@ namespace test_declarations {
 
         template <int>
         struct eager_sender {
-            template <template <typename...> class V, template <typename...> class T>
+            template <template <typename...> class T, template <typename...> class V>
             using value_types = V<T<int>>;
             template <template <typename...> class V>
             using error_types = V<::std::exception_ptr>;
@@ -209,7 +209,7 @@ static KT::testcase const tests[] = {
             return KT::use(sender)
                 && EX::sender<decltype(sender)>
                 && EX::typed_sender<decltype(sender)>
-                && KT::type<decltype(sender)::value_types<TD::V, TD::T>> == KT::type<TD::V<TD::T<int>>>
+                && KT::type<decltype(sender)::value_types<TD::T, TD::V>> == KT::type<TD::V<TD::T<int>>>
                 && ::std::get<0>(*res) == 12
                 ;
         }),

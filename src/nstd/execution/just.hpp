@@ -47,7 +47,7 @@ namespace nstd::hidden_names {
     struct just_sender
         : ::nstd::execution::piped_sender_base
     {
-        template <template <typename...> class V, template <typename...> class T>
+        template <template <typename...> class T, template <typename...> class V>
         using value_types = V<T<A...>>;
         template <template <typename...> class V>
         using error_types = V<::std::exception_ptr>;

@@ -38,7 +38,7 @@ namespace test_declarations {
         struct no_types {};
 
         struct sender {
-            template <template <typename...> class V, template <typename...> class T>
+            template <template <typename...> class T, template <typename...> class V>
             using value_types = V<T<>>;
             template <template <typename...> class V>
             using error_types = V<int>;
@@ -52,21 +52,21 @@ namespace test_declarations {
         };
 
         struct wrong_value_types {
-            template <typename V, template <typename...> class T>
-            using value_types = T<V>;
+            template <typename T, template <typename...> class V>
+            using value_types = V<T>;
             template <template <typename...> class V>
             using error_types = V<int>;
             static constexpr bool sends_done = true;
         };
 
         struct no_error_types {
-            template <template <typename...> class V, template <typename...> class T>
+            template <template <typename...> class T, template <typename...> class V>
             using value_types = V<T<>>;
             static constexpr bool sends_done = true;
         };
 
         struct wrong_error_types {
-            template <template <typename...> class V, template <typename...> class T>
+            template <template <typename...> class T, template <typename...> class V>
             using value_types = V<T<>>;
             template <typename V>
             using error_types = V;
@@ -74,14 +74,14 @@ namespace test_declarations {
         };
 
         struct no_sends_done {
-            template <template <typename...> class V, template <typename...> class T>
+            template <template <typename...> class T, template <typename...> class V>
             using value_types = V<T<>>;
             template <template <typename...> class V>
             using error_types = V<int>;
         };
 
         struct non_static_sends_done {
-            template <template <typename...> class V, template <typename...> class T>
+            template <template <typename...> class T, template <typename...> class V>
             using value_types = V<T<>>;
             template <template <typename...> class V>
             using error_types = V<int>;
@@ -89,7 +89,7 @@ namespace test_declarations {
         };
 
         struct non_constexpr_sends_done {
-            template <template <typename...> class V, template <typename...> class T>
+            template <template <typename...> class T, template <typename...> class V>
             using value_types = V<T<>>;
             template <template <typename...> class V>
             using error_types = V<int>;
@@ -97,7 +97,7 @@ namespace test_declarations {
         };
 
         struct non_boolean_sends_done {
-            template <template <typename...> class V, template <typename...> class T>
+            template <template <typename...> class T, template <typename...> class V>
             using value_types = V<T<>>;
             template <template <typename...> class V>
             using error_types = V<int>;

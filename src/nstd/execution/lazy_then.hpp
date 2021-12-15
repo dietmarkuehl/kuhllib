@@ -114,24 +114,22 @@ namespace nstd::execution {
         struct lazy_then_sender
             : ::nstd::execution::piped_sender_base 
         {
-            template <template <typename...> class V, template <typename...> class T>
-            using xvalue_types
-                      = typename Sender::template value_types<V, ::nstd::hidden_names::invoked_type<Fun, T>::template type>;
-
             using fun_type
-                    = typename Sender::template value_types<::nstd::type_traits::type_identity_t,
-                                                            ::nstd::hidden_names::invoked_type<Fun, ::nstd::type_traits::type_identity_t>::template type>;
+                    = typename Sender::template value_types<
+                        ::nstd::hidden_names::invoked_type<Fun, ::nstd::type_traits::type_identity_t>::template type,
+                        ::nstd::type_traits::type_identity_t
+                        >;
 
 
-            template <bool, template <typename...> class V, template <typename...> class T>
+            template <bool, template <typename...> class T, template <typename...> class V>
             struct make_value_types { using type = V<T<fun_type>>; };
-            template <template <typename...> class V, template <typename...> class T>
-            struct make_value_types<true, V, T> { using type = V<T<>>; };
-            template <bool C, template <typename...> class V, template <typename...> class T>
-            using make_value_types_t = typename make_value_types<C, V, T>::type;
+            template <template <typename...> class T, template <typename...> class V>
+            struct make_value_types<true, T, V> { using type = V<T<>>; };
+            template <bool C, template <typename...> class T, template <typename...> class V>
+            using make_value_types_t = typename make_value_types<C, T, V>::type;
 
-            template <template <typename...> class V, template <typename...> class T>
-            using value_types = make_value_types_t<::nstd::type_traits::is_void_v<fun_type>, V, T>;
+            template <template <typename...> class T, template <typename...> class V>
+            using value_types = make_value_types_t<::nstd::type_traits::is_void_v<fun_type>, T, V>;
 
             template <template <typename...> class V>
             using error_types = V<::std::exception_ptr>; //-dk:TODO merge with Sender errors

@@ -155,7 +155,7 @@ struct nstd::net::async_connect_t::state
 template <typename Endpoint>
 struct nstd::net::async_connect_t::sender
 {
-    template <template <typename...> class V, template <typename...> class T>
+    template <template <typename...> class T, template <typename...> class V>
     using value_types = V<T<::std::error_code>>;
     template <template <typename...> class V>
     using error_types = V<::std::exception_ptr>;

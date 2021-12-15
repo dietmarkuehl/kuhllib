@@ -58,13 +58,13 @@ namespace test_declarations {
     };
     struct typed_sender_missing_error_types
     {
-        template <template <typename...> class Variant, template <typename...> class Tuple>
+        template <template <typename...> class Tuple, template <typename...> class Variant>
         using value_types = Variant<Tuple<bool>>;
         static constexpr bool sends_done = true;
     };
     struct typed_sender_missing_sends_done
     {
-        template <template <typename...> class Variant, template <typename...> class Tuple>
+        template <template <typename...> class Tuple, template <typename...> class Variant>
         using value_types = Variant<Tuple<bool>>;
         template <template <typename...> class Tuple>
         using error_types = Tuple<int>;
@@ -106,8 +106,8 @@ static KT::testcase const tests[] = {
         }),
     KT::expect_success("a typed sender has sender_traits", []{
             return TD::has_sender_traits<TD::typed_sender>
-                && KT::type<EX::sender_traits<TD::typed_sender>::value_types<::std::variant, ::std::tuple>>
-                    == KT::type<TD::typed_sender::value_types<::std::variant, ::std::tuple>>
+                && KT::type<EX::sender_traits<TD::typed_sender>::value_types<::std::tuple, ::std::variant>>
+                    == KT::type<TD::typed_sender::value_types<::std::tuple, ::std::variant>>
                 && KT::type<EX::sender_traits<TD::typed_sender>::error_types<::std::tuple>>
                     == KT::type<TD::typed_sender::error_types<::std::tuple>>
                 && sizeof(::nstd::type_traits::bool_constant<EX::sender_traits<TD::typed_sender>::sends_done>)
@@ -123,8 +123,8 @@ static KT::testcase const tests[] = {
         }),
     KT::expect_success("a typed sender derived execution::sender_base has sender_traits", []{
             return TD::has_sender_traits<TD::derived_typed_sender>
-                && KT::type<EX::sender_traits<TD::derived_typed_sender>::value_types<::std::variant, ::std::tuple>>
-                    == KT::type<TD::derived_typed_sender::value_types<::std::variant, ::std::tuple>>
+                && KT::type<EX::sender_traits<TD::derived_typed_sender>::value_types<::std::tuple, ::std::variant>>
+                    == KT::type<TD::derived_typed_sender::value_types<::std::tuple, ::std::variant>>
                 && KT::type<EX::sender_traits<TD::derived_typed_sender>::error_types<::std::tuple>>
                     == KT::type<TD::derived_typed_sender::error_types<::std::tuple>>
                 && sizeof(::nstd::type_traits::bool_constant<EX::sender_traits<TD::derived_typed_sender>::sends_done>)

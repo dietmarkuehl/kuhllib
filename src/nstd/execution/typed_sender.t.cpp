@@ -37,7 +37,7 @@ namespace KT = ::kuhl::test;
 namespace test_declarations {
     namespace {
         struct typed_sender {
-            template <template <typename...> class V, template <typename...> class T>
+            template <template <typename...> class T, template <typename...> class V>
             using value_types = V<T<int>, T<>>;
             template <template <typename...> class V>
             using error_types = V<int>;

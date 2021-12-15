@@ -1,4 +1,4 @@
-// nstd/sender/just_done.hpp                                          -*-C++-*-
+// nstd/execution/just_done.t.cpp                                     -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,58 +23,39 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_SENDER_JUST_DONE
-#define INCLUDED_NSTD_SENDER_JUST_DONE
-
-#include "nstd/execution/sender_base.hpp"
-#include "nstd/execution/connect.hpp"
-#include "nstd/execution/set_done.hpp"
-#include "nstd/execution/start.hpp"
-#include "nstd/type_traits/remove_cvref.hpp"
+#include "nstd/execution/just_done.hpp"
+#include "nstd/execution/then.hpp"
+#include "nstd/thread/sync_wait.hpp"
 #include "nstd/utility/move.hpp"
-#include "nstd/utility/forward.hpp"
-#include <exception>
+#include <optional>
+#include <tuple>
+#include <variant>
+#include "kuhl/test.hpp"
+
+namespace EX = ::nstd::execution;
+namespace TT = ::nstd::this_thread;
+namespace UT = ::nstd::utility;
+namespace KT = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::net {
-    class just_done;
-    template <typename Receiver> struct just_done_state;
-}
-
-// ----------------------------------------------------------------------------
-
-template <typename Receiver>
-struct nstd::net::just_done_state
-{
-    ::nstd::type_traits::remove_cvref_t<Receiver> d_receiver;
-
-    friend auto tag_invoke(::nstd::execution::start_t, just_done_state& state) noexcept -> void {
-        ::nstd::execution::set_done(::nstd::utility::move(state.d_receiver));
-    }
+static KT::testcase const tests[] = {
+    KT::expect_success("breathing", []{
+            auto sender{EX::just_done()};
+            auto rc{TT::sync_wait(UT::move(sender))};
+            return KT::type<decltype(rc)> == KT::type<::std::optional<::std::variant<::std::monostate>>>
+                && !rc
+                ;
+        }),
+    KT::expect_success("just_done + then", []{
+            auto called{false};
+            auto sender{EX::just_done() | EX::then([&called]{ called = true; })};
+            auto rc{TT::sync_wait(UT::move(sender))};
+            return KT::type<decltype(rc)> == KT::type<::std::optional<::std::variant<::std::monostate>>>
+                && !rc
+                && !called
+                ;
+        }),
 };
 
-// ----------------------------------------------------------------------------
-
-class nstd::net::just_done
-    : public ::nstd::execution::piped_sender_base
-{
-public:
-    template <template <typename...> class T, template <typename...> class V>
-    using value_types = V<T<int>>;
-    template <template <typename...> class V>
-    using error_types = V<::std::exception_ptr>;
-    static constexpr bool sends_done = true;
-
-    template <typename Receiver>
-    friend auto tag_invoke(::nstd::execution::connect_t, just_done&&, Receiver&& receiver)
-         -> ::nstd::net::just_done_state<Receiver> {
-        return ::nstd::net::just_done_state<Receiver>{
-            ::nstd::utility::forward<Receiver>(receiver)
-            };
-    }
-};
-
-// ----------------------------------------------------------------------------
-
-#endif
+static KT::add_tests suite("just_done", ::tests);

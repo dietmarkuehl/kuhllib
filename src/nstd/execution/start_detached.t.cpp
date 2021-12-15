@@ -71,7 +71,7 @@ namespace test_declarations {
                 friend auto tag_invoke(EX::start_t, state&) noexcept {}
             };
             struct sender {
-                template <template <typename...> class V, template <typename...> class T>
+                template <template <typename...> class T, template <typename...> class V>
                 using value_types = V<T<>>;
                 template <template <typename...> class V>
                 using error_types = V<::std::exception_ptr>;
@@ -94,7 +94,7 @@ namespace test_declarations {
 
         struct sender
         {
-            template <template <typename...> class V, template <typename...> class T>
+            template <template <typename...> class T, template <typename...> class V>
             using value_types = V<T<>>;
             template <template <typename...> class V>
             using error_types = V<::std::exception_ptr>;
@@ -114,7 +114,7 @@ namespace test_declarations {
         template <typename RC>
         struct detached_sender
         {
-            template <template <typename...> class V, template <typename...> class T>
+            template <template <typename...> class T, template <typename...> class V>
             using value_types = V<T<>>;
             template <template <typename...> class V>
             using error_types = V<::std::exception_ptr>;
@@ -143,7 +143,7 @@ namespace test_declarations {
         template <typename RC>
         struct completion_sender
         {
-            template <template <typename...> class V, template <typename...> class T>
+            template <template <typename...> class T, template <typename...> class V>
             using value_types = V<T<>>;
             template <template <typename...> class V>
             using error_types = V<::std::exception_ptr>;
@@ -176,7 +176,7 @@ namespace test_declarations {
         template <typename RC>
         struct detached_completion_sender
         {
-            template <template <typename...> class V, template <typename...> class T>
+            template <template <typename...> class T, template <typename...> class V>
             using value_types = V<T<>>;
             template <template <typename...> class V>
             using error_types = V<::std::exception_ptr>;
