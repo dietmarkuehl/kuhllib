@@ -1,4 +1,4 @@
-// nstd/execution/get_stop_token.hpp                                  -*-C++-*-
+// nstd/execution/inject_cancel.cpp                                   -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,38 +23,10 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_EXECUTION_GET_STOP_TOKEN
-#define INCLUDED_NSTD_EXECUTION_GET_STOP_TOKEN
-
-#include "nstd/functional/tag_invoke.hpp"
-#include "nstd/execution/receiver.hpp"
-#include "nstd/stop_token/stoppable_token.hpp"
-#include "nstd/stop_token/never_stop_token.hpp"
-#include "nstd/type_traits/declval.hpp"
-#include "nstd/utility/as_const.hpp"
+#include <nstd/execution/inject_cancel.hpp>
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::execution::inline customization_points {
-    inline constexpr struct get_stop_token_t {
-        template <::nstd::execution::receiver Receiver>
-            requires requires(Receiver const& receiver) {
-                        { ::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::execution::get_stop_token_t>(), ::nstd::utility::as_const(receiver)) } noexcept
-                            -> ::nstd::stop_token::stoppable_token;
-                    }
-        constexpr auto operator()(Receiver const& receiver) const
-            noexcept(noexcept(::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::execution::get_stop_token_t>(), ::nstd::utility::as_const(receiver))))
-        {
-            return ::nstd::tag_invoke(*this, ::nstd::utility::as_const(receiver));
-        }
-        template <::nstd::execution::receiver Receiver>
-        constexpr auto operator()(Receiver const& ) const noexcept
-        {
-            return ::nstd::stop_token::never_stop_token();
-        }
-    } get_stop_token;
+namespace nstd::execution{
+    int inject_cancel_dummy = 0;
 }
-
-// ----------------------------------------------------------------------------
-
-#endif

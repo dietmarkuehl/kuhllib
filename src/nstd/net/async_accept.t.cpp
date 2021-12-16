@@ -29,6 +29,8 @@
 #include "nstd/execution/schedule.hpp"
 #include "nstd/execution/start_detached.hpp"
 #include "nstd/execution/then.hpp"
+#include "nstd/execution/upon_done.hpp"
+#include "nstd/utility/move.hpp"
 #include "kuhl/test.hpp"
 
 namespace test_declarations {}
@@ -37,6 +39,7 @@ namespace KT = ::kuhl::test;
 namespace NF = ::nstd::file;
 namespace NI = ::nstd::net::ip;
 namespace NN = ::nstd::net;
+namespace UT = ::nstd::utility;
 namespace TD = test_declarations;
 
 // ----------------------------------------------------------------------------
@@ -100,32 +103,32 @@ static KT::testcase const tests[] = {
         }),
 #if 0
     KT::expect_success("cancelation", []{
-        {
             NF::test_context test_context;
             NN::io_context   context(&test_context);
-            test_context.on_accept = [&test_context](int, ::sockaddr*, ::socklen_t*, int, NF::context::io_base* cont){
+            test_context.on_accept = [](int, ::sockaddr*, ::socklen_t*, int, NF::context::io_base*){
                 ::std::cout << "on_accept\n";
             };
             test_context.on_nop = [&test_context](NF::context::io_base* cont){
                 test_context.make_ready(0, 0, cont);
             };
 
+            bool completion_called{false};
+            bool cancellation_called{false};
             TD::acceptor acceptor;
             auto accept
                 = EX::schedule(context.scheduler())
-                | EX::then([&]{ predecessor_called = true; })
                 | NN::async_accept(acceptor)
                 | EX::then([&](auto, TD::stream){ completion_called = true; })
-                | EX::on_done
+                | EX::upon_done([&](auto&&...){ cancellation_called = true; })
                 ;
-            EX::start_detached(accept);
+            EX::start_detached(UT::move(accept));
             auto rc(context.run());
             return true
                 && KT::use(acceptor)
                 && KT::use(accept)
                 && rc == 2
-                && predecessor_called
-                && completion_called
+                && not completion_called
+                && cancellation_called
                 ;
         }),
 #endif

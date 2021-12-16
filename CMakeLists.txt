@@ -65,6 +65,7 @@ list(APPEND kuhllib_components
     src/nstd/execution/get_completion_scheduler
     src/nstd/execution/get_scheduler
     src/nstd/execution/get_stop_token
+    src/nstd/execution/inject_cancel
     src/nstd/execution/is_execution_policy
     src/nstd/execution/just
     src/nstd/execution/just_done

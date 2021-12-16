@@ -34,6 +34,7 @@
 #include "nstd/execution/sender.hpp"
 #include "nstd/functional/tag_invoke.hpp"
 #include "nstd/type_traits/declval.hpp"
+#include "nstd/type_traits/is_void.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
 #include "nstd/utility/forward.hpp"
 #include "nstd/utility/move.hpp"
@@ -68,7 +69,13 @@ struct nstd::execution::upon_done_t::receiver
     }
     friend auto tag_invoke(::nstd::execution::set_done_t, receiver&& self) noexcept -> void {
         try {
-            ::nstd::execution::set_value(::nstd::utility::move(self.d_receiver), ::nstd::utility::move(self.d_fun)());
+            if constexpr (::nstd::type_traits::is_void_v<decltype(::nstd::utility::move(self.d_fun)())>) {
+                ::nstd::utility::move(self.d_fun)();
+                ::nstd::execution::set_value(::nstd::utility::move(self.d_receiver));
+            }
+            else {
+                ::nstd::execution::set_value(::nstd::utility::move(self.d_receiver), ::nstd::utility::move(self.d_fun)());
+            }
         }
         catch (...) {
             ::nstd::execution::set_error(::nstd::utility::move(self.d_receiver), ::std::current_exception());
@@ -91,11 +98,11 @@ struct nstd::execution::upon_done_t::sender
     ::nstd::type_traits::remove_cvref_t<Fun>    d_fun;
 
     template <::nstd::execution::receiver Receiver>
-    friend auto tag_invoke(::nstd::execution::connect_t, sender&& self, Receiver&& receiver)
+    friend auto tag_invoke(::nstd::execution::connect_t, sender&& self, Receiver&& rceiver) noexcept
     {
         return ::nstd::execution::connect(::nstd::utility::move(self.d_sender),
                                           ::nstd::execution::upon_done_t::receiver<Receiver, Fun>{ 
-                                              ::nstd::utility::forward<Receiver>(receiver),
+                                              ::nstd::utility::forward<Receiver>(rceiver),
                                               ::nstd::utility::move(self.d_fun)
                                           });
     }
@@ -104,17 +111,17 @@ struct nstd::execution::upon_done_t::sender
 // ----------------------------------------------------------------------------
 
 template <::nstd::execution::sender Sender, typename Fun>
-auto nstd::execution::upon_done_t::operator()(Sender&& sender, Fun&& fun) const
+auto nstd::execution::upon_done_t::operator()(Sender&& sndr, Fun&& fun) const
     -> nstd::execution::upon_done_t::sender<Sender, Fun>
 {
-    return { ::nstd::utility::forward<Sender>(sender), ::nstd::utility::forward<Fun>(fun) };
+    return { ::nstd::utility::forward<Sender>(sndr), ::nstd::utility::forward<Fun>(fun) };
 }
 
 template <typename Fun>
 auto nstd::execution::upon_done_t::operator()(Fun&& fun) const
 {
-    return [fun = ::nstd::utility::forward<Fun>(fun)](::nstd::execution::sender auto&& sender) mutable {
-        return nstd::execution::upon_done(::nstd::utility::forward<decltype(sender)>(sender),
+    return [fun = ::nstd::utility::forward<Fun>(fun)](::nstd::execution::sender auto&& sndr) mutable {
+        return nstd::execution::upon_done(::nstd::utility::forward<decltype(sndr)>(sndr),
                                           ::nstd::utility::move(fun));
     };
 }

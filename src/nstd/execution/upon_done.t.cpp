@@ -70,4 +70,4 @@ static KT::testcase const tests[] = {
         }),
 };
 
-static KT::add_tests suite("just_done", ::tests);
+static KT::add_tests suite("upon_done", ::tests);
