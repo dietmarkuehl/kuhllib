@@ -56,7 +56,7 @@ public:
 protected:
     virtual auto do_run_one() -> count_type = 0;
 
-    virtual auto do_cancel(io_base*, io_base*) -> void {} //-dk:TODO should be: = 0;
+    virtual auto do_cancel(io_base*, io_base*) -> void = 0;
     virtual auto do_nop(io_base*) -> void = 0;
     virtual auto do_timer(time_spec*, io_base*) -> void = 0;
     virtual auto do_accept(native_handle_type, ::sockaddr*, ::socklen_t*, int, io_base*) -> void = 0;

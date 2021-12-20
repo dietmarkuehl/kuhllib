@@ -197,6 +197,17 @@ auto NF::ring_context::do_timer(::nstd::file::context::time_spec* time, io_base*
 }
 // ----------------------------------------------------------------------------
 
+auto NF::ring_context::do_cancel(io_base* to_cancel, io_base* continuation) -> void
+{
+    this->submit([=](::io_uring_sqe& element){
+        element = ::io_uring_sqe{};
+        element.opcode    = IORING_OP_ASYNC_CANCEL;
+        element.addr      = reinterpret_cast<::std::uint64_t>(to_cancel);
+        element.user_data = reinterpret_cast<::std::uint64_t>(continuation);
+    });
+
+}
+
 auto NF::ring_context::do_nop(io_base* continuation) -> void
 {
     this->submit([=](::io_uring_sqe& element){

@@ -36,7 +36,8 @@ namespace nstd::file {
 // ----------------------------------------------------------------------------
 
 NF::test_context::test_context()
-    : on_nop([this](::nstd::file::context::io_base* cont){ this->make_ready(-1, 0, cont); })
+    : on_cancel([this](::nstd::file::context::io_base*, ::nstd::file::context::io_base* cont){ this->make_ready(-1, 0, cont); })
+    , on_nop([this](::nstd::file::context::io_base* cont){ this->make_ready(-1, 0, cont); })
     , on_timer([this](::nstd::file::context::time_spec*, ::nstd::file::context::io_base* cont){ this->make_ready(-1, 0, cont); })
     , on_accept([this](int, ::sockaddr*, ::socklen_t*, int, ::nstd::file::context::io_base* cont){ this->make_ready(-1, 0, cont); })
     , on_connect([this](int, ::sockaddr const*, ::socklen_t, ::nstd::file::context::io_base* cont){ this->make_ready(-1, 0, cont); })
@@ -59,6 +60,11 @@ auto NF::test_context::do_run_one() -> ::nstd::file::context::count_type
     this->d_ready.pop_back();
     cont->result(rc, flags);
     return 1;
+}
+
+auto NF::test_context::do_cancel(io_base* to_cancel, io_base* cont) -> void
+{
+    this->on_cancel(to_cancel, cont);
 }
 
 auto NF::test_context::do_nop(io_base* cont) -> void

@@ -104,7 +104,6 @@ static KT::testcase const tests[] = {
                 && completion_called
                 ;
         }),
-#if 1
     KT::expect_success("cancelation", []{
             NF::test_context test_context;
             NN::io_context   context(&test_context);
@@ -113,6 +112,10 @@ static KT::testcase const tests[] = {
             };
             test_context.on_nop = [&test_context](NF::context::io_base* cont){
                 test_context.make_ready(0, 0, cont);
+            };
+            test_context.on_cancel = [&test_context](NF::context::io_base* to_cancel, NF::context::io_base* cont){
+                test_context.make_ready(0, 0, cont);
+                test_context.make_ready(0, 0, to_cancel);
             };
 
             ST::in_place_stop_source source;
@@ -129,15 +132,17 @@ static KT::testcase const tests[] = {
             EX::start_detached(UT::move(accept));
             source.stop();
             auto rc(context.run());
+            ::std::cout << "rc=" << rc << ", " << ::std::boolalpha
+                        << "completion=" << completion_called << ", "
+                        << "cancellation=" << cancellation_called << "\n";
             return true
                 && KT::use(acceptor)
                 && KT::use(accept)
-                && rc == 2
+                && rc == 3
                 && not completion_called
                 && cancellation_called
                 ;
         }),
-#endif
 };
 
 static KT::add_tests suite("async_accept", ::tests);

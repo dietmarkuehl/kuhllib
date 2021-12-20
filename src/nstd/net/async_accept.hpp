@@ -288,6 +288,7 @@ struct nstd::net::async_accept_t::state
         ::nstd::file::context* d_context;
         base_t*                d_self;
         callback_type          d_callback;
+        bool                   d_canceled{false};
         template <::nstd::execution::receiver R>
         cancel_state(::nstd::file::context* context, base_t* self, R& receiver)
             : d_mutex()
@@ -300,6 +301,7 @@ struct nstd::net::async_accept_t::state
         auto cancel() -> void {
             ::std::lock_guard kerberos(this->d_mutex);
             if (this->d_outstanding == 1u) {
+                this->d_canceled = true;
                 ++this->d_outstanding;
                 this->d_context->cancel(this->d_self, this);
             }
@@ -313,7 +315,12 @@ struct nstd::net::async_accept_t::state
         auto complete(::std::int32_t rc, ::std::uint32_t flags) -> void {
             ::std::lock_guard kerberos(this->d_mutex);
             if (--this->d_outstanding == 0) {
-                this->d_self->d_submit.complete(rc, flags, this->d_self->d_receiver);
+                if (this->d_canceled) {
+                    ::nstd::execution::set_done(::nstd::utility::move(this->d_self->d_receiver));
+                }
+                else {
+                    this->d_self->d_submit.complete(rc, flags, this->d_self->d_receiver);
+                }
             }
         }
     };

@@ -156,6 +156,11 @@ auto NF::poll_context::do_run_one() -> NF::context::count_type
 
 // ----------------------------------------------------------------------------
 
+auto NF::poll_context::do_cancel(NF::context::io_base*, NF::context::io_base*) -> void
+{
+    //-dk:TODO 
+}
+
 auto NF::poll_context::do_nop(NF::context::io_base* continuation) -> void
 {
     this->submit_io(-1, 0, [continuation]{

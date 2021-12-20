@@ -48,6 +48,7 @@ private:
 protected:
     auto do_run_one() -> ::nstd::file::context::count_type override;
 
+    auto do_cancel(::nstd::file::context::io_base*, ::nstd::file::context::io_base*) -> void override;
     auto do_nop(::nstd::file::context::io_base*) -> void override;
     auto do_timer(::nstd::file::context::time_spec*, ::nstd::file::context::io_base*) -> void override;
     auto do_accept(int, ::sockaddr*, ::socklen_t*, int, ::nstd::file::context::io_base*) -> void override;
@@ -62,6 +63,7 @@ public:
 
     auto make_ready(int, int, ::nstd::file::context::io_base*) -> void;
 
+    ::std::function<auto (::nstd::file::context::io_base*, ::nstd::file::context::io_base*) -> void>     on_cancel;
     ::std::function<auto (::nstd::file::context::io_base*) -> void>                                      on_nop;
     ::std::function<auto (::nstd::file::context::time_spec*, ::nstd::file::context::io_base*) -> void>   on_timer;
     ::std::function<auto (int, ::sockaddr*, ::socklen_t*, int, ::nstd::file::context::io_base*) -> void> on_accept;

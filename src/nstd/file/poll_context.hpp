@@ -75,6 +75,7 @@ private:
 protected:
     auto do_run_one() -> count_type override;
 
+    auto do_cancel(io_base*, io_base*) -> void override;
     auto do_nop(io_base*) -> void override;
     auto do_timer(time_spec*, io_base*) -> void override;
     auto do_accept(native_handle_type, ::sockaddr*, ::socklen_t*, int, io_base*) -> void override;
