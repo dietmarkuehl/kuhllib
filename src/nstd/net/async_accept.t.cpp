@@ -30,6 +30,8 @@
 #include "nstd/execution/start_detached.hpp"
 #include "nstd/execution/then.hpp"
 #include "nstd/execution/upon_done.hpp"
+#include "nstd/execution/inject_cancel.hpp"
+#include "nstd/stop_token/in_place_stop_token.hpp"
 #include "nstd/utility/move.hpp"
 #include "kuhl/test.hpp"
 
@@ -39,6 +41,7 @@ namespace KT = ::kuhl::test;
 namespace NF = ::nstd::file;
 namespace NI = ::nstd::net::ip;
 namespace NN = ::nstd::net;
+namespace ST = ::nstd::stop_token;
 namespace UT = ::nstd::utility;
 namespace TD = test_declarations;
 
@@ -101,7 +104,7 @@ static KT::testcase const tests[] = {
                 && completion_called
                 ;
         }),
-#if 0
+#if 1
     KT::expect_success("cancelation", []{
             NF::test_context test_context;
             NN::io_context   context(&test_context);
@@ -112,16 +115,19 @@ static KT::testcase const tests[] = {
                 test_context.make_ready(0, 0, cont);
             };
 
+            ST::in_place_stop_source source;
             bool completion_called{false};
             bool cancellation_called{false};
             TD::acceptor acceptor;
             auto accept
                 = EX::schedule(context.scheduler())
                 | NN::async_accept(acceptor)
+                | EX::inject_cancel(source.token())
                 | EX::then([&](auto, TD::stream){ completion_called = true; })
                 | EX::upon_done([&](auto&&...){ cancellation_called = true; })
                 ;
             EX::start_detached(UT::move(accept));
+            source.stop();
             auto rc(context.run());
             return true
                 && KT::use(acceptor)

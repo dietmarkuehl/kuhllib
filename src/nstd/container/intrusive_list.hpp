@@ -31,8 +31,13 @@
 // ----------------------------------------------------------------------------
 
 namespace nstd::container {
+    struct intrusive_list_link {
+        template <typename T>
+        auto operator()(T& e) const -> auto& { return e.link; }
+        auto operator== (intrusive_list_link const&) const -> bool = default;
+    };
     template <typename> class intrusive_list_node;
-    template <typename T, typename = decltype([](T& e)->auto&{ return e.link; })> 
+    template <typename T, typename = intrusive_list_link>
     class intrusive_list;
 }
 
@@ -112,6 +117,7 @@ public:
         this->link(*link.d_next).d_prev = link.d_prev;
     }
 
+    auto make_iterator(T* ptr) const -> iterator { return ptr; }
     auto begin() const -> iterator { return this->link(this->d_link).d_next; }
     auto end() const   -> iterator { return &this->d_link; }
 };

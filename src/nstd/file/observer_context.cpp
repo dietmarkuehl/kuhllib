@@ -24,6 +24,7 @@
 // ----------------------------------------------------------------------------
 
 #include <nstd/file/observer_context.hpp>
+#include <nstd/utility/forward.hpp>
 #include <nstd/utility/move.hpp>
 #include <iostream>
 
@@ -35,33 +36,47 @@ namespace nstd::file {
 
 // ----------------------------------------------------------------------------
 
-namespace
+template <typename Fun>
+struct nstd::file::observer_context::continuation
+    : nstd::file::observer_context::continuation_base
 {
-    template <typename Fun>
-    struct continuation
-        : ::nstd::file::context::io_base
-    {
-        ::nstd::file::context::io_base* d_cont;
-        Fun                             d_fun;
-        continuation(::nstd::file::context::io_base* cont,
-                     Fun&& fun)
-            : d_cont(cont)
-            , d_fun(::nstd::utility::move(fun)) {
+    ::nstd::file::observer_context* d_context;
+    Fun                             d_fun;
+    continuation(::nstd::file::observer_context* context,
+                 ::nstd::file::context::io_base* cont,
+                 Fun&& fun)
+        : continuation_base(cont)
+        , d_context(context)
+        , d_fun(::nstd::utility::move(fun)) {
+    }
+    auto do_result(::std::int32_t rc, ::std::uint32_t flags) -> void override {
+        ::nstd::file::context::io_base* cont(this->d_cont);
+        this->d_fun(rc, flags);
+        {
+            ::std::lock_guard kerberos(this->d_context->d_mutex);
+            this->d_context->d_outstanding.erase(this->d_context->d_outstanding.make_iterator(this));
         }
-        auto do_result(::std::int32_t rc, ::std::uint32_t flags) -> void override {
-            ::nstd::file::context::io_base* cont(this->d_cont);
-            this->d_fun(rc, flags);
-            delete this;
-            cont->result(rc, flags);
-        }
-    };
-}
+        cont->result(rc, flags);
+    }
+};
 
 // ----------------------------------------------------------------------------
 
 nstd::file::observer_context::observer_context(::nstd::file::context& context)
     : d_context(context)
 {
+}
+
+// ----------------------------------------------------------------------------
+
+template <typename Fun>
+auto nstd::file::observer_context::add(nstd::file::context::io_base* cont, Fun&& fun)
+    -> continuation_base*
+{
+    continuation_base* rc(new continuation(this, cont, ::nstd::utility::forward<Fun>(fun)));
+    ::std::lock_guard kerberos(this->d_mutex);
+    this->d_outstanding.insert(this->d_outstanding.begin(), *rc);
+    return rc;
 }
 
 // ----------------------------------------------------------------------------
@@ -74,10 +89,30 @@ auto nstd::file::observer_context::do_run_one() -> count_type
     return rc;
 }
 
+auto nstd::file::observer_context::do_cancel(io_base* to_cancel, io_base* cont) -> void
+{
+    io_base* upstream(nullptr);
+    {
+        ::std::lock_guard kerberos(this->d_mutex);
+        auto it(::std::find_if(this->d_outstanding.begin(), this->d_outstanding.end(),
+                               [to_cancel](auto const& c){ return to_cancel == c.d_cont; }));
+        if (it == this->d_outstanding.end()) {
+            cont->result(-ENOENT, 0);
+            return;
+        }
+        upstream = &*it;
+    }
+    this->d_context.cancel(upstream, this->add(cont, [](int rc, int flags){
+        ::std::cout << "< cancel: rc=" << rc << ", flags=" << flags << "\n";
+    }));
+}
+
+// ----------------------------------------------------------------------------
+
 auto nstd::file::observer_context::do_nop(io_base* cont) -> void
 {
     ::std::cout << "> nop()\n";
-    this->d_context.nop(new continuation(cont, [](int rc, int flags){
+    this->d_context.nop(this->add(cont, [](int rc, int flags){
         ::std::cout << "< nop: rc=" << rc << ", flags=" << flags << "\n";
     }));
 }
@@ -85,7 +120,7 @@ auto nstd::file::observer_context::do_nop(io_base* cont) -> void
 auto nstd::file::observer_context::do_timer(time_spec* spec, io_base* cont) -> void
 {
     ::std::cout << "> timer()\n";
-    this->d_context.timer(spec, new continuation(cont, [](int rc, int flags){
+    this->d_context.timer(spec, this->add(cont, [](int rc, int flags){
         ::std::cout << "< timer: rc=" << rc << ", flags=" << flags << "\n";
     }));
 }
@@ -93,7 +128,7 @@ auto nstd::file::observer_context::do_timer(time_spec* spec, io_base* cont) -> v
 auto nstd::file::observer_context::do_accept(native_handle_type fd, ::sockaddr* addr, ::socklen_t* len, int flags, io_base* cont) -> void
 {
     ::std::cout << "> accept(" << fd << ", ...)\n";
-    this->d_context.accept(fd, addr, len, flags, new continuation(cont, [fd](int rc, int flags){
+    this->d_context.accept(fd, addr, len, flags, this->add(cont, [fd](int rc, int flags){
         ::std::cout << "< accept(" << fd << "): rc=" << rc << ", flags=" << flags << "\n";
     }));
 }
@@ -101,7 +136,7 @@ auto nstd::file::observer_context::do_accept(native_handle_type fd, ::sockaddr* 
 auto nstd::file::observer_context::do_connect(native_handle_type fd, ::sockaddr const* addr, ::socklen_t len, io_base* cont) -> void
 {
     ::std::cout << "> connect(" << fd << ", ...)\n";
-    this->d_context.connect(fd, addr, len, new continuation(cont, [fd](int rc, int flags){
+    this->d_context.connect(fd, addr, len, this->add(cont, [fd](int rc, int flags){
         ::std::cout << "< connect(" << fd << "): rc=" << rc << ", flags=" << flags << "\n";
     }));
 }
@@ -109,7 +144,7 @@ auto nstd::file::observer_context::do_connect(native_handle_type fd, ::sockaddr 
 auto nstd::file::observer_context::do_sendmsg(native_handle_type fd, ::msghdr const* hdr, int len, io_base* cont) -> void
 {
     ::std::cout << "> sendmsg(" << fd << ", ...)\n";
-    this->d_context.sendmsg(fd, hdr, len, new continuation(cont, [fd](int rc, int flags){
+    this->d_context.sendmsg(fd, hdr, len, this->add(cont, [fd](int rc, int flags){
         ::std::cout << "< sendmsg(" << fd << "): rc=" << rc << ", flags=" << flags << "\n";
     }));
 }
@@ -117,7 +152,7 @@ auto nstd::file::observer_context::do_sendmsg(native_handle_type fd, ::msghdr co
 auto nstd::file::observer_context::do_recvmsg(native_handle_type fd, ::msghdr* hdr, int len, io_base* cont) -> void
 {
     ::std::cout << "> recvmsg(" << fd << ", ...)\n";
-    this->d_context.recvmsg(fd, hdr, len, new continuation(cont, [fd](int rc, int flags){
+    this->d_context.recvmsg(fd, hdr, len, this->add(cont, [fd](int rc, int flags){
         ::std::cout << "< recvmsg(" << fd << "): rc=" << rc << ", flags=" << flags << "\n";
     }));
 }
@@ -125,7 +160,7 @@ auto nstd::file::observer_context::do_recvmsg(native_handle_type fd, ::msghdr* h
 auto nstd::file::observer_context::do_read(int fd, ::iovec* vec, ::std::size_t len, io_base* cont) -> void
 {
     ::std::cout << "> read(" << fd << ", ...)\n";
-    this->d_context.read(fd, vec, len, new continuation(cont, [fd](int rc, int flags){
+    this->d_context.read(fd, vec, len, this->add(cont, [fd](int rc, int flags){
         ::std::cout << "< read(" << fd << "): rc=" << rc << ", flags=" << flags << "\n";
     }));
 }
@@ -133,7 +168,7 @@ auto nstd::file::observer_context::do_read(int fd, ::iovec* vec, ::std::size_t l
 auto nstd::file::observer_context::do_open_at(int fd, char const* path, int flags, io_base* cont) -> void
 {
     ::std::cout << "> open_at(" << fd << ", '" << path << "', " << std::hex << flags << std::dec << ")\n";
-    this->d_context.open_at(fd, path, flags, new continuation(cont, [fd](int rc, int flags){
+    this->d_context.open_at(fd, path, flags, this->add(cont, [fd](int rc, int flags){
         ::std::cout << "< open_at(" << fd << "): rc=" << rc << ", flags=" << flags << "\n";
     }));
 }

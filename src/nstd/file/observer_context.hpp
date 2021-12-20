@@ -27,6 +27,8 @@
 #define INCLUDED_NSTD_FILE_OBSERVER_CONTEXT
 
 #include "nstd/file/context.hpp"
+#include "nstd/container/intrusive_list.hpp"
+#include <mutex>
 
 // ----------------------------------------------------------------------------
 
@@ -39,12 +41,33 @@ namespace nstd::file {
 class nstd::file::observer_context
     : public ::nstd::file::context
 {
+public:
+    struct continuation_base
+        : ::nstd::file::context::io_base
+    {
+        ::nstd::container::intrusive_list_node<continuation_base> link;
+        ::nstd::file::context::io_base*                           d_cont;
+        continuation_base(::nstd::file::context::io_base* cont = nullptr)
+            : d_cont(cont)
+        {
+        }
+        auto do_result(::std::int32_t, ::std::uint32_t) -> void override {}
+    };
+
 private:
-    ::nstd::file::context& d_context;
+    template <typename> struct continuation;
+    template <typename> friend struct continuation;
+    ::std::mutex                                         d_mutex;
+    ::nstd::container::intrusive_list<continuation_base> d_outstanding;
+    ::nstd::file::context&                               d_context;
+
+    template <typename Fun>
+    auto add(nstd::file::context::io_base*, Fun&& fun) -> continuation_base*;
 
 protected:
     auto do_run_one() -> count_type override;
 
+    auto do_cancel(io_base*, io_base*) -> void override;
     auto do_nop(io_base*) -> void override;
     auto do_timer(time_spec*, io_base*) -> void override;
     auto do_accept(native_handle_type, ::sockaddr*, ::socklen_t*, int, io_base*) -> void override;
