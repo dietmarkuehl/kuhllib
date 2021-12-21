@@ -29,6 +29,7 @@
 #include "nstd/net/ip/tcp.hpp"
 #include "nstd/execution/just.hpp"
 #include "nstd/execution/run.hpp"
+#include "nstd/execution/schedule.hpp"
 #include "nstd/execution/then.hpp"
 #include "nstd/utility/move.hpp"
 #include "kuhl/test.hpp"
@@ -75,10 +76,28 @@ static KT::testcase const tests[] = {
             Net::io_context context;
             TD::socket s{IP::tcp::v4()};
             auto connect_sender
-                = Net::async_connect(s,
-                                    IP::basic_endpoint<IP::tcp>(IP::address_v4::any(), 12345),
-                                    context.scheduler()
-                                    )
+                = Net::async_connect(EX::schedule(context.scheduler()),
+                                     s,
+                                     IP::basic_endpoint<IP::tcp>(IP::address_v4::any(), 12345)
+                                     )
+                ;
+            try {
+                EX::run(context, UT::move(connect_sender));
+            }
+            catch (...) {
+
+            }
+            return KT::use(context)
+                && KT::use(s)
+                && KT::use(connect_sender)
+                ;
+        }),
+    KT::expect_success("piped async_connect ", []{
+            Net::io_context context;
+            TD::socket s{IP::tcp::v4()};
+            auto connect_sender
+                = EX::schedule(context.scheduler())
+                | Net::async_connect(s, IP::basic_endpoint<IP::tcp>(IP::address_v4::any(), 12345))
                 ;
             try {
                 EX::run(context, UT::move(connect_sender));

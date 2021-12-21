@@ -29,6 +29,7 @@
 #include "nstd/net/io_context.hpp"
 #include "nstd/buffer/const_buffer.hpp"
 #include "nstd/execution/then.hpp"
+#include "nstd/execution/schedule.hpp"
 #include "nstd/execution/when_all.hpp"
 #include "nstd/execution/run.hpp"
 #include "nstd/net/ip/tcp.hpp"
@@ -76,7 +77,7 @@ static KT::testcase const tests[] = {
                 | EX::then([&server](::std::error_code, NN::basic_stream_socket<NN::ip::tcp>&& stream){
                     server = UT::move(stream);
                     }),
-                NN::async_connect(client, ep, context.scheduler())
+                NN::async_connect(EX::schedule(context.scheduler()), client, ep)
                 ));
 
             auto write = NN::async_write_some(context.scheduler(),

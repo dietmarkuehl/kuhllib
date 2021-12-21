@@ -144,6 +144,7 @@ list(APPEND kuhllib_components
     src/nstd/memory/addressof
     src/nstd/memory/uninitialized_default_construct
     src/nstd/net/async_accept
+    src/nstd/net/async_connect
     src/nstd/net/async_io
     src/nstd/net/ip/address
     src/nstd/net/ip/address_v4

@@ -1,4 +1,4 @@
-// nstd/net/async_accept.hpp                                          -*-C++-*-
+// nstd/net/async_connect.hpp                                         -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,59 +23,60 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_NET_ASYNC_ACCEPT
-#define INCLUDED_NSTD_NET_ASYNC_ACCEPT
+#ifndef INCLUDED_NSTD_NET_ASYNC_CONNECT
+#define INCLUDED_NSTD_NET_ASYNC_CONNECT
 
 #include "nstd/net/async_io.hpp"
 #include "nstd/execution/get_completion_scheduler.hpp"
 #include "nstd/execution/sender.hpp"
 #include "nstd/execution/set_value.hpp"
-#include "nstd/file/context.hpp"
+#include "nstd/utility/move.hpp"
 
 #include <system_error>
+
 // ----------------------------------------------------------------------------
 
 namespace nstd::net {
-    inline constexpr struct async_accept_t {
+    inline constexpr struct async_connect_t {
         template <typename Socket> struct io_operation;
 
-        template <typename Acceptor, ::nstd::execution::sender Sender>
-        friend auto tag_invoke(async_accept_t, Acceptor& acceptor, Sender sndr)
-            -> ::nstd::net::async_io_sender<Sender, io_operation<typename Acceptor::socket_type>> {
+        template <typename Socket, ::nstd::execution::sender Sender>
+        friend auto tag_invoke(async_connect_t, Socket& socket, typename Socket::endpoint_type const& endpoint, Sender sndr)
+            -> ::nstd::net::async_io_sender<Sender, io_operation<Socket>> {
             auto scheduler{::nstd::execution::get_completion_scheduler<::nstd::execution::set_value_t>(sndr)};
-            return nstd::net::async_io_sender<Sender, io_operation<typename Acceptor::socket_type>>{
+            return nstd::net::async_io_sender<Sender, io_operation<Socket>>{
                 ::nstd::utility::move(sndr),
                 scheduler.context()->hidden_context(),
-                acceptor.protocol(),
-                acceptor.native_handle()
+                socket.native_handle(),
+                endpoint
                 };
         }
-        template <typename Acceptor, ::nstd::execution::sender Sender>
-        auto operator()(Sender sender, Acceptor& acceptor) const {
-            return ::nstd::tag_invoke(*this, acceptor, sender);
+        template <::nstd::execution::sender Sender, typename Socket>
+        auto operator()(Sender sender, Socket& socket, typename Socket::endpoint_type const& endpoint) const {
+            return ::nstd::tag_invoke(*this, socket, endpoint, sender);
         }
-        template <typename Acceptor>
-        auto operator()(Acceptor& acceptor) const {
-            return [&acceptor, this](::nstd::execution::sender auto sender){
-                return ::nstd::tag_invoke(*this, acceptor, sender);
+        template <typename Socket>
+        auto operator()(Socket& socket, typename Socket::endpoint_type const& endpoint) const {
+            return [&socket, endpoint, this](::nstd::execution::sender auto sender){
+                return ::nstd::tag_invoke(*this, socket, endpoint, sender);
                 };
         }
-    } async_accept;
+    } async_connect;
 }
 
 // ----------------------------------------------------------------------------
 
 template <typename Socket>
-struct nstd::net::async_accept_t::io_operation
+struct nstd::net::async_connect_t::io_operation
 {
     template <template <typename...> class T, template <typename...> class V>
-    using value_types = V<T<::std::error_code, Socket>>;
+    using value_types = V<T<::std::error_code>>;
     template <template <typename...> class V>
     using error_types = V<::std::exception_ptr>;
 
     struct parameters {
-        typename Socket::protocol_type       d_protocol;
         typename Socket::native_handle_type  d_fd;
+        typename Socket::endpoint_type       d_endpoint;
     };
 
     ::nstd::file::context*                        d_context;
@@ -84,7 +85,7 @@ struct nstd::net::async_accept_t::io_operation
     ::socklen_t                                   d_length;
 
     io_operation(::nstd::file::context*               context,
-                 ::nstd::net::async_accept_t::io_operation<Socket>::parameters const& parameters)
+                 ::nstd::net::async_connect_t::io_operation<Socket>::parameters const& parameters)
         : d_context(context)
         , d_parameters(parameters)
         , d_address{}
@@ -93,20 +94,15 @@ struct nstd::net::async_accept_t::io_operation
     }
 
     auto submit(::nstd::file::context::io_base* cont) -> void {
-        this->d_context->accept(this->d_parameters.d_fd, reinterpret_cast<::sockaddr*>(&this->d_address), &this->d_length, 0, cont);
+        this->d_length = this->d_parameters.d_endpoint.get_address(&this->d_address);
+        this->d_context->connect(this->d_parameters.d_fd, reinterpret_cast<::sockaddr*>(&this->d_address), this->d_length, cont);
     }
     template <typename Receiver>
     auto complete(::std::int32_t rc, std::uint32_t, Receiver& receiver) {
-        if (rc < 0) {
-            ::nstd::execution::set_value(::nstd::utility::move(receiver),
-                                         ::std::error_code(-rc, ::std::system_category()),
-                                         Socket());
-        }
-        else {
-            ::nstd::execution::set_value(::nstd::utility::move(receiver),
-                                         ::std::error_code(),
-                                         Socket(this->d_parameters.d_protocol, rc));
-        }
+        ::nstd::execution::set_value(::nstd::utility::move(receiver),
+                                     rc < 0
+                                     ? ::std::error_code(-rc, ::std::system_category())
+                                     : ::std::error_code());
     }
 };
 
