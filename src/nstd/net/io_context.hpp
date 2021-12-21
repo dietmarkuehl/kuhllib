@@ -57,6 +57,9 @@ private:
 
 public:
     using count_type = ::nstd::file::context::count_type;
+    class scheduler_type;
+    template <::nstd::execution::receiver> struct state;
+    struct sender;
 
     io_context();
     explicit io_context(::nstd::file::context* ctxt); // ctxt isn't owned
@@ -68,7 +71,6 @@ public:
     auto operator=(io_context const&) -> io_context& = delete;
     auto operator=(io_context&&) -> io_context& = delete;
 
-    class scheduler_type;
     auto hidden_context() -> ::nstd::file::context* { return this->d_context; }
 
     auto scheduler() noexcept -> ::nstd::net::io_context::scheduler_type;
@@ -99,6 +101,11 @@ public:
 
 // ----------------------------------------------------------------------------
 
+namespace nstd::net {
+    inline auto tag_invoke(::nstd::execution::schedule_t, nstd::net::io_context::scheduler_type const&)
+        -> nstd::net::io_context::sender;
+}
+
 class nstd::net::io_context::scheduler_type
 {
 private:
@@ -110,65 +117,91 @@ public:
     auto context() noexcept -> ::nstd::net::io_context* { return this->d_context; }
     auto operator== (scheduler_type const& other) const -> bool = default;
 
-    template <::nstd::execution::receiver Receiver>
-    struct state
-        : ::nstd::file::context::io_base
-    {
-        ::nstd::type_traits::remove_cvref_t<Receiver> d_receiver;
-        ::nstd::net::io_context*                      d_context;
-        template <::nstd::execution::receiver R>
-        state(R&& receiver, ::nstd::net::io_context* context)
-            : d_receiver(::nstd::utility::forward<R>(receiver))
-            , d_context(context) {
-        }
-        friend auto tag_invoke(::nstd::execution::start_t, state& s) noexcept -> void {
-            s.d_context->hidden_context()->nop(&s);
-        }
-        auto do_result(::std::int32_t, ::std::uint32_t) -> void override {
-            ::nstd::execution::set_value(::nstd::utility::move(this->d_receiver));
-        }
-    };
-    struct sender;
-    friend struct sender;
-    struct sender
-        : ::nstd::execution::piped_sender_base
-    {
-        template <template <typename...> class T, template <typename...> class V>
-        using value_types = V<T<>>;
-        template <template <typename...> class V>
-        using error_types = V<::std::exception_ptr>;
-        static constexpr bool sends_done = true;
+    auto cancel(::nstd::file::context::io_base* to_cancel, ::nstd::file::context::io_base* cont) -> void {
+        this->d_context->hidden_context()->cancel(to_cancel, cont);
+    }
+    auto nop(::nstd::file::context::io_base* cont) -> void {
+        this->d_context->hidden_context()->nop(cont);
+    }
+    auto accept(::nstd::file::context::native_handle_type fd, ::sockaddr* addr, ::socklen_t* len, int flags, ::nstd::file::context::io_base* cont) -> void {
+        this->d_context->hidden_context()->accept(fd, addr, len, flags, cont);
+    }
+    auto connect(::nstd::file::context::native_handle_type fd, ::sockaddr const* addr, ::socklen_t len, ::nstd::file::context::io_base* cont) -> void {
+        this->d_context->hidden_context()->connect(fd, addr, len, cont);
+    }
 
-        ::nstd::net::io_context* d_context;
-        private:
-            auto make_scheduler() const noexcept -> scheduler_type { return scheduler_type(this->d_context); }
-        public:
+    friend auto tag_invoke(::nstd::execution::schedule_t, scheduler_type const& scheduler) -> sender;
+};
 
-        friend auto tag_invoke(::nstd::execution::get_completion_scheduler_t<::nstd::execution::set_value_t>, sender const& self) noexcept -> scheduler_type {
-            return self.make_scheduler();
-        }
+// ----------------------------------------------------------------------------
 
-        template <::nstd::execution::receiver Receiver>
-        friend auto tag_invoke(::nstd::execution::connect_t, sender const& sndr, Receiver&& receiver) noexcept
-            -> state<Receiver> {
-            return state<Receiver>(::nstd::utility::forward<Receiver>(receiver), sndr.d_context);
-        }
-    };
-
-    friend auto tag_invoke(::nstd::execution::schedule_t, scheduler_type const& scheduler) -> sender {
-        return { {}, scheduler.d_context };
+template <::nstd::execution::receiver Receiver>
+struct nstd::net::io_context::state
+    : ::nstd::file::context::io_base
+{
+    ::nstd::type_traits::remove_cvref_t<Receiver> d_receiver;
+    nstd::net::io_context::scheduler_type         d_scheduler;
+    template <::nstd::execution::receiver R>
+    state(R&& receiver, ::nstd::net::io_context::scheduler_type scheduler)
+        : d_receiver(::nstd::utility::forward<R>(receiver))
+        , d_scheduler(scheduler) {
+    }
+    friend auto tag_invoke(::nstd::execution::start_t, state& self) noexcept -> void {
+        self.d_scheduler.nop(&self);
+    }
+    auto do_result(::std::int32_t, ::std::uint32_t) -> void override {
+        ::nstd::execution::set_value(::nstd::utility::move(this->d_receiver));
     }
 };
 
-static_assert(::nstd::execution::operation_state<::nstd::net::io_context::scheduler_type::state<::nstd::execution::test_receiver>>);
-static_assert(::nstd::execution::sender<::nstd::net::io_context::scheduler_type::sender>);
-static_assert(::nstd::execution::scheduler<::nstd::net::io_context::scheduler_type>);
+// ----------------------------------------------------------------------------
+
+struct nstd::net::io_context::sender
+    : ::nstd::execution::piped_sender_base
+{
+    template <template <typename...> class T, template <typename...> class V>
+    using value_types = V<T<>>;
+    template <template <typename...> class V>
+    using error_types = V<::std::exception_ptr>;
+    static constexpr bool sends_done = true;
+
+private:
+    ::nstd::net::io_context::scheduler_type d_scheduler;
+
+public:
+    sender(::nstd::net::io_context::scheduler_type scheduler)
+        : d_scheduler(scheduler) {
+    }
+
+    friend auto tag_invoke(::nstd::execution::get_completion_scheduler_t<::nstd::execution::set_value_t>, sender const& self) noexcept -> scheduler_type {
+        return self.d_scheduler;
+    }
+
+    template <::nstd::execution::receiver Receiver>
+    friend auto tag_invoke(::nstd::execution::connect_t, sender const& self, Receiver&& receiver) noexcept
+        -> state<Receiver> {
+        return state<Receiver>(::nstd::utility::forward<Receiver>(receiver), self.d_scheduler);
+    }
+};
+
+// ----------------------------------------------------------------------------
 
 inline auto nstd::net::io_context::scheduler() noexcept
     -> ::nstd::net::io_context::scheduler_type
 {
     return ::nstd::net::io_context::scheduler_type(this);
 }
+
+inline auto nstd::net::tag_invoke(::nstd::execution::schedule_t, ::nstd::net::io_context::scheduler_type const& self)
+    -> nstd::net::io_context::sender {
+    return ::nstd::net::io_context::sender(self);
+}
+
+// ----------------------------------------------------------------------------
+
+static_assert(::nstd::execution::operation_state<::nstd::net::io_context::state<::nstd::execution::test_receiver>>);
+static_assert(::nstd::execution::sender<::nstd::net::io_context::sender>);
+static_assert(::nstd::execution::scheduler<::nstd::net::io_context::scheduler_type>);
 
 // ----------------------------------------------------------------------------
 

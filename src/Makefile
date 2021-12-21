@@ -1,4 +1,4 @@
-JOBS = 4
+JOBS = 1
 
 .PHONY: default run check build clean
 default: check
