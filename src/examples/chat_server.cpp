@@ -209,7 +209,8 @@ namespace {
                         &done = this->d_clients.back().second,
                         buffer = ::std::vector<char>(1024),
                         scheduler]() mutable {
-                            return NN::async_read_some(cl, scheduler, NN::buffer(buffer))
+                            return EX::schedule(scheduler)
+                                |  NN::async_read_some(cl, NN::buffer(buffer))
                                 |  EX::then([this, &buffer, &done, scheduler](::std::size_t n){
                                     if (n != 0u) {
                                         buffer.resize(n);

@@ -146,6 +146,7 @@ list(APPEND kuhllib_components
     src/nstd/net/async_accept
     src/nstd/net/async_connect
     src/nstd/net/async_io
+    src/nstd/net/async_read_some
     src/nstd/net/ip/address
     src/nstd/net/ip/address_v4
     src/nstd/net/ip/address_v6

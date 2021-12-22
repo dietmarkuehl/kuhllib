@@ -132,8 +132,8 @@ namespace
     {
         return 
             EX::repeat_effect_until(
-                NN::async_read_some(owner.d_socket,
-                                    context.scheduler(),
+                NN::async_read_some(EX::schedule(context.scheduler()),
+                                    owner.d_socket,
                                     NN::buffer(owner.d_buffer))
                 | compose(
                     [&context, &owner](::std::size_t n){

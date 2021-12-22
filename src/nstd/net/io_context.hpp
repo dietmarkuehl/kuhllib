@@ -129,6 +129,12 @@ public:
     auto connect(::nstd::file::context::native_handle_type fd, ::sockaddr const* addr, ::socklen_t len, ::nstd::file::context::io_base* cont) -> void {
         this->d_context->hidden_context()->connect(fd, addr, len, cont);
     }
+    auto recvmsg(::nstd::file::context::native_handle_type fd, ::msghdr* msg, int flags, ::nstd::file::context::io_base* cont) -> void {
+        this->d_context->hidden_context()->recvmsg(fd, msg, flags, cont);
+    }
+    auto sendmsg(::nstd::file::context::native_handle_type fd, ::msghdr const* msg, int flags, ::nstd::file::context::io_base* cont) -> void {
+        this->d_context->hidden_context()->sendmsg(fd, msg, flags, cont);
+    }
 
     friend auto tag_invoke(::nstd::execution::schedule_t, scheduler_type const& scheduler) -> sender;
 };
