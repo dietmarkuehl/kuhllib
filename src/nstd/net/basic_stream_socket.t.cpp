@@ -80,7 +80,7 @@ static KT::testcase const tests[] = {
                 NN::async_connect(EX::schedule(context.scheduler()), client, ep)
                 ));
 
-            auto write = NN::async_write_some(context.scheduler(),
+            auto write = NN::async_write_some(EX::schedule(context.scheduler()),
                                               client,
                                               NN::buffer(message));
             auto read = NN::async_read_some(EX::schedule(context.scheduler()),
