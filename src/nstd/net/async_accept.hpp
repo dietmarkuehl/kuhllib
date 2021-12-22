@@ -28,6 +28,7 @@
 
 #include "nstd/net/async_io.hpp"
 #include "nstd/execution/get_completion_scheduler.hpp"
+#include "nstd/execution/scheduler.hpp"
 #include "nstd/execution/sender.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/file/context.hpp"
@@ -41,12 +42,11 @@ namespace nstd::net {
         template <typename Socket> struct io_operation;
 
         template <typename Acceptor, ::nstd::execution::sender Sender>
-        friend auto tag_invoke(async_accept_t, Acceptor& acceptor, Sender sndr)
-            -> ::nstd::net::async_io_sender<Sender, io_operation<typename Acceptor::socket_type>> {
+        friend auto tag_invoke(async_accept_t, Acceptor& acceptor, Sender sndr) {
             auto scheduler{::nstd::execution::get_completion_scheduler<::nstd::execution::set_value_t>(sndr)};
-            return nstd::net::async_io_sender<Sender, io_operation<typename Acceptor::socket_type>>{
+            return nstd::net::async_io_sender<decltype(scheduler), Sender, io_operation<typename Acceptor::socket_type>>{
+                scheduler,
                 ::nstd::utility::move(sndr),
-                scheduler.context()->hidden_context(),
                 acceptor.protocol(),
                 acceptor.native_handle()
                 };
@@ -79,22 +79,20 @@ struct nstd::net::async_accept_t::io_operation
         typename Socket::native_handle_type  d_fd;
     };
 
-    ::nstd::file::context*                        d_context;
     parameters                                    d_parameters;
     ::sockaddr_storage                            d_address;
     ::socklen_t                                   d_length;
 
-    io_operation(::nstd::file::context*               context,
-                 ::nstd::net::async_accept_t::io_operation<Socket>::parameters const& parameters)
-        : d_context(context)
-        , d_parameters(parameters)
+    io_operation(::nstd::net::async_accept_t::io_operation<Socket>::parameters const& parameters)
+        : d_parameters(parameters)
         , d_address{}
         , d_length{}
     {
     }
 
-    auto submit(::nstd::file::context::io_base* cont) -> void {
-        this->d_context->accept(this->d_parameters.d_fd, reinterpret_cast<::sockaddr*>(&this->d_address), &this->d_length, 0, cont);
+    template <::nstd::execution::scheduler Scheduler>
+    auto submit(Scheduler&& scheduler, ::nstd::file::context::io_base* cont) -> void {
+        scheduler.accept(this->d_parameters.d_fd, reinterpret_cast<::sockaddr*>(&this->d_address), &this->d_length, 0, cont);
     }
     template <typename Receiver>
     auto complete(::std::int32_t rc, std::uint32_t, Receiver& receiver) {

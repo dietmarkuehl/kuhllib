@@ -29,6 +29,7 @@
 #include "nstd/execution/connect.hpp"
 #include "nstd/execution/get_stop_token.hpp"
 #include "nstd/execution/receiver.hpp"
+#include "nstd/execution/scheduler.hpp"
 #include "nstd/execution/sender.hpp"
 #include "nstd/execution/set_done.hpp"
 #include "nstd/execution/set_error.hpp"
@@ -45,36 +46,38 @@
 // ----------------------------------------------------------------------------
 
 namespace nstd::net {
-    template <::nstd::execution::receiver Receiver, typename IOOperation> struct async_io_state_base;
-    template <::nstd::execution::receiver Receiver, typename IOOperation> struct async_io_receiver;
-    template <::nstd::execution::sender , ::nstd::execution::receiver, typename IOOperation> struct async_io_state;
-    template <::nstd::execution::sender, typename IOOperation> struct async_io_sender;
+    template <::nstd::execution::scheduler, ::nstd::execution::receiver, typename IOOperation> struct async_io_state_base;
+    template <::nstd::execution::scheduler, ::nstd::execution::receiver, typename IOOperation> struct async_io_receiver;
+    template <::nstd::execution::scheduler, ::nstd::execution::sender, ::nstd::execution::receiver, typename IOOperation> struct async_io_state;
+    template <::nstd::execution::scheduler, ::nstd::execution::sender, typename IOOperation> struct async_io_sender;
 }
 
 // ----------------------------------------------------------------------------
 
-template <::nstd::execution::receiver Receiver, typename IOOperation>
+template <::nstd::execution::scheduler Scheduler, ::nstd::execution::receiver Receiver, typename IOOperation>
 struct nstd::net::async_io_state_base
     : ::nstd::file::context::io_base
 {
+    Scheduler                                        d_scheduler;
     ::nstd::type_traits::remove_cvref_t<Receiver>    d_receiver;
     ::nstd::type_traits::remove_cvref_t<IOOperation> d_submit;
 
-    template <typename R, typename S>
-    async_io_state_base(R&& r, S&& s)
-        : d_receiver(::nstd::utility::forward<R>(r))
+    template <typename Sch, typename R, typename S>
+    async_io_state_base(Sch&& scheduler, R&& r, S&& s)
+        : d_scheduler(::nstd::utility::forward<Sch>(scheduler))
+        , d_receiver(::nstd::utility::forward<R>(r))
         , d_submit(::nstd::utility::forward<S>(s))
     {
     }
-    auto submit() -> void { this->d_submit.submit(this); }
+    auto submit() -> void { this->d_submit.submit(this->d_scheduler, this); }
 };
 
 // ----------------------------------------------------------------------------
 
-template <::nstd::execution::receiver Receiver, typename IOOperation>
+template <::nstd::execution::scheduler Scheduler, ::nstd::execution::receiver Receiver, typename IOOperation>
 struct nstd::net::async_io_receiver
 {
-    ::nstd::net::async_io_state_base<Receiver, IOOperation>* d_state;
+    ::nstd::net::async_io_state_base<Scheduler, Receiver, IOOperation>* d_state;
 
     friend auto tag_invoke(::nstd::execution::set_value_t, async_io_receiver&& self, auto&&...) noexcept -> void {
         try {
@@ -95,12 +98,12 @@ struct nstd::net::async_io_receiver
 
 // ----------------------------------------------------------------------------
 
-template <::nstd::execution::sender Sender, ::nstd::execution::receiver Receiver, typename IOOperation>
+template <::nstd::execution::scheduler Scheduler, ::nstd::execution::sender Sender, ::nstd::execution::receiver Receiver, typename IOOperation>
 struct nstd::net::async_io_state
-    : ::nstd::net::async_io_state_base<Receiver, IOOperation>
+    : ::nstd::net::async_io_state_base<Scheduler, Receiver, IOOperation>
 {
-    using base_t    = nstd::net::async_io_state_base<Receiver, IOOperation>;
-    using own_receiver_t = ::nstd::net::async_io_receiver<Receiver, IOOperation>;
+    using base_t    = nstd::net::async_io_state_base<Scheduler, Receiver, IOOperation>;
+    using own_receiver_t = ::nstd::net::async_io_receiver<Scheduler, Receiver, IOOperation>;
     using inner_state_t  = decltype(::nstd::execution::connect(::nstd::type_traits::declval<Sender>(),
                                                                ::nstd::type_traits::declval<own_receiver_t>()));
     using StopToken = decltype(::nstd::execution::get_stop_token(::nstd::type_traits::declval<Receiver>()));
@@ -116,25 +119,23 @@ struct nstd::net::async_io_state
         using callback_type = typename StopToken::template callback_type<cancel_fun>;
         ::std::mutex           d_mutex;
         ::std::size_t          d_outstanding{1u};
-        ::nstd::file::context* d_context;
+        Scheduler              d_scheduler;
         base_t*                d_self;
         callback_type          d_callback;
         bool                   d_canceled{false};
-        template <::nstd::execution::receiver R>
-        cancel_state(::nstd::file::context* context, base_t* self, R& receiver)
+        template <::nstd::execution::scheduler Sch, ::nstd::execution::receiver R>
+        cancel_state(Sch&& scheduler, base_t* self, R& receiver)
             : d_mutex()
-            , d_context(context)
+            , d_scheduler(::nstd::utility::forward<Sch>(scheduler))
             , d_self(self)
-            , d_callback(::nstd::execution::get_stop_token(receiver), cancel_fun{this})
-            {
-
+            , d_callback(::nstd::execution::get_stop_token(receiver), cancel_fun{this}) {
         }
         auto cancel() -> void {
             ::std::lock_guard kerberos(this->d_mutex);
             if (this->d_outstanding == 1u) {
                 this->d_canceled = true;
                 ++this->d_outstanding;
-                this->d_context->cancel(this->d_self, this);
+                this->d_scheduler.cancel(this->d_self, this);
             }
         }
         auto do_result(::std::int32_t, ::std::uint32_t) -> void override {
@@ -159,14 +160,14 @@ struct nstd::net::async_io_state
 
     template <::nstd::execution::sender S,
               ::nstd::execution::receiver R>
-    async_io_state(S&& s,
-          R&& r,
-          ::nstd::file::context* context,
-          typename IOOperation::parameters const& parameters)
-        : base_t{::nstd::utility::forward<R>(r), IOOperation(context, parameters)}
+    async_io_state(Scheduler const& scheduler,
+                   S&& s,
+                   R&& r,
+                   typename IOOperation::parameters const& parameters)
+        : base_t{scheduler, ::nstd::utility::forward<R>(r), IOOperation(parameters)}
         , d_inner_state(::nstd::execution::connect(::nstd::utility::forward<S>(s),
                                                    own_receiver_t{this}))
-        , d_cancel_state(context, this, this->d_receiver)
+        , d_cancel_state(scheduler, this, this->d_receiver)
     {
     }
 
@@ -179,14 +180,14 @@ struct nstd::net::async_io_state
     }
 };
 
-template <::nstd::execution::sender Sender, ::nstd::execution::receiver Receiver, typename IOOperation>
-auto nstd::net::async_io_state<Sender, Receiver, IOOperation>::cancel_state::cancel_fun::operator()() -> void {
+template <::nstd::execution::scheduler Scheduler, ::nstd::execution::sender Sender, ::nstd::execution::receiver Receiver, typename IOOperation>
+auto nstd::net::async_io_state<Scheduler, Sender, Receiver, IOOperation>::cancel_state::cancel_fun::operator()() -> void {
     this->d_state->cancel();
 }
 
 // ----------------------------------------------------------------------------
 
-template <::nstd::execution::sender Sender, typename IOOperation>
+template <::nstd::execution::scheduler Scheduler, ::nstd::execution::sender Sender, typename IOOperation>
 struct nstd::net::async_io_sender
 {
     template <template <typename...> class T, template <typename...> class V>
@@ -194,16 +195,17 @@ struct nstd::net::async_io_sender
     template <template <typename...> class V>
     using error_types = typename IOOperation::template error_types<V>;
     static constexpr bool sends_done = true;
+    using scheduler_type = ::nstd::type_traits::remove_cvref_t<Scheduler>;
     using sender_type = ::nstd::type_traits::remove_cvref_t<Sender>;
 
-    sender_type                            d_sender;
-    ::nstd::file::context*                 d_context;
-    typename IOOperation::parameters       d_parameters;
+    scheduler_type                   d_scheduler;
+    sender_type                      d_sender;
+    typename IOOperation::parameters d_parameters;
 
-    template <::nstd::execution::sender S, typename... Args>
-    async_io_sender(S&& sender, ::nstd::file::context* context, Args&&... args)
-        : d_sender(::nstd::utility::forward<S>(sender))
-        , d_context(context)
+    template <::nstd::execution::scheduler Sch, ::nstd::execution::sender S, typename... Args>
+    async_io_sender(Sch&& scheduler, S&& sender, Args&&... args)
+        : d_scheduler(::nstd::utility::forward<Sch>(scheduler))
+        , d_sender(::nstd::utility::forward<S>(sender))
         , d_parameters{::nstd::utility::forward<Args>(args)...}
     {
     }
@@ -211,23 +213,23 @@ struct nstd::net::async_io_sender
     template <::nstd::execution::receiver Receiver>
     friend auto tag_invoke(::nstd::execution::connect_t, async_io_sender&& sndr, Receiver&& receiver)
         noexcept
-        -> ::nstd::net::async_io_state<sender_type, Receiver, IOOperation>
+        -> ::nstd::net::async_io_state<scheduler_type, sender_type, Receiver, IOOperation>
     {
-        return ::nstd::net::async_io_state<sender_type, Receiver, IOOperation>(
+        return ::nstd::net::async_io_state<scheduler_type, sender_type, Receiver, IOOperation>(
+                sndr.d_scheduler,
                 ::nstd::utility::move(sndr.d_sender),
                 ::nstd::utility::forward<Receiver>(receiver),
-                sndr.d_context,
                 sndr.d_parameters);
     }
     template <::nstd::execution::receiver Receiver>
     friend auto tag_invoke(::nstd::execution::connect_t, async_io_sender const& sndr, Receiver&& receiver)
         noexcept
-        -> ::nstd::net::async_io_state<Sender, Receiver, IOOperation>
+        -> ::nstd::net::async_io_state<scheduler_type, sender_type, Receiver, IOOperation>
     {
-        return ::nstd::net::async_io_state<Sender, Receiver, IOOperation>(
+        return ::nstd::net::async_io_state<scheduler_type, sender_type, Receiver, IOOperation>(
+                sndr.d_scheduler,
                 sndr.d_sender,
                 ::nstd::utility::forward<Receiver>(receiver),
-                sndr.d_context,
                 sndr.d_parameters);
     }
 };

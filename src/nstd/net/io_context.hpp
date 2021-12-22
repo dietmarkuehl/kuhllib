@@ -114,7 +114,7 @@ private:
     explicit scheduler_type(::nstd::net::io_context* context) noexcept: d_context(context) {}
 
 public:
-    auto context() noexcept -> ::nstd::net::io_context* { return this->d_context; }
+    auto context() const noexcept -> ::nstd::net::io_context* { return this->d_context; }
     auto operator== (scheduler_type const& other) const -> bool = default;
 
     auto cancel(::nstd::file::context::io_base* to_cancel, ::nstd::file::context::io_base* cont) -> void {

@@ -41,12 +41,11 @@ namespace nstd::net {
         template <typename Socket> struct io_operation;
 
         template <typename Socket, ::nstd::execution::sender Sender>
-        friend auto tag_invoke(async_connect_t, Socket& socket, typename Socket::endpoint_type const& endpoint, Sender sndr)
-            -> ::nstd::net::async_io_sender<Sender, io_operation<Socket>> {
+        friend auto tag_invoke(async_connect_t, Socket& socket, typename Socket::endpoint_type const& endpoint, Sender sndr) {
             auto scheduler{::nstd::execution::get_completion_scheduler<::nstd::execution::set_value_t>(sndr)};
-            return nstd::net::async_io_sender<Sender, io_operation<Socket>>{
+            return nstd::net::async_io_sender<decltype(scheduler), Sender, io_operation<Socket>>{
+                scheduler,
                 ::nstd::utility::move(sndr),
-                scheduler.context()->hidden_context(),
                 socket.native_handle(),
                 endpoint
                 };
@@ -79,23 +78,21 @@ struct nstd::net::async_connect_t::io_operation
         typename Socket::endpoint_type       d_endpoint;
     };
 
-    ::nstd::file::context*                        d_context;
     parameters                                    d_parameters;
     ::sockaddr_storage                            d_address;
     ::socklen_t                                   d_length;
 
-    io_operation(::nstd::file::context*               context,
-                 ::nstd::net::async_connect_t::io_operation<Socket>::parameters const& parameters)
-        : d_context(context)
-        , d_parameters(parameters)
+    io_operation(::nstd::net::async_connect_t::io_operation<Socket>::parameters const& parameters)
+        : d_parameters(parameters)
         , d_address{}
         , d_length{}
     {
     }
 
-    auto submit(::nstd::file::context::io_base* cont) -> void {
+    template <::nstd::execution::scheduler Scheduler>
+    auto submit(Scheduler&& scheduler, ::nstd::file::context::io_base* cont) -> void {
         this->d_length = this->d_parameters.d_endpoint.get_address(&this->d_address);
-        this->d_context->connect(this->d_parameters.d_fd, reinterpret_cast<::sockaddr*>(&this->d_address), this->d_length, cont);
+        scheduler.connect(this->d_parameters.d_fd, reinterpret_cast<::sockaddr*>(&this->d_address), this->d_length, cont);
     }
     template <typename Receiver>
     auto complete(::std::int32_t rc, std::uint32_t, Receiver& receiver) {
