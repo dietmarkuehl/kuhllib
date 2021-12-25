@@ -49,11 +49,14 @@ static KT::testcase const tests[] = {
             NN::basic_stream_socket<NN::ip::tcp> client(NI::tcp::v4());
             auto sender = EX::schedule(context.scheduler())
                         | NN::async_write_some(client, NN::buffer(message))
+                        | EX::then([](auto n){
+                                ::std::cout << "n=" << n << "\n";
+                                return n;
+                                })
                         | EX::then([](::std::int64_t n){
                                 ::std::cout << "n=" << n << "\n";
                                 if (n < 0) { std::cout << strerror(-n) << "\n"; }
                                 })
-                        //| EX::then([](auto n){ ::std::cout << "n=" << n << "\n"; })
                         ;
             EX::run(context, sender);
             return KT::use(client)

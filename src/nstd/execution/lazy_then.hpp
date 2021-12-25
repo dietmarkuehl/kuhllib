@@ -40,6 +40,7 @@
 #include "nstd/utility/move.hpp"
 #include "nstd/type_traits/declval.hpp"
 #include "nstd/type_traits/is_void.hpp"
+#include "nstd/type_traits/is_same.hpp"
 #include "nstd/type_traits/type_identity.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
 #include <exception>
@@ -65,13 +66,14 @@ namespace nstd::execution {
             Fun      d_fun;
             Receiver d_receiver;
 
-            template <typename... T>
-                requires requires(Fun&& f, T&&... args) {
+            template <typename Tag, typename... T>
+                requires ::nstd::type_traits::is_same_v<Tag, ::nstd::execution::set_value_t>
+                    && requires(Fun&& f, T&&... args) {
                     std::invoke(::nstd::utility::move(f),
                                 ::nstd::utility::forward<T>(args)...);
                     }
             friend auto
-            tag_invoke(::nstd::execution::set_value_t, lazy_then_receiver&& r, T&&... args) noexcept
+            tag_invoke(Tag, lazy_then_receiver&& r, T&&... args) noexcept
                 try {
                     if constexpr (::nstd::type_traits::is_void_v<decltype(::std::invoke(::nstd::utility::move(r.d_fun), ::nstd::utility::forward<T>(args)...))>) {
                         ::std::invoke(::nstd::utility::move(r.d_fun), ::nstd::utility::forward<T>(args)...);
@@ -86,11 +88,12 @@ namespace nstd::execution {
                     ::nstd::execution::set_error(::nstd::utility::move(r.d_receiver),
                                                  ::std::current_exception());
                 }
-            template <typename... T>
-                requires requires(Fun const& f, T&&... args) {
+            template <typename Tag, typename... T>
+                requires ::nstd::type_traits::is_same_v<Tag, ::nstd::execution::set_value_t>
+                    && requires(Fun const& f, T&&... args) {
                     std::invoke(f, ::nstd::utility::forward<T>(args)...);
                     }
-            friend auto tag_invoke(::nstd::execution::set_value_t, lazy_then_receiver const& r, T&&... args) noexcept
+            friend auto tag_invoke(Tag, lazy_then_receiver const& r, T&&... args) noexcept
                 try {
                     ::nstd::execution::set_value(r.d_receiver,
                                                  ::std::invoke(r.d_fun,
