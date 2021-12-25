@@ -40,6 +40,7 @@
 namespace test_declarations {}
 namespace TD = ::test_declarations;
 namespace KT = ::kuhl::test;
+namespace NF = ::nstd::file;
 namespace NN = ::nstd::net;
 namespace NI = NN::ip;
 namespace EX = ::nstd::execution;
@@ -72,20 +73,30 @@ static KT::testcase const tests[] = {
             NN::basic_stream_socket<NN::ip::tcp>   server;
             NN::basic_stream_socket<NN::ip::tcp>   client(NI::tcp::v4());
 
-            EX::run(context, EX::when_all(
-                NN::async_accept(EX::schedule(context.scheduler()), accept)
-                | EX::then([&server](::std::error_code, NN::basic_stream_socket<NN::ip::tcp>&& stream){
-                    server = UT::move(stream);
-                    }),
-                NN::async_connect(EX::schedule(context.scheduler()), client, ep)
-                ));
+            EX::run(context,
+                    EX::schedule(context.scheduler())
+                  | NN::async_connect(client, ep)
+                  | NN::async_accept(accept)
+                  | EX::then([&server](::std::error_code, NN::basic_stream_socket<NN::ip::tcp>&& stream){
+                      server = UT::move(stream);
+                      })
+                  );
 
-            auto write = NN::async_write_some(EX::schedule(context.scheduler()),
-                                              client,
-                                              NN::buffer(message));
-            auto read = NN::async_read_some(EX::schedule(context.scheduler()),
-                                            server,
-                                            NN::buffer(buffer));
+            auto write = EX::schedule(context.scheduler())
+                       | NN::async_write_some(client, NN::buffer(message))
+                       // | EX::then([](auto n){ ::std::cout << "write=" << n << "\n"; })
+                        | EX::then([](::std::int64_t n){
+                                ::std::cout << "write=" << n << "\n";
+                                if (n < 0) { std::cout << strerror(-n) << "\n"; }
+                            })
+                       ;
+            auto read = EX::schedule(context.scheduler())
+                      | NN::async_read_some(server, NN::buffer(buffer))
+                      | EX::then([](::std::int64_t n){
+                                ::std::cout << "read=" << n << "\n";
+                                if (n < 0) { std::cout << strerror(-n) << "\n"; }
+                                })
+                      ;
             EX::run(context, EX::when_all(UT::move(read), UT::move(write)));
 
             return KT::use(accept)

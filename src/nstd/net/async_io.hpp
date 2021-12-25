@@ -27,6 +27,7 @@
 #define INCLUDED_NSTD_NET_ASYNC_IO
 
 #include "nstd/execution/connect.hpp"
+#include "nstd/execution/get_completion_scheduler.hpp"
 #include "nstd/execution/get_stop_token.hpp"
 #include "nstd/execution/receiver.hpp"
 #include "nstd/execution/scheduler.hpp"
@@ -210,6 +211,11 @@ struct nstd::net::async_io_sender
     {
     }
 
+    friend auto tag_invoke(::nstd::execution::get_completion_scheduler_t<::nstd::execution::set_value_t>, async_io_sender const& sndr)
+        noexcept
+    {
+        return ::nstd::execution::get_completion_scheduler<::nstd::execution::set_value_t>(sndr.d_sender);
+    }
     template <::nstd::execution::receiver Receiver>
     friend auto tag_invoke(::nstd::execution::connect_t, async_io_sender&& sndr, Receiver&& receiver)
         noexcept

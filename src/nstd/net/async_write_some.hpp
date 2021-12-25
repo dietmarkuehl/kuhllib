@@ -80,7 +80,7 @@ struct nstd::net::async_write_some_t::io_operation
     };
 
     parameters d_parameters;
-    ::msghdr   d_msg;
+    ::msghdr   d_msg{};
 
     io_operation(::nstd::net::async_write_some_t::io_operation<Socket, CBS>::parameters const& parameters)
         : d_parameters(parameters)
