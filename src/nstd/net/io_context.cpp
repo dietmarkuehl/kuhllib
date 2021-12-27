@@ -40,6 +40,12 @@ nstd::net::io_context::io_context()
     assert(this->d_context && "install poll_context if ring_context can't be used");
 }
 
+nstd::net::io_context::io_context(::nstd::file::context& ctxt)
+    : ::nstd::net::io_context(&ctxt)
+{
+    assert(this->d_context && "install poll_context if ring_context can't be used");
+}
+
 nstd::net::io_context::io_context(::nstd::file::context* ctxt)
     : d_manager()
     , d_context(ctxt)

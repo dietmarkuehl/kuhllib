@@ -28,6 +28,7 @@
 
 #include "kuhl/test/context.hpp"
 //#include <source_location>
+#include <initializer_list>
 #include <utility>
 #include <cstring>
 
@@ -96,6 +97,9 @@ namespace kuhl
         bool operator== (type_t<T0>, type_t<T1>);
         template <typename T>               bool operator== (type_t<T>, type_t<T>) { return true; }
         template <typename T> type_t<T> get_type(T&&) { return {}; }
+
+        template <typename B>
+        auto assert_bitmask(context&, ::std::initializer_list<B>) -> bool;
     }
 
 }
@@ -203,6 +207,53 @@ auto kuhl::test::assert_no_nested_type(kuhl::test::context& context, char const*
         return false;
     }
     return true;
+}
+
+// ----------------------------------------------------------------------------
+
+template <typename B>
+auto kuhl::test::assert_bitmask(context& context, ::std::initializer_list<B> es) -> bool
+{
+    bool rc{true};
+    if (1u < es.size()) {
+        for (auto it(es.begin()), end(es.end()); it != end; ++it) {
+            rc = rc && kuhl::test::assert_true(context, "element zero value", *it != B());
+            for (auto sit(it); ++sit != end; ) {
+                rc = rc && kuhl::test::assert_equal(context, "elements with overlapping value", *it & *sit, B());
+            }
+        }
+        auto it(es.begin());
+        auto v0(*it);
+        auto v1(*++it);
+
+        auto all(v0 | v1);
+        rc = rc && kuhl::test::assert_true(context, "both bits set", (all & v0) == v0 && (all & v1) == v1);
+        auto none(v0 & v1);
+        rc = rc && kuhl::test::assert_true(context, "no bits set", none == B());
+        rc = rc && kuhl::test::assert_true(context, "xor bits", (all ^ v0) == v1 && (all ^ v1) == v0);
+        rc = rc && kuhl::test::assert_true(context, "invert bits", (~v0 & v0) == B() && (~v0 & v1) == v1 && (~v1 & v0) == v0 && (~v1 & v1) == B());
+
+        auto v_or(v0);
+        v_or |= v1;
+        rc = rc && kuhl::test::assert_equal(context, "or-assign", v_or, v0 | v1);
+        auto v_and(all);
+        v_and &= v1;
+        rc = rc && kuhl::test::assert_equal(context, "and-assign", v_and, v1);
+        auto v_xor(v0);
+        v_xor ^= (v0 | v1);
+        rc = rc && kuhl::test::assert_equal(context, "xor-assign", v_xor, v1);
+    }
+    (void)context;
+    constexpr auto and_result = B() & B();
+    constexpr auto or_result = B() | B();
+    constexpr auto xor_result = B() ^ B();
+    constexpr auto invert_result = ~B();
+    return kuhl::test::type<decltype(and_result)> == kuhl::test::type<B const>
+        && kuhl::test::type<decltype(or_result)> == kuhl::test::type<B const>
+        && kuhl::test::type<decltype(xor_result)> == kuhl::test::type<B const>
+        && kuhl::test::type<decltype(invert_result)> == kuhl::test::type<B const>
+        && rc
+        ;
 }
 
 // ----------------------------------------------------------------------------

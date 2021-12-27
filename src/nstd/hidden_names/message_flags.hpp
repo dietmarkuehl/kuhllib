@@ -1,4 +1,4 @@
-// nstd/net/socket_base.hpp                                           -*-C++-*-
+// nstd/hidden_names/message_flags.hpp                                -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,56 +23,52 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_NET_SOCKET_BASE
-#define INCLUDED_NSTD_NET_SOCKET_BASE
+#ifndef INCLUDED_NSTD_HIDDEN_NAMES_MESSAGE_FLAGS
+#define INCLUDED_NSTD_HIDDEN_NAMES_MESSAGE_FLAGS
 
-#include "nstd/hidden_names/boolean_socket_option.hpp"
-#include "nstd/hidden_names/message_flags.hpp"
-#include "nstd/file/descriptor.hpp"
+#include <functional>
+#include <iosfwd>
+#include <sys/types.h>
 #include <sys/socket.h>
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::net {
-    class socket_base;
+namespace nstd::hidden_names {
+    enum class message_flags: unsigned int {
+        peek = MSG_PEEK,
+        out_of_band = MSG_OOB,
+        do_not_route = MSG_DONTROUTE
+    };
+
+    template <typename Operation>
+    constexpr auto message_flags_apply(message_flags m0, message_flags m1) {
+        return message_flags(Operation()(static_cast<unsigned int>(m0), static_cast<unsigned int>(m1)));
+    }
+
+    inline constexpr auto operator& (message_flags m0, message_flags m1) -> message_flags {
+        return message_flags_apply<::std::bit_and<>>(m0, m1);
+    }
+    inline constexpr auto operator| (message_flags m0, message_flags m1) -> message_flags {
+        return message_flags_apply<::std::bit_or<>>(m0, m1);
+    }
+    inline constexpr auto operator^ (message_flags m0, message_flags m1) -> message_flags {
+        return message_flags_apply<::std::bit_xor<>>(m0, m1);
+    }
+    inline constexpr auto operator~ (message_flags m) -> message_flags {
+        return message_flags(~static_cast<unsigned int>(m));
+    }
+    inline constexpr auto operator&= (message_flags& m0, message_flags m1) -> message_flags& {
+        return m0 = m0 & m1;
+    }
+    inline constexpr auto operator|= (message_flags& m0, message_flags m1) -> message_flags& {
+        return m0 = m0 | m1;
+    }
+    inline constexpr auto operator^= (message_flags& m0, message_flags m1) -> message_flags& {
+        return m0 = m0 ^ m1;
+    }
+
+    auto operator<< (::std::ostream&, message_flags) -> ::std::ostream&;
 }
-
-// ----------------------------------------------------------------------------
-
-class nstd::net::socket_base
-{
-private:
-    ::nstd::file::descriptor d_descriptor;
-    int                      d_flags;
-
-protected:
-    auto open(int domain, int type, int protocol) -> int;
-
-public:
-    using reuse_address = ::nstd::hidden_names::boolean_socket_option<SO_REUSEADDR>;
-    //-dk:TODO define the various member types
-    using message_flags = ::nstd::hidden_names::message_flags;
-    static constexpr message_flags message_peek = ::nstd::hidden_names::message_flags::peek;
-    static constexpr message_flags message_out_of_band = ::nstd::hidden_names::message_flags::out_of_band;
-    static constexpr message_flags message_do_not_route = ::nstd::hidden_names::message_flags::do_not_route;
-
-    static constexpr int max_listen_connections = SOMAXCONN;
-
-    socket_base() = default;
-    socket_base(int fd): d_descriptor(fd) {}
-    socket_base(int, int, int);
-    socket_base(socket_base const&) = delete;
-    socket_base(socket_base&&) = default;
-    ~socket_base() = default;
-    auto operator= (socket_base const&) -> socket_base& = delete;
-    auto operator= (socket_base&&) -> socket_base& = default;
-
-    using native_handle_type = int;
-    auto native_handle() const -> native_handle_type { return this->d_descriptor.get(); }
-    auto is_open() const noexcept -> bool { return this->d_descriptor.is_open(); }
-
-    auto non_blocking() const noexcept -> bool;
-};
 
 // ----------------------------------------------------------------------------
 

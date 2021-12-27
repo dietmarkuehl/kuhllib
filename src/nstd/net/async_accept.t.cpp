@@ -107,9 +107,7 @@ static KT::testcase const tests[] = {
     KT::expect_success("cancelation", []{
             NF::test_context test_context;
             NN::io_context   context(&test_context);
-            test_context.on_accept = [](int, ::sockaddr*, ::socklen_t*, int, NF::context::io_base*){
-                ::std::cout << "on_accept\n";
-            };
+            test_context.on_accept = [](int, ::sockaddr*, ::socklen_t*, int, NF::context::io_base*){ };
             test_context.on_nop = [&test_context](NF::context::io_base* cont){
                 test_context.make_ready(0, 0, cont);
             };
@@ -132,9 +130,6 @@ static KT::testcase const tests[] = {
             EX::start_detached(UT::move(accept));
             source.stop();
             auto rc(context.run());
-            ::std::cout << "rc=" << rc << ", " << ::std::boolalpha
-                        << "completion=" << completion_called << ", "
-                        << "cancellation=" << cancellation_called << "\n";
             return true
                 && KT::use(acceptor)
                 && KT::use(accept)

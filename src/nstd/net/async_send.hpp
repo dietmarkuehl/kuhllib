@@ -27,6 +27,7 @@
 #define INCLUDED_NSTD_NET_ASYNC_SEND
 
 #include "nstd/net/async_io.hpp"
+#include "nstd/hidden_names/message_flags.hpp"
 #include "nstd/execution/get_completion_scheduler.hpp"
 #include "nstd/execution/sender.hpp"
 #include "nstd/execution/set_value.hpp"
@@ -42,7 +43,7 @@ namespace nstd::net {
         template <typename Socket, typename CBS> struct io_operation;
 
         template <typename Socket, typename CBS, ::nstd::execution::sender Sender>
-        friend auto tag_invoke(async_send_t, Socket& socket, CBS const& cbs, int flags, Sender sndr) {
+        friend auto tag_invoke(async_send_t, Socket& socket, CBS const& cbs, ::nstd::hidden_names::message_flags flags, Sender sndr) {
             auto scheduler{::nstd::execution::get_completion_scheduler<::nstd::execution::set_value_t>(sndr)};
             return nstd::net::async_io_sender<decltype(scheduler), Sender, io_operation<Socket, CBS>>{
                 scheduler,
@@ -53,23 +54,23 @@ namespace nstd::net {
                 };
         }
         template <::nstd::execution::sender Sender, typename Socket, typename CBS>
-        auto operator()(Sender sender, Socket& socket, CBS const& cbs, int flags) const {
+        auto operator()(Sender sender, Socket& socket, CBS const& cbs, ::nstd::hidden_names::message_flags flags) const {
             return ::nstd::tag_invoke(*this, socket, cbs, flags, sender);
         }
         template <typename Socket, typename CBS>
-        auto operator()(Socket& socket, CBS const& cbs, int flags) const {
+        auto operator()(Socket& socket, CBS const& cbs, ::nstd::hidden_names::message_flags flags) const {
             return [&socket, cbs, flags, this](::nstd::execution::sender auto sender){
                 return ::nstd::tag_invoke(*this, socket, cbs, flags, sender);
                 };
         }
         template <::nstd::execution::sender Sender, typename Socket, typename CBS>
         auto operator()(Sender sender, Socket& socket, CBS const& cbs) const {
-            return ::nstd::tag_invoke(*this, socket, cbs, 0, sender);
+            return ::nstd::tag_invoke(*this, socket, cbs, ::nstd::hidden_names::message_flags(), sender);
         }
         template <typename Socket, typename CBS>
         auto operator()(Socket& socket, CBS const& cbs) const {
             return [&socket, cbs, this](::nstd::execution::sender auto sender){
-                return ::nstd::tag_invoke(*this, socket, cbs, 0, sender);
+                return ::nstd::tag_invoke(*this, socket, cbs, ::nstd::hidden_names::message_flags(), sender);
                 };
         }
     } async_send;
@@ -86,9 +87,9 @@ struct nstd::net::async_send_t::io_operation
     using error_types = V<::std::exception_ptr>;
 
     struct parameters {
-        Socket& d_socket;
-        CBS     d_buffer;
-        int     d_flags;
+        Socket&                             d_socket;
+        CBS                                 d_buffer;
+        ::nstd::hidden_names::message_flags d_flags;
     };
 
     parameters d_parameters;
@@ -104,7 +105,7 @@ struct nstd::net::async_send_t::io_operation
         iovec const* iov = reinterpret_cast<::iovec const*>(&*::nstd::net::buffer_sequence_begin(this->d_parameters.d_buffer));
         this->d_msg.msg_iov = const_cast<::iovec*>(iov);
         this->d_msg.msg_iovlen = 1u;
-        scheduler.sendmsg(this->d_parameters.d_socket.native_handle(), &this->d_msg, this->d_parameters.d_flags, cont);
+        scheduler.sendmsg(this->d_parameters.d_socket.native_handle(), &this->d_msg, static_cast<int>(this->d_parameters.d_flags), cont);
     }
 
     template <typename Receiver>

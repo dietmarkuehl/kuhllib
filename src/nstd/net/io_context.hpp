@@ -62,6 +62,7 @@ public:
     struct sender;
 
     io_context();
+    explicit io_context(::nstd::file::context& ctxt); // ctxt isn't owned
     explicit io_context(::nstd::file::context* ctxt); // ctxt isn't owned
     explicit io_context(::std::unique_ptr<::nstd::file::context> ctxt);
     explicit io_context(::nstd::file::ring_context::queue_size);

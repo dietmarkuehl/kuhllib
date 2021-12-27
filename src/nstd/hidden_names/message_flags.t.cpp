@@ -1,4 +1,4 @@
-// nstd/net/async_write_some.t.cpp                                    -*-C++-*-
+// nstd/hidden_names/message_flags.t.cpp                              -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,39 +23,19 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include <nstd/net/async_write_some.hpp>
-#include <nstd/buffer/const_buffer.hpp>
-#include <nstd/execution/schedule.hpp>
-#include <nstd/execution/run.hpp>
-#include <nstd/execution/then.hpp>
-#include <nstd/net/io_context.hpp>
-#include <nstd/net/basic_stream_socket.hpp>
-#include <nstd/net/ip/tcp.hpp>
+#include "nstd/hidden_names/message_flags.hpp"
 #include "kuhl/test.hpp"
-#include <iostream>
 
-namespace EX = ::nstd::execution;
-namespace NF = ::nstd::file;
-namespace NN = ::nstd::net;
-namespace NI = ::nstd::net::ip;
+namespace HN = ::nstd::hidden_names;
 namespace KT = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
-    KT::expect_success("breathing", []{
-            char const message[] = { 'h', 'e', 'l', 'l', 'o', '\n' };
-            NN::io_context                       context;
-            NN::basic_stream_socket<NN::ip::tcp> client(NI::tcp::v4());
-            auto sender = EX::schedule(context.scheduler())
-                        | NN::async_write_some(client, NN::buffer(message))
-                        | EX::then([](auto){ })
-                        ;
-            EX::run(context, sender);
-            return KT::use(client)
-                && KT::use(sender)
-                ;
+    KT::expect_success("is a bitmask type", [](KT::context& ctxt){
+           return KT::assert_bitmask<HN::message_flags>(ctxt,
+               { HN::message_flags::peek, HN::message_flags::out_of_band, HN::message_flags::do_not_route });
         }),
 };
 
-static KT::add_tests suite("async_write_some", ::tests);
+static KT::add_tests suite("nstd::hidden_names:message_flags", ::tests);

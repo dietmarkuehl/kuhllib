@@ -84,18 +84,10 @@ static KT::testcase const tests[] = {
 
             auto write = EX::schedule(context.scheduler())
                        | NN::async_write_some(client, NN::buffer(message))
-                       // | EX::then([](auto n){ ::std::cout << "write=" << n << "\n"; })
-                        | EX::then([](::std::int64_t n){
-                                ::std::cout << "write=" << n << "\n";
-                                if (n < 0) { std::cout << strerror(-n) << "\n"; }
-                            })
                        ;
             auto read = EX::schedule(context.scheduler())
                       | NN::async_read_some(server, NN::buffer(buffer))
-                      | EX::then([](::std::int64_t n){
-                                ::std::cout << "read=" << n << "\n";
-                                if (n < 0) { std::cout << strerror(-n) << "\n"; }
-                                })
+                      | EX::then([](::std::int64_t){})
                       ;
             EX::run(context, EX::when_all(UT::move(read), UT::move(write)));
 
