@@ -26,6 +26,7 @@
 #ifndef INCLUDED_NSTD_FILE_CONTEXT
 #define INCLUDED_NSTD_FILE_CONTEXT
 
+#include "nstd/file/io_base.hpp"
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <cstdint>
@@ -49,7 +50,7 @@ public:
         long long        nsec;
     };
 
-    class io_base;
+    using io_base = ::nstd::file::io_base;
     using count_type = ::std::size_t;
     using native_handle_type = int;
 
@@ -84,18 +85,6 @@ public:
     auto recvmsg(native_handle_type, ::msghdr*, int, io_base*) -> void;
     auto read(native_handle_type, ::iovec*, ::std::size_t, io_base*) -> void;
     auto open_at(int, char const*, int, io_base*) -> void;
-};
-
-// ----------------------------------------------------------------------------
-
-class nstd::file::context::io_base
-{
-protected:
-    virtual ~io_base() = default;
-    virtual auto do_result(::std::int32_t, ::std::uint32_t) -> void = 0;
-
-public:
-    auto result(::std::int32_t res, ::std::uint32_t flags) -> void { this->do_result(res, flags); }
 };
 
 // ----------------------------------------------------------------------------

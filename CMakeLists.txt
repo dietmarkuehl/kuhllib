@@ -110,6 +110,7 @@ list(APPEND kuhllib_components
     src/nstd/executor/system_executor
     src/nstd/file/context
     src/nstd/file/descriptor
+    src/nstd/file/io_base
     src/nstd/file/mapped_memory
     src/nstd/file/observer_context
     src/nstd/file/open
