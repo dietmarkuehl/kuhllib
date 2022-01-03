@@ -26,7 +26,7 @@
 #ifndef INCLUDED_NSTD_NET_ASYNC_WRITE_SOME
 #define INCLUDED_NSTD_NET_ASYNC_WRITE_SOME
 
-#include "nstd/net/async_io.hpp"
+#include "nstd/net/async_io_.hpp"
 #include "nstd/execution/get_completion_scheduler.hpp"
 #include "nstd/execution/sender.hpp"
 #include "nstd/execution/set_value.hpp"
@@ -44,7 +44,7 @@ namespace nstd::net {
         template <typename Socket, typename CBS, ::nstd::execution::sender Sender>
         friend auto tag_invoke(async_write_some_t, Socket& socket, CBS const& cbs, Sender sndr) {
             auto scheduler{::nstd::execution::get_completion_scheduler<::nstd::execution::set_value_t>(sndr)};
-            return nstd::net::async_io_sender<decltype(scheduler), Sender, io_operation<Socket, CBS>>{
+            return nstd::net::async_io_sender_<decltype(scheduler), Sender, io_operation<Socket, CBS>>{
                 scheduler,
                 ::nstd::utility::move(sndr),
                 socket.native_handle(),

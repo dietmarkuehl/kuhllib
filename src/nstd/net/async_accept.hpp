@@ -26,7 +26,7 @@
 #ifndef INCLUDED_NSTD_NET_ASYNC_ACCEPT
 #define INCLUDED_NSTD_NET_ASYNC_ACCEPT
 
-#include "nstd/net/async_io.hpp"
+#include "nstd/net/async_io_.hpp"
 #include "nstd/execution/get_completion_scheduler.hpp"
 #include "nstd/execution/scheduler.hpp"
 #include "nstd/execution/sender.hpp"
@@ -44,7 +44,7 @@ namespace nstd::net {
         template <typename Acceptor, ::nstd::execution::sender Sender>
         friend auto tag_invoke(async_accept_t, Acceptor& acceptor, Sender sndr) {
             auto scheduler{::nstd::execution::get_completion_scheduler<::nstd::execution::set_value_t>(sndr)};
-            return nstd::net::async_io_sender<decltype(scheduler), Sender, io_operation<typename Acceptor::socket_type>>{
+            return nstd::net::async_io_sender_<decltype(scheduler), Sender, io_operation<typename Acceptor::socket_type>>{
                 scheduler,
                 ::nstd::utility::move(sndr),
                 acceptor.protocol(),

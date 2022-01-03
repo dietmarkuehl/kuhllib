@@ -27,6 +27,7 @@
 #define INCLUDED_NSTD_NET_ASYNC_SEND
 
 #include "nstd/net/async_io.hpp"
+#include "nstd/file/operation.hpp"
 #include "nstd/hidden_names/message_flags.hpp"
 #include "nstd/execution/get_completion_scheduler.hpp"
 #include "nstd/execution/sender.hpp"
@@ -35,10 +36,11 @@
 #include "nstd/utility/move.hpp"
 
 #include <system_error>
+#include <tuple>
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::net {
+namespace nstd::net::inline customization_points {
     inline constexpr struct async_send_t {
         template <typename Socket, typename CBS> struct io_operation;
 
@@ -79,33 +81,28 @@ namespace nstd::net {
 // ----------------------------------------------------------------------------
 
 template <typename Socket, typename CBS>
-struct nstd::net::async_send_t::io_operation
+struct nstd::net::customization_points::async_send_t::io_operation
 {
     template <template <typename...> class T, template <typename...> class V>
     using value_types = V<T<int>>;
     template <template <typename...> class V>
     using error_types = V<::std::exception_ptr>;
 
-    struct parameters {
-        Socket&                             d_socket;
-        CBS                                 d_buffer;
-        ::nstd::hidden_names::message_flags d_flags;
-    };
+    using socket_type    = Socket;
+    using operation_type = ::nstd::file::operation_send<CBS>;
+    using parameter_type = ::std::tuple<CBS, ::nstd::hidden_names::message_flags>;
 
-    parameters d_parameters;
-    ::msghdr   d_msg{};
+    socket_type& d_socket;
 
-    io_operation(::nstd::net::async_send_t::io_operation<Socket, CBS>::parameters const& parameters)
-        : d_parameters(parameters)
-    {
-    }
+    io_operation(socket_type& socket): d_socket(socket) {}
 
     template <::nstd::execution::scheduler Scheduler>
-    auto submit(Scheduler&& scheduler, ::nstd::file::context::io_base* cont) -> void {
-        iovec const* iov = reinterpret_cast<::iovec const*>(&*::nstd::net::buffer_sequence_begin(this->d_parameters.d_buffer));
-        this->d_msg.msg_iov = const_cast<::iovec*>(iov);
-        this->d_msg.msg_iovlen = 1u;
-        scheduler.sendmsg(this->d_parameters.d_socket.native_handle(), &this->d_msg, static_cast<int>(this->d_parameters.d_flags), cont);
+    auto submit(Scheduler&& scheduler, operation_type* cont) -> void {
+        iovec const* iov = reinterpret_cast<::iovec const*>(&*::nstd::net::buffer_sequence_begin(cont->d_buffers));
+        cont->d_msgheader.msg_iov = const_cast<::iovec*>(iov);
+        cont->d_msgheader.msg_iovlen = 1u;
+        scheduler.sendmsg(this->d_socket.native_handle(), &cont->d_msgheader, static_cast<int>(cont->d_flags), cont);
+        // should be: this->d_socket.submit(*cont);
     }
 
     template <typename Receiver>

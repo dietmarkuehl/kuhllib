@@ -115,6 +115,7 @@ list(APPEND kuhllib_components
     src/nstd/file/observer_context
     src/nstd/file/open
     src/nstd/file/open_flags
+    src/nstd/file/operation
     src/nstd/file/read
     src/nstd/file/poll_context
     src/nstd/file/ring
