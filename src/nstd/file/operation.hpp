@@ -34,6 +34,7 @@
 // ----------------------------------------------------------------------------
 
 namespace nstd::file {
+    struct operation;
     struct operation_read;
     struct operation_read_some;
     struct operation_receive;
@@ -44,9 +45,17 @@ namespace nstd::file {
 
 // ----------------------------------------------------------------------------
 
+struct nstd::file::operation
+    : ::nstd::file::io_base
+{
+    virtual auto submit() -> void = 0;
+};
+
+// ----------------------------------------------------------------------------
+
 template <typename ConstantBufferSequence>
 struct nstd::file::operation_send
-    : ::nstd::file::io_base
+    : ::nstd::file::operation
 {
     ConstantBufferSequence              d_buffers;
     ::nstd::hidden_names::message_flags d_flags;

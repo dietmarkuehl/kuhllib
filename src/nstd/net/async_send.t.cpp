@@ -29,6 +29,7 @@
 #include "nstd/execution/run.hpp"
 #include "nstd/execution/scheduler.hpp"
 #include "nstd/execution/then.hpp"
+#include "nstd/file/operation.hpp"
 #include "nstd/file/test_context.hpp"
 #include "nstd/net/io_context.hpp"
 #include "nstd/utility/move.hpp"
@@ -48,6 +49,10 @@ namespace test_declarations {
     namespace {
         struct socket {
             auto native_handle() const -> int { return 17; }
+            template <typename CBS>
+            auto enqueue(NF::operation_send<CBS>& op) {
+                op.submit();
+            }
         };
     }
 }

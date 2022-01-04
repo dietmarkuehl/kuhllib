@@ -30,6 +30,7 @@
 #include "nstd/net/async_read_some.hpp"
 #include "nstd/net/async_write_some.hpp"
 #include "nstd/net/basic_socket.hpp"
+#include "nstd/file/operation.hpp"
 #include "nstd/execution/connect.hpp"
 #include "nstd/execution/get_completion_scheduler.hpp"
 #include "nstd/execution/schedule.hpp"
@@ -81,6 +82,9 @@ public:
     basic_stream_socket(basic_stream_socket &&) = default;
     auto operator=(basic_stream_socket const&) -> basic_stream_socket& = delete;
     auto operator=(basic_stream_socket &&) -> basic_stream_socket& = default;
+
+    template <typename ConstantBufferSequence>
+    auto enqueue(::nstd::file::operation_send<ConstantBufferSequence>& op) -> void;
 };
 
 // ----------------------------------------------------------------------------
@@ -102,6 +106,15 @@ nstd::net::basic_stream_socket<Protocol>::basic_stream_socket(protocol_type cons
                                                               native_handle_type const& fd)
     : ::nstd::net::basic_socket<Protocol>(protocol, fd)
 {
+}
+
+// ----------------------------------------------------------------------------
+
+template <typename Protocol>
+    template <typename ConstantBufferSequence>
+auto nstd::net::basic_stream_socket<Protocol>::enqueue(::nstd::file::operation_send<ConstantBufferSequence>& op) -> void
+{
+    op.submit();
 }
 
 // ----------------------------------------------------------------------------

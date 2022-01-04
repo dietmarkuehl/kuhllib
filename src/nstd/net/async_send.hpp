@@ -96,13 +96,15 @@ struct nstd::net::customization_points::async_send_t::io_operation
 
     io_operation(socket_type& socket): d_socket(socket) {}
 
+    auto enqueue(operation_type* cont) -> void {
+        this->d_socket.enqueue(*cont);
+    }
     template <::nstd::execution::scheduler Scheduler>
     auto submit(Scheduler&& scheduler, operation_type* cont) -> void {
         iovec const* iov = reinterpret_cast<::iovec const*>(&*::nstd::net::buffer_sequence_begin(cont->d_buffers));
         cont->d_msgheader.msg_iov = const_cast<::iovec*>(iov);
         cont->d_msgheader.msg_iovlen = 1u;
         scheduler.sendmsg(this->d_socket.native_handle(), &cont->d_msgheader, static_cast<int>(cont->d_flags), cont);
-        // should be: this->d_socket.submit(*cont);
     }
 
     template <typename Receiver>

@@ -71,7 +71,8 @@ struct nstd::net::async_io_state_base
         , d_submit(socket)
     {
     }
-    auto submit() -> void { this->d_submit.submit(this->d_scheduler, this); }
+    auto enqueue() -> void { this->d_submit.enqueue(this); }
+    auto submit() -> void override { this->d_submit.submit(this->d_scheduler, this); }
 };
 
 // ----------------------------------------------------------------------------
@@ -83,7 +84,7 @@ struct nstd::net::async_io_receiver
 
     friend auto tag_invoke(::nstd::execution::set_value_t, async_io_receiver&& self, auto&&...) noexcept -> void {
         try {
-            self.d_state->submit();
+            self.d_state->enqueue();
         }
         catch (...) {
             ::nstd::execution::set_error(::nstd::utility::move(self.d_state->d_receiver), ::std::current_exception());

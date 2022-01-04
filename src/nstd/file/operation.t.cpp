@@ -24,15 +24,43 @@
 // ----------------------------------------------------------------------------
 
 #include "nstd/file/operation.hpp"
+#include "nstd/buffer/const_buffer.hpp"
 #include "kuhl/test.hpp"
 
+namespace test_declarations {}
+namespace NF = ::nstd::file;
+namespace NH = ::nstd::hidden_names;
+namespace NN = ::nstd::net;
+namespace TD = test_declarations;
 namespace KT = ::kuhl::test;
+
+// ----------------------------------------------------------------------------
+
+namespace test_declarations
+{
+    namespace {
+        template <typename ConstantBufferSequence>
+        struct operation_send
+            : NF::operation_send<ConstantBufferSequence>
+        {
+            operation_send(ConstantBufferSequence const& cbs, NH::message_flags flags)
+                : NF::operation_send<ConstantBufferSequence>(cbs, flags)
+            {
+            }
+            auto do_result(::std::int32_t, ::std::uint32_t) -> void override {}
+            auto submit() -> void override {}
+        };
+    }
+}
 
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
     KT::expect_success("breathing", []{
-            return true
+            char const array[] = "hello, world";
+            TD::operation_send os(NN::buffer(array), NH::message_flags{});
+
+            return KT::use(os)
                 ;
         }),
 };
