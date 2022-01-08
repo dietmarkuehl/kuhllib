@@ -36,8 +36,12 @@
 #ifdef NSTD_HAS_LINUX_IO_URING
 #include <linux/io_uring.h>
 #endif
-#include <sys/socket.h>
-#include <sys/types.h>
+#ifdef _MSC_VER
+#    include <WinSock2.h>
+#else
+#    include <sys/socket.h>
+#    include <sys/types.h>
+#endif
 #include <chrono>
 #include <mutex>
 #include <cstddef>

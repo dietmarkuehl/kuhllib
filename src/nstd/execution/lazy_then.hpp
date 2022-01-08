@@ -174,7 +174,7 @@ namespace nstd::execution {
                                        ::nstd::execution::get_completion_scheduler<::nstd::execution::set_value_t>(sender),
                                        ::nstd::utility::forward<Sender>(sender),
                                        ::nstd::utility::forward<Fun>(fun))
-                } -> ::nstd::execution::sender;
+                } -> nstd::execution::sender;
             }
         auto operator()(Sender&& sender, Fun&& fun) const {
             return ::nstd::tag_invoke(*this,
@@ -190,14 +190,14 @@ namespace nstd::execution {
                                            ::nstd::execution::get_completion_scheduler<::nstd::execution::set_value_t>(sender),
                                            ::nstd::utility::forward<Sender>(sender),
                                            ::nstd::utility::forward<Fun>(fun))
-                    } -> ::nstd::execution::sender;
+                    } -> nstd::execution::sender;
                 })
                 && requires (Sender&& sender, Fun&& fun) {
                     {
                         ::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::execution::lazy_then_t const&>(),
                                            ::nstd::utility::forward<Sender>(sender),
                                            ::nstd::utility::forward<Fun>(fun))
-                    } -> ::nstd::execution::sender;
+                    } -> nstd::execution::sender;
                 }
         auto operator()(Sender&& sender, Fun&& fun) const {
             return ::nstd::tag_invoke(*this,
@@ -212,14 +212,14 @@ namespace nstd::execution {
                                            ::nstd::execution::get_completion_scheduler<::nstd::execution::set_value_t>(sender),
                                            ::nstd::utility::forward<Sender>(sender),
                                            ::nstd::utility::forward<Fun>(fun))
-                    } -> ::nstd::execution::sender;
+                    } -> nstd::execution::sender;
                 })
                 && (not requires (Sender&& sender, Fun&& fun) {
                     {
                         ::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::execution::lazy_then_t const&>(),
                                            ::nstd::utility::forward<Sender>(sender),
                                            ::nstd::utility::forward<Fun>(fun))
-                    } -> ::nstd::execution::sender;
+                    } -> nstd::execution::sender;
                 })
         auto operator()(Sender&& s, Fun&& fun) const {
             return lazy_then_sender<::nstd::type_traits::remove_cvref_t<Sender>, ::nstd::type_traits::remove_cvref_t<Fun>>{

@@ -27,7 +27,12 @@
 #define INCLUDED_NSTD_HIDDEN_NAMES_BOOLEAN_SOCKET_OPTION
 
 #include <cstddef>
-#include <sys/socket.h>
+#ifdef _MSC_VER
+#    include <WinSock2.h>
+#else
+#    include <sys/socket.h>
+#    include <sys/types.h>
+#endif
 
 // ----------------------------------------------------------------------------
 

@@ -35,7 +35,11 @@
 #include <string_view>
 #include <vector>
 #include <cstddef>
-#include <sys/uio.h>
+#ifdef _MSC_VER
+#    include <WinSock2.h>
+#else
+#    include <sys/uio.h>
+#endif
 
 // ----------------------------------------------------------------------------
 

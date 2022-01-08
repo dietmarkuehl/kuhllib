@@ -27,8 +27,12 @@
 #define INCLUDED_NSTD_FILE_CONTEXT
 
 #include "nstd/file/io_base.hpp"
-#include <sys/socket.h>
-#include <sys/types.h>
+#ifdef _MSC_VER
+#    include <WinSock2.h>
+#else
+#    include <sys/socket.h>
+#    include <sys/types.h>
+#endif
 #include <cstdint>
 #include <cstddef>
 

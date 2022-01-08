@@ -40,7 +40,7 @@ namespace nstd::execution::inline customization_points {
         template <::nstd::execution::receiver Receiver>
             requires requires(Receiver const& receiver) {
                         { ::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::execution::get_stop_token_t>(), ::nstd::utility::as_const(receiver)) } noexcept
-                            -> ::nstd::stop_token::stoppable_token;
+                            -> nstd::stop_token::stoppable_token;
                     }
         constexpr auto operator()(Receiver const& receiver) const
             noexcept(noexcept(::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::execution::get_stop_token_t>(), ::nstd::utility::as_const(receiver))))

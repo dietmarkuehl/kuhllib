@@ -37,8 +37,13 @@
 #include <sstream>
 #include <cstdint>
 #include <cstring>
-#include <sys/socket.h>
-#include <netinet/ip.h>
+#ifdef _MSC_VER
+#    include <WinSock2.h>
+#else
+#    include <sys/socket.h>
+#    include <sys/types.h>
+#    include <netinet/ip.h>
+#endif
 
 // ----------------------------------------------------------------------------
 

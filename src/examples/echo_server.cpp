@@ -28,6 +28,7 @@
 #include "nstd/concepts/same_as.hpp"
 #include "nstd/execution.hpp"
 #include "nstd/net/io_context.hpp"
+#include "nstd/net/async_read_some.hpp"
 #include "nstd/net/basic_socket_acceptor.hpp"
 #include "nstd/net/basic_stream_socket.hpp"
 #include "nstd/net/ip/basic_endpoint.hpp"

@@ -44,7 +44,7 @@ namespace nstd::execution::inline customization_points {
                                        ::nstd::utility::forward<Sender>(sender),
                                        ::nstd::utility::forward<Receiver>(receiver))
                 }
-                -> ::nstd::execution::operation_state;
+                -> nstd::execution::operation_state;
             }
         constexpr auto operator()(Sender&& sender, Receiver&& receiver) const
             noexcept(noexcept(::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::execution::connect_t>(),

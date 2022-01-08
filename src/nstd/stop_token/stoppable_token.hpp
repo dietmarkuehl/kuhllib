@@ -42,8 +42,8 @@ namespace nstd::stop_token {
         && ::std::is_nothrow_move_constructible_v<StopToken>
         && ::std::equality_comparable<StopToken>
         && requires(StopToken const& st) {
-                { st.stop_requested() } noexcept -> ::nstd::concepts::boolean_testable;
-                { st.stop_possible() } noexcept -> ::nstd::concepts::boolean_testable;
+                { st.stop_requested() } noexcept -> nstd::concepts::boolean_testable;
+                { st.stop_possible() } noexcept -> nstd::concepts::boolean_testable;
                 typename ::nstd::hidden_names::check_type_alias_exists<StopToken::template callback_type>;
             }
         ;

@@ -28,8 +28,12 @@
 
 #include "nstd/file/io_base.hpp"
 #include "nstd/hidden_names/message_flags.hpp"
-#include <sys/types.h>
-#include <sys/socket.h>
+#ifdef _MSC_VER
+#    include <WinSock2.h>
+#else
+#    include <sys/socket.h>
+#    include <sys/types.h>
+#endif
 
 // ----------------------------------------------------------------------------
 

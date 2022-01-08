@@ -39,7 +39,7 @@ namespace nstd::execution::inline customization_points {
         template <nstd::execution::receiver Receiver>
             requires requires(Receiver&& receiver) {
                     { ::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::execution::get_scheduler_t>(), ::nstd::utility::as_const(receiver)) } noexcept
-                        -> ::nstd::execution::scheduler;
+                        -> nstd::execution::scheduler;
                 }
         constexpr auto operator()(Receiver&& receiver) const
             noexcept(noexcept(::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::execution::get_scheduler_t>(), ::nstd::utility::as_const(receiver))))
