@@ -29,10 +29,12 @@
 #include "nstd/file/context.hpp"
 #include <chrono>
 #include <queue>
-#include <poll.h>
 #include <functional>
 #include <list>
 #include <vector>
+#ifndef _MSC_VER
+#    include <poll.h>
+#endif
 
 // ----------------------------------------------------------------------------
 

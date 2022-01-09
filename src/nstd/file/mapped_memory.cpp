@@ -20,13 +20,27 @@
 //  HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,         
 //  WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING         
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR        
-//  OTHER DEALINGS IN THE SOFTWARE. 
+//  OTHER DEALINGS IN THE SOFTW
+// ARE. 
 // ----------------------------------------------------------------------------
 
 #include "nstd/file/mapped_memory.hpp"
 #include "nstd/utility/exchange.hpp"
-#include <unistd.h>
-#include <sys/mman.h>
+#ifdef _MSC_VER
+#    include <cstddef>
+
+namespace {
+    void* mmap(void*, ::std::size_t, int, int, int, ::std::ptrdiff_t) { return nullptr; }
+    int munmap(void*, ::std::size_t) { return 0; }
+    constexpr int PROT_READ = 0;
+    constexpr int PROT_WRITE = 0;
+    constexpr int MAP_SHARED = 0;
+    constexpr void* MAP_FAILED = nullptr;
+}
+#else
+#    include <unistd.h>
+#    include <sys/mman.h>
+#endif
 
 // ----------------------------------------------------------------------------
 

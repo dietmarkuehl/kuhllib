@@ -44,6 +44,10 @@
 #include <thread> //-dk:TODO remove
 #include <fcntl.h>
 
+#ifdef_MSC_VER
+inline constexpr int AT_FDCWD = 0;
+#endif
+
 // ----------------------------------------------------------------------------
 
 namespace nstd::file {

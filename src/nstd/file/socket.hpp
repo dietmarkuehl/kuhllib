@@ -53,10 +53,15 @@ struct msghdr {
     int            msg_flags;
 };
 
-struct sockaddr;
-struct sockaddr_in { char buffer[4]; };
-struct sockaddr_in6 { char buffer[16]; };
-struct sockaddr_storage { char buffer[16]; };
+struct in_addr_t {
+    char buffer[4];
+};
+
+struct sockaddr_in6 {
+    int sin6_family;
+    short sin6_port;
+    char sin6_addr[16];
+};
 #endif
 
 // ----------------------------------------------------------------------------

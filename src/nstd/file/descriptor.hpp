@@ -45,9 +45,9 @@ private:
 public:
     explicit descriptor(int = -1);
     descriptor(descriptor const&) = delete;
-    descriptor(descriptor&&);
+    descriptor(descriptor&&) noexcept;
     auto operator=(descriptor const&) -> descriptor& = delete;
-    auto operator=(descriptor&&)-> descriptor&;
+    auto operator=(descriptor&&) noexcept -> descriptor&;
     ~descriptor();
 
     auto get() const -> int;
@@ -62,12 +62,12 @@ inline nstd::file::descriptor::descriptor(int fd)
 {
 }
 
-inline nstd::file::descriptor::descriptor(::nstd::file::descriptor&& other)
+inline nstd::file::descriptor::descriptor(::nstd::file::descriptor&& other) noexcept
     : d_fd(::nstd::utility::exchange(other.d_fd, -1))
 {
 }
 
-inline auto nstd::file::descriptor::operator=(::nstd::file::descriptor&& other)
+inline auto nstd::file::descriptor::operator=(::nstd::file::descriptor&& other) noexcept
     -> ::nstd::file::descriptor&
 {
     if (this != &other) {

@@ -25,7 +25,7 @@
 
 #include "nstd/file/descriptor.hpp"
 #ifdef _MSC_VER
-void close(int) {}
+int close(int) { return 0;  }
 #else
 #    include <unistd.h>
 #endif

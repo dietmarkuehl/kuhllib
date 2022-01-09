@@ -39,8 +39,12 @@
 #include <system_error>
 #include <cstddef>
 #include <cstdint>
-#include <unistd.h>
-#include <sys/uio.h>
+#ifdef _MSC_VER
+int read(int, char*, int) { return 0; }
+#else
+#    include <unistd.h>
+#    include <sys/uio.h>
+#endif
 #include <iostream> //-dk:TODO remove
 
 // ----------------------------------------------------------------------------
