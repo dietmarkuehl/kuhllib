@@ -31,6 +31,7 @@
 #include "nstd/net/async_write_some.hpp"
 #include "nstd/net/basic_socket.hpp"
 #include "nstd/file/operation.hpp"
+#include "nstd/container/intrusive_list.hpp"
 #include "nstd/execution/connect.hpp"
 #include "nstd/execution/get_completion_scheduler.hpp"
 #include "nstd/execution/schedule.hpp"
@@ -69,6 +70,9 @@ template <typename Protocol>
 class nstd::net::basic_stream_socket
     : public ::nstd::net::basic_socket<Protocol>
 {
+private:
+    ::nstd::container::intrusive_list<::nstd::file::operation_send_base> d_send_queue;
+
 public:
     using protocol_type = Protocol;
     using endpoint_type = typename protocol_type::endpoint;
@@ -84,7 +88,9 @@ public:
     auto operator=(basic_stream_socket &&) -> basic_stream_socket& = default;
 
     template <typename ConstantBufferSequence>
-    auto enqueue(::nstd::file::operation_send<ConstantBufferSequence>& op) -> void;
+    auto enqueue(::nstd::file::operation_send<ConstantBufferSequence>&) -> void;
+    template <typename ConstantBufferSequence>
+    auto complete(::nstd::file::operation_send<ConstantBufferSequence>&) -> void;
 };
 
 // ----------------------------------------------------------------------------
@@ -114,7 +120,21 @@ template <typename Protocol>
     template <typename ConstantBufferSequence>
 auto nstd::net::basic_stream_socket<Protocol>::enqueue(::nstd::file::operation_send<ConstantBufferSequence>& op) -> void
 {
-    op.submit();
+    this->d_send_queue.push_back(op);
+    if (&op == &this->d_send_queue.front()) {
+        op.submit();
+    }
+}
+
+template <typename Protocol>
+    template <typename ConstantBufferSequence>
+auto nstd::net::basic_stream_socket<Protocol>::complete(::nstd::file::operation_send<ConstantBufferSequence>& op) -> void
+{
+    bool front(&this->d_send_queue.front() == &op);
+    this->d_send_queue.erase(&op);
+    if (front && !this->d_send_queue.empty()) {
+        this->d_send_queue.front().submit();
+    }
 }
 
 // ----------------------------------------------------------------------------

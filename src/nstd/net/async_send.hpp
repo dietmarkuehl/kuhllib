@@ -108,7 +108,8 @@ struct nstd::net::customization_points::async_send_t::io_operation
     }
 
     template <typename Receiver>
-    auto complete(::std::int32_t rc, std::uint32_t, Receiver& receiver) {
+    auto complete(::std::int32_t rc, std::uint32_t, operation_type* cont, Receiver& receiver) {
+        this->d_socket.complete(*cont);
         ::nstd::execution::set_value(::nstd::utility::move(receiver), rc);
     }
 };

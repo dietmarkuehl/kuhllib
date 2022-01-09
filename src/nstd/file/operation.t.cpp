@@ -48,7 +48,7 @@ namespace test_declarations
             {
             }
             auto do_result(::std::int32_t, ::std::uint32_t) -> void override {}
-            auto submit() -> void override {}
+            auto do_submit() -> void override {}
         };
     }
 }

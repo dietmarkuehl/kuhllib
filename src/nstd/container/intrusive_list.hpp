@@ -58,12 +58,16 @@ class nstd::container::intrusive_list
     : private Access
 {
 private:
-    mutable T d_link;
+    mutable T d_head;
 
-    intrusive_list(intrusive_list&&) = delete;
+    intrusive_list(intrusive_list const&) = delete;
 
     auto link(T& obj) const -> auto& { return (*this)(obj); }
 
+    auto connect(T& prev, T& next) {
+        this->link(prev).d_next = &next;
+        this->link(next).d_prev = &prev;
+    }
 public:
     struct iterator
         : private Access
@@ -96,11 +100,20 @@ public:
     };
 
     intrusive_list() {
-        auto& link(this->link(this->d_link));
-        link.d_prev = link.d_next = &this->d_link;
+        connect(this->d_head, this->d_head);
+    }
+    intrusive_list(intrusive_list&& other)
+    {
+        connect(this->d_head, *link(other.d_head).d_next);
+        connect(*link(other.d_head).d_prev, this->d_head);
+    }
+    auto operator= (intrusive_list&& other) -> intrusive_list& {
+        connect(this->d_head, *link(other.d_head).d_next);
+        connect(*link(other.d_head).d_prev, this->d_head);
+        return *this;
     }
 
-    iterator insert(iterator pos, T& obj) {
+    auto insert(iterator pos, T& obj) -> iterator {
         auto& next_link(this->link(*pos));
         auto& obj_link(this->link(obj));
 
@@ -111,15 +124,23 @@ public:
 
         return {&obj};
     }
-    void erase(iterator pos) {
+    auto push_back(T& obj) -> void {
+        this->insert(this->end(), obj);
+    }
+    auto erase(iterator pos) -> void {
         auto& link(this->link(*pos));
         this->link(*link.d_prev).d_next = link.d_next;
         this->link(*link.d_next).d_prev = link.d_prev;
     }
+    auto pop_front() -> void {
+        this->erase(this->begin());
+    }
 
+    auto front() -> T& { return *this->link(this->d_head).d_next; }
+    auto empty() const -> bool { return &this->d_head == this->link(this->d_head).d_next; }
     auto make_iterator(T* ptr) const -> iterator { return ptr; }
-    auto begin() const -> iterator { return this->link(this->d_link).d_next; }
-    auto end() const   -> iterator { return &this->d_link; }
+    auto begin() const -> iterator { return this->link(this->d_head).d_next; }
+    auto end() const   -> iterator { return &this->d_head; }
 };
 
 // ----------------------------------------------------------------------------

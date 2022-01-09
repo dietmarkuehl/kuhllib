@@ -72,7 +72,7 @@ struct nstd::net::async_io_state_base
     {
     }
     auto enqueue() -> void { this->d_submit.enqueue(this); }
-    auto submit() -> void override { this->d_submit.submit(this->d_scheduler, this); }
+    auto do_submit() -> void override { this->d_submit.submit(this->d_scheduler, this); }
 };
 
 // ----------------------------------------------------------------------------
@@ -154,7 +154,7 @@ struct nstd::net::async_io_state
                     ::nstd::execution::set_done(::nstd::utility::move(this->d_self->d_receiver));
                 }
                 else {
-                    this->d_self->d_submit.complete(rc, flags, this->d_self->d_receiver);
+                    this->d_self->d_submit.complete(rc, flags, this->d_self, this->d_self->d_receiver);
                 }
             }
         }

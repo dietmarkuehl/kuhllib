@@ -24,11 +24,14 @@
 // ----------------------------------------------------------------------------
 
 #include "nstd/container/intrusive_list.hpp"
+#include "nstd/utility/move.hpp"
 #include "kuhl/test.hpp"
 #include <algorithm>
 #include <array>
+#include <iostream>
 
 namespace NC = ::nstd::container;
+namespace UT = ::nstd::utility;
 namespace test_declarations {};
 namespace TD = test_declarations;
 namespace KT = ::kuhl::test;
@@ -88,6 +91,67 @@ static KT::testcase const tests[] = {
 
             return true;
         }),
+    KT::expect_success("push_back", []{
+            TD::type v[] = { 17, 42, 8, 11 };
+            NC::intrusive_list<TD::type> list;
+            if (!compare(::std::array<TD::type, 0>{}, list)) return false;
+
+            list.push_back(v[0]);
+            if (!compare(::std::array<TD::type, 1>{ 17 }, list)) return false;
+
+            list.push_back(v[1]);
+            if (!compare(::std::array<TD::type, 2>{ 17, 42 }, list)) return false;
+
+            list.push_back(v[2]);
+            if (!compare(::std::array<TD::type, 3>{ 17, 42, 8 }, list)) return false;
+
+            list.push_back(v[3]);
+            if (!compare(::std::array<TD::type, 4>{ 17, 42, 8, 11 }, list)) return false;
+
+            return true;
+        }),
+    KT::expect_success("front", []{
+            TD::type v[] = { 17, 42 };
+            NC::intrusive_list<TD::type> list;
+            list.push_back(v[0]);
+            list.push_back(v[1]);
+            return v[0] == list.front();
+        }),
+
+    KT::expect_success("empty()", []{
+            TD::type v[] = { 17, 43, 8, 11 };
+            NC::intrusive_list<TD::type> list;
+            if (!list.empty()) return false;
+            list.insert(list.end(), v[0]);
+            return !list.empty();
+        }),
+    KT::expect_success("move ctor", []{
+            TD::type v[] = { 17, 43, 8, 11 };
+            NC::intrusive_list<TD::type> list;
+            for (auto& r: v) {
+                list.insert(list.end(), r);
+            }
+            if (!compare(std::array<TD::type, 4>{ 17, 43, 8, 11 }, list)) return false;
+
+            NC::intrusive_list<TD::type> moved(UT::move(list));
+            if (!compare(std::array<TD::type, 4>{ 17, 43, 8, 11 }, moved)) return false;
+
+            return true;
+        }),
+    KT::expect_success("move assign", []{
+            TD::type v[] = { 17, 43, 8, 11 };
+            NC::intrusive_list<TD::type> list;
+            for (auto& r: v) {
+                list.insert(list.end(), r);
+            }
+            if (!compare(std::array<TD::type, 4>{ 17, 43, 8, 11 }, list)) return false;
+
+            NC::intrusive_list<TD::type> moved;
+            moved = UT::move(list);
+            if (!compare(std::array<TD::type, 4>{ 17, 43, 8, 11 }, moved)) return false;
+
+            return true;
+        }),
     KT::expect_success("erase", []{
             TD::type v[] = { 17, 42, 8, 11 };
             NC::intrusive_list<TD::type> list;
@@ -113,6 +177,17 @@ static KT::testcase const tests[] = {
 
             return true;
         }),
+    KT::expect_success("pop_front", []{
+            TD::type v[] = { 17, 42, 8, 11 };
+            NC::intrusive_list<TD::type> list;
+            for (auto& r: v) {
+                list.push_back(r);
+            }
+            if (!compare(::std::array<TD::type, 4>{ 17, 42, 8, 11 }, list)) return false;
+            list.pop_front();
+            return compare(::std::array<TD::type, 3>{ 42, 8, 11 }, list);
+        }),
+
 };
 
 static KT::add_tests suite("intrusive_list", ::tests);

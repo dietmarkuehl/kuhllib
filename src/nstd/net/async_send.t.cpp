@@ -53,6 +53,9 @@ namespace test_declarations {
             auto enqueue(NF::operation_send<CBS>& op) {
                 op.submit();
             }
+            template <typename CBS>
+            auto complete(NF::operation_send<CBS>&) {
+            }
         };
     }
 }

@@ -27,6 +27,7 @@
 #define INCLUDED_NSTD_FILE_OPERATION
 
 #include "nstd/file/io_base.hpp"
+#include "nstd/container/intrusive_list.hpp"
 #include "nstd/hidden_names/message_flags.hpp"
 #include "nstd/file/socket.hpp"
 
@@ -37,6 +38,7 @@ namespace nstd::file {
     struct operation_read;
     struct operation_read_some;
     struct operation_receive;
+    struct operation_send_base;
     template <typename> struct operation_send;
     struct operation_write;
     struct operation_write_some;
@@ -47,14 +49,29 @@ namespace nstd::file {
 struct nstd::file::operation
     : ::nstd::file::io_base
 {
-    virtual auto submit() -> void = 0;
+protected:
+    virtual auto do_submit() -> void = 0;
+
+public:
+    auto submit() -> void { this->do_submit(); }
 };
 
 // ----------------------------------------------------------------------------
 
+struct nstd::file::operation_send_base
+    : ::nstd::file::operation
+{
+private:
+    auto do_result(::std::int32_t, ::std::uint32_t) -> void override {}
+    auto do_submit() -> void override {}
+
+public:
+    nstd::container::intrusive_list_node<::nstd::file::operation_send_base> link;
+};
+
 template <typename ConstantBufferSequence>
 struct nstd::file::operation_send
-    : ::nstd::file::operation
+    : ::nstd::file::operation_send_base
 {
     ConstantBufferSequence              d_buffers;
     ::nstd::hidden_names::message_flags d_flags;
