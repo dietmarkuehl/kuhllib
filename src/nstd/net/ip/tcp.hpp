@@ -27,12 +27,7 @@
 #define INCLUDED_NSTD_NET_IP_TCP
 
 #include "nstd/net/netfwd.hpp"
-#ifdef _MSC_VER
-#    include <WinSock2.h>
-#else
-#    include <sys/socket.h>
-#    include <sys/types.h>
-#endif
+#include "nstd/file/socket.hpp"
 
 // ----------------------------------------------------------------------------
 

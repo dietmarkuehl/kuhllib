@@ -1,4 +1,4 @@
-// nstd/file/operation.hpp                                            -*-C++-*-
+// nstd/file/socket.hpp                                               -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,50 +23,41 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_FILE_OPERATION
-#define INCLUDED_NSTD_FILE_OPERATION
-
-#include "nstd/file/io_base.hpp"
-#include "nstd/hidden_names/message_flags.hpp"
-#include "nstd/file/socket.hpp"
+#ifndef INCLUDED_NSTD_FILE_SOCKET
+#define INCLUDED_NSTD_FILE_SOCKET
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::file {
-    struct operation;
-    struct operation_read;
-    struct operation_read_some;
-    struct operation_receive;
-    template <typename> struct operation_send;
-    struct operation_write;
-    struct operation_write_some;
-}
+#include <cstddef>
+#ifndef _MSC_VER
+#    include <sys/socket.h>
+#    include <sys/types.h>
+#    include <sys/uio.h>
+#else
+#    include <WinSock2.h>
 
-// ----------------------------------------------------------------------------
+using socklen_t = ::std::size_t;
 
-struct nstd::file::operation
-    : ::nstd::file::io_base
-{
-    virtual auto submit() -> void = 0;
+struct iovec { //-dk:TODO abstract iovec nicer
+    void* iov_base;
+    ::std::size_t iov_len;
 };
 
-// ----------------------------------------------------------------------------
-
-template <typename ConstantBufferSequence>
-struct nstd::file::operation_send
-    : ::nstd::file::operation
-{
-    ConstantBufferSequence              d_buffers;
-    ::nstd::hidden_names::message_flags d_flags;
-    ::msghdr                            d_msgheader{};
-
-    operation_send(ConstantBufferSequence const&       buffers,
-                   ::nstd::hidden_names::message_flags flags)
-        : d_buffers(buffers)
-        , d_flags(flags)
-    {
-    }
+struct msghdr {
+    void*          msg_name;
+    ::socklen_t    msg_namelen;
+    ::iovec*       msg_iov;
+    ::std::size_t  msg_iovlen;
+    void*          msg_control;
+    ::std::size_t  msg_controllen;
+    int            msg_flags;
 };
+
+struct sockaddr;
+struct sockaddr_in { char buffer[4]; };
+struct sockaddr_in6 { char buffer[16]; };
+struct sockaddr_storage { char buffer[16]; };
+#endif
 
 // ----------------------------------------------------------------------------
 

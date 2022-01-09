@@ -33,18 +33,7 @@
 #include <string>
 #include <vector>
 #include <cstddef>
-#ifdef _MSC_VER
-#    include <WinSock2.h>
-#else
-#    include <sys/uio.h>
-#endif
-
-#ifdef _MSC_VER
-struct iovec { //-dk:TODO abstract iovec nicer
-    void* iov_base;
-    ::std::size_t iov_len;
-};
-#endif
+#include "nstd/file/socket.hpp"
 
 // ----------------------------------------------------------------------------
 

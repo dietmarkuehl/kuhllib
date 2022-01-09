@@ -36,17 +36,11 @@
 #ifdef NSTD_HAS_LINUX_IO_URING
 #include <linux/io_uring.h>
 #endif
-#ifdef _MSC_VER
-#    include <WinSock2.h>
-#else
-#    include <sys/socket.h>
-#    include <sys/types.h>
-#endif
+#include "nstd/file/socket.hpp"
 #include <chrono>
 #include <mutex>
 #include <cstddef>
 #include <cstdint>
-#include <iostream> //-dk:TODO remove
 
 // ----------------------------------------------------------------------------
 

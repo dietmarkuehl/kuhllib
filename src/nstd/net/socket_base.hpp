@@ -29,12 +29,7 @@
 #include "nstd/hidden_names/boolean_socket_option.hpp"
 #include "nstd/hidden_names/message_flags.hpp"
 #include "nstd/file/descriptor.hpp"
-#ifdef _MSC_VER
-#    include <WinSock2.h>
-#else
-#    include <sys/socket.h>
-#    include <sys/types.h>
-#endif
+#include "nstd/file/socket.hpp"
 
 // ----------------------------------------------------------------------------
 

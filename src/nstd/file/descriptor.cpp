@@ -24,7 +24,11 @@
 // ----------------------------------------------------------------------------
 
 #include "nstd/file/descriptor.hpp"
-#include <unistd.h>
+#ifdef _MSC_VER
+void close(int) {}
+#else
+#    include <unistd.h>
+#endif
 
 // ----------------------------------------------------------------------------
 

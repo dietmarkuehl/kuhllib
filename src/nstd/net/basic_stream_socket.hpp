@@ -47,12 +47,7 @@
 #include "nstd/utility/forward.hpp"
 #include "nstd/utility/move.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
-#ifdef _MSC_VER
-#    include <WinSock2.h>
-#else
-#    include <sys/socket.h>
-#    include <sys/types.h>
-#endif
+#include "nstd/file/socket.hpp"
 
 // ----------------------------------------------------------------------------
 

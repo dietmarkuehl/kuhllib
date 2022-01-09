@@ -30,12 +30,7 @@
 #include "nstd/net/ip/address_v6.hpp"
 #include <compare>
 #include <variant>
-#ifdef _MSC_VER
-#    include <WinSock2.h>
-#else
-#    include <sys/socket.h>
-#    include <sys/types.h>
-#endif
+#include "nstd/file/socket.hpp"
 
 // ----------------------------------------------------------------------------
 
