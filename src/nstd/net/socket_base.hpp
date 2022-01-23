@@ -43,7 +43,7 @@ class nstd::net::socket_base
 {
 private:
     ::nstd::file::descriptor d_descriptor;
-    int                      d_flags;
+    int                      d_flags{};
 
 protected:
     auto open(int domain, int type, int protocol) -> int;
