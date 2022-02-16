@@ -94,6 +94,9 @@ public:
 
     auto enable_connection_aborted() const -> bool { return false; }
     auto protocol() const -> protocol_type { return *this->d_protocol; }
+
+    auto accept() -> socket_type;
+    auto accept(::std::error_code&) -> socket_type;
 };
 
 // ----------------------------------------------------------------------------
@@ -151,6 +154,30 @@ auto nstd::net::basic_socket_acceptor<AcceptableProtocol>::bind(endpoint_type co
     if (int rc = ::bind(this->native_handle(), reinterpret_cast<::sockaddr const*>(&storage), size)) {
         throw ::std::system_error(::std::error_code(errno, ::std::system_category()));
     }
+}
+
+// ----------------------------------------------------------------------------
+
+template <typename AcceptableProtocol>
+auto nstd::net::basic_socket_acceptor<AcceptableProtocol>::accept(::std::error_code& ec) -> socket_type
+{
+    auto res = ::accept(this->native_handle(), nullptr, 0);
+    if (res < 0) {
+        ec = std::error_code(errno, std::system_category());
+        return socket_type();
+    }
+    return socket_type(this->protocol(), res);
+}
+
+template <typename AcceptableProtocol>
+auto nstd::net::basic_socket_acceptor<AcceptableProtocol>::accept() -> socket_type
+{
+    ::std::error_code ec;
+    auto rc = this->accept(ec);
+    if (ec) {
+        throw ::std::system_error(ec);
+    }
+    return rc;
 }
 
 // ----------------------------------------------------------------------------

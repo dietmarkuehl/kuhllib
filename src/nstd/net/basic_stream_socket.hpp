@@ -49,6 +49,7 @@
 #include "nstd/utility/move.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
 #include "nstd/file/socket.hpp"
+#include <vector>
 
 // ----------------------------------------------------------------------------
 
@@ -91,6 +92,34 @@ public:
     auto enqueue(::nstd::file::operation_send<ConstantBufferSequence>&) -> void;
     template <typename ConstantBufferSequence>
     auto complete(::nstd::file::operation_send<ConstantBufferSequence>&) -> void;
+
+    template <typename MutableBufferSequence>
+    auto read_some(MutableBufferSequence const&) -> ::std::size_t;
+    template <typename MutableBufferSequence>
+    auto read_some(MutableBufferSequence const&, ::std::error_code&) -> ::std::size_t;
+
+    template <typename MutableBufferSequence>
+    auto receive(MutableBufferSequence const&) -> ::std::size_t;
+    template <typename MutableBufferSequence>
+    auto receive(MutableBufferSequence const&, ::std::error_code&) -> ::std::size_t;
+    template <typename MutableBufferSequence>
+    auto receive(MutableBufferSequence const&, ::nstd::net::socket_base::message_flags) -> ::std::size_t;
+    template <typename MutableBufferSequence>
+    auto receive(MutableBufferSequence const&, ::nstd::net::socket_base::message_flags, ::std::error_code&) -> ::std::size_t;
+
+    template <typename ConstBufferSequence>
+    auto write_some(ConstBufferSequence const&) -> ::std::size_t;
+    template <typename ConstBufferSequence>
+    auto write_some(ConstBufferSequence const&, ::std::error_code&) -> ::std::size_t;
+
+    template <typename ConstBufferSequence>
+    auto send(ConstBufferSequence const&) -> ::std::size_t;
+    template <typename ConstBufferSequence>
+    auto send(ConstBufferSequence const&, ::std::error_code&) -> ::std::size_t;
+    template <typename ConstBufferSequence>
+    auto send(ConstBufferSequence const&, ::nstd::net::socket_base::message_flags) -> ::std::size_t;
+    template <typename ConstBufferSequence>
+    auto send(ConstBufferSequence const&, ::nstd::net::socket_base::message_flags, ::std::error_code&) -> ::std::size_t;
 };
 
 // ----------------------------------------------------------------------------
@@ -167,6 +196,196 @@ auto nstd::net::async_write_t::operator()(::nstd::net::basic_stream_socket<P>& s
     return [this, &socket, buffer](::nstd::execution::sender auto&& sender) {
         return this->operator()(sender, socket, buffer);
     };
+}
+
+// ----------------------------------------------------------------------------
+
+template <typename P>
+template <typename MutableBufferSequence>
+auto nstd::net::basic_stream_socket<P>::receive(MutableBufferSequence const& buffers)
+    -> ::std::size_t
+{
+    ::std::error_code ec;
+    std::size_t rc = this->receive(buffers, ec);
+    if (ec) {
+        throw ::std::system_error(ec);
+    }
+    return rc;
+}
+
+template <typename P>
+template <typename MutableBufferSequence>
+auto nstd::net::basic_stream_socket<P>::receive(MutableBufferSequence const& buffers,
+                                                  ::std::error_code&           ec)
+    -> ::std::size_t
+{
+    return this->receive(buffers, ::nstd::net::socket_base::message_flags(), ec);
+}
+
+template <typename P>
+template <typename MutableBufferSequence>
+auto nstd::net::basic_stream_socket<P>::receive(MutableBufferSequence const&            buffers,
+                                                ::nstd::net::socket_base::message_flags flags)
+    -> ::std::size_t
+{
+    ::std::error_code ec;
+    std::size_t rc = this->receive(buffers, flags, ec);
+    if (ec) {
+        throw ::std::system_error(ec);
+    }
+    return rc;
+}
+
+template <typename P>
+template <typename MutableBufferSequence>
+auto nstd::net::basic_stream_socket<P>::receive(MutableBufferSequence const&            buffers,
+                                                ::nstd::net::socket_base::message_flags flags,
+                                                ::std::error_code&                      ec)
+    -> ::std::size_t
+{
+    //-dk:TODO: if (buffer_size(buffers) == 0) { return ::std::size_t{}; }
+
+    auto size = ::std::distance(::nstd::net::buffer_sequence_begin(buffers), ::nstd::net::buffer_sequence_end(buffers));
+    ::std::vector<::iovec> v;
+    for (auto it = ::nstd::net::buffer_sequence_begin(buffers),
+              end = ::nstd::net::buffer_sequence_end(buffers); it != end; ++it) {
+        ::iovec vec;
+        vec.iov_base = it->data();
+        vec.iov_len  = it->size();
+        v.push_back(vec);
+    }
+
+    ::msghdr message{};
+    message.msg_name = nullptr;
+    message.msg_namelen = 0u;
+    message.msg_iov = v.data();
+    message.msg_iovlen = size;
+    message.msg_control = nullptr;
+    message.msg_controllen = 0u;
+    message.msg_flags = 0u;
+
+    auto rc = ::recvmsg(this->native_handle(), &message, static_cast<int>(flags));
+    if (rc < 0) {
+        ec = ::std::error_code(errno, ::std::system_category());
+        return 0u;
+    }
+
+    return rc;
+}
+
+// ----------------------------------------------------------------------------
+
+template <typename P>
+template <typename MutableBufferSequence>
+auto nstd::net::basic_stream_socket<P>::read_some(MutableBufferSequence const& buffers)
+    -> ::std::size_t
+{
+    ::std::error_code ec;
+    std::size_t rc = this->read_some(buffers, ec);
+    if (ec) {
+        throw ::std::system_error(ec);
+    }
+    return rc;
+}
+
+template <typename P>
+template <typename MutableBufferSequence>
+auto nstd::net::basic_stream_socket<P>::read_some(MutableBufferSequence const& buffers,
+                                                  ::std::error_code&           ec)
+    -> ::std::size_t
+{
+    return this->receive(buffers, ec);
+}
+
+// ----------------------------------------------------------------------------
+
+template <typename P>
+template <typename ConstBufferSequence>
+auto nstd::net::basic_stream_socket<P>::write_some(ConstBufferSequence const& buffers) -> ::std::size_t
+{
+    ::std::error_code ec;
+    std::size_t rc = this->send(buffers, ec);
+    if (ec) {
+        throw ::std::system_error(ec);
+    }
+    return rc;
+}
+
+template <typename P>
+template <typename ConstBufferSequence>
+auto nstd::net::basic_stream_socket<P>::write_some(ConstBufferSequence const& buffers, ::std::error_code& ec) -> ::std::size_t
+{
+    return this->send(buffers, ec);
+}
+
+// ----------------------------------------------------------------------------
+
+template <typename P>
+template <typename ConstBufferSequence>
+auto nstd::net::basic_stream_socket<P>::send(ConstBufferSequence const& buffers) -> ::std::size_t
+{
+    ::std::error_code ec;
+    std::size_t rc = this->send(buffers, ec);
+    if (ec) {
+        throw ::std::system_error(ec);
+    }
+    return rc;
+}
+
+template <typename P>
+template <typename ConstBufferSequence>
+auto nstd::net::basic_stream_socket<P>::send(ConstBufferSequence const& buffers, ::std::error_code& ec) -> ::std::size_t
+{
+    return this->send(buffers, ::nstd::net::socket_base::message_flags{}, ec);
+}
+
+template <typename P>
+template <typename ConstBufferSequence>
+auto nstd::net::basic_stream_socket<P>::send(ConstBufferSequence const& buffers, ::nstd::net::socket_base::message_flags flags) -> ::std::size_t
+{
+    ::std::error_code ec;
+    std::size_t rc = this->send(buffers, flags, ec);
+    if (ec) {
+        throw ::std::system_error(ec);
+    }
+    return rc;
+}
+
+template <typename P>
+template <typename ConstBufferSequence>
+auto nstd::net::basic_stream_socket<P>::send(ConstBufferSequence const&              buffers,
+                                             ::nstd::net::socket_base::message_flags flags,
+                                             ::std::error_code&                      ec)
+    -> ::std::size_t
+{
+    //-dk:TODO: if (buffer_size(buffers) == 0) { return ::std::size_t{}; }
+
+    auto size = ::std::distance(::nstd::net::buffer_sequence_begin(buffers), ::nstd::net::buffer_sequence_end(buffers));
+    ::std::vector<::iovec> v;
+    for (auto it = ::nstd::net::buffer_sequence_begin(buffers),
+              end = ::nstd::net::buffer_sequence_end(buffers); it != end; ++it) {
+        ::iovec vec;
+        vec.iov_base = it->data();
+        vec.iov_len  = it->size();
+        v.push_back(vec);
+    }
+
+    ::msghdr message{};
+    message.msg_name = nullptr;
+    message.msg_namelen = 0u;
+    message.msg_iov = v.data();
+    message.msg_iovlen = size;
+    message.msg_control = nullptr;
+    message.msg_controllen = 0u;
+    message.msg_flags = 0u;
+
+    auto rc = ::sendmsg(this->native_handle(), &message, static_cast<int>(flags));
+    if (rc < 0) {
+        ec = ::std::error_code(errno, ::std::system_category());
+        return 0u;
+    }
+
+    return rc;
 }
 
 // ----------------------------------------------------------------------------

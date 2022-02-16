@@ -240,6 +240,8 @@ add_executable(kuhllib_test ${kuhllib_tstfiles})
 target_link_libraries(kuhllib_test PUBLIC kuhllib kuhltest pthread)
 add_test(NAME kuhllib_test COMMAND $<TARGET_FILE:kuhllib_test>)
 
+add_executable(simple_echo_server src/examples/simple_echo_server.cpp)
+target_link_libraries(simple_echo_server PUBLIC kuhllib pthread)
 add_executable(echo_server src/examples/echo_server.cpp)
 target_link_libraries(echo_server PUBLIC kuhllib pthread)
 add_executable(chat_server src/examples/chat_server.cpp)
