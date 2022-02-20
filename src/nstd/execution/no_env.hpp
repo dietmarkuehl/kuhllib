@@ -1,4 +1,4 @@
-// src/examples/simple_echo_server.cpp                                -*-C++-*-
+// src/nstd/execution/no_env.hpp                                      -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2022 Dietmar Kuehl http://www.dietmar-kuehl.de
 //
@@ -23,37 +23,18 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "nstd/net.hpp"
-#include <iostream>
-#include <thread>
+#ifndef INCLUDED_SRC_NSTD_EXECUTION_NO_ENV
+#define INCLUDED_SRC_NSTD_EXECUTION_NO_ENV
 
 // ----------------------------------------------------------------------------
 
-void run_client(::nstd::net::ip::tcp::socket stream)
-{
-    std::cout << "run_client start\n";
-    char buffer[1024];
-    while (true)
+namespace nstd::hidden_names::exec_envs {
+    struct no_env
     {
-        try {
-            auto size = stream.read_some(::nstd::net::buffer(buffer));
-            if (size == 0) {
-                break;
-            }
-            stream.write_some(::nstd::net::buffer(buffer, size));
-        }
-        catch (::std::exception const&) { ::std::cout << "Error processing\n"; }
-    }
-    std::cout << "run_client end\n";
+    friend auto tag_invoke(auto, no_env, auto&&...) -> void = delete;
+    };
 }
 
-int main()
-{
-    using tcp = nstd::net::ip::tcp;
+// ----------------------------------------------------------------------------
 
-    tcp::acceptor server(tcp::endpoint(nstd::net::ip::address_v4::any(), 12345));
-    while (true) {
-        try { ::std::thread(run_client, server.accept()).detach(); }
-        catch (::std::exception const&) { ::std::cout << "Error accepting\n"; }
-    }
-}
+#endif

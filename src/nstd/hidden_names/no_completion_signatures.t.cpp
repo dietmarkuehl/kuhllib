@@ -1,4 +1,4 @@
-// src/examples/simple_echo_server.cpp                                -*-C++-*-
+// src/nstd/hidden_names/no_completion_signatures.t.cpp               -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2022 Dietmar Kuehl http://www.dietmar-kuehl.de
 //
@@ -23,37 +23,17 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "nstd/net.hpp"
-#include <iostream>
-#include <thread>
+#include "nstd/hidden_names/no_completion_signatures.hpp"
+#include "kuhl/test.hpp"
+
+namespace KT = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
 
-void run_client(::nstd::net::ip::tcp::socket stream)
-{
-    std::cout << "run_client start\n";
-    char buffer[1024];
-    while (true)
-    {
-        try {
-            auto size = stream.read_some(::nstd::net::buffer(buffer));
-            if (size == 0) {
-                break;
-            }
-            stream.write_some(::nstd::net::buffer(buffer, size));
-        }
-        catch (::std::exception const&) { ::std::cout << "Error processing\n"; }
-    }
-    std::cout << "run_client end\n";
-}
+static KT::testcase const tests[] = {
+    KT::expect_success("breathing", []{
+           return 0u != sizeof(::nstd::hidden_names::no_completion_signatures::type);
+        }),
+};
 
-int main()
-{
-    using tcp = nstd::net::ip::tcp;
-
-    tcp::acceptor server(tcp::endpoint(nstd::net::ip::address_v4::any(), 12345));
-    while (true) {
-        try { ::std::thread(run_client, server.accept()).detach(); }
-        catch (::std::exception const&) { ::std::cout << "Error accepting\n"; }
-    }
-}
+static KT::add_tests suite("no_completion_signatures", ::tests);

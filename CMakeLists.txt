@@ -36,7 +36,6 @@ list(APPEND kuhllib_test_components
     )
 
 list(APPEND kuhllib_components
-    src/nstd/hidden_names/message_flags
     src/nstd/algorithm/all_of
     src/nstd/algorithm/any_of
     src/nstd/algorithm/distance
@@ -65,10 +64,13 @@ list(APPEND kuhllib_components
     src/nstd/endian/literals
     src/nstd/endian/type
     src/nstd/execution
+    src/nstd/execution/completion_signatures
     src/nstd/execution/connect
+    src/nstd/execution/dependent_completion_signatures
     src/nstd/execution/execution
     src/nstd/execution/get_allocator
     src/nstd/execution/get_completion_scheduler
+    src/nstd/execution/get_completion_signatures
     src/nstd/execution/get_scheduler
     src/nstd/execution/get_stop_token
     src/nstd/execution/inject_cancel
@@ -78,6 +80,7 @@ list(APPEND kuhllib_components
     src/nstd/execution/lazy_then
     src/nstd/execution/let_value
     src/nstd/execution/operation_state
+    src/nstd/execution/no_env
     src/nstd/execution/parallel_policy
     src/nstd/execution/parallel_unsequenced_policy
     src/nstd/execution/receiver
@@ -142,7 +145,10 @@ list(APPEND kuhllib_components
     src/nstd/hidden_names/constexpr_expression
     src/nstd/hidden_names/derives_from_sender_base
     src/nstd/hidden_names/has_sender_types
+    src/nstd/hidden_names/is_instance_of
+    src/nstd/hidden_names/message_flags
     src/nstd/hidden_names/movable_value
+    src/nstd/hidden_names/no_completion_signatures
     src/nstd/hidden_names/type_list
     src/nstd/iterator/bidirectional_iterator
     src/nstd/iterator/bidirectional_iterator_tag
@@ -240,11 +246,15 @@ add_executable(kuhllib_test ${kuhllib_tstfiles})
 target_link_libraries(kuhllib_test PUBLIC kuhllib kuhltest pthread)
 add_test(NAME kuhllib_test COMMAND $<TARGET_FILE:kuhllib_test>)
 
-add_executable(simple_echo_server src/examples/simple_echo_server.cpp)
-target_link_libraries(simple_echo_server PUBLIC kuhllib pthread)
-add_executable(echo_server src/examples/echo_server.cpp)
-target_link_libraries(echo_server PUBLIC kuhllib pthread)
-add_executable(chat_server src/examples/chat_server.cpp)
-target_link_libraries(chat_server PUBLIC kuhllib pthread)
-add_executable(audio src/examples/audio.cpp)
-target_link_libraries(audio PUBLIC kuhllib pthread)
+
+list(APPEND kuhllib_examples
+    coroutine_echo_server
+    simple_echo_server
+    echo_server
+    chat_server
+    audio
+)
+foreach(example ${kuhllib_examples})
+    add_executable(${example} src/examples/${example}.cpp)
+    target_link_libraries(${example} PUBLIC kuhllib pthread)
+endforeach()

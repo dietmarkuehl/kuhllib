@@ -1,4 +1,4 @@
-// src/examples/simple_echo_server.cpp                                -*-C++-*-
+// src/nstd/execution/no_env.t.cpp                                    -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2022 Dietmar Kuehl http://www.dietmar-kuehl.de
 //
@@ -23,37 +23,40 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "nstd/net.hpp"
-#include <iostream>
-#include <thread>
+#include "nstd/execution/no_env.hpp"
+#include "nstd/functional/tag_invoke.hpp"
+#include "kuhl/test.hpp"
+#include <functional>
+
+namespace KT = ::kuhl::test;
+namespace test_declarations {};
+namespace TD = test_declarations;
 
 // ----------------------------------------------------------------------------
 
-void run_client(::nstd::net::ip::tcp::socket stream)
+namespace test_declarations
 {
-    std::cout << "run_client start\n";
-    char buffer[1024];
-    while (true)
-    {
-        try {
-            auto size = stream.read_some(::nstd::net::buffer(buffer));
-            if (size == 0) {
-                break;
-            }
-            stream.write_some(::nstd::net::buffer(buffer, size));
-        }
-        catch (::std::exception const&) { ::std::cout << "Error processing\n"; }
-    }
-    std::cout << "run_client end\n";
-}
+    namespace {
+        struct type {};
+        struct cpo_t {};
 
-int main()
-{
-    using tcp = nstd::net::ip::tcp;
-
-    tcp::acceptor server(tcp::endpoint(nstd::net::ip::address_v4::any(), 12345));
-    while (true) {
-        try { ::std::thread(run_client, server.accept()).detach(); }
-        catch (::std::exception const&) { ::std::cout << "Error accepting\n"; }
+        template <typename Arg>
+        auto tag_invoke(cpo_t, Arg&&) -> bool { return true; }
     }
 }
+
+// ----------------------------------------------------------------------------
+
+static KT::testcase const tests[] = {
+    KT::expect_success("test classes", []{
+            return ::std::invocable<decltype(::nstd::tag_invoke), TD::cpo_t, int>
+                && ::std::invocable<decltype(::nstd::tag_invoke), TD::cpo_t, TD::type>
+                ;
+        }),
+    KT::expect_success("no_env doesn't tag_invoke", []{
+            return not ::std::invocable<decltype(::nstd::tag_invoke), TD::cpo_t, ::nstd::hidden_names::exec_envs::no_env>
+                ;
+        }),
+};
+
+static KT::add_tests suite("no_env", ::tests);

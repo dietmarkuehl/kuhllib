@@ -1,4 +1,4 @@
-// src/examples/simple_echo_server.cpp                                -*-C++-*-
+// src/nstd/execution/dependent_completion_signatures.hpp             -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2022 Dietmar Kuehl http://www.dietmar-kuehl.de
 //
@@ -23,37 +23,45 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "nstd/net.hpp"
-#include <iostream>
-#include <thread>
+#ifndef INCLUDED_SRC_NSTD_EXECUTION_DEPENDENT_COMPLETION_SIGNATURES
+#define INCLUDED_SRC_NSTD_EXECUTION_DEPENDENT_COMPLETION_SIGNATURES
 
 // ----------------------------------------------------------------------------
 
-void run_client(::nstd::net::ip::tcp::socket stream)
-{
-    std::cout << "run_client start\n";
-    char buffer[1024];
-    while (true)
-    {
-        try {
-            auto size = stream.read_some(::nstd::net::buffer(buffer));
-            if (size == 0) {
-                break;
-            }
-            stream.write_some(::nstd::net::buffer(buffer, size));
-        }
-        catch (::std::exception const&) { ::std::cout << "Error processing\n"; }
+namespace nstd::execution {
+#if 0
+    template <typename E>
+    struct dependent_completion_signatures {};
+
+#elif 1
+    namespace dependent_completion_signatures_impl {
+        template<class T>
+        struct hidden {
+            using type = struct _ { using type = T; };
+        };
+
+        template<class HiddenT>
+        struct type {
+            using T = typename HiddenT::type;
+        };
     }
-    std::cout << "run_client end\n";
+
+    template<class T>
+    using dependent_completion_signatures = ::nstd::execution::dependent_completion_signatures_impl::type<typename ::nstd::execution::dependent_completion_signatures_impl::hidden<T>::type>;
+#else
+    namespace dependent_completion_signatures_impl {
+        template <typename>
+        struct impl
+        {
+            struct type {};
+        };
+    }
+
+    template <typename E>
+    using dependent_completion_signatures = typename ::nstd::execution::dependent_completion_signatures_impl::impl<E>::type;
+#endif
 }
 
-int main()
-{
-    using tcp = nstd::net::ip::tcp;
+// ----------------------------------------------------------------------------
 
-    tcp::acceptor server(tcp::endpoint(nstd::net::ip::address_v4::any(), 12345));
-    while (true) {
-        try { ::std::thread(run_client, server.accept()).detach(); }
-        catch (::std::exception const&) { ::std::cout << "Error accepting\n"; }
-    }
-}
+#endif

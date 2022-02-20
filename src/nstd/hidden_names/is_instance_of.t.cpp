@@ -1,4 +1,4 @@
-// src/examples/simple_echo_server.cpp                                -*-C++-*-
+// src/nstd/hidden_names/is_instance_of.t.cpp                         -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2022 Dietmar Kuehl http://www.dietmar-kuehl.de
 //
@@ -23,37 +23,37 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "nstd/net.hpp"
-#include <iostream>
-#include <thread>
+#include "nstd/hidden_names/is_instance_of.hpp"
+#include "kuhl/test.hpp"
+
+namespace test_declarations {};
+namespace KT = ::kuhl::test;
+namespace HN = ::nstd::hidden_names;
+namespace TD = test_declarations;
 
 // ----------------------------------------------------------------------------
 
-void run_client(::nstd::net::ip::tcp::socket stream)
+namespace test_declarations
 {
-    std::cout << "run_client start\n";
-    char buffer[1024];
-    while (true)
-    {
-        try {
-            auto size = stream.read_some(::nstd::net::buffer(buffer));
-            if (size == 0) {
-                break;
-            }
-            stream.write_some(::nstd::net::buffer(buffer, size));
-        }
-        catch (::std::exception const&) { ::std::cout << "Error processing\n"; }
-    }
-    std::cout << "run_client end\n";
-}
+    namespace {
+        struct type {};
 
-int main()
-{
-    using tcp = nstd::net::ip::tcp;
-
-    tcp::acceptor server(tcp::endpoint(nstd::net::ip::address_v4::any(), 12345));
-    while (true) {
-        try { ::std::thread(run_client, server.accept()).detach(); }
-        catch (::std::exception const&) { ::std::cout << "Error accepting\n"; }
+        template <typename...> struct tmpl1;
+        template <typename...> struct tmpl2;
     }
 }
+
+// ----------------------------------------------------------------------------
+
+static KT::testcase const tests[] = {
+    KT::expect_failure("breathing", []{
+            static_assert(HN::is_instance_of<TD::tmpl1<TD::type, int>, TD::tmpl1>);
+            static_assert(not HN::is_instance_of<TD::tmpl1<TD::type, int>, TD::tmpl2>);
+
+            return HN::is_instance_of<TD::tmpl1<TD::type, int>, TD::tmpl1>
+                && not HN::is_instance_of<TD::tmpl1<TD::type, int>, TD::tmpl2>
+                ;
+        }),
+};
+
+KT::add_tests suite("is_instance_of", ::tests);

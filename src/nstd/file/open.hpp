@@ -35,6 +35,7 @@
 #include "nstd/execution/set_done.hpp"
 #include "nstd/file/context.hpp"
 #include "nstd/net/io_context.hpp"
+#include "nstd/type_traits/remove_cvref.hpp"
 #include "nstd/utility/move.hpp"
 #include "nstd/utility/forward.hpp"
 #include <string_view>
@@ -78,18 +79,18 @@ struct nstd::file::open_sender
     using error_types = V<::std::exception_ptr, std::error_code>;
     static constexpr bool sends_done = true;
 
-    Sender                   d_sender;
-    ::nstd::file::context*   d_context;
-    ::nstd::file::open_flags d_flags;
+    ::nstd::type_traits::remove_cvref_t<Sender> d_sender;
+    ::nstd::file::context*                      d_context;
+    ::nstd::file::open_flags                    d_flags;
 
     template <typename Receiver>
     struct receiver
         : ::nstd::file::context::io_base
     {
-        ::nstd::file::context*   d_context;
-        ::nstd::file::open_flags d_flags;
-        Receiver                 d_receiver;
-        ::std::string            d_name;
+        ::nstd::file::context*                        d_context;
+        ::nstd::file::open_flags                      d_flags;
+        ::nstd::type_traits::remove_cvref_t<Receiver> d_receiver;
+        ::std::string                                 d_name;
 
         template <typename R>
         receiver(::nstd::file::context* context, ::nstd::file::open_flags flags, R&& receiver)

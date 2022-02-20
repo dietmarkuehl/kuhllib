@@ -1,4 +1,4 @@
-// src/examples/simple_echo_server.cpp                                -*-C++-*-
+// src/nstd/hidden_names/is_instance_of.hpp                           -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2022 Dietmar Kuehl http://www.dietmar-kuehl.de
 //
@@ -23,37 +23,19 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "nstd/net.hpp"
-#include <iostream>
-#include <thread>
+#ifndef INCLUDED_SRC_NSTD_HIDDEN_NAMES_IS_INSTANCE_OF
+#define INCLUDED_SRC_NSTD_HIDDEN_NAMES_IS_INSTANCE_OF
 
 // ----------------------------------------------------------------------------
 
-void run_client(::nstd::net::ip::tcp::socket stream)
-{
-    std::cout << "run_client start\n";
-    char buffer[1024];
-    while (true)
-    {
-        try {
-            auto size = stream.read_some(::nstd::net::buffer(buffer));
-            if (size == 0) {
-                break;
-            }
-            stream.write_some(::nstd::net::buffer(buffer, size));
-        }
-        catch (::std::exception const&) { ::std::cout << "Error processing\n"; }
-    }
-    std::cout << "run_client end\n";
+namespace nstd::hidden_names {
+    template <typename, template <typename...> class>
+    inline constexpr bool is_instance_of = false;
+
+    template <typename... T, template <typename...> class C>
+    inline constexpr bool is_instance_of<C<T...>, C> = true;
 }
 
-int main()
-{
-    using tcp = nstd::net::ip::tcp;
+// ----------------------------------------------------------------------------
 
-    tcp::acceptor server(tcp::endpoint(nstd::net::ip::address_v4::any(), 12345));
-    while (true) {
-        try { ::std::thread(run_client, server.accept()).detach(); }
-        catch (::std::exception const&) { ::std::cout << "Error accepting\n"; }
-    }
-}
+#endif
