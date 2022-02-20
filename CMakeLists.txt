@@ -151,6 +151,7 @@ list(APPEND kuhllib_components
     src/nstd/hidden_names/movable_value
     src/nstd/hidden_names/no_completion_signatures
     src/nstd/hidden_names/type_list
+    src/nstd/hidden_names/variant_or_empty
     src/nstd/iterator/bidirectional_iterator
     src/nstd/iterator/bidirectional_iterator_tag
     src/nstd/iterator/forward_iterator
