@@ -28,6 +28,7 @@
 
 #include "nstd/file/descriptor.hpp"
 #include "nstd/file/open_flags.hpp"
+#include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/connect.hpp"
 #include "nstd/execution/sender_base.hpp"
 #include "nstd/execution/set_value.hpp"
@@ -73,6 +74,11 @@ template <typename Sender>
 struct nstd::file::open_sender
     : ::nstd::execution::sender_base
 {
+    using completion_signatures
+        = ::nstd::execution::completion_signatures<
+            ::nstd::execution::set_value_t(::nstd::file::descriptor),
+            ::nstd::execution::set_error_t(::std::error_code)
+            >;
     template <template <typename...> class T, template <typename...> class V>
     using value_types = V<T<::nstd::file::descriptor>>;
     template <template <typename...> class V>

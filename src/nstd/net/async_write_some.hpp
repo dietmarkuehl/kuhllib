@@ -27,6 +27,7 @@
 #define INCLUDED_NSTD_NET_ASYNC_WRITE_SOME
 
 #include "nstd/net/async_io_.hpp"
+#include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/get_completion_scheduler.hpp"
 #include "nstd/execution/sender.hpp"
 #include "nstd/execution/set_value.hpp"
@@ -69,6 +70,10 @@ namespace nstd::net {
 template <typename Socket, typename CBS>
 struct nstd::net::async_write_some_t::io_operation
 {
+    using completion_signatures
+        = ::nstd::execution::completion_signatures<
+            ::nstd::execution::set_value_t(int)
+            >;
     template <template <typename...> class T, template <typename...> class V>
     using value_types = V<T<int>>;
     template <template <typename...> class V>

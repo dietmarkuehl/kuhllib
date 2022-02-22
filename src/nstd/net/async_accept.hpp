@@ -27,6 +27,7 @@
 #define INCLUDED_NSTD_NET_ASYNC_ACCEPT
 
 #include "nstd/net/async_io_.hpp"
+#include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/get_completion_scheduler.hpp"
 #include "nstd/execution/scheduler.hpp"
 #include "nstd/execution/sender.hpp"
@@ -69,6 +70,10 @@ namespace nstd::net {
 template <typename Socket>
 struct nstd::net::async_accept_t::io_operation
 {
+    using completion_signatures
+        = ::nstd::execution::completion_signatures<
+            ::nstd::execution::set_value_t(::std::error_code, Socket)
+            >;
     template <template <typename...> class T, template <typename...> class V>
     using value_types = V<T<::std::error_code, Socket>>;
     template <template <typename...> class V>

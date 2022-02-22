@@ -1,4 +1,4 @@
-// src/nstd/execution/no_env.hpp                                      -*-C++-*-
+// src/nstd/execution/value_types_of_t.hpp                            -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2022 Dietmar Kuehl http://www.dietmar-kuehl.de
 //
@@ -23,16 +23,23 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_SRC_NSTD_EXECUTION_NO_ENV
-#define INCLUDED_SRC_NSTD_EXECUTION_NO_ENV
+#ifndef INCLUDED_SRC_NSTD_EXECUTION_VALUE_TYPES_OF
+#define INCLUDED_SRC_NSTD_EXECUTION_VALUE_TYPES_OF
+
+#include "nstd/execution/no_env.hpp"
+#include "nstd/execution/sender.hpp"
+#include "nstd/hidden_names/decayed_tuple.hpp"
+#include "nstd/hidden_names/variant_or_empty.hpp"
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::hidden_names::exec_envs {
-    struct no_env
-    {
-        friend auto tag_invoke(auto, no_env, auto&&...) -> void = delete;
-    };
+namespace nstd::execution {
+    template <typename Sender,
+              typename Env = ::nstd::hidden_names::exec_envs::no_env,
+              template <typename...> class Tuple = ::nstd::hidden_names::decayed_tuple,
+              template <typename...> class Variant = ::nstd::hidden_names::variant_or_empty>
+        requires ::nstd::execution::sender<Sender, Env>
+    using value_types_of_t = void; //-dk:TODO
 }
 
 // ----------------------------------------------------------------------------

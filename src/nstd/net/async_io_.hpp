@@ -27,6 +27,7 @@
 #define INCLUDED_NSTD_NET_ASYNC_IO_
 
 #include "nstd/execution/connect.hpp"
+#include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/get_completion_scheduler.hpp"
 #include "nstd/execution/get_stop_token.hpp"
 #include "nstd/execution/receiver.hpp"
@@ -191,6 +192,8 @@ auto nstd::net::async_io_state_<Scheduler, Sender, Receiver, IOOperation>::cance
 template <::nstd::execution::scheduler Scheduler, ::nstd::execution::sender Sender, typename IOOperation>
 struct nstd::net::async_io_sender_
 {
+    using completion_signatures = typename IOOperation::completion_signatures;
+
     template <template <typename...> class T, template <typename...> class V>
     using value_types = typename IOOperation::template value_types<T, V>;
     template <template <typename...> class V>

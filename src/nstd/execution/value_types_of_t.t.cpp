@@ -1,4 +1,4 @@
-// src/nstd/execution/no_env.hpp                                      -*-C++-*-
+// src/nstd/execution/value_types_of_t.t.cpp                          -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2022 Dietmar Kuehl http://www.dietmar-kuehl.de
 //
@@ -23,18 +23,20 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_SRC_NSTD_EXECUTION_NO_ENV
-#define INCLUDED_SRC_NSTD_EXECUTION_NO_ENV
+#include "nstd/execution/value_types_of_t.hpp"
+#include "kuhl/test.hpp"
+
+namespace test_declarations {}
+namespace TD = ::test_declarations;
+namespace EX = ::nstd::execution;
+namespace KT = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::hidden_names::exec_envs {
-    struct no_env
-    {
-        friend auto tag_invoke(auto, no_env, auto&&...) -> void = delete;
-    };
-}
+static KT::testcase const tests[] = {
+    KT::expect_success("placeholder", []{
+           return true; //-dk:TODO provide actual tests
+        }),
+};
 
-// ----------------------------------------------------------------------------
-
-#endif
+static KT::add_tests suite("value_types_of_t", ::tests);

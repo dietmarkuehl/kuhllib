@@ -1,4 +1,4 @@
-// src/nstd/execution/no_env.hpp                                      -*-C++-*-
+// src/nstd/hidden_names/add_signatures.cpp                           -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2022 Dietmar Kuehl http://www.dietmar-kuehl.de
 //
@@ -23,18 +23,10 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_SRC_NSTD_EXECUTION_NO_ENV
-#define INCLUDED_SRC_NSTD_EXECUTION_NO_ENV
+#include "nstd/hidden_names/add_signatures.hpp"
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::hidden_names::exec_envs {
-    struct no_env
-    {
-        friend auto tag_invoke(auto, no_env, auto&&...) -> void = delete;
-    };
+namespace nstd::hidden_names {
+    int add_signatures_dummy{};
 }
-
-// ----------------------------------------------------------------------------
-
-#endif

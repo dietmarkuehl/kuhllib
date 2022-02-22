@@ -26,6 +26,7 @@
 #ifndef INCLUDED_NSTD_EXECUTION_JUST_DONE
 #define INCLUDED_NSTD_EXECUTION_JUST_DONE
 
+#include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/connect.hpp"
 #include "nstd/execution/receiver.hpp"
 #include "nstd/execution/set_done.hpp"
@@ -58,6 +59,10 @@ struct nstd::execution::just_done_t::state
 // ----------------------------------------------------------------------------
 
 struct nstd::execution::just_done_t::sender {
+    using completion_signatures
+        = ::nstd::execution::completion_signatures<
+            ::nstd::execution::set_done_t()
+            >;
     template <template <typename...> class T, template <typename...> class V>
     using value_types = V<T<>>;
     template <template <typename...> class V>

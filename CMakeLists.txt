@@ -105,6 +105,7 @@ list(APPEND kuhllib_components
     src/nstd/execution/timeout
     src/nstd/execution/typed_sender
     src/nstd/execution/upon_done
+    src/nstd/execution/value_types_of_t
     src/nstd/execution/when_all
     src/nstd/executor/associated_allocator
     src/nstd/executor/associated_executor
@@ -140,6 +141,7 @@ list(APPEND kuhllib_components
     src/nstd/functional/reference_wrapper
     src/nstd/functional/tag_invoke
     src/nstd/functional/tuple_invoke
+    src/nstd/hidden_names/add_signatures
     src/nstd/hidden_names/boolean_socket_option
     src/nstd/hidden_names/check_type_alias_exists
     src/nstd/hidden_names/constexpr_expression
@@ -151,6 +153,7 @@ list(APPEND kuhllib_components
     src/nstd/hidden_names/movable_value
     src/nstd/hidden_names/no_completion_signatures
     src/nstd/hidden_names/type_list
+    src/nstd/hidden_names/valid_completion_signatures
     src/nstd/hidden_names/variant_or_empty
     src/nstd/iterator/bidirectional_iterator
     src/nstd/iterator/bidirectional_iterator_tag

@@ -26,6 +26,7 @@
 #ifndef INCLUDED_NSTD_EXECUTION_JUST
 #define INCLUDED_NSTD_EXECUTION_JUST
 
+#include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/connect.hpp"
 #include "nstd/execution/receiver.hpp"
 #include "nstd/execution/receiver_of.hpp"
@@ -47,6 +48,10 @@ namespace nstd::hidden_names {
     struct just_sender
         : ::nstd::execution::piped_sender_base
     {
+        using completion_signatures
+            = ::nstd::execution::completion_signatures<
+                ::nstd::execution::set_value_t(A...)
+                >;
         template <template <typename...> class T, template <typename...> class V>
         using value_types = V<T<A...>>;
         template <template <typename...> class V>

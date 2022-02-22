@@ -74,6 +74,10 @@ namespace test_declarations
 
         struct sender
         {
+            using completion_signatures
+                = ::nstd::execution::completion_signatures<
+                    ::nstd::execution::set_done_t()
+                    >;
             template <template <typename...> class T, template <typename...> class V>
             using value_types = V<T<>>;
             template <template <typename...> class V>

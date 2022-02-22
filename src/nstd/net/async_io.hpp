@@ -196,6 +196,7 @@ auto nstd::net::async_io_state<Scheduler, Sender, Receiver, IOOperation>::cancel
 template <::nstd::execution::scheduler Scheduler, ::nstd::execution::sender Sender, typename IOOperation>
 struct nstd::net::async_io_sender
 {
+    using completion_signatures = typename IOOperation::completion_signatures;
     template <template <typename...> class T, template <typename...> class V>
     using value_types = typename IOOperation::template value_types<T, V>;
     template <template <typename...> class V>

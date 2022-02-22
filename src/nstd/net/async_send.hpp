@@ -29,6 +29,7 @@
 #include "nstd/net/async_io.hpp"
 #include "nstd/file/operation.hpp"
 #include "nstd/hidden_names/message_flags.hpp"
+#include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/get_completion_scheduler.hpp"
 #include "nstd/execution/sender.hpp"
 #include "nstd/execution/set_value.hpp"
@@ -83,6 +84,10 @@ namespace nstd::net::inline customization_points {
 template <typename Socket, typename CBS>
 struct nstd::net::customization_points::async_send_t::io_operation
 {
+    using completion_signatures
+        = ::nstd::execution::completion_signatures<
+            ::nstd::execution::set_value_t(int)
+            >;
     template <template <typename...> class T, template <typename...> class V>
     using value_types = V<T<int>>;
     template <template <typename...> class V>

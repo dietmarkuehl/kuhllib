@@ -28,6 +28,7 @@
 
 #include "nstd/net/netfwd.hpp"
 #include "nstd/execution/operation_state.hpp"
+#include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/get_completion_scheduler.hpp"
 #include "nstd/execution/schedule.hpp"
 #include "nstd/execution/scheduler.hpp"
@@ -166,6 +167,11 @@ struct nstd::net::io_context::state
 struct nstd::net::io_context::sender
     : ::nstd::execution::piped_sender_base
 {
+    using completion_signatures
+        = ::nstd::execution::completion_signatures<
+            ::nstd::execution::set_value_t(),
+            ::nstd::execution::set_done_t()
+            >;
     template <template <typename...> class T, template <typename...> class V>
     using value_types = V<T<>>;
     template <template <typename...> class V>

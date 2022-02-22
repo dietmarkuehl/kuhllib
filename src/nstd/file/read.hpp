@@ -27,6 +27,7 @@
 #define INCLUDED_NSTD_FILE_READ
 
 #include "nstd/file/descriptor.hpp"
+#include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/connect.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/set_error.hpp"
@@ -112,6 +113,10 @@ namespace nstd::file {
     struct read_sender
         : ::nstd::execution::piped_sender_base
     {
+    using completion_signatures
+        = ::nstd::execution::completion_signatures<
+            ::nstd::execution::set_value_t(::nstd::file::descriptor, ::std::size_t)
+            >;
         template <template <typename...> class T, template <typename...> class V>
         using value_types = V<T<::nstd::file::descriptor, ::std::size_t>>;
         template <template <typename...> class V>

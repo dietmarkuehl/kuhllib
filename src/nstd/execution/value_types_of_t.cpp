@@ -1,4 +1,4 @@
-// src/nstd/execution/no_env.hpp                                      -*-C++-*-
+// src/nstd/execution/value_types_of_t.cpp                            -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2022 Dietmar Kuehl http://www.dietmar-kuehl.de
 //
@@ -23,18 +23,10 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_SRC_NSTD_EXECUTION_NO_ENV
-#define INCLUDED_SRC_NSTD_EXECUTION_NO_ENV
+#include "nstd/execution/value_types_of_t.hpp"
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::hidden_names::exec_envs {
-    struct no_env
-    {
-        friend auto tag_invoke(auto, no_env, auto&&...) -> void = delete;
-    };
+namespace nstd::execution {
+    int value_types_of_t_dummy{};
 }
-
-// ----------------------------------------------------------------------------
-
-#endif
