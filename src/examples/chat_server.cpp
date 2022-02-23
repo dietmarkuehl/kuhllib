@@ -26,17 +26,8 @@
 #include "nstd/net/io_context.hpp"
 #include "nstd/file/observer_context.hpp"
 #include "nstd/file/ring_context.hpp"
-#include "nstd/net/basic_socket_acceptor.hpp"
-#include "nstd/net/basic_stream_socket.hpp"
-#include "nstd/net/ip/basic_endpoint.hpp"
-#include "nstd/net/ip/address_v4.hpp"
-#include "nstd/net/ip/tcp.hpp"
-#include "nstd/execution/run.hpp"
-#include "nstd/execution/repeat_effect.hpp"
-#include "nstd/execution/schedule.hpp"
-#include "nstd/execution/then.hpp"
-#include "nstd/execution/start_detached.hpp"
-#include "nstd/execution/just.hpp"
+#include "nstd/net.hpp"
+#include "nstd/execution.hpp"
 #include "nstd/type_traits/declval.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
 
@@ -132,6 +123,9 @@ namespace {
 
         template <typename Range, typename Fun>
         struct sender {
+            using completion_signatures = EX::completion_signatures<
+                    EX::set_value_t()
+                >;
             template <template <typename...> class V, template <typename...> class T>
             using value_types = V<T<>>;
             template <template <typename...> class V>

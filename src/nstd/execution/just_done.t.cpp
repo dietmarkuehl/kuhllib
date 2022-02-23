@@ -23,7 +23,7 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/execution/just_done.hpp"
+#include "nstd/execution/just.hpp"
 #include "nstd/execution/then.hpp"
 #include "nstd/thread/sync_wait.hpp"
 #include "nstd/utility/move.hpp"

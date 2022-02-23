@@ -116,6 +116,9 @@ namespace audio
 
     struct buffer_sender
     {
+        using completion_signatures = EX::completion_signatures<
+                EX::set_value_t(::std::span<::std::byte>)
+            >;
         template <template <typename...> class T, template <typename...> class V>
         using value_types = V<T<::std::span<::std::byte>>>;
         template <template <typename...> class V>
@@ -174,6 +177,9 @@ namespace audio
 
     struct sender
     {
+        using completion_signatures = EX::completion_signatures<
+                EX::set_value_t(audio::start_description)
+            >;
         template <template <typename...> class T, template <typename...> class V>
         using value_types = V<T<audio::start_description>>;
         template <template <typename...> class V>

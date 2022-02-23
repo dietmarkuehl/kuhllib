@@ -31,6 +31,8 @@
 #include "nstd/execution/receiver.hpp"
 #include "nstd/execution/receiver_of.hpp"
 #include "nstd/execution/sender_base.hpp"
+#include "nstd/execution/set_done.hpp"
+#include "nstd/execution/set_error.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/start.hpp"
 #include "nstd/hidden_names/movable_value.hpp"
@@ -44,13 +46,13 @@
 // ----------------------------------------------------------------------------
 
 namespace nstd::hidden_names {
-    template <typename... A>
+    template <typename Signal, typename... A>
     struct just_sender
         : ::nstd::execution::piped_sender_base
     {
         using completion_signatures
             = ::nstd::execution::completion_signatures<
-                ::nstd::execution::set_value_t(A...)
+                Signal(A...)
                 >;
         template <template <typename...> class T, template <typename...> class V>
         using value_types = V<T<A...>>;
@@ -66,8 +68,9 @@ namespace nstd::hidden_names {
                 try {
                     (void)s;
                     ::std::apply([&s](A&&... a){
-                                       nstd::execution::set_value(::nstd::utility::move(s.d_receiver),
-                                                                  ::nstd::utility::forward<decltype(a)>(a)...);
+                                        constexpr Signal signal{};
+                                        signal(::nstd::utility::move(s.d_receiver),
+                                               ::nstd::utility::forward<decltype(a)>(a)...);
                                  },
                                  ::nstd::utility::move(s.d_value));
                 }
@@ -98,17 +101,32 @@ namespace nstd::hidden_names {
         }
     };
 
-    static_assert(::nstd::execution::operation_state<::nstd::hidden_names::just_sender<int>::operation_state<::nstd::execution::test_receiver>>);
+    static_assert(::nstd::execution::operation_state<::nstd::hidden_names::just_sender<::nstd::execution::set_value_t, int>::operation_state<::nstd::execution::test_receiver>>);
+    static_assert(::nstd::execution::operation_state<::nstd::hidden_names::just_sender<::nstd::execution::set_error_t, int>::operation_state<::nstd::execution::test_receiver>>);
+    static_assert(::nstd::execution::operation_state<::nstd::hidden_names::just_sender<::nstd::execution::set_done_t>::operation_state<::nstd::execution::test_receiver>>);
 }
 
 namespace nstd::execution {
     template <::nstd::hidden_names::movable_value... A>
-    auto just(A&&... a) noexcept((::nstd::type_traits::is_nothrow_constructible_v<
-                                      ::nstd::type_traits::remove_cvref_t<A>,
-                                      A> && ...))
-    {
-        return ::nstd::hidden_names::just_sender<::nstd::type_traits::remove_cvref_t<A>...>{
+    inline auto just(A&&... a) noexcept((::std::is_nothrow_constructible_v<::nstd::type_traits::remove_cvref_t<A>, A> && ...))
+        -> ::nstd::hidden_names::just_sender<::nstd::execution::set_value_t, ::nstd::type_traits::remove_cvref_t<A>...> {
+        return ::nstd::hidden_names::just_sender<::nstd::execution::set_value_t, ::nstd::type_traits::remove_cvref_t<A>...>{
             {}, ::std::make_tuple(::nstd::utility::forward<A>(a)...)
+            };
+    }
+
+    template <::nstd::hidden_names::movable_value E>
+    inline auto just_error(E&& e) noexcept(::std::is_nothrow_constructible_v<::nstd::type_traits::remove_cvref_t<E>, E>)
+        -> ::nstd::hidden_names::just_sender<::nstd::execution::set_error_t, ::nstd::type_traits::remove_cvref_t<E>> {
+        return ::nstd::hidden_names::just_sender<::nstd::execution::set_error_t, ::nstd::type_traits::remove_cvref_t<E>>{
+            {}, ::std::make_tuple(::nstd::utility::forward<E>(e))
+            };
+    }
+
+    inline auto just_done() noexcept
+        -> ::nstd::hidden_names::just_sender<::nstd::execution::set_done_t> {
+        return ::nstd::hidden_names::just_sender<::nstd::execution::set_done_t>{
+            {}, ::std::make_tuple()
             };
     }
 }

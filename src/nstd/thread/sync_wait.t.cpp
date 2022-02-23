@@ -25,8 +25,6 @@
 
 #include "nstd/thread/sync_wait.hpp"
 #include "nstd/execution/just.hpp"
-#include "nstd/sender/just_done.hpp"
-#include "nstd/sender/just_error.hpp"
 #include "kuhl/test.hpp"
 #include <optional>
 #include <variant>
@@ -38,7 +36,6 @@ namespace test_declarations {}
 namespace TD = ::test_declarations;
 namespace EX = ::nstd::execution;
 namespace TT = ::nstd::this_thread;
-namespace NET = ::nstd::net;
 namespace KT = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
@@ -61,7 +58,7 @@ static KT::testcase const tests[] = {
         }),
     KT::expect_success("sync_wait error_code", []{
         try {
-            TT::sync_wait(NET::just_error(::std::error_code(0, ::std::generic_category())));
+            TT::sync_wait(EX::just_error(::std::error_code(0, ::std::generic_category())));
             return false;
         }
         catch (::std::error_code const&) {
@@ -77,7 +74,7 @@ static KT::testcase const tests[] = {
     }),
     KT::expect_success("sync_wait exception object", []{
         try {
-            TT::sync_wait(NET::just_error(::std::runtime_error("error")));
+            TT::sync_wait(EX::just_error(::std::runtime_error("error")));
             return false;
         }
         catch (::std::runtime_error const&) {
@@ -89,7 +86,7 @@ static KT::testcase const tests[] = {
     }),
     KT::expect_success("sync_wait exception_ptr", []{
         try {
-            TT::sync_wait(NET::just_error(::std::make_exception_ptr(::std::logic_error("error"))));
+            TT::sync_wait(EX::just_error(::std::make_exception_ptr(::std::logic_error("error"))));
             return false;
         }
         catch (::std::logic_error const&) {
@@ -101,7 +98,7 @@ static KT::testcase const tests[] = {
     }),
     KT::expect_success("sync_wait cancel", []{
         try {
-            TT::sync_wait(NET::just_done());
+            TT::sync_wait(EX::just_done());
             return true;
         }
         catch (...) {

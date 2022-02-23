@@ -189,8 +189,6 @@ list(APPEND kuhllib_components
     src/nstd/projection/identity
     src/nstd/projection/model_readable
     src/nstd/projection/model_value
-    src/nstd/sender/just_done
-    src/nstd/sender/just_error
     src/nstd/stop_token/in_place_stop_token
     src/nstd/stop_token/never_stop_token
     src/nstd/stop_token/stoppable_token
