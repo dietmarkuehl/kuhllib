@@ -26,6 +26,7 @@
 #ifndef INCLUDED_NSTD_EXECUTION_WHEN_ALL
 #define INCLUDED_NSTD_EXECUTION_WHEN_ALL
 
+#include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/just.hpp"
 #include "nstd/execution/receiver.hpp"
 #include "nstd/execution/sender.hpp"
@@ -107,6 +108,12 @@ namespace nstd::execution {
         };
         template <::nstd::execution::sender... Sender>
         struct sender {
+            using completion_signatures = ::nstd::execution::completion_signatures<
+                    //-dk:TODO fix when_all completion_signals
+                    ::nstd::execution::set_value_t(),
+                    ::nstd::execution::set_done_t()
+                >;
+
             template <template <typename...> class T, template <typename...> class V>
             using value_types = V<T<>>;
             template <template <typename...> class V>

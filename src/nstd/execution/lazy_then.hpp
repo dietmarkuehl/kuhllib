@@ -131,6 +131,10 @@ namespace nstd::execution {
             template <bool C, template <typename...> class T, template <typename...> class V>
             using make_value_types_t = typename make_value_types<C, T, V>::type;
 
+            using completion_signatures
+                = typename Sender::completion_signatures
+                ;
+
             template <template <typename...> class T, template <typename...> class V>
             using value_types = make_value_types_t<::nstd::type_traits::is_void_v<fun_type>, T, V>;
 

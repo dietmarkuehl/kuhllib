@@ -26,6 +26,7 @@
 #ifndef INCLUDED_NSTD_EXECUTION_UPON_DONE
 #define INCLUDED_NSTD_EXECUTION_UPON_DONE
 
+#include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/connect.hpp"
 #include "nstd/execution/receiver.hpp"
 #include "nstd/execution/set_done.hpp"
@@ -33,6 +34,7 @@
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/sender.hpp"
 #include "nstd/functional/tag_invoke.hpp"
+#include "nstd/type_traits/conditional.hpp"
 #include "nstd/type_traits/declval.hpp"
 #include "nstd/type_traits/is_void.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
@@ -88,6 +90,13 @@ struct nstd::execution::upon_done_t::receiver
 template <::nstd::execution::sender Sender, typename Fun>
 struct nstd::execution::upon_done_t::sender
 {
+    using result_type = decltype(::std::invoke(::nstd::type_traits::declval<Fun>()));
+    using non_void_type = ::nstd::type_traits::conditional_t<::nstd::type_traits::is_void_v<result_type>, int, result_type>;
+    using completion_signatures = ::nstd::execution::completion_signatures<
+            ::nstd::type_traits::conditional_t<::nstd::type_traits::is_void_v<result_type>,
+                                               ::nstd::execution::set_value_t(),
+                                               ::nstd::execution::set_value_t(non_void_type)>
+        >;
     template <template <typename...> class T, template <typename...> class V>
     using value_types = V<T<decltype(::std::invoke(::nstd::type_traits::declval<Fun>()))>>;
     template <template <typename...> class V>

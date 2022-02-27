@@ -26,6 +26,7 @@
 #ifndef INCLUDED_NSTD_EXECUTION_LET_VALUE
 #define INCLUDED_NSTD_EXECUTION_LET_VALUE
 
+#include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/sender.hpp"
 #include "nstd/execution/receiver.hpp"
 #include "nstd/execution/connect.hpp"
@@ -192,6 +193,10 @@ struct nstd::execution::let_value_t::sender
     using call_type = decltype(::nstd::type_traits::declval<Function>()(::nstd::type_traits::declval<T>()...));
     using returned_sender = 
         typename Sender::template value_types<call_type, ::nstd::type_traits::type_identity_t>;
+
+    using completion_signatures = ::nstd::execution::completion_signatures<
+            //-dk:TODO define completion_signatures
+        >;
 
     template <template <typename...> class T, template <typename...> class V>
     using value_types = typename returned_sender::template value_types<T, V>;

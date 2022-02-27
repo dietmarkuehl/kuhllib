@@ -26,6 +26,7 @@
 #ifndef INCLUDED_NSTD_EXECUTION_REPEAT_EFFECT_UNTIL
 #define INCLUDED_NSTD_EXECUTION_REPEAT_EFFECT_UNTIL
 
+#include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/sender.hpp"
 #include "nstd/execution/connect.hpp"
 #include "nstd/execution/start.hpp"
@@ -112,6 +113,10 @@ namespace nstd::execution {
         };
         template <::nstd::execution::sender Sender, typename Predicate>
         struct sender {
+            using completion_signatures = ::nstd::execution::completion_signatures<
+                    ::nstd::execution::set_value_t(),
+                    ::nstd::execution::set_done_t()
+                >;
             template <template <typename...> class T, template <typename...> class V>
             using value_types = V<T<>>;
             template <template <typename...> class V>
