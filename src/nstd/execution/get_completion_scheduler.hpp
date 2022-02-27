@@ -37,22 +37,27 @@
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::execution {
+namespace nstd::hidden_names::get_completion_scheduler {
     template <typename CPO>
         requires ::nstd::concepts::same_as<::nstd::execution::set_value_t, CPO>
               || ::nstd::concepts::same_as<::nstd::execution::set_error_t, CPO>
               || ::nstd::concepts::same_as<::nstd::execution::set_stopped_t, CPO>
-    struct get_completion_scheduler_t {
+    struct cpo {
         template <::nstd::execution::sender Sender>
-            requires requires(get_completion_scheduler_t<CPO> const& cpo, Sender&& sender) {
-                { ::nstd::tag_invoke(cpo, ::nstd::utility::as_const(sender)) } noexcept -> ::nstd::execution::scheduler;
+            requires requires(cpo<CPO> const& gcs, Sender&& sender) {
+                { ::nstd::tag_invoke(gcs, ::nstd::utility::as_const(sender)) } noexcept -> ::nstd::execution::scheduler;
             }
         auto operator()(Sender&& sender) const noexcept
         {
             return ::nstd::tag_invoke(*this, ::nstd::utility::as_const(sender));
         }
     };
+}
 
+namespace nstd::execution {
+    template <typename CPO>
+    using get_completion_scheduler_t = ::nstd::hidden_names::get_completion_scheduler::cpo<CPO>;
+    
     template <typename CPO>
         requires ::nstd::concepts::same_as<::nstd::execution::set_value_t, CPO>
               || ::nstd::concepts::same_as<::nstd::execution::set_error_t, CPO>

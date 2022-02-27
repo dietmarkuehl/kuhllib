@@ -37,27 +37,28 @@
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::hidden_names::get_completion_signatures_cpo
+namespace nstd::hidden_names {
+    template <typename T>
+    concept is_completion_signatures
+        =  ::nstd::hidden_names::is_instance_of<T, ::nstd::execution::completion_signatures>
+        || ::nstd::hidden_names::is_instance_of<T, ::nstd::execution::dependent_completion_signatures_impl::type>
+        ;
+}
+
+namespace nstd::hidden_names::get_completion_signatures
 {
-    namespace hidden_names {
-        template <typename T>
-        concept is_completion_signatures
-            =  ::nstd::hidden_names::is_instance_of<T, ::nstd::execution::completion_signatures>
-            || ::nstd::hidden_names::is_instance_of<T, ::nstd::execution::dependent_completion_signatures_impl::type>
-            ;
-    }
-    struct get_completion_signatures_t {
+    struct cpo {
         template <typename S>
         constexpr auto operator()(S&& s) const noexcept {
             return (*this)(::nstd::utility::forward<S>(s), ::nstd::hidden_names::exec_envs::no_env{});
         }
         template <typename S, typename E>
-            requires(hidden_names::is_completion_signatures<::nstd::tag_invoke_result_t<get_completion_signatures_t, S, E>>)
+            requires(::nstd::hidden_names::is_completion_signatures<::nstd::tag_invoke_result_t<cpo, S, E>>)
         constexpr auto operator()(S&&, E&&) const noexcept {
-            return ::nstd::tag_invoke_result_t<get_completion_signatures_t, S, E>{};
+            return ::nstd::tag_invoke_result_t<cpo, S, E>{};
         }
         template <typename S, typename E>
-            requires(hidden_names::is_completion_signatures<typename ::nstd::type_traits::remove_cvref_t<S>::completion_signatures>)
+            requires(::nstd::hidden_names::is_completion_signatures<typename ::nstd::type_traits::remove_cvref_t<S>::completion_signatures>)
         constexpr auto operator()(S&&, E&&) const noexcept {
             using type = typename ::nstd::type_traits::remove_cvref_t<S>::completion_signatures;
             return type{};
@@ -71,7 +72,7 @@ namespace nstd::hidden_names::get_completion_signatures_cpo
 }
 
 namespace nstd::execution {
-    using get_completion_signatures_t = ::nstd::hidden_names::get_completion_signatures_cpo::get_completion_signatures_t;
+    using get_completion_signatures_t = ::nstd::hidden_names::get_completion_signatures::cpo;
     inline constexpr get_completion_signatures_t get_completion_signatures{};
 }
 

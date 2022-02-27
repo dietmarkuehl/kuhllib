@@ -65,6 +65,7 @@ list(APPEND kuhllib_components
     src/nstd/endian/type
     src/nstd/execution
     src/nstd/execution/completion_signatures
+    src/nstd/execution/completion_signatures_of_t
     src/nstd/execution/connect
     src/nstd/execution/dependent_completion_signatures
     src/nstd/execution/execution
@@ -153,6 +154,7 @@ list(APPEND kuhllib_components
     src/nstd/hidden_names/message_flags
     src/nstd/hidden_names/movable_value
     src/nstd/hidden_names/no_completion_signatures
+    src/nstd/hidden_names/sender_base
     src/nstd/hidden_names/type_list
     src/nstd/hidden_names/valid_completion_signatures
     src/nstd/hidden_names/variant_or_empty
