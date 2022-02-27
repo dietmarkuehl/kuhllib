@@ -143,6 +143,7 @@ list(APPEND kuhllib_components
     src/nstd/functional/tuple_invoke
     src/nstd/hidden_names/add_signatures
     src/nstd/hidden_names/boolean_socket_option
+    src/nstd/hidden_names/callable
     src/nstd/hidden_names/check_type_alias_exists
     src/nstd/hidden_names/constexpr_expression
     src/nstd/hidden_names/decayed_tuple
