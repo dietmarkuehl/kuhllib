@@ -98,7 +98,7 @@ struct nstd::execution::timeout_t::state_base
                 }, *this->d_values);
             }
             else {
-                ::nstd::execution::set_done(::nstd::utility::move(this->d_receiver));
+                ::nstd::execution::set_stopped(::nstd::utility::move(this->d_receiver));
             }
         }
     }
@@ -118,11 +118,11 @@ struct nstd::execution::timeout_t::sender_receiver
     }
     friend auto tag_invoke(::nstd::execution::set_error_t, sender_receiver&&, auto&&) noexcept -> void {
     }
-    friend auto tag_invoke(::nstd::execution::set_done_t, sender_receiver&& r) noexcept -> void {
+    friend auto tag_invoke(::nstd::execution::set_stopped_t, sender_receiver&& r) noexcept -> void {
         r.d_state->d_source.stop();
         unsigned done = ++r.d_state->d_done;
         if (2u == done) { // ++r.d_state->d_done) {
-            ::nstd::execution::set_done(::nstd::utility::move(r.d_state->d_receiver));
+            ::nstd::execution::set_stopped(::nstd::utility::move(r.d_state->d_receiver));
         }
     }
 };
@@ -143,7 +143,7 @@ struct nstd::execution::timeout_t::timer_receiver
     friend auto tag_invoke(::nstd::execution::set_error_t, timer_receiver&& r, auto&&) noexcept -> void {
         r.d_state->timer_done();
     }
-    friend auto tag_invoke(::nstd::execution::set_done_t, timer_receiver&& r) noexcept -> void {
+    friend auto tag_invoke(::nstd::execution::set_stopped_t, timer_receiver&& r) noexcept -> void {
         r.d_state->timer_done();
     }
 };

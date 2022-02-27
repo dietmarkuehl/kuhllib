@@ -60,7 +60,7 @@ namespace
             this->complete();
         }
         #endif
-        void set_done() noexcept {
+        void set_stopped() noexcept {
             std::cout << "canceled\n";
             this->complete();
         }

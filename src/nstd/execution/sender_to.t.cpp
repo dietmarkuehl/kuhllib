@@ -54,7 +54,7 @@ namespace test_declarations {
         {
             friend auto tag_invoke(EX::set_value_t, receiver&&, T) noexcept -> void {}
             friend auto tag_invoke(EX::set_error_t, receiver&&, ::std::exception_ptr) noexcept -> void {}
-            friend auto tag_invoke(EX::set_done_t, receiver&&) noexcept -> void {}
+            friend auto tag_invoke(EX::set_stopped_t, receiver&&) noexcept -> void {}
         };
 
         template <typename Receiver>

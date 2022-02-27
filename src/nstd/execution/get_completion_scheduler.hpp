@@ -31,7 +31,7 @@
 #include "nstd/execution/sender.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/set_error.hpp"
-#include "nstd/execution/set_done.hpp"
+#include "nstd/execution/set_stopped.hpp"
 #include "nstd/functional/tag_invoke.hpp"
 #include "nstd/utility/as_const.hpp"
 
@@ -41,7 +41,7 @@ namespace nstd::execution {
     template <typename CPO>
         requires ::nstd::concepts::same_as<::nstd::execution::set_value_t, CPO>
               || ::nstd::concepts::same_as<::nstd::execution::set_error_t, CPO>
-              || ::nstd::concepts::same_as<::nstd::execution::set_done_t, CPO>
+              || ::nstd::concepts::same_as<::nstd::execution::set_stopped_t, CPO>
     struct get_completion_scheduler_t {
         template <::nstd::execution::sender Sender>
             requires requires(get_completion_scheduler_t<CPO> const& cpo, Sender&& sender) {
@@ -56,7 +56,7 @@ namespace nstd::execution {
     template <typename CPO>
         requires ::nstd::concepts::same_as<::nstd::execution::set_value_t, CPO>
               || ::nstd::concepts::same_as<::nstd::execution::set_error_t, CPO>
-              || ::nstd::concepts::same_as<::nstd::execution::set_done_t, CPO>
+              || ::nstd::concepts::same_as<::nstd::execution::set_stopped_t, CPO>
     inline constexpr get_completion_scheduler_t<CPO> get_completion_scheduler;
 }
 

@@ -78,9 +78,9 @@ namespace {
                     self.d_state->d_result();
                 }
             }
-            friend auto tag_invoke(EX::set_done_t, receiver&& self) noexcept {
+            friend auto tag_invoke(EX::set_stopped_t, receiver&& self) noexcept {
                 if (!self.d_state->d_result) {
-                    self.d_state->d_result = [&receiver = self.d_state->d_receiver]() mutable { EX::set_done(::std::move(receiver)); };
+                    self.d_state->d_result = [&receiver = self.d_state->d_receiver]() mutable { EX::set_stopped(::std::move(receiver)); };
                 }
                 if (0u == --self.d_state->d_count) {
                     self.d_state->d_result();

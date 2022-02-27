@@ -30,7 +30,7 @@
 #include "nstd/execution/connect.hpp"
 #include "nstd/execution/get_stop_token.hpp"
 #include "nstd/execution/sender.hpp"
-#include "nstd/execution/set_done.hpp"
+#include "nstd/execution/set_stopped.hpp"
 #include "nstd/execution/receiver.hpp"
 #include "nstd/hidden_names/add_signatures.hpp"
 #include "nstd/functional/tag_invoke.hpp"
@@ -68,7 +68,7 @@ namespace nstd::execution {
         struct sender
         {
             using completion_signatures
-                = ::nstd::hidden_names::add_signatures_t<typename Sender::completion_signatures, ::nstd::execution::set_done_t()>;
+                = ::nstd::hidden_names::add_signatures_t<typename Sender::completion_signatures, ::nstd::execution::set_stopped_t()>;
             template <template <typename...> class T, template <typename...> class V>
             using value_types = typename Sender::template value_types<T, V>;
             template < template <typename...> class V>

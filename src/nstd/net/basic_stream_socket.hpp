@@ -38,7 +38,7 @@
 #include "nstd/execution/start.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/set_error.hpp"
-#include "nstd/execution/set_done.hpp"
+#include "nstd/execution/set_stopped.hpp"
 #include "nstd/execution/repeat_effect_until.hpp"
 #include "nstd/execution/let_value.hpp"
 #include "nstd/execution/then.hpp"

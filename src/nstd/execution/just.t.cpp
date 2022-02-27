@@ -30,7 +30,7 @@
 #include "nstd/execution/sender.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/set_error.hpp"
-#include "nstd/execution/set_done.hpp"
+#include "nstd/execution/set_stopped.hpp"
 #include "nstd/execution/typed_sender.hpp"
 #include "nstd/utility/forward.hpp"
 #include <exception>
@@ -90,7 +90,7 @@ namespace test_declarations {
                 catch (TD::error const&) { *r.result = TD::result::error; }
                 catch (...) {}
             }
-            friend auto tag_invoke(EX::set_done_t, receiver&& r) noexcept {
+            friend auto tag_invoke(EX::set_stopped_t, receiver&& r) noexcept {
                 *r.result = TD::result::done;
             }
         };

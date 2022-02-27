@@ -1,4 +1,4 @@
-// nstd/execution/set_done.hpp                                        -*-C++-*-
+// nstd/execution/set_stopped.cpp                                     -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,32 +23,10 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_EXECUTION_SET_DONE
-#define INCLUDED_NSTD_EXECUTION_SET_DONE
-
-#include "nstd/functional/tag_invoke.hpp"
-#include "nstd/type_traits/declval.hpp"
-#include "nstd/utility/forward.hpp"
+#include "nstd/execution/set_stopped.hpp"
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::execution::inline customization_points {
-    inline constexpr struct set_done_t {
-        template <typename Receiver>
-            requires requires(Receiver&& receiver) {
-                ::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::execution::set_done_t>(),
-                                   ::nstd::utility::forward<Receiver>(receiver));
-            }
-        constexpr auto operator()(Receiver&& receiver) const
-            noexcept(noexcept(::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::execution::set_done_t>(),
-                                                 ::nstd::utility::forward<Receiver>(receiver))))
-            -> void //-dk:TODO verify if expression-equivalent may mean it can have a [reference?] return type
-        {
-            return ::nstd::tag_invoke(*this, ::nstd::utility::forward<Receiver>(receiver));
-        }
-    } set_done;
+namespace nstd::execution {
+    int set_stopped_dummy = 0;
 }
-
-// ----------------------------------------------------------------------------
-
-#endif

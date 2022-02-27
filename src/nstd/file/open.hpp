@@ -33,7 +33,7 @@
 #include "nstd/execution/sender_base.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/set_error.hpp"
-#include "nstd/execution/set_done.hpp"
+#include "nstd/execution/set_stopped.hpp"
 #include "nstd/file/context.hpp"
 #include "nstd/net/io_context.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
@@ -129,8 +129,8 @@ struct nstd::file::open_sender
         friend auto tag_invoke(::nstd::execution::set_error_t, receiver&& r, Error&& error) noexcept -> void {
             ::nstd::execution::set_error(::nstd::utility::move(r.d_receiver), ::nstd::utility::forward<Error>(error));
         }
-        friend auto tag_invoke(::nstd::execution::set_done_t, receiver&& r) noexcept -> void {
-            ::nstd::execution::set_done(::nstd::utility::move(r.d_receiver));
+        friend auto tag_invoke(::nstd::execution::set_stopped_t, receiver&& r) noexcept -> void {
+            ::nstd::execution::set_stopped(::nstd::utility::move(r.d_receiver));
         }
     };
 

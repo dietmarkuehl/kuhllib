@@ -29,7 +29,7 @@
 #include "nstd/execution/receiver.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/set_error.hpp"
-#include "nstd/execution/set_done.hpp"
+#include "nstd/execution/set_stopped.hpp"
 #include "nstd/execution/then.hpp"
 #include "nstd/thread/sync_wait.hpp"
 #include "nstd/utility/move.hpp"
@@ -64,7 +64,7 @@ namespace test_declarations {
                     EX::set_error(UT::move(s.d_receiver), TD::error{});
                     break;
                 case 8:
-                    EX::set_done(UT::move(s.d_receiver));
+                    EX::set_stopped(UT::move(s.d_receiver));
                     break;
                 }
             }

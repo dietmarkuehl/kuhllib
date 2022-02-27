@@ -106,7 +106,7 @@ namespace audio
 
         auto do_process(::std::span<::std::byte> buffer) -> void override {
             if (buffer.empty()) {
-                EX::set_done(::std::move(this->d_receiver));
+                EX::set_stopped(::std::move(this->d_receiver));
             }
             else {
                 EX::set_value(::std::move(this->d_receiver), buffer);

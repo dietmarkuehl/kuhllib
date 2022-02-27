@@ -40,7 +40,7 @@
 #include "nstd/execution/schedule.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/set_error.hpp"
-#include "nstd/execution/set_done.hpp"
+#include "nstd/execution/set_stopped.hpp"
 #include "nstd/execution/start.hpp"
 #include "nstd/execution/sender.hpp"
 #include "nstd/execution/sender_to.hpp"

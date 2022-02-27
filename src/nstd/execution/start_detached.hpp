@@ -33,7 +33,7 @@
 #include "nstd/execution/receiver.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/set_error.hpp"
-#include "nstd/execution/set_done.hpp"
+#include "nstd/execution/set_stopped.hpp"
 #include "nstd/execution/start.hpp"
 #include "nstd/utility/forward.hpp"
 #include "nstd/utility/move.hpp"
@@ -127,7 +127,7 @@ struct nstd::execution::start_detached_t::receiver
     friend auto tag_invoke(::nstd::execution::set_value_t, receiver&& r, auto&&...) noexcept -> void{
         r.d_state.reset();
     }
-    friend auto tag_invoke(::nstd::execution::set_done_t, receiver&& r) noexcept -> void {
+    friend auto tag_invoke(::nstd::execution::set_stopped_t, receiver&& r) noexcept -> void {
         r.d_state.reset();
     }
     friend auto tag_invoke(::nstd::execution::set_error_t, receiver&&, auto&&) noexcept -> void {

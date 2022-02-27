@@ -42,7 +42,7 @@ namespace test_declarations {
         receiver(receiver&&);
         friend auto tag_invoke(EX::set_value_t, receiver&&, int, double) -> void {}
         friend auto tag_invoke(EX::set_error_t, receiver&&, Error) noexcept(SetErrorNoexcept) -> void {}
-        friend auto tag_invoke(EX::set_done_t, receiver&&) noexcept(SetDoneNoexcept) -> void {}
+        friend auto tag_invoke(EX::set_stopped_t, receiver&&) noexcept(SetDoneNoexcept) -> void {}
     };
 }
 

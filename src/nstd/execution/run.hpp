@@ -30,7 +30,7 @@
 #include "nstd/execution/connect.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/set_error.hpp"
-#include "nstd/execution/set_done.hpp"
+#include "nstd/execution/set_stopped.hpp"
 #include "nstd/execution/start.hpp"
 #include "nstd/utility/forward.hpp"
 #include <atomic>
@@ -54,7 +54,7 @@ namespace nstd::hidden_names
         {
             *r.done = true;
         }
-        friend auto tag_invoke(::nstd::execution::set_done_t, run_receiver&& r)
+        friend auto tag_invoke(::nstd::execution::set_stopped_t, run_receiver&& r)
             noexcept -> void
         {
             *r.done = true;

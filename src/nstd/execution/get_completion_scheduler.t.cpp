@@ -30,7 +30,7 @@
 #include "nstd/execution/sender_base.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/set_error.hpp"
-#include "nstd/execution/set_done.hpp"
+#include "nstd/execution/set_stopped.hpp"
 #include <type_traits> //-dk:TODO "nstd/type_traits/conditional.hpp"
 #include "kuhl/test.hpp"
 
@@ -108,8 +108,8 @@ static KT::testcase const tests[] = {
                    == KT::type<decltype(EX::get_completion_scheduler<EX::set_value_t>)>
                 && KT::type<EX::get_completion_scheduler_t<EX::set_error_t> const>
                    == KT::type<decltype(EX::get_completion_scheduler<EX::set_error_t>)>
-                && KT::type<EX::get_completion_scheduler_t<EX::set_done_t> const>
-                   == KT::type<decltype(EX::get_completion_scheduler<EX::set_done_t>)>
+                && KT::type<EX::get_completion_scheduler_t<EX::set_stopped_t> const>
+                   == KT::type<decltype(EX::get_completion_scheduler<EX::set_stopped_t>)>
                 ;
         }),
     // working cases
@@ -119,8 +119,8 @@ static KT::testcase const tests[] = {
     KT::expect_success("sender<true, true, true, set_error_t> has get_completion_scheduler<set_error_t>", []{
             return TD::check_get_completion_scheduler<true, TD::sender<true, true, true, EX::set_error_t>, EX::set_error_t>();
         }),
-    KT::expect_success("sender<true, true, true, set_done_t> has get_completion_scheduler<set_done_t>", []{
-            return TD::check_get_completion_scheduler<true, TD::sender<true, true,true,  EX::set_done_t>, EX::set_done_t>();
+    KT::expect_success("sender<true, true, true, set_stopped_t> has get_completion_scheduler<set_stopped_t>", []{
+            return TD::check_get_completion_scheduler<true, TD::sender<true, true,true,  EX::set_stopped_t>, EX::set_stopped_t>();
         }),
     // wrong completion channel
     KT::expect_success("sender<true, true, true, set_value_t> does not have get_completion_scheduler<set_value_t const>", []{
@@ -140,8 +140,8 @@ static KT::testcase const tests[] = {
     KT::expect_success("sender<false, true, true, set_error_t> does not have get_completion_scheduler<set_error_t>", []{
             return TD::check_get_completion_scheduler<false, TD::sender<false, true, true, EX::set_error_t>, EX::set_error_t>();
         }),
-    KT::expect_success("sender<false, true, true, set_done_t> does not have get_completion_scheduler<set_done_t>", []{
-            return TD::check_get_completion_scheduler<false, TD::sender<false, true, true, EX::set_done_t>, EX::set_done_t>();
+    KT::expect_success("sender<false, true, true, set_stopped_t> does not have get_completion_scheduler<set_stopped_t>", []{
+            return TD::check_get_completion_scheduler<false, TD::sender<false, true, true, EX::set_stopped_t>, EX::set_stopped_t>();
         }),
 
     // not noexcept
@@ -151,8 +151,8 @@ static KT::testcase const tests[] = {
     KT::expect_success("sender<true, false, true, set_error_t> does not have get_completion_scheduler<set_error_t>", []{
             return TD::check_get_completion_scheduler<false, TD::sender<true, false, true, EX::set_error_t>, EX::set_error_t>();
         }),
-    KT::expect_success("sender<true, false, true, set_done_t> does not have get_completion_scheduler<set_done_t>", []{
-            return TD::check_get_completion_scheduler<false, TD::sender<true, false, true, EX::set_done_t>, EX::set_done_t>();
+    KT::expect_success("sender<true, false, true, set_stopped_t> does not have get_completion_scheduler<set_stopped_t>", []{
+            return TD::check_get_completion_scheduler<false, TD::sender<true, false, true, EX::set_stopped_t>, EX::set_stopped_t>();
         }),
 
     // result isn't a scheduler
@@ -162,8 +162,8 @@ static KT::testcase const tests[] = {
     KT::expect_success("sender<true, true, false, set_error_t> does not have get_completion_scheduler<set_error_t>", []{
             return TD::check_get_completion_scheduler<false, TD::sender<true, true, false, EX::set_error_t>, EX::set_error_t>();
         }),
-    KT::expect_success("sender<true, true, false, set_done_t> does not have get_completion_scheduler<set_done_t>", []{
-            return TD::check_get_completion_scheduler<false, TD::sender<true, true, false,  EX::set_done_t>, EX::set_done_t>();
+    KT::expect_success("sender<true, true, false, set_stopped_t> does not have get_completion_scheduler<set_stopped_t>", []{
+            return TD::check_get_completion_scheduler<false, TD::sender<true, true, false,  EX::set_stopped_t>, EX::set_stopped_t>();
         }),
 };
 

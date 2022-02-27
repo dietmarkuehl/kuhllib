@@ -58,7 +58,7 @@ namespace test_declarations {
             receiver(T&&) { static_assert(TT::is_same_v<T, receiver>); }
             friend auto tag_invoke(EX::set_value_t, receiver, auto&&...) noexcept -> void {}
             friend auto tag_invoke(EX::set_error_t, receiver, auto&&) noexcept -> void {}
-            friend auto tag_invoke(EX::set_done_t, receiver) noexcept -> void {}
+            friend auto tag_invoke(EX::set_stopped_t, receiver) noexcept -> void {}
         };
 #endif
     }

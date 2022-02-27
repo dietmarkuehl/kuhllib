@@ -45,7 +45,7 @@ namespace test_declarations
     template <typename Allocator, bool Noexcept, bool IsReceiver = true>
     struct receiver {
         bool* const value;
-        friend auto tag_invoke(EX::set_done_t, receiver&&) noexcept(IsReceiver) {}
+        friend auto tag_invoke(EX::set_stopped_t, receiver&&) noexcept(IsReceiver) {}
         friend auto tag_invoke(EX::set_error_t, receiver&&, std::exception_ptr) noexcept {}
         friend auto tag_invoke(EX::get_allocator_t, receiver const& r) noexcept(Noexcept) {
             *r.value = true;

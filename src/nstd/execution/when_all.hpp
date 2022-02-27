@@ -33,7 +33,7 @@
 #include "nstd/execution/connect.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/set_error.hpp"
-#include "nstd/execution/set_done.hpp"
+#include "nstd/execution/set_stopped.hpp"
 #include "nstd/execution/start.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
 #include "nstd/utility/forward.hpp"
@@ -67,7 +67,7 @@ namespace nstd::execution {
                 noexcept -> void {
                 r.d_common->complete();
             }
-            friend auto tag_invoke(::nstd::execution::set_done_t, receiver&& r)
+            friend auto tag_invoke(::nstd::execution::set_stopped_t, receiver&& r)
                 noexcept -> void {
                 r.d_common->complete();
             }
@@ -111,7 +111,7 @@ namespace nstd::execution {
             using completion_signatures = ::nstd::execution::completion_signatures<
                     //-dk:TODO fix when_all completion_signals
                     ::nstd::execution::set_value_t(),
-                    ::nstd::execution::set_done_t()
+                    ::nstd::execution::set_stopped_t()
                 >;
 
             template <template <typename...> class T, template <typename...> class V>

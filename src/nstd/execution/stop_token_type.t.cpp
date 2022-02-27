@@ -25,7 +25,7 @@
 
 #include "nstd/execution/stop_token_type.hpp"
 #include "nstd/execution/receiver.hpp"
-#include "nstd/execution/set_done.hpp"
+#include "nstd/execution/set_stopped.hpp"
 #include "nstd/execution/set_error.hpp"
 #include "nstd/stop_token/stoppable_token.hpp"
 #include "kuhl/test.hpp"
@@ -56,7 +56,7 @@ namespace test_declarations {
         struct receiver {
             friend auto tag_invoke(EX::get_stop_token_t, receiver const&) noexcept -> TD::stop_token { return {}; }
             friend auto tag_invoke(EX::set_error_t, receiver&&, auto&&) noexcept -> void {}
-            friend auto tag_invoke(EX::set_done_t, receiver&&) noexcept -> void {}
+            friend auto tag_invoke(EX::set_stopped_t, receiver&&) noexcept -> void {}
         };
         static_assert(EX::receiver<TD::receiver>);
     }

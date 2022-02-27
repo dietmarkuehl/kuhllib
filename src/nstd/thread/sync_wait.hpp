@@ -31,7 +31,7 @@
 #include "nstd/execution/sender_traits.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/set_error.hpp"
-#include "nstd/execution/set_done.hpp"
+#include "nstd/execution/set_stopped.hpp"
 #include "nstd/execution/start.hpp"
 #include "nstd/execution/connect.hpp"
 #include "nstd/execution/get_completion_scheduler.hpp"
@@ -122,7 +122,7 @@ namespace nstd::this_thread {
                 catch (...) { (*r.ex) = ::std::current_exception(); }
                 r.complete();
             }
-            friend auto tag_invoke(::nstd::execution::set_done_t, receiver&& r) noexcept {
+            friend auto tag_invoke(::nstd::execution::set_stopped_t, receiver&& r) noexcept {
                 r.complete();
             }
         };

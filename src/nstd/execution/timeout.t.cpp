@@ -28,7 +28,7 @@
 #include "nstd/execution/run.hpp"
 #include "nstd/execution/sender.hpp"
 #include "nstd/execution/start.hpp"
-#include "nstd/execution/set_done.hpp"
+#include "nstd/execution/set_stopped.hpp"
 #include "nstd/execution/operation_state.hpp"
 #include "nstd/execution/stop_token_type.hpp"
 #include "nstd/execution/get_stop_token.hpp"
@@ -68,7 +68,7 @@ namespace test_declarations {
                     auto operator()() noexcept -> void {
                         state* s = this->d_state;
                         s->d_callback.reset(); 
-                        EX::set_done(UT::move(s->d_receiver));
+                        EX::set_stopped(UT::move(s->d_receiver));
                     }
                 };
                 using stop_token = EX::stop_token_type_t<TT::remove_cvref_t<Receiver>>;

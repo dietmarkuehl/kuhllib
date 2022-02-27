@@ -58,7 +58,7 @@ struct nstd::execution::test_receiver_of
     friend auto tag_invoke(::nstd::execution::set_value_t, test_receiver_of&&, Args...) noexcept -> void {};
     template <typename Error>
     friend auto tag_invoke(::nstd::execution::set_error_t, test_receiver_of&&, Error&&) noexcept -> void {};
-    friend auto tag_invoke(::nstd::execution::set_done_t, test_receiver_of&&) noexcept -> void {};
+    friend auto tag_invoke(::nstd::execution::set_stopped_t, test_receiver_of&&) noexcept -> void {};
 };
 
 static_assert(::nstd::execution::receiver_of<::nstd::execution::test_receiver_of<int, bool&, char const>, int, bool&, char const>);

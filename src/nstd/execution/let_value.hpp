@@ -33,7 +33,7 @@
 #include "nstd/execution/start.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/set_error.hpp"
-#include "nstd/execution/set_done.hpp"
+#include "nstd/execution/set_stopped.hpp"
 #include "nstd/functional/tag_invoke.hpp"
 #include "nstd/utility/forward.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
@@ -128,9 +128,9 @@ struct nstd::execution::let_value_t::state
             noexcept -> void {
             ::nstd::execution::set_error(::nstd::utility::move(r.d_state->d_receiver), ::nstd::utility::forward<E>(e));
         }
-        friend auto tag_invoke(::nstd::execution::set_done_t, upstream_receiver r)
+        friend auto tag_invoke(::nstd::execution::set_stopped_t, upstream_receiver r)
             noexcept -> void {
-            ::nstd::execution::set_done(::nstd::utility::move(r.d_state->d_receiver));
+            ::nstd::execution::set_stopped(::nstd::utility::move(r.d_state->d_receiver));
         }
     };
     struct downstream_receiver {
@@ -146,9 +146,9 @@ struct nstd::execution::let_value_t::state
             noexcept -> void {
             ::nstd::execution::set_error(::nstd::utility::move(r.d_state->d_receiver), ::nstd::utility::forward<E>(e));
         }
-        friend auto tag_invoke(::nstd::execution::set_done_t, downstream_receiver r)
+        friend auto tag_invoke(::nstd::execution::set_stopped_t, downstream_receiver r)
             noexcept -> void {
-            ::nstd::execution::set_done(::nstd::utility::move(r.d_state->d_receiver));
+            ::nstd::execution::set_stopped(::nstd::utility::move(r.d_state->d_receiver));
         }
     };
 

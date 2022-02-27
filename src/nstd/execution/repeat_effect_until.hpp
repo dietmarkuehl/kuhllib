@@ -53,9 +53,9 @@ namespace nstd::execution {
                     ::nstd::execution::set_error(::nstd::utility::move(r.d_state->d_receiver),
                                                  ::nstd::utility::forward<Error>(e));
                 }
-                friend auto tag_invoke(::nstd::execution::set_done_t, receiver&& r)
+                friend auto tag_invoke(::nstd::execution::set_stopped_t, receiver&& r)
                     noexcept -> void {
-                    ::nstd::execution::set_done(::nstd::utility::move(r.d_state->d_receiver));
+                    ::nstd::execution::set_stopped(::nstd::utility::move(r.d_state->d_receiver));
                 }
             };
             using sender_type = ::nstd::type_traits::remove_cvref_t<Sender>;
@@ -115,7 +115,7 @@ namespace nstd::execution {
         struct sender {
             using completion_signatures = ::nstd::execution::completion_signatures<
                     ::nstd::execution::set_value_t(),
-                    ::nstd::execution::set_done_t()
+                    ::nstd::execution::set_stopped_t()
                 >;
             template <template <typename...> class T, template <typename...> class V>
             using value_types = V<T<>>;

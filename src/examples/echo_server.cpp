@@ -71,7 +71,7 @@ namespace
             container::iterator d_iterator;
 
             template <typename Tag>
-                requires NC::same_as<Tag, EX::set_value_t> || NC::same_as<Tag, EX::set_error_t> || NC::same_as<Tag, EX::set_done_t>
+                requires NC::same_as<Tag, EX::set_value_t> || NC::same_as<Tag, EX::set_error_t> || NC::same_as<Tag, EX::set_stopped_t>
             friend auto tag_invoke(Tag, receiver&& r, auto&&...)
                 noexcept -> void
             {

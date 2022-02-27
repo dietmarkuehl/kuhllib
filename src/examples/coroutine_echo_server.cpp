@@ -79,8 +79,8 @@ namespace
             friend auto tag_invoke(EX::set_error_t, receiver&&, auto&&) noexcept -> void {
                 ::std::cout << "set_error\n";
             }
-            friend auto tag_invoke(EX::set_done_t, receiver&&) noexcept -> void {
-                ::std::cout << "set_done\n";
+            friend auto tag_invoke(EX::set_stopped_t, receiver&&) noexcept -> void {
+                ::std::cout << "set_stopped\n";
             }
         };
         template <::nstd::execution::sender Sender>

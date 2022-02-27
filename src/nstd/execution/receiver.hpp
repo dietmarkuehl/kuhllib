@@ -28,7 +28,7 @@
 
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/set_error.hpp"
-#include "nstd/execution/set_done.hpp"
+#include "nstd/execution/set_stopped.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
 #include "nstd/utility/forward.hpp"
 #include "nstd/utility/move.hpp"
@@ -43,7 +43,7 @@ namespace nstd::execution {
         =  ::std::move_constructible<::nstd::type_traits::remove_cvref_t<Receiver>>
         && ::std::constructible_from<::nstd::type_traits::remove_cvref_t<Receiver>, Receiver>
         && requires(::nstd::type_traits::remove_cvref_t<Receiver>&& rec, Error&& err) {
-            { ::nstd::execution::set_done(::nstd::utility::move(rec)) } noexcept;
+            { ::nstd::execution::set_stopped(::nstd::utility::move(rec)) } noexcept;
             { ::nstd::execution::set_error(::nstd::utility::move(rec), ::nstd::utility::forward<Error>(err)) } noexcept;
         }
         ;
@@ -56,7 +56,7 @@ namespace nstd::execution {
 struct nstd::execution::test_receiver {
     friend auto tag_invoke(::nstd::execution::set_value_t, test_receiver&&, auto&&...) noexcept -> void {};
     friend auto tag_invoke(::nstd::execution::set_error_t, test_receiver&&, auto&&) noexcept -> void {};
-    friend auto tag_invoke(::nstd::execution::set_done_t, test_receiver&&) noexcept -> void {};
+    friend auto tag_invoke(::nstd::execution::set_stopped_t, test_receiver&&) noexcept -> void {};
 };
 
 static_assert(::nstd::execution::receiver<::nstd::execution::test_receiver>);

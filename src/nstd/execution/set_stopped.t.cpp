@@ -1,4 +1,4 @@
-// nstd/execution/set_done.t.cpp                                      -*-C++-*-
+// nstd/execution/set_stopped.t.cpp                                   -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,7 +23,7 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/execution/set_done.hpp"
+#include "nstd/execution/set_stopped.hpp"
 #include "nstd/utility/move.hpp"
 #include "kuhl/test.hpp"
 
@@ -35,17 +35,17 @@ namespace KT = ::kuhl::test;
 // ----------------------------------------------------------------------------
 
 namespace test_declarations {
-    struct member_set_done {
+    struct member_set_stopped {
         bool* const ptr;
-        friend auto tag_invoke(EX::set_done_t, member_set_done&& r) noexcept -> void {
+        friend auto tag_invoke(EX::set_stopped_t, member_set_stopped&& r) noexcept -> void {
             *r.ptr = true;
         }
     };
 
-    struct non_member_set_done {
+    struct non_member_set_stopped {
         bool* const ptr;
     };
-    auto tag_invoke(EX::set_done_t, non_member_set_done&& r) noexcept -> void {
+    auto tag_invoke(EX::set_stopped_t, non_member_set_stopped&& r) noexcept -> void {
         *r.ptr = true;
     }
 }
@@ -53,20 +53,20 @@ namespace test_declarations {
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
-    KT::expect_success("member set_done", []{
+    KT::expect_success("member set_stopped", []{
            bool value(false);
-           EX::set_done(TD::member_set_done{&value});
-           return requires(::TD::member_set_done& r){ EX::set_done(::nstd::utility::move(r)); }
+           EX::set_stopped(TD::member_set_stopped{&value});
+           return requires(::TD::member_set_stopped& r){ EX::set_stopped(::nstd::utility::move(r)); }
                && value
                ;
         }),
-    KT::expect_success("non-member set_done", []{
+    KT::expect_success("non-member set_stopped", []{
            bool value(false);
-           EX::set_done(TD::non_member_set_done{&value});
-           return requires(::TD::non_member_set_done& r){ EX::set_done(::nstd::utility::move(r)); }
+           EX::set_stopped(TD::non_member_set_stopped{&value});
+           return requires(::TD::non_member_set_stopped& r){ EX::set_stopped(::nstd::utility::move(r)); }
                && value
                ;
         }),
 };
 
-static KT::add_tests suite("set_done", ::tests);
+static KT::add_tests suite("set_stopped", ::tests);

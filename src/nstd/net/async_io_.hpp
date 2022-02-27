@@ -33,7 +33,7 @@
 #include "nstd/execution/receiver.hpp"
 #include "nstd/execution/scheduler.hpp"
 #include "nstd/execution/sender.hpp"
-#include "nstd/execution/set_done.hpp"
+#include "nstd/execution/set_stopped.hpp"
 #include "nstd/execution/set_error.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/start.hpp"
@@ -93,8 +93,8 @@ struct nstd::net::async_io_receiver_
     friend auto tag_invoke(::nstd::execution::set_error_t, async_io_receiver_&& self, Error&& error) noexcept -> void {
         ::nstd::execution::set_error(::nstd::utility::move(self.d_state->d_receiver), ::nstd::utility::forward<Error>(error));
     }
-    friend auto tag_invoke(::nstd::execution::set_done_t, async_io_receiver_&& self) noexcept -> void {
-        ::nstd::execution::set_done(::nstd::utility::move(self.d_state->d_receiver));
+    friend auto tag_invoke(::nstd::execution::set_stopped_t, async_io_receiver_&& self) noexcept -> void {
+        ::nstd::execution::set_stopped(::nstd::utility::move(self.d_state->d_receiver));
     }
 };
 
@@ -143,14 +143,14 @@ struct nstd::net::async_io_state_
         auto do_result(::std::int32_t, ::std::uint32_t) -> void override {
             ::std::lock_guard kerberos(this->d_mutex);
             if (--this->d_outstanding == 0) {
-                ::nstd::execution::set_done(::nstd::utility::move(this->d_self->d_receiver));
+                ::nstd::execution::set_stopped(::nstd::utility::move(this->d_self->d_receiver));
             }
         }
         auto complete(::std::int32_t rc, ::std::uint32_t flags) -> void {
             ::std::lock_guard kerberos(this->d_mutex);
             if (--this->d_outstanding == 0) {
                 if (this->d_canceled) {
-                    ::nstd::execution::set_done(::nstd::utility::move(this->d_self->d_receiver));
+                    ::nstd::execution::set_stopped(::nstd::utility::move(this->d_self->d_receiver));
                 }
                 else {
                     this->d_self->d_submit.complete(rc, flags, this->d_self->d_receiver);

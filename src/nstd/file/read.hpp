@@ -31,7 +31,7 @@
 #include "nstd/execution/connect.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/set_error.hpp"
-#include "nstd/execution/set_done.hpp"
+#include "nstd/execution/set_stopped.hpp"
 #include "nstd/execution/sender_base.hpp"
 #include "nstd/file/context.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
@@ -104,8 +104,8 @@ namespace nstd::file {
             ::nstd::execution::set_error(::nstd::utility::move(r.d_receiver),
                                          ::nstd::utility::forward<decltype(err)>(err));
         }
-        friend auto tag_invoke(::nstd::execution::set_done_t, read_receiver&& r) noexcept -> void {
-            ::nstd::execution::set_done(::nstd::utility::move(r.d_receiver));
+        friend auto tag_invoke(::nstd::execution::set_stopped_t, read_receiver&& r) noexcept -> void {
+            ::nstd::execution::set_stopped(::nstd::utility::move(r.d_receiver));
         }
     };
 

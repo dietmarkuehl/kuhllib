@@ -31,7 +31,7 @@
 #include "nstd/execution/receiver.hpp"
 #include "nstd/execution/receiver_of.hpp"
 #include "nstd/execution/sender_base.hpp"
-#include "nstd/execution/set_done.hpp"
+#include "nstd/execution/set_stopped.hpp"
 #include "nstd/execution/set_error.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/start.hpp"
@@ -103,7 +103,7 @@ namespace nstd::hidden_names {
 
     static_assert(::nstd::execution::operation_state<::nstd::hidden_names::just_sender<::nstd::execution::set_value_t, int>::operation_state<::nstd::execution::test_receiver>>);
     static_assert(::nstd::execution::operation_state<::nstd::hidden_names::just_sender<::nstd::execution::set_error_t, int>::operation_state<::nstd::execution::test_receiver>>);
-    static_assert(::nstd::execution::operation_state<::nstd::hidden_names::just_sender<::nstd::execution::set_done_t>::operation_state<::nstd::execution::test_receiver>>);
+    static_assert(::nstd::execution::operation_state<::nstd::hidden_names::just_sender<::nstd::execution::set_stopped_t>::operation_state<::nstd::execution::test_receiver>>);
 }
 
 namespace nstd::execution {
@@ -124,8 +124,8 @@ namespace nstd::execution {
     }
 
     inline auto just_done() noexcept
-        -> ::nstd::hidden_names::just_sender<::nstd::execution::set_done_t> {
-        return ::nstd::hidden_names::just_sender<::nstd::execution::set_done_t>{
+        -> ::nstd::hidden_names::just_sender<::nstd::execution::set_stopped_t> {
+        return ::nstd::hidden_names::just_sender<::nstd::execution::set_stopped_t>{
             {}, ::std::make_tuple()
             };
     }

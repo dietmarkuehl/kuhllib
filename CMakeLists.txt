@@ -95,8 +95,8 @@ list(APPEND kuhllib_components
     src/nstd/execution/sender_to
     src/nstd/execution/sender_traits
     src/nstd/execution/sequenced_policy
-    src/nstd/execution/set_done
     src/nstd/execution/set_error
+    src/nstd/execution/set_stopped
     src/nstd/execution/set_value
     src/nstd/execution/start
     src/nstd/execution/start_detached

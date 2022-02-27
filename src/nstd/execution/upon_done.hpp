@@ -29,7 +29,7 @@
 #include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/connect.hpp"
 #include "nstd/execution/receiver.hpp"
-#include "nstd/execution/set_done.hpp"
+#include "nstd/execution/set_stopped.hpp"
 #include "nstd/execution/set_error.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/sender.hpp"
@@ -69,7 +69,7 @@ struct nstd::execution::upon_done_t::receiver
     friend auto tag_invoke(Tag tag, receiver&& self, Args&&... args) noexcept {
         return ::nstd::tag_invoke(tag, ::nstd::utility::move(self.d_receiver), ::nstd::utility::forward<Args>(args)...);
     }
-    friend auto tag_invoke(::nstd::execution::set_done_t, receiver&& self) noexcept -> void {
+    friend auto tag_invoke(::nstd::execution::set_stopped_t, receiver&& self) noexcept -> void {
         try {
             if constexpr (::nstd::type_traits::is_void_v<decltype(::nstd::utility::move(self.d_fun)())>) {
                 ::nstd::utility::move(self.d_fun)();

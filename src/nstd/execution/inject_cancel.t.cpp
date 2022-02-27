@@ -61,7 +61,7 @@ namespace test_declarations
                 static_assert(EX::receiver<decltype(self.d_receiver)>);
                 auto token{EX::get_stop_token(self.d_receiver)};
                 if (token.stop_requested()) {
-                    EX::set_done(UT::move(self.d_receiver));
+                    EX::set_stopped(UT::move(self.d_receiver));
                 }
                 else try {
                     EX::set_value(UT::move(self.d_receiver));
@@ -76,7 +76,7 @@ namespace test_declarations
         {
             using completion_signatures
                 = ::nstd::execution::completion_signatures<
-                    ::nstd::execution::set_done_t()
+                    ::nstd::execution::set_stopped_t()
                     >;
             template <template <typename...> class T, template <typename...> class V>
             using value_types = V<T<>>;

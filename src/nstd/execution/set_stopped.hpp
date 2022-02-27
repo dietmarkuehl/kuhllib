@@ -1,4 +1,4 @@
-// nstd/execution/set_done.cpp                                        -*-C++-*-
+// nstd/execution/set_stopped.hpp                                     -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,8 +23,32 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/execution/set_done.hpp"
+#ifndef INCLUDED_NSTD_EXECUTION_SET_STOPPED
+#define INCLUDED_NSTD_EXECUTION_SET_STOPPED
+
+#include "nstd/functional/tag_invoke.hpp"
+#include "nstd/type_traits/declval.hpp"
+#include "nstd/utility/forward.hpp"
 
 // ----------------------------------------------------------------------------
 
-int set_done_dummy = 0;
+namespace nstd::execution::inline customization_points {
+    inline constexpr struct set_stopped_t {
+        template <typename Receiver>
+            requires requires(Receiver&& receiver) {
+                ::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::execution::set_stopped_t>(),
+                                   ::nstd::utility::forward<Receiver>(receiver));
+            }
+        constexpr auto operator()(Receiver&& receiver) const
+            noexcept(noexcept(::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::execution::set_stopped_t>(),
+                                                 ::nstd::utility::forward<Receiver>(receiver))))
+            -> void //-dk:TODO verify if expression-equivalent may mean it can have a [reference?] return type
+        {
+            return ::nstd::tag_invoke(*this, ::nstd::utility::forward<Receiver>(receiver));
+        }
+    } set_stopped;
+}
+
+// ----------------------------------------------------------------------------
+
+#endif

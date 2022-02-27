@@ -52,7 +52,7 @@ namespace test_declarations
             struct state {
                 Receiver receiver;
                 friend void tag_invoke(EX::start_t, state& s) noexcept(State) {
-                    EX::set_done(UT::move(s.receiver));
+                    EX::set_stopped(UT::move(s.receiver));
                 };
             };
             int* const ptr;
@@ -68,7 +68,7 @@ namespace test_declarations
         template <bool Receiver>
         struct receiver {
             friend auto tag_invoke(EX::set_error_t, receiver&&, ::std::exception_ptr) noexcept(Receiver) -> void {}
-            friend auto tag_invoke(EX::set_done_t, receiver&&) noexcept -> void {}
+            friend auto tag_invoke(EX::set_stopped_t, receiver&&) noexcept -> void {}
         };
 
         template <typename Sender, typename Receiver>

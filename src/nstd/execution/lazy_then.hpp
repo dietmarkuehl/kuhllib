@@ -34,7 +34,7 @@
 #include "nstd/execution/sender_base.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/set_error.hpp"
-#include "nstd/execution/set_done.hpp"
+#include "nstd/execution/set_stopped.hpp"
 #include "nstd/execution/connect.hpp"
 #include "nstd/utility/forward.hpp"
 #include "nstd/utility/move.hpp"
@@ -108,8 +108,8 @@ namespace nstd::execution {
                 ::nstd::execution::set_error(::nstd::utility::move(r.d_receiver),
                                              ::nstd::utility::forward<Error>(error));
             }
-            friend auto tag_invoke(::nstd::execution::set_done_t, lazy_then_receiver&& r) noexcept {
-                ::nstd::execution::set_done(::nstd::utility::move(r.d_receiver));
+            friend auto tag_invoke(::nstd::execution::set_stopped_t, lazy_then_receiver&& r) noexcept {
+                ::nstd::execution::set_stopped(::nstd::utility::move(r.d_receiver));
             }
         };
 

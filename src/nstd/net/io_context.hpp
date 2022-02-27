@@ -170,7 +170,7 @@ struct nstd::net::io_context::sender
     using completion_signatures
         = ::nstd::execution::completion_signatures<
             ::nstd::execution::set_value_t(),
-            ::nstd::execution::set_done_t()
+            ::nstd::execution::set_stopped_t()
             >;
     template <template <typename...> class T, template <typename...> class V>
     using value_types = V<T<>>;
