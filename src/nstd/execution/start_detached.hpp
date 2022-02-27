@@ -44,59 +44,65 @@
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::execution {
-    inline constexpr struct start_detached_t
-    {
-        struct holder_base;
-        template <::nstd::execution::operation_state> struct holder;
-        struct receiver;
+namespace nstd {
+    namespace hidden_names::start_detached {
+        struct cpo
+        {
+            struct holder_base;
+            template <::nstd::execution::operation_state> struct holder;
+            struct receiver;
 
-        template <::nstd::execution::sender Sender>
-            requires requires(Sender&& sender) {
-                {
-                    ::nstd::tag_invoke(::nstd::type_traits::declval<start_detached_t>(),
-                                       ::nstd::execution::get_completion_scheduler<::nstd::execution::set_value_t>(sender),
-                                       ::nstd::utility::forward<Sender>(sender))
-                } -> ::nstd::concepts::same_as<void>;
+            template <::nstd::execution::sender Sender>
+                requires requires(Sender&& sender) {
+                    {
+                        ::nstd::tag_invoke(::nstd::type_traits::declval<cpo>(),
+                                           ::nstd::execution::get_completion_scheduler<::nstd::execution::set_value_t>(sender),
+                                           ::nstd::utility::forward<Sender>(sender))
+                    } -> ::nstd::concepts::same_as<void>;
+                }
+            auto operator()(Sender&& sender) const -> void {
+                ::nstd::tag_invoke(*this,
+                                   ::nstd::execution::get_completion_scheduler<::nstd::execution::set_value_t>(sender),
+                                   ::nstd::utility::forward<Sender>(sender));
             }
-        auto operator()(Sender&& sender) const -> void {
-            ::nstd::tag_invoke(*this,
-                               ::nstd::execution::get_completion_scheduler<::nstd::execution::set_value_t>(sender),
-                               ::nstd::utility::forward<Sender>(sender));
-        }
-        template <::nstd::execution::sender Sender>
-            requires requires(Sender&& sender) {
-                {
-                    ::nstd::tag_invoke(::nstd::type_traits::declval<start_detached_t>(),
-                                       ::nstd::utility::forward<Sender>(sender))
-                } -> ::nstd::concepts::same_as<void>;
+            template <::nstd::execution::sender Sender>
+                requires requires(Sender&& sender) {
+                    {
+                        ::nstd::tag_invoke(::nstd::type_traits::declval<cpo>(),
+                                           ::nstd::utility::forward<Sender>(sender))
+                    } -> ::nstd::concepts::same_as<void>;
+                }
+                && (not requires(Sender&& sender) {
+                    {
+                        ::nstd::tag_invoke(::nstd::type_traits::declval<cpo>(),
+                                           ::nstd::execution::get_completion_scheduler<::nstd::execution::set_value_t>(sender),
+                                           ::nstd::utility::forward<Sender>(sender))
+                    } -> ::nstd::concepts::same_as<void>;
+                })
+            auto operator()(Sender&& sender) const -> void {
+                ::nstd::tag_invoke(*this, ::nstd::utility::forward<Sender>(sender));
             }
-            && (not requires(Sender&& sender) {
-                {
-                    ::nstd::tag_invoke(::nstd::type_traits::declval<start_detached_t>(),
-                                       ::nstd::execution::get_completion_scheduler<::nstd::execution::set_value_t>(sender),
-                                       ::nstd::utility::forward<Sender>(sender))
-                } -> ::nstd::concepts::same_as<void>;
-            })
-        auto operator()(Sender&& sender) const -> void {
-            ::nstd::tag_invoke(*this, ::nstd::utility::forward<Sender>(sender));
-        }
 
-        template <::nstd::execution::sender Sender>
-        auto operator()(Sender&& ) const -> void;
-    } start_detached;
+            template <::nstd::execution::sender Sender>
+            auto operator()(Sender&& ) const -> void;
+        };
+    }
+    namespace execution {
+        using start_detached_t = ::nstd::hidden_names::start_detached::cpo;
+        inline constexpr start_detached_t start_detached{};
+    }
 }
 
 // ----------------------------------------------------------------------------
 
-struct nstd::execution::start_detached_t::holder_base
+struct nstd::hidden_names::start_detached::cpo::holder_base
 {
     virtual ~holder_base() = default;
 };
 
 template <::nstd::execution::operation_state State>
-struct nstd::execution::start_detached_t::holder
-    : nstd::execution::start_detached_t::holder_base
+struct nstd::hidden_names::start_detached::cpo::holder
+    : nstd::hidden_names::start_detached::cpo::holder_base
 {
     ::nstd::type_traits::remove_cvref_t<State> d_state;
     template <::nstd::execution::sender S, ::nstd::execution::receiver R>
@@ -141,7 +147,7 @@ static_assert(::nstd::execution::receiver<nstd::execution::start_detached_t::rec
 
 
 template <::nstd::execution::sender Sender>
-auto nstd::execution::start_detached_t::operator()(Sender&& sender) const -> void
+auto nstd::hidden_names::start_detached::cpo::operator()(Sender&& sender) const -> void
 {
     using State = decltype(::nstd::execution::connect(::nstd::utility::forward<Sender>(sender),
                                                       receiver(nullptr)));
