@@ -24,6 +24,7 @@
 // ----------------------------------------------------------------------------
 
 #include "nstd/execution/connect.hpp"
+#include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/start.hpp"
 #include "nstd/utility/move.hpp"
 #include <type_traits> //-dk:TODO "nstd/type_traits/conditional.hpp"
@@ -48,6 +49,8 @@ namespace test_declarations
         struct sender
             : TT::conditional_t<Sender, EX::sender_base, TD::empty>
         {
+            using completion_signatures =  TT::conditional_t<Sender, EX::completion_signatures<>, TD::empty>;
+            
             template <typename Receiver>
             struct state {
                 Receiver receiver;
@@ -150,4 +153,4 @@ static KT::testcase const tests[] = {
         }),
 };
 
-static KT::add_tests suite("connect", ::tests);
+static KT::add_tests suite("execution::connect", ::tests);

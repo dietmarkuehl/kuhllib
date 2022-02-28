@@ -79,6 +79,7 @@ namespace test_declarations
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
+    KT::expect_success("placehlolder", []{ return true; }),
     KT::expect_success("non-sender", []{
             return KT::type<HN::no_completion_signatures::type>
                     == KT::type<decltype(EX::get_completion_signatures(TT::declval<TD::non_sender>()))>

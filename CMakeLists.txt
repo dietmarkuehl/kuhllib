@@ -262,8 +262,9 @@ list(APPEND kuhllib_examples
     cs2
     coroutine_echo_server
     simple_echo_server
-    echo_server
     chat_server
+    echo_server
+    audio
 )
 foreach(example ${kuhllib_examples})
     add_executable(${example} src/examples/${example}.cpp)

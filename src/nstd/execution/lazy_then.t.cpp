@@ -24,6 +24,7 @@
 // ----------------------------------------------------------------------------
 
 #include "nstd/execution/lazy_then.hpp"
+#include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/get_completion_scheduler.hpp"
 #include "nstd/execution/scheduler.hpp"
 #include "nstd/execution/sender.hpp"
@@ -61,6 +62,8 @@ namespace test_declarations {
 
         template <bool HasScheduler>
         struct scheduled_sender {
+            using completion_signatures = EX::completion_signatures<>;
+
             template <template <typename...> class T, template <typename...> class V>
             using value_types = V<T<int>>;
             template <template <typename...> class V>
@@ -78,6 +81,8 @@ namespace test_declarations {
 
         template <int>
         struct lazy_sender {
+            using completion_signatures = EX::completion_signatures<>;
+
             template <template <typename...> class T, template <typename...> class V>
             using value_types = V<T<int>>;
             template <template <typename...> class V>

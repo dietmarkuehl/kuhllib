@@ -24,6 +24,7 @@
 // ----------------------------------------------------------------------------
 
 #include "nstd/execution/repeat_effect.hpp"
+#include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/receiver.hpp"
 #include "nstd/execution/sender.hpp"
 #include "nstd/execution/start.hpp"
@@ -74,6 +75,8 @@ namespace test_declarations {
         };
         struct sender
         {
+            using completion_signatures = EX::completion_signatures<>;
+
             template <template <typename...> class T, template <typename...> class V>
             using value_types = V<T<>>;
             template <template <typename...> class V>

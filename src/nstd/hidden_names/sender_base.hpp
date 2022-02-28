@@ -28,19 +28,19 @@
 
 #include "nstd/execution/get_completion_signatures.hpp"
 #include "nstd/hidden_names/valid_completion_signatures.hpp"
+#include "nstd/type_traits/remove_cvref.hpp"
 #include "nstd/utility/forward.hpp"
 
 // ----------------------------------------------------------------------------
 
 namespace nstd::hidden_names {
     template <typename Sender, typename Env>
-    concept sender_base
+    concept xsender_base
         = requires (Sender&& s, Env&& e) {
             {
                 ::nstd::execution::get_completion_signatures(::nstd::utility::forward<Sender>(s),
                                                              ::nstd::utility::forward<Env>(e))
             } -> ::nstd::hidden_names::valid_completion_signatures<Env>;
-
         }
         ;
 }

@@ -23,6 +23,7 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/completion_signatures_of_t.hpp"
 #include "nstd/execution/sender.hpp"
 #include "kuhl/test.hpp"
@@ -37,6 +38,9 @@ namespace KT = ::kuhl::test;
 namespace test_declarations {
     namespace {
         struct sender {
+            using completion_signatures = EX::completion_signatures<>;
+
+            //-dk:TODO remove old-style value_types, error_types, and sends_done
             template <template <typename...> class T, template <typename...> class V>
             using value_types = T<V<>>;
             template <template <typename...> class T>

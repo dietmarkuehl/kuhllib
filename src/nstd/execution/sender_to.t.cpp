@@ -24,6 +24,7 @@
 // ----------------------------------------------------------------------------
 
 #include "nstd/execution/sender_to.hpp"
+#include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/connect.hpp"
 #include "nstd/execution/operation_state.hpp"
 #include "nstd/execution/set_value.hpp"
@@ -75,6 +76,8 @@ namespace test_declarations {
         struct sender
             : EX::sender_base
         {
+            using completion_signatures = EX::completion_signatures<>;
+
             template <typename Receiver>
             friend auto tag_invoke(EX::connect_t, sender&&, Receiver&& receiver) {
                 return TD::state<Receiver>{UT::forward<Receiver>(receiver)};
