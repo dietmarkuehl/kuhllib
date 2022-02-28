@@ -24,6 +24,7 @@
 // ----------------------------------------------------------------------------
 
 #include "nstd/execution/get_completion_scheduler.hpp"
+#include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/schedule.hpp"
 #include "nstd/execution/scheduler.hpp"
 #include "nstd/execution/sender.hpp"
@@ -47,6 +48,7 @@ namespace test_declarations {
         struct scheduler_sender
             : EX::sender_base
         {
+            using completion_signatures = EX::completion_signatures<>;
         };
 
         struct scheduler
@@ -66,6 +68,7 @@ namespace test_declarations {
         struct sender
             : TT::conditional_t<Sender, EX::sender_base, empty>
         {
+            using completion_signatures = TT::conditional_t<Sender, EX::completion_signatures<>, empty>;
             TT::conditional_t<Scheduler, TD::scheduler, int> scheduler;
             explicit sender(int id): scheduler(id) {}
 

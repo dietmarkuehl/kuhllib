@@ -24,6 +24,7 @@
 // ----------------------------------------------------------------------------
 
 #include "nstd/execution/start_detached.hpp"
+#include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/scheduler.hpp"
 #include "nstd/execution/receiver.hpp"
 #include "nstd/execution/operation_state.hpp"
@@ -71,6 +72,8 @@ namespace test_declarations {
                 friend auto tag_invoke(EX::start_t, state&) noexcept {}
             };
             struct sender {
+                using completion_signatures = EX::completion_signatures<>;
+
                 template <template <typename...> class T, template <typename...> class V>
                 using value_types = V<T<>>;
                 template <template <typename...> class V>
@@ -94,6 +97,8 @@ namespace test_declarations {
 
         struct sender
         {
+            using completion_signatures = EX::completion_signatures<>;
+
             template <template <typename...> class T, template <typename...> class V>
             using value_types = V<T<>>;
             template <template <typename...> class V>
@@ -114,6 +119,8 @@ namespace test_declarations {
         template <typename RC>
         struct detached_sender
         {
+            using completion_signatures = EX::completion_signatures<>;
+
             template <template <typename...> class T, template <typename...> class V>
             using value_types = V<T<>>;
             template <template <typename...> class V>
@@ -143,6 +150,8 @@ namespace test_declarations {
         template <typename RC>
         struct completion_sender
         {
+            using completion_signatures = EX::completion_signatures<>;
+
             template <template <typename...> class T, template <typename...> class V>
             using value_types = V<T<>>;
             template <template <typename...> class V>
@@ -176,6 +185,8 @@ namespace test_declarations {
         template <typename RC>
         struct detached_completion_sender
         {
+            using completion_signatures = EX::completion_signatures<>;
+
             template <template <typename...> class T, template <typename...> class V>
             using value_types = V<T<>>;
             template <template <typename...> class V>

@@ -24,6 +24,7 @@
 // ----------------------------------------------------------------------------
 
 #include "nstd/execution/schedule.hpp"
+#include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/sender_base.hpp"
 #include "nstd/utility/forward.hpp"
 #include <type_traits> //-dk:TODO "nstd/utility/conditional.hpp"
@@ -47,6 +48,7 @@ namespace test_declarations
         struct sender
             : TT::conditional_t<Sender, EX::sender_base, empty>
         {
+            using completion_signatures = TT::conditional_t<Sender, EX::completion_signatures<>, empty>;
             int value;
         };
 

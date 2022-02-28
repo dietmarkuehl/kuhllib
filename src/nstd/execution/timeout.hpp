@@ -26,6 +26,7 @@
 #ifndef INCLUDED_NSTD_EXECUTION_TIMEOUT
 #define INCLUDED_NSTD_EXECUTION_TIMEOUT
 
+#include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/receiver.hpp"
 #include "nstd/execution/scheduler.hpp"
 #include "nstd/execution/sender.hpp"
@@ -189,6 +190,8 @@ struct nstd::execution::timeout_t::state
 template <::nstd::execution::sender Sender, ::nstd::execution::sender Timer>
 struct nstd::execution::timeout_t::sender
 {
+    using completion_signatures = ::nstd::execution::completion_signatures<>;
+
     template <template <typename...> class T, template <typename...> class V>
     using value_types = typename Sender::template value_types<T, V>;
     template <template <typename...> class V>

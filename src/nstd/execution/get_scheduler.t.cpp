@@ -23,6 +23,7 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
+#include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/get_scheduler.hpp"
 #include "nstd/execution/receiver.hpp"
 #include "nstd/execution/scheduler.hpp"
@@ -43,7 +44,10 @@ namespace test_declarations
         ;
 
     struct non_scheduler {};
-    struct sender: EX::sender_base {};
+    struct sender: EX::sender_base {
+        //-dk:TODO remove sender_base
+        using completion_signatures = EX::completion_signatures<>;
+    };
     struct scheduler {
         bool operator== (scheduler const&) const = default;
         friend auto tag_invoke(EX::schedule_t, scheduler&&) -> sender { return {}; }

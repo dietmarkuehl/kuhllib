@@ -24,6 +24,7 @@
 // ----------------------------------------------------------------------------
 
 #include "nstd/execution/scheduler.hpp"
+#include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/schedule.hpp"
 #include "nstd/execution/sender_base.hpp"
 #include "nstd/utility/move.hpp"
@@ -41,7 +42,9 @@ namespace test_declarations
 {
     namespace
     {
-        struct sender: EX::sender_base {};
+        struct sender: EX::sender_base {
+            using completion_signatures = EX::completion_signatures<>;
+        };
 
         struct scheduler {
             scheduler(scheduler const&) = default;

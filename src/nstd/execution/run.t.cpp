@@ -24,6 +24,7 @@
 // ----------------------------------------------------------------------------
 
 #include "nstd/execution/run.hpp"
+#include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/just.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
 #include "nstd/utility/move.hpp"
@@ -67,6 +68,8 @@ namespace test_declarations {
         class sender
         {
         public:
+            using completion_signatures = EX::completion_signatures<>;
+
             template <template <typename...> class T, template <typename...> class V>
             using value_types = V<T<>>;
             template <template <typename...> class V>

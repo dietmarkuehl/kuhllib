@@ -24,6 +24,7 @@
 // ----------------------------------------------------------------------------
 
 #include "nstd/execution/sender.hpp"
+#include "nstd/execution/completion_signatures.hpp"
 #include "kuhl/test.hpp"
 
 namespace test_declarations {}
@@ -34,10 +35,13 @@ namespace KT = ::kuhl::test;
 // ----------------------------------------------------------------------------
 
 namespace test_declarations {
-    struct sender
-        : EX::sender_base
-    {
-    };
+    namespace {
+        struct sender
+            : EX::sender_base
+        {
+            using completion_signatures = EX::completion_signatures<>;
+        };
+    }
 }
 
 // ----------------------------------------------------------------------------

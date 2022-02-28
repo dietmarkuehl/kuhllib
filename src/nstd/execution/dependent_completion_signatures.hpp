@@ -29,11 +29,6 @@
 // ----------------------------------------------------------------------------
 
 namespace nstd::execution {
-#if 0
-    template <typename E>
-    struct dependent_completion_signatures {};
-
-#elif 1
     namespace dependent_completion_signatures_impl {
         template<class T>
         struct hidden {
@@ -48,18 +43,6 @@ namespace nstd::execution {
 
     template<class T>
     using dependent_completion_signatures = ::nstd::execution::dependent_completion_signatures_impl::type<typename ::nstd::execution::dependent_completion_signatures_impl::hidden<T>::type>;
-#else
-    namespace dependent_completion_signatures_impl {
-        template <typename>
-        struct impl
-        {
-            struct type {};
-        };
-    }
-
-    template <typename E>
-    using dependent_completion_signatures = typename ::nstd::execution::dependent_completion_signatures_impl::impl<E>::type;
-#endif
 }
 
 // ----------------------------------------------------------------------------

@@ -26,6 +26,7 @@
 #ifndef INCLUDED_NSTD_EXECUTION_SENDER
 #define INCLUDED_NSTD_EXECUTION_SENDER
 
+#include "nstd/hidden_names/sender_base.hpp"
 #include "nstd/execution/sender_traits.hpp"
 #include "nstd/execution/no_env.hpp"
 #include "nstd/utility/forward.hpp"
@@ -38,7 +39,9 @@ namespace nstd::execution {
 
     template <typename Sender, typename Env = ::nstd::hidden_names::exec_envs::no_env>
     concept sender
-        =  ::std::move_constructible<::nstd::type_traits::remove_cvref_t<Sender>>
+        =  ::nstd::hidden_names::xsender_base<Sender, Env>
+        && ::nstd::hidden_names::xsender_base<Sender, ::nstd::hidden_names::exec_envs::no_env>
+        && ::std::move_constructible<::nstd::type_traits::remove_cvref_t<Sender>>
         && !requires{ typename ::nstd::execution::sender_traits<::nstd::type_traits::remove_cvref_t<Sender>>::not_specialized; }
         ;
 

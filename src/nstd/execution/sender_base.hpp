@@ -30,11 +30,11 @@
 
 namespace nstd::execution
 {
-    namespace hidden_names {
-        struct sender_base {};
+    namespace hidden_names::remove {
+        struct type {};
 
     }
-    using ::nstd::execution::hidden_names::sender_base;
+    using sender_base = ::nstd::execution::hidden_names::remove::type;
     struct piped_sender_base
         : ::nstd::execution::sender_base
     {

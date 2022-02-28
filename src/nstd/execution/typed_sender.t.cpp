@@ -24,6 +24,7 @@
 // ----------------------------------------------------------------------------
 
 #include "nstd/execution/typed_sender.hpp"
+#include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/sender_base.hpp"
 #include "kuhl/test.hpp"
 
@@ -37,6 +38,8 @@ namespace KT = ::kuhl::test;
 namespace test_declarations {
     namespace {
         struct typed_sender {
+            using completion_signatures = EX::completion_signatures<>;
+
             template <template <typename...> class T, template <typename...> class V>
             using value_types = V<T<int>, T<>>;
             template <template <typename...> class V>
@@ -47,7 +50,7 @@ namespace test_declarations {
         struct sender
             : EX::sender_base
         {
-
+            using completion_signatures = EX::completion_signatures<>;
         };
     }
 }
