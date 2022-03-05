@@ -58,6 +58,7 @@ namespace nstd::hidden_names::get_completion_signatures
         constexpr auto operator()(S&&, E&&) const noexcept -> ::nstd::tag_invoke_result_t<cpo, S, E> {
             return ::nstd::tag_invoke_result_t<cpo, S, E>{};
         }
+        #if 0
         template <typename S, typename E>
             requires(::nstd::hidden_names::is_completion_signatures<typename ::nstd::type_traits::remove_cvref_t<S>::completion_signatures>)
         constexpr auto operator()(S&&, E&&) const noexcept
@@ -66,6 +67,7 @@ namespace nstd::hidden_names::get_completion_signatures
             using type = typename ::nstd::type_traits::remove_cvref_t<S>::completion_signatures;
             return type{};
         }
+        #endif
         //-dk:TODO deal with awaitables!
         template <typename S, typename E>
         constexpr auto operator()(S&&, E&&) const noexcept

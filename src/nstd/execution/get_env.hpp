@@ -1,4 +1,4 @@
-// src/nstd/execution/no_env.hpp                                      -*-C++-*-
+// nstd/execution/get_env.hpp                                         -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2022 Dietmar Kuehl http://www.dietmar-kuehl.de
 //
@@ -23,19 +23,33 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_SRC_NSTD_EXECUTION_NO_ENV
-#define INCLUDED_SRC_NSTD_EXECUTION_NO_ENV
+#ifndef INCLUDED_NSTD_EXECUTION_GET_ENV
+#define INCLUDED_NSTD_EXECUTION_GET_ENV
 
-#include <concepts>
+#include "nstd/execution/no_env.hpp"
+#include "nstd/functional/tag_invoke.hpp"
+#include "nstd/type_traits/is_same.hpp"
+#include "nstd/type_traits/remove_cvref.hpp"
+#include "nstd/utility/forward.hpp"
 
 // ----------------------------------------------------------------------------
+// [exec.get_env]
 
-namespace nstd::hidden_names::exec_envs {
-    struct no_env
-    {
-        //-dk:TODO [exec.no_env] uses ::std::same_as<no_env> auto
-        friend auto tag_invoke(auto, no_env, auto&&...) -> void = delete;
-    };
+namespace nstd::execution {
+    namespace hidden_names::get_env {
+        struct cpo {
+            template <typename C>
+                requires(::nstd::tag_invocable<cpo, C>
+                         && not ::nstd::type_traits::is_same_v<::nstd::hidden_names::exec_envs::no_env,
+                                                               ::nstd::type_traits::remove_cvref_t<::nstd::tag_invoke_result_t<cpo, C>>>)
+            auto operator()(C&& c) const {
+                return ::nstd::tag_invoke(*this, ::nstd::utility::forward<C>(c));
+            }
+        };
+    }
+
+    using get_env_t = ::nstd::execution::hidden_names::get_env::cpo;
+    inline constexpr get_env_t get_env{};
 }
 
 // ----------------------------------------------------------------------------
