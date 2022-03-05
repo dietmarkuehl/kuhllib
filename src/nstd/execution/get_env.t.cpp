@@ -107,4 +107,4 @@ static KT::testcase const tests[] = {
         }),
 };
 
-KT::add_tests suite("nstd/execution/get_env", ::tests);
+static KT::add_tests suite("nstd/execution/get_env", ::tests);
