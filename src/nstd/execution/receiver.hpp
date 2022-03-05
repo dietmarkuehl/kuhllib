@@ -26,40 +26,42 @@
 #ifndef INCLUDED_NSTD_EXECUTION_RECEIVER
 #define INCLUDED_NSTD_EXECUTION_RECEIVER
 
-#include "nstd/execution/set_value.hpp"
-#include "nstd/execution/set_error.hpp"
-#include "nstd/execution/set_stopped.hpp"
+#include "nstd/execution/get_env.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
-#include "nstd/utility/forward.hpp"
-#include "nstd/utility/move.hpp"
 #include <concepts>
 #include <exception>
 
 // ----------------------------------------------------------------------------
 
 namespace nstd::execution {
-    template <typename Receiver, typename Error = ::std::exception_ptr>
+    template <typename Receiver>
     concept receiver
         =  ::std::move_constructible<::nstd::type_traits::remove_cvref_t<Receiver>>
         && ::std::constructible_from<::nstd::type_traits::remove_cvref_t<Receiver>, Receiver>
-        && requires(::nstd::type_traits::remove_cvref_t<Receiver>&& rec, Error&& err) {
-            { ::nstd::execution::set_stopped(::nstd::utility::move(rec)) } noexcept;
-            { ::nstd::execution::set_error(::nstd::utility::move(rec), ::nstd::utility::forward<Error>(err)) } noexcept;
+        && requires(const ::nstd::type_traits::remove_cvref_t<Receiver>& rec) {
+            ::nstd::execution::get_env(rec);
         }
         ;
 
-    struct test_receiver;
+    namespace hidden_names {
+        struct test_env;
+        struct test_receiver;
+    }
 }
 
 // ----------------------------------------------------------------------------
 
-struct nstd::execution::test_receiver {
-    friend auto tag_invoke(::nstd::execution::set_value_t, test_receiver&&, auto&&...) noexcept -> void {};
-    friend auto tag_invoke(::nstd::execution::set_error_t, test_receiver&&, auto&&) noexcept -> void {};
-    friend auto tag_invoke(::nstd::execution::set_stopped_t, test_receiver&&) noexcept -> void {};
+struct nstd::execution::hidden_names::test_env {
 };
 
-static_assert(::nstd::execution::receiver<::nstd::execution::test_receiver>);
+struct nstd::execution::hidden_names::test_receiver {
+    friend auto tag_invoke(::nstd::execution::get_env_t, test_receiver)
+        -> ::nstd::execution::hidden_names::test_env {
+        return {};
+    }
+};
+
+static_assert(::nstd::execution::receiver<::nstd::execution::hidden_names::test_receiver>);
 
 // ----------------------------------------------------------------------------
 
