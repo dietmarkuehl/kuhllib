@@ -1,4 +1,4 @@
-// src/nstd/execution/no_env.hpp                                      -*-C++-*-
+// nstd/execution/get_env.cpp                                         -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2022 Dietmar Kuehl http://www.dietmar-kuehl.de
 //
@@ -23,21 +23,10 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_SRC_NSTD_EXECUTION_NO_ENV
-#define INCLUDED_SRC_NSTD_EXECUTION_NO_ENV
-
-#include <concepts>
+#include "nstd/execution/get_env.hpp"
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::hidden_names::exec_envs {
-    struct no_env
-    {
-        //-dk:TODO [exec.no_env] uses ::std::same_as<no_env> auto
-        friend auto tag_invoke(auto, no_env, auto&&...) -> void = delete;
-    };
+namespace nstd::execution {
+    int get_env_dummy{};
 }
-
-// ----------------------------------------------------------------------------
-
-#endif

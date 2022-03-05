@@ -95,10 +95,12 @@ namespace test_declarations {
             return TD::lazy_sender<3>();
         }
 
+#if 0
         template <EX::sender Sender, typename Fun>
         auto tag_invoke(EX::lazy_then_t, Sender&&, Fun&&) {
             return TD::lazy_sender<2>();
         }
+#endif
     }
 }
 
@@ -132,12 +134,14 @@ static KT::testcase const tests[] = {
                 && KT::type<decltype(sender)> == KT::type<TD::lazy_sender<3>>
                 ;
         }),
+#if 0
     KT::expect_success("custom lazy_then without scheduler", []{
             auto sender = EX::lazy_then(TD::scheduled_sender<false>(), []{});
             return KT::use(sender)
                 && KT::type<decltype(sender)> == KT::type<TD::lazy_sender<2>>
                 ;
         }),
+#endif
     KT::expect_success("lazy_then with just", []{
             auto sender = EX::lazy_then(EX::just(3, 4), [](int a, int b){ return TD::result{a * b}; });
             auto res = TT::sync_wait(UT::move(sender));

@@ -35,7 +35,7 @@ list(APPEND kuhllib_test_components
     src/kuhl/test
     )
 
-list(APPEND kuhllib_components
+list(APPEND kuhllib_algorithm_components
     src/nstd/algorithm/all_of
     src/nstd/algorithm/any_of
     src/nstd/algorithm/distance
@@ -48,32 +48,62 @@ list(APPEND kuhllib_components
     src/nstd/algorithm/mismatch
     src/nstd/algorithm/none_of
     src/nstd/algorithm/search
+)
+
+list(APPEND kuhllib_atomic_components
     src/nstd/atomic/atomic
+)
+
+list(APPEND kuhllib_buffer_components
     src/nstd/buffer/const_buffer
     src/nstd/buffer/make_buffer
     src/nstd/buffer/mutable_buffer
+)
+
+list(APPEND kuhllib_concepts_components
     src/nstd/concepts/boolean_testable
     src/nstd/concepts/same_as
+)
+
+list(APPEND kuhllib_container_components
     src/nstd/container/intrusive_list
+)
+
+list(APPEND kuhllib_xcursor_components
     src/nstd/cursor/array
     src/nstd/cursor/category
     src/nstd/cursor/model_key
     src/nstd/cursor/model_single_pass
     src/nstd/cursor/single_pass
+)
+
+list(APPEND kuhllib_endian_components
     src/nstd/endian/big_to_native
     src/nstd/endian/literals
     src/nstd/endian/type
+)
+
+list(APPEND kuhllib_execution_components
+    src/nstd/execution/get_env
+    src/nstd/execution/no_env
+)
+
+list(APPEND kuhllib_execution_todo
+    src/nstd/execution/get_allocator
+    src/nstd/execution/get_delegatee_scheduler
+    src/nstd/execution/get_scheduler
+    src/nstd/execution/get_stop_token
+)
+
+list(APPEND kuhllib_xexecution_components
     src/nstd/execution
     src/nstd/execution/completion_signatures
     src/nstd/execution/completion_signatures_of_t
     src/nstd/execution/connect
     src/nstd/execution/dependent_completion_signatures
     src/nstd/execution/execution
-    src/nstd/execution/get_allocator
     src/nstd/execution/get_completion_scheduler
     src/nstd/execution/get_completion_signatures
-    src/nstd/execution/get_scheduler
-    src/nstd/execution/get_stop_token
     src/nstd/execution/inject_cancel
     src/nstd/execution/is_execution_policy
     src/nstd/execution/just
@@ -81,7 +111,6 @@ list(APPEND kuhllib_components
     src/nstd/execution/lazy_then
     src/nstd/execution/let_value
     src/nstd/execution/operation_state
-    src/nstd/execution/no_env
     src/nstd/execution/parallel_policy
     src/nstd/execution/parallel_unsequenced_policy
     src/nstd/execution/receiver
@@ -109,6 +138,9 @@ list(APPEND kuhllib_components
     src/nstd/execution/upon_done
     src/nstd/execution/value_types_of_t
     src/nstd/execution/when_all
+)
+
+list(APPEND kuhllib_xexecutor_components
     src/nstd/executor/associated_allocator
     src/nstd/executor/associated_executor
     src/nstd/executor/async_completion
@@ -119,6 +151,9 @@ list(APPEND kuhllib_components
     src/nstd/executor/fork_event
     src/nstd/executor/service_already_exists
     src/nstd/executor/system_executor
+)
+
+list(APPEND kuhllib_xfile_components
     src/nstd/file/context
     src/nstd/file/descriptor
     src/nstd/file/io_base
@@ -132,6 +167,9 @@ list(APPEND kuhllib_components
     src/nstd/file/ring
     src/nstd/file/ring_context
     src/nstd/file/test_context
+)
+
+list(APPEND kuhllib_functional_components
     src/nstd/functional/bind
     src/nstd/functional/equal_to
     src/nstd/functional/invoke
@@ -143,6 +181,12 @@ list(APPEND kuhllib_components
     src/nstd/functional/reference_wrapper
     src/nstd/functional/tag_invoke
     src/nstd/functional/tuple_invoke
+)
+
+list(APPEND kuhllib_hidden_components
+    src/nstd/hidden_names/movable_value
+)
+list(APPEND kuhllib_xhidden_components
     src/nstd/hidden_names/add_signatures
     src/nstd/hidden_names/boolean_socket_option
     src/nstd/hidden_names/callable
@@ -153,19 +197,27 @@ list(APPEND kuhllib_components
     src/nstd/hidden_names/has_sender_types
     src/nstd/hidden_names/is_instance_of
     src/nstd/hidden_names/message_flags
-    src/nstd/hidden_names/movable_value
     src/nstd/hidden_names/no_completion_signatures
     src/nstd/hidden_names/sender_base
     src/nstd/hidden_names/type_list
     src/nstd/hidden_names/valid_completion_signatures
     src/nstd/hidden_names/variant_or_empty
+)
+
+list(APPEND kuhllib_iterator_components
     src/nstd/iterator/bidirectional_iterator
     src/nstd/iterator/bidirectional_iterator_tag
     src/nstd/iterator/forward_iterator
     src/nstd/iterator/forward_iterator_tag
     src/nstd/iterator/iterator_traits
+)
+
+list(APPEND kuhllib_memory_components
     src/nstd/memory/addressof
     src/nstd/memory/uninitialized_default_construct
+)
+
+list(APPEND kuhllib_xnet_components
     src/nstd/net/async_accept
     src/nstd/net/async_connect
     src/nstd/net/async_io
@@ -187,18 +239,36 @@ list(APPEND kuhllib_components
     src/nstd/net/netfwd
     src/nstd/net/socket_base
     src/nstd/net/timer
+)
+
+list(APPEND kuhllib_new_components
     src/nstd/new/new
+)
+
+list(APPEND kuhllib_operators_components
     src/nstd/operators/equality
     src/nstd/operators/relational
+)
+
+list(APPEND kuhllib_xprojection_components
     src/nstd/projection/identity
     src/nstd/projection/model_readable
     src/nstd/projection/model_value
+)
+
+list(APPEND kuhllib_stop_token_components
     src/nstd/stop_token/in_place_stop_token
     src/nstd/stop_token/never_stop_token
     src/nstd/stop_token/stoppable_token
     src/nstd/stop_token/stoppable_token_for
     src/nstd/stop_token/unstoppable_token
+)
+
+list(APPEND kuhllib_xthread_components
     src/nstd/thread/sync_wait
+)
+
+list(APPEND kuhllib_type_traits_components
     src/nstd/type_traits/add_const
     src/nstd/type_traits/add_lvalue_reference
     src/nstd/type_traits/add_rvalue_reference
@@ -230,6 +300,9 @@ list(APPEND kuhllib_components
     src/nstd/type_traits/remove_volatile
     src/nstd/type_traits/result_of
     src/nstd/type_traits/type_identity
+)
+
+list(APPEND kuhllib_utility_components
     src/nstd/utility/as_const
     src/nstd/utility/equality_comparable
     src/nstd/utility/forward
@@ -237,6 +310,29 @@ list(APPEND kuhllib_components
     src/nstd/utility/move
     src/nstd/utility/pair
     src/nstd/utility/swap
+)
+
+list(APPEND kuhllib_components
+    ${kuhllib_algorithm_components}
+    ${kuhllib_atomic_components}
+    ${kuhllib_buffer_components}
+    ${kuhllib_concepts_components}
+    ${kuhllib_cursor_components}
+    ${kuhllib_endian_components}
+    ${kuhllib_execution_components}
+    ${kuhllib_file_components}
+    ${kuhllib_functional_components}
+    ${kuhllib_hidden_components}
+    ${kuhllib_iterator_components}
+    ${kuhllib_memory_components}
+    ${kuhllib_net_components}
+    ${kuhllib_new_components}
+    ${kuhllib_operators_components}
+    ${kuhllib_projection_components}
+    ${kuhllib_stop_token_components}
+    ${kuhllib_thread_components}
+    ${kuhllib_type_traits_components}
+    ${kuhllib_utility_components}
     )
 
 list(TRANSFORM kuhllib_test_components APPEND ${KUHLLIB_SOURCE_SUFFIX} OUTPUT_VARIABLE kuhllib_test_libfiles)
@@ -266,7 +362,7 @@ list(APPEND kuhllib_examples
     echo_server
     audio
 )
-foreach(example ${kuhllib_examples})
-    add_executable(${example} src/examples/${example}.cpp)
-    target_link_libraries(${example} PUBLIC kuhllib pthread)
-endforeach()
+#foreach(example ${kuhllib_examples})
+#    add_executable(${example} src/examples/${example}.cpp)
+#    target_link_libraries(${example} PUBLIC kuhllib pthread)
+#endforeach()
