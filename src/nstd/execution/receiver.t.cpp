@@ -35,14 +35,15 @@ namespace KT = ::kuhl::test;
 
 namespace test_declarations
 {
-    template <typename Error, bool SetErrorNoexcept, bool SetDoneNoexcept>
+    struct env {};
+
+    template <typename Env>
     struct receiver
     {
+        receiver(receiver const&);
         receiver(receiver&);
         receiver(receiver&&);
-        friend auto tag_invoke(EX::set_value_t, receiver&&, int, double) -> void {}
-        friend auto tag_invoke(EX::set_error_t, receiver&&, Error) noexcept(SetErrorNoexcept) -> void {}
-        friend auto tag_invoke(EX::set_stopped_t, receiver&&) noexcept(SetDoneNoexcept) -> void {}
+        friend auto tag_invoke(EX::get_env_t, receiver const&) -> Env { return Env{}; }
     };
 
     struct error {};
@@ -51,15 +52,13 @@ namespace test_declarations
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
-    KT::expect_success("receiver", [](KT::context& )->bool{
-            return EX::receiver<TD::receiver<::std::exception_ptr, true, true>>
-                && EX::receiver<TD::receiver<::std::exception_ptr, true, true>&>
-                && !EX::receiver<TD::receiver<::std::exception_ptr, false, true>>
-                && !EX::receiver<TD::receiver<::std::exception_ptr, true, false>>
-                && !EX::receiver<TD::receiver<::std::exception_ptr, true, true>, TD::error>
-                && EX::receiver<TD::receiver<TD::error, true, true>, TD::error>
+    KT::expect_success("receiver", []{
+            return EX::receiver<TD::receiver<TD::env>>
+                && EX::receiver<TD::receiver<TD::env>&>
+                && EX::receiver<TD::receiver<TD::env> const&>
+                //&& not EX::receiver<TD::receiver<nstd::hidden_names::exec_envs::no_env>>
                 ;
         }),
 };
 
-static KT::add_tests suite("receiver", ::tests);
+static KT::add_tests suite("nstd::execution::receiver", ::tests);

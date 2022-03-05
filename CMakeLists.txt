@@ -86,13 +86,18 @@ list(APPEND kuhllib_endian_components
 list(APPEND kuhllib_execution_components
     src/nstd/execution/get_env
     src/nstd/execution/no_env
+    src/nstd/execution/receiver
 )
 
 list(APPEND kuhllib_execution_todo
+    src/nstd/execution/forward_progress_guarantee
+    src/nstd/execution/forwarding_env_query
+    src/nstd/execution/forwarding_scheduler_query
     src/nstd/execution/get_allocator
     src/nstd/execution/get_delegatee_scheduler
     src/nstd/execution/get_scheduler
     src/nstd/execution/get_stop_token
+    src/nstd/execution/scheduler
 )
 
 list(APPEND kuhllib_xexecution_components
@@ -113,13 +118,11 @@ list(APPEND kuhllib_xexecution_components
     src/nstd/execution/operation_state
     src/nstd/execution/parallel_policy
     src/nstd/execution/parallel_unsequenced_policy
-    src/nstd/execution/receiver
     src/nstd/execution/receiver_of
     src/nstd/execution/repeat_effect
     src/nstd/execution/repeat_effect_until
     src/nstd/execution/run
     src/nstd/execution/schedule
-    src/nstd/execution/scheduler
     src/nstd/execution/sender
     src/nstd/execution/sender_base
     src/nstd/execution/sender_to
