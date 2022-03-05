@@ -188,6 +188,7 @@ list(APPEND kuhllib_functional_components
 
 list(APPEND kuhllib_hidden_components
     src/nstd/hidden_names/movable_value
+    src/nstd/hidden_names/valid_completion_for
 )
 list(APPEND kuhllib_xhidden_components
     src/nstd/hidden_names/add_signatures
