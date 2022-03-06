@@ -44,34 +44,42 @@ namespace test_declarations
     namespace 
     {
         struct empty {};
+        struct env {};
+        struct error {};
+        struct type {};
 
-        template <bool Sender, bool Noexcept, bool State>
+        template <bool ConnectNoexcept, bool StartNoexcept, typename T>
         struct sender
-            : TT::conditional_t<Sender, EX::sender_base, TD::empty>
         {
-            using completion_signatures =  TT::conditional_t<Sender, EX::completion_signatures<>, TD::empty>;
+            using completion_signatures = EX::completion_signatures<
+                EX::set_error_t(TD::error),
+                EX::set_stopped_t(),
+                EX::set_value_t(T)
+                >;
             
-            template <typename Receiver>
+            template <EX::receiver Receiver>
             struct state {
                 Receiver receiver;
-                friend void tag_invoke(EX::start_t, state& s) noexcept(State) {
+                friend void tag_invoke(EX::start_t, state& s) noexcept(StartNoexcept) {
                     EX::set_stopped(UT::move(s.receiver));
                 };
             };
             int* const ptr;
             explicit sender(int* ptr): ptr(ptr) {}
-            template <typename Receiver>
-            friend auto tag_invoke(EX::connect_t, sender&& sender, Receiver&& receiver) noexcept(Noexcept)
+            template <EX::receiver Receiver>
+            friend auto tag_invoke(EX::connect_t, sender&& sender, Receiver&& receiver) noexcept(ConnectNoexcept)
                 -> state<Receiver> {
                 *sender.ptr = 42;
                 return { ::UT::forward<Receiver>(receiver) };
             }
         };
 
-        template <bool Receiver>
+        template <typename T>
         struct receiver {
-            friend auto tag_invoke(EX::set_error_t, receiver&&, ::std::exception_ptr) noexcept(Receiver) -> void {}
+            friend auto tag_invoke(EX::get_env_t, receiver const&) -> TD::env { return {}; }
+            friend auto tag_invoke(EX::set_error_t, receiver&&, TD::error) noexcept -> void {}
             friend auto tag_invoke(EX::set_stopped_t, receiver&&) noexcept -> void {}
+            friend auto tag_invoke(EX::set_value_t, receiver&&, T) noexcept -> void {}
         };
 
         template <typename Sender, typename Receiver>
@@ -87,9 +95,9 @@ namespace test_declarations
                 int    value(17);
                 Sender sender(&value);
 
-                EX::connect(UT::move(sender), TD::receiver<true>());
+                EX::connect(UT::move(sender), Receiver());
                 return value == 42
-                    && Noexcept == noexcept(EX::connect(UT::move(sender), TD::receiver<true>()))
+                    && Noexcept == noexcept(EX::connect(UT::move(sender), Receiver()))
                     ;
             }
             return false == HasConnect;
@@ -100,56 +108,65 @@ namespace test_declarations
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
-    KT::expect_success("sender<true, true, true> is a sender", []{
-            return EX::sender<TD::sender<true, true, true>>;
+    KT::expect_success("placeholder", []{
+            return true;
         }),
-    KT::expect_success("sender<true, true, false> is a sender", []{
-            return EX::sender<TD::sender<true, true, false>>;
+    KT::expect_success("sender<true, true, TD::type> is a sender", []{
+            return EX::sender<TD::sender<true, true, TD::type>>;
         }),
-    KT::expect_success("sender<true, false, true> is a sender", []{
-            return EX::sender<TD::sender<true, false, true>>;
+    KT::expect_success("sender<true, true, int> is a sender", []{
+            return EX::sender<TD::sender<true, true, int>>;
         }),
-    KT::expect_success("sender<true, false, false> is a sender", []{
-            return EX::sender<TD::sender<true, false, false>>;
+    KT::expect_success("sender<true, false, TD::type> is a sender", []{
+            return EX::sender<TD::sender<true, false, TD::type>>;
         }),
-    KT::expect_success("sender<false, true, true> is not a sender", []{
-            return not EX::sender<TD::sender<false, true, true>>;
+    KT::expect_success("sender<true, false, int> is a sender", []{
+            return EX::sender<TD::sender<true, false, int>>;
         }),
-    KT::expect_success("sender<false, false, false> is not a sender", []{
-            return not EX::sender<TD::sender<false, false, false>>;
+    KT::expect_success("sender<false, true, TD::type> is a sender", []{
+            return EX::sender<TD::sender<false, true, TD::type>>;
         }),
-    KT::expect_success("receiver<true> is a receiver", []{
-            return EX::receiver<TD::receiver<true>>;
+    KT::expect_success("sender<false, false, TD::type> is a sender", []{
+            return EX::sender<TD::sender<false, false, TD::type>>;
         }),
-    KT::expect_success("receiver<false> is not a receiver", []{
-            return not EX::receiver<TD::receiver<false>>;
+    KT::expect_success("receiver<TD::type> is a receiver", []{
+            return EX::receiver<TD::receiver<TD::type>>;
         }),
-    KT::expect_success("sender<true, true, true>::state<receiver<true>> is an operation_state", []{
-            return EX::operation_state<TD::sender<true, true, true>::state<TD::receiver<true>>>;
+    KT::expect_success("receiver<int> is a receiver", []{
+            return EX::receiver<TD::receiver<int>>;
         }),
-    KT::expect_success("sender<true, true, false>::state<receiver<true>> is not an operation_state", []{
-            return not EX::operation_state<TD::sender<true, true, false>::state<TD::receiver<true>>>;
+    KT::expect_success("sender<true, true, TD::type>::state<TD::receiver<TD::type>> is an operation_state", []{
+            return EX::operation_state<TD::sender<true, true, TD::type>::state<TD::receiver<TD::type>>>;
         }),
-    KT::expect_success("sender<true, true, true>, receiver<true> => connect() noexcept(true)", []{
-            return TD::check_connect<true, true, TD::sender<true, true, true>, TD::receiver<true>>();
+    KT::expect_success("sender<true, true, int>::state<TD::receiver<int>> is an operation_state", []{
+            return EX::operation_state<TD::sender<true, true, int>::state<TD::receiver<int>>>;
         }),
-    KT::expect_success("sender<true, false, true>, receiver<true> => connect() noexcept(false)", []{
-            return TD::check_connect<true, false, TD::sender<true, false, true>, TD::receiver<true>>();
+    KT::expect_success("sender<true, false, TD::type>::state<receiver<TD::type>> is not an operation_state", []{
+            return not EX::operation_state<TD::sender<true, false, TD::type>::state<TD::receiver<TD::type>>>;
         }),
-    KT::expect_success("sender<true, true, false>, receiver<true> => no connect()", []{
-            return TD::check_connect<false, false, TD::sender<true, true, false>, TD::receiver<true>>();
+    KT::expect_success("receiver_of<receiver<int>, set_error_t(TD::error)> == true", []{
+            return EX::receiver_of<TD::receiver<int>, EX::completion_signatures<EX::set_error_t(TD::error)>>;
         }),
-    KT::expect_success("sender<true, false, false>, receiver<true> => no connect()", []{
-            return TD::check_connect<false, false, TD::sender<true, false, false>, TD::receiver<true>>();
+    KT::expect_success("receiver_of<receiver<int>, set_stopped_t()> == true", []{
+            return EX::receiver_of<TD::receiver<int>, EX::completion_signatures<EX::set_stopped_t()>>;
         }),
-    KT::expect_success("sender<false, true, true>, receiver<true> => no connect()", []{
-            return TD::check_connect<false, true, TD::sender<false, true, true>, TD::receiver<true>>();
+    KT::expect_success("receiver_of<receiver<int>, set_value_t(int)> == true", []{
+            return EX::receiver_of<TD::receiver<int>, EX::completion_signatures<EX::set_value_t(int)>>;
         }),
-    KT::expect_success("sender<true, true, true>, receiver<false> => no connect()", []{
-            return TD::check_connect<false, true, TD::sender<true, true, true>, TD::receiver<false>>();
+    KT::expect_success("has_connect<sender<true, true, int>, receiver<int>> == true", []{
+            return TD::has_connect< TD::sender<true, true, int>, TD::receiver<int>>;
         }),
-    KT::expect_success("sender<false, true, true>, receiver<false> => no connect()", []{
-            return TD::check_connect<false, true, TD::sender<false, true, true>, TD::receiver<false>>();
+    KT::expect_success("sender<true, true, TD::type>, receiver<TD::type> => connect() noexcept(true)", []{
+            return TD::check_connect<true, true, TD::sender<true, true, int>, TD::receiver<int>>();
+        }),
+    KT::expect_success("sender<false, true, true>, receiver<true> => connect() noexcept(false)", []{
+            return TD::check_connect<true, false, TD::sender<false, true, int>, TD::receiver<int>>();
+        }),
+    KT::expect_success("sender<true, false, int>, receiver<int> => no connect()", []{
+            return TD::check_connect<false, true, TD::sender<true, false, int>, TD::receiver<int>>();
+        }),
+    KT::expect_success("sender<true, true, int>, receiver<TD::type> => no connect()", []{
+            return TD::check_connect<false, true, TD::sender<true, true, int>, TD::receiver<TD::type>>();
         }),
 };
 

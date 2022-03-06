@@ -85,6 +85,8 @@ list(APPEND kuhllib_endian_components
 
 list(APPEND kuhllib_execution_components
     src/nstd/execution/completion_signatures
+    src/nstd/execution/completion_signatures_of_t
+    src/nstd/execution/connect
     src/nstd/execution/dependent_completion_signatures
     src/nstd/execution/env_of_t
     src/nstd/execution/get_completion_signatures
@@ -114,8 +116,6 @@ list(APPEND kuhllib_execution_todo
 
 list(APPEND kuhllib_xexecution_components
     src/nstd/execution
-    src/nstd/execution/completion_signatures_of_t
-    src/nstd/execution/connect
     src/nstd/execution/execution
     src/nstd/execution/get_completion_scheduler
     src/nstd/execution/inject_cancel

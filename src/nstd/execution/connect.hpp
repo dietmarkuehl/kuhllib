@@ -26,36 +26,50 @@
 #ifndef INCLUDED_NSTD_EXECUTION_CONNECT
 #define INCLUDED_NSTD_EXECUTION_CONNECT
 
+#include "nstd/execution/completion_signatures_of_t.hpp"
+#include "nstd/execution/env_of_t.hpp"
 #include "nstd/execution/operation_state.hpp"
 #include "nstd/execution/receiver.hpp"
+#include "nstd/execution/receiver_of.hpp"
 #include "nstd/execution/sender.hpp"
 #include "nstd/functional/tag_invoke.hpp"
 #include "nstd/type_traits/declval.hpp"
 #include "nstd/utility/forward.hpp"
 
 // ----------------------------------------------------------------------------
+// [exec.connect]
 
-namespace nstd::execution::inline customization_points {
-    inline constexpr struct connect_t {
-        template <::nstd::execution::sender Sender, ::nstd::execution::receiver Receiver>
-            requires requires(Sender&& sender, Receiver&& receiver) {
-                {
-                    ::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::execution::connect_t>(),
-                                       ::nstd::utility::forward<Sender>(sender),
-                                       ::nstd::utility::forward<Receiver>(receiver))
+namespace nstd::execution {
+    namespace hidden_names::connect {
+        struct cpo {
+            template <::nstd::execution::sender Sender, ::nstd::execution::receiver Receiver>
+                requires ::nstd::execution::receiver_of<
+                        Receiver,
+                        ::nstd::execution::completion_signatures_of_t<Sender, ::nstd::execution::env_of_t<Receiver>>
+                        >
+                    && requires(Sender&& sender, Receiver&& receiver) {
+                    {
+                        ::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::execution::hidden_names::connect::cpo>(),
+                                           ::nstd::utility::forward<Sender>(sender),
+                                           ::nstd::utility::forward<Receiver>(receiver))
+                    }
+                    -> nstd::execution::operation_state;
                 }
-                -> nstd::execution::operation_state;
+            constexpr auto operator()(Sender&& sender, Receiver&& receiver) const
+                noexcept(noexcept(::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::execution::hidden_names::connect::cpo>(),
+                                                     ::nstd::utility::forward<Sender>(sender),
+                                                     ::nstd::utility::forward<Receiver>(receiver))))
+            {
+                return ::nstd::tag_invoke(*this, //connect_t
+                                         ::nstd::utility::forward<Sender>(sender),
+                                         ::nstd::utility::forward<Receiver>(receiver));
             }
-        constexpr auto operator()(Sender&& sender, Receiver&& receiver) const
-            noexcept(noexcept(::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::execution::connect_t>(),
-                                                 ::nstd::utility::forward<Sender>(sender),
-                                                 ::nstd::utility::forward<Receiver>(receiver))))
-        {
-            return ::nstd::tag_invoke(*this, //connect_t
-                                     ::nstd::utility::forward<Sender>(sender),
-                                     ::nstd::utility::forward<Receiver>(receiver));
-        }
-    } connect;
+        };
+    }
+    inline namespace customization_points {
+        using connect_t = ::nstd::execution::hidden_names::connect::cpo;
+        inline constexpr connect_t  connect{};
+    }
 }
 
 // ----------------------------------------------------------------------------
