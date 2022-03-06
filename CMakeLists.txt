@@ -187,6 +187,7 @@ list(APPEND kuhllib_functional_components
 )
 
 list(APPEND kuhllib_hidden_components
+    src/nstd/hidden_names/completion_signature
     src/nstd/hidden_names/movable_value
     src/nstd/hidden_names/valid_completion_for
 )
@@ -266,6 +267,10 @@ list(APPEND kuhllib_stop_token_components
     src/nstd/stop_token/stoppable_token
     src/nstd/stop_token/stoppable_token_for
     src/nstd/stop_token/unstoppable_token
+)
+
+list(APPEND kuhllib_thread_todo
+    src/nstd/thread/may_block_caller
 )
 
 list(APPEND kuhllib_xthread_components
