@@ -86,12 +86,14 @@ list(APPEND kuhllib_endian_components
 list(APPEND kuhllib_execution_components
     src/nstd/execution/completion_signatures
     src/nstd/execution/dependent_completion_signatures
+    src/nstd/execution/env_of_t
     src/nstd/execution/get_completion_signatures
     src/nstd/execution/get_env
     src/nstd/execution/no_env
     src/nstd/execution/operation_state
     src/nstd/execution/receiver
     src/nstd/execution/receiver_of
+    src/nstd/execution/sender
     src/nstd/execution/set_error
     src/nstd/execution/set_stopped
     src/nstd/execution/set_value
@@ -128,7 +130,6 @@ list(APPEND kuhllib_xexecution_components
     src/nstd/execution/repeat_effect_until
     src/nstd/execution/run
     src/nstd/execution/schedule
-    src/nstd/execution/sender
     src/nstd/execution/sender_base
     src/nstd/execution/sender_to
     src/nstd/execution/sender_traits
@@ -191,6 +192,7 @@ list(APPEND kuhllib_hidden_components
     src/nstd/hidden_names/completion_signature
     src/nstd/hidden_names/is_instance_of
     src/nstd/hidden_names/movable_value
+    src/nstd/hidden_names/sender_base
     src/nstd/hidden_names/valid_completion_for
     src/nstd/hidden_names/valid_completion_signatures
 )
@@ -205,7 +207,6 @@ list(APPEND kuhllib_xhidden_components
     src/nstd/hidden_names/has_sender_types
     src/nstd/hidden_names/message_flags
     src/nstd/hidden_names/no_completion_signatures
-    src/nstd/hidden_names/sender_base
     src/nstd/hidden_names/type_list
     src/nstd/hidden_names/variant_or_empty
 )

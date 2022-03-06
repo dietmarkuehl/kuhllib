@@ -27,4 +27,6 @@
 
 // ----------------------------------------------------------------------------
 
-int sender_dummy = 0;
+namespace nstd::execution {
+    int sender_dummy{};
+}

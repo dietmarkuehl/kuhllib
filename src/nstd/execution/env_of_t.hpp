@@ -1,4 +1,4 @@
-// nstd/hidden_names/sender_base.hpp                                  -*-C++-*-
+// nstd/execution/env_of_t.hpp                                        -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2022 Dietmar Kuehl http://www.dietmar-kuehl.de
 //
@@ -23,26 +23,18 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_HIDDEN_NAMES_SENDER_BASE
-#define INCLUDED_NSTD_HIDDEN_NAMES_SENDER_BASE
+#ifndef INCLUDED_NSTD_EXECUTION_ENV_OF
+#define INCLUDED_NSTD_EXECUTION_ENV_OF
 
-#include "nstd/execution/get_completion_signatures.hpp"
-#include "nstd/hidden_names/valid_completion_signatures.hpp"
-#include "nstd/utility/forward.hpp"
+#include "nstd/execution/get_env.hpp"
+#include "nstd/type_traits/declval.hpp"
 
 // ----------------------------------------------------------------------------
-// [exec.snd]
+// [exec.syn]
 
-namespace nstd::hidden_names {
-    template <typename Sender, typename Env>
-    concept sender_base
-        = requires (Sender&& s, Env&& e) {
-            {
-                ::nstd::execution::get_completion_signatures(::nstd::utility::forward<Sender>(s),
-                                                             ::nstd::utility::forward<Env>(e))
-            } -> ::nstd::hidden_names::valid_completion_signatures<Env>;
-        }
-        ;
+namespace nstd::execution {
+    template <typename T>
+    using env_of_t = decltype(::nstd::execution::get_env(::nstd::type_traits::declval<T>()));
 }
 
 // ----------------------------------------------------------------------------

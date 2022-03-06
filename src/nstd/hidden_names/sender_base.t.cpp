@@ -78,30 +78,30 @@ namespace test_declarations {
 
 static KT::testcase const tests[] = {
     KT::expect_success("non-sender_base", []{
-            return not HN::xsender_base<TD::non_sender_base, TD::env>
+            return not HN::sender_base<TD::non_sender_base, TD::env>
                 ;
         }),
     KT::expect_success("wrong completion_signatures", []{
-            return not HN::xsender_base<TD::wrong_completion_signatures, TD::env>
+            return not HN::sender_base<TD::wrong_completion_signatures, TD::env>
                 ;
         }),
     KT::expect_success("sender_base_no_completion_signatures", []{
-            return not HN::xsender_base<TD::sender_base_no_completion_signatures, TD::env>
+            return not HN::sender_base<TD::sender_base_no_completion_signatures, TD::env>
                 ;
         }),
     KT::expect_success("sender_base", []{
-            return HN::xsender_base<TD::sender_base, TD::env>
+            return HN::sender_base<TD::sender_base, TD::env>
                 ;
         }),
     KT::expect_success("sender_base_with_getter", []{
-            return HN::xsender_base<TD::sender_base, TD::env>
+            return HN::sender_base<TD::sender_base, TD::env>
                 ;
         }),
     KT::expect_success("sender_base_with_conditional_getter", []{
             EX::get_completion_signatures(TD::sender_base_with_conditional_getter{});
             EX::get_completion_signatures(TD::sender_base_with_conditional_getter{}, TD::env{});
-            return HN::xsender_base<TD::sender_base, TD::env>
-                && HN::xsender_base<TD::sender_base, HN::exec_envs::no_env>
+            return HN::sender_base<TD::sender_base, TD::env>
+                && HN::sender_base<TD::sender_base, HN::exec_envs::no_env>
                 ;
         }),
 };
