@@ -29,6 +29,7 @@
 #include <variant>
 
 // ----------------------------------------------------------------------------
+// [exec.sndtraitst]
 
 namespace nstd::hidden_names {
     namespace variant_or_empty_impl {
