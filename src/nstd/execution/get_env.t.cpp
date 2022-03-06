@@ -34,6 +34,7 @@
 
 namespace test_declaration {}
 namespace EX = ::nstd::execution;
+namespace EC = ::nstd::execution::customization_points;
 namespace TT = ::nstd::type_traits;
 namespace TD = ::test_declaration;
 namespace KT = ::kuhl::test;
@@ -52,6 +53,14 @@ namespace test_declaration {
                 return env{self.value};
             }
         };
+
+        struct context2 {
+            int value;
+            friend auto tag_invoke(EC::get_env_t, context2 self) -> env {
+                return env{self.value};
+            }
+        };
+
 
         template <typename RC>
         struct no_env_context {
@@ -74,6 +83,15 @@ static KT::testcase const tests[] = {
             return KT::type<TD::env> == KT::type<decltype(::nstd::tag_invoke(EX::get_env, TD::context{42}))>
                 && ::nstd::tag_invocable<EX::get_env_t, TD::context>
                 && ::nstd::tag_invoke(EX::get_env, TD::context{42}).value == 42
+                && KT::type<TD::env> == KT::type<decltype(::nstd::tag_invoke(EC::get_env, TD::context{42}))>
+                && ::nstd::tag_invocable<EC::get_env_t, TD::context>
+                && ::nstd::tag_invoke(EC::get_env, TD::context{42}).value == 42
+                && KT::type<TD::env> == KT::type<decltype(::nstd::tag_invoke(EX::get_env, TD::context2{42}))>
+                && ::nstd::tag_invocable<EX::get_env_t, TD::context2>
+                && ::nstd::tag_invoke(EX::get_env, TD::context2{42}).value == 42
+                && KT::type<TD::env> == KT::type<decltype(::nstd::tag_invoke(EC::get_env, TD::context2{42}))>
+                && ::nstd::tag_invocable<EC::get_env_t, TD::context2>
+                && ::nstd::tag_invoke(EC::get_env, TD::context2{42}).value == 42
                 ;
         }),
     KT::expect_success("no_env_context", []{
@@ -92,6 +110,15 @@ static KT::testcase const tests[] = {
             return KT::type<TD::env> == KT::type<decltype(EX::get_env(TD::context{42}))>
                 && ::std::invocable<EX::get_env_t, TD::context>
                 && EX::get_env(TD::context{42}).value == 42
+                && KT::type<TD::env> == KT::type<decltype(EC::get_env(TD::context{42}))>
+                && ::std::invocable<EC::get_env_t, TD::context>
+                && EC::get_env(TD::context{42}).value == 42
+                && KT::type<TD::env> == KT::type<decltype(EX::get_env(TD::context2{42}))>
+                && ::std::invocable<EX::get_env_t, TD::context2>
+                && EX::get_env(TD::context2{42}).value == 42
+                && KT::type<TD::env> == KT::type<decltype(EC::get_env(TD::context2{42}))>
+                && ::std::invocable<EC::get_env_t, TD::context2>
+                && EC::get_env(TD::context2{42}).value == 42
                 ;
         }),
     KT::expect_success("result isn't no_env", []{

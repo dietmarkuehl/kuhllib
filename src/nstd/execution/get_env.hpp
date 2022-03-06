@@ -48,8 +48,10 @@ namespace nstd::execution {
         };
     }
 
-    using get_env_t = ::nstd::execution::hidden_names::get_env::cpo;
-    inline constexpr get_env_t get_env{};
+    inline namespace customization_points {
+        using get_env_t = ::nstd::execution::hidden_names::get_env::cpo;
+        inline constexpr get_env_t get_env{};
+    }
 }
 
 // ----------------------------------------------------------------------------

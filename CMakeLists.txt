@@ -88,6 +88,7 @@ list(APPEND kuhllib_execution_components
     src/nstd/execution/get_env
     src/nstd/execution/no_env
     src/nstd/execution/receiver
+    src/nstd/execution/receiver_of
 )
 
 list(APPEND kuhllib_execution_todo
@@ -118,7 +119,6 @@ list(APPEND kuhllib_xexecution_components
     src/nstd/execution/operation_state
     src/nstd/execution/parallel_policy
     src/nstd/execution/parallel_unsequenced_policy
-    src/nstd/execution/receiver_of
     src/nstd/execution/repeat_effect
     src/nstd/execution/repeat_effect_until
     src/nstd/execution/run

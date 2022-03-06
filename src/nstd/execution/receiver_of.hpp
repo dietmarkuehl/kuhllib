@@ -26,42 +26,55 @@
 #ifndef INCLUDED_NSTD_EXECUTION_RECEIVER_OF
 #define INCLUDED_NSTD_EXECUTION_RECEIVER_OF
 
+#include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/receiver.hpp"
-#include "nstd/execution/set_value.hpp"
-#include "nstd/utility/forward.hpp"
-#include "nstd/utility/move.hpp"
-#include "nstd/type_traits/remove_cvref.hpp"
+#include "nstd/hidden_names/valid_completion_for.hpp"
 
 // ----------------------------------------------------------------------------
 
 namespace nstd::execution {
-    template <typename Receiver, typename... Args>
+    template <typename Receiver, typename Completions>
     concept receiver_of
         =  ::nstd::execution::receiver<Receiver>
-        && requires(::nstd::type_traits::remove_cvref_t<Receiver>&& rec, Args&&... args) {
-            ::nstd::execution::set_value(::nstd::utility::move(rec),
-                                         ::nstd::utility::forward<Args>(args)...);
+        && requires(Completions* completions) {
+            []<::nstd::hidden_names::valid_completion_for<Receiver>... Signatures>(
+                ::nstd::execution::completion_signatures<Signatures...>*)
+            {}(completions);
         }
         ;
 
-    template <typename... Args>
-    struct test_receiver_of;
+    template <typename> struct test_receiver_of_base;
+    template <typename Tag, typename... Args> struct test_receiver_of_base<Tag(Args...)>;
+    template <typename...> struct test_receiver_of;
 }
 
 // ----------------------------------------------------------------------------
 
-template <typename... Args>
-struct nstd::execution::test_receiver_of
-{
-    test_receiver_of(test_receiver_of&&) = default;
-
-    friend auto tag_invoke(::nstd::execution::set_value_t, test_receiver_of&&, Args...) noexcept -> void {};
-    template <typename Error>
-    friend auto tag_invoke(::nstd::execution::set_error_t, test_receiver_of&&, Error&&) noexcept -> void {};
-    friend auto tag_invoke(::nstd::execution::set_stopped_t, test_receiver_of&&) noexcept -> void {};
+template <typename Tag, typename... Args>
+struct nstd::execution::test_receiver_of_base<Tag(Args...)> {
+    friend auto tag_invoke(Tag, test_receiver_of_base&, Args...) noexcept -> void {}
+    friend auto tag_invoke(Tag, test_receiver_of_base &&, Args...) noexcept -> void {}
+    friend auto tag_invoke(Tag, test_receiver_of_base const&, Args...) noexcept -> void {}
 };
 
-static_assert(::nstd::execution::receiver_of<::nstd::execution::test_receiver_of<int, bool&, char const>, int, bool&, char const>);
+template <typename... Signatures>
+struct nstd::execution::test_receiver_of
+    : ::nstd::execution::test_receiver_of_base<Signatures>...
+{
+    test_receiver_of(test_receiver_of&&) = default;
+    friend auto tag_invoke(::nstd::execution::get_env_t, test_receiver_of const&) -> int { return {}; }
+};
+
+static_assert(::nstd::execution::receiver_of<
+    ::nstd::execution::test_receiver_of<::nstd::execution::set_value_t(int, bool),
+                                        ::nstd::execution::set_error_t(void*),
+                                        ::nstd::execution::set_stopped_t()
+                                       >,
+    ::nstd::execution::completion_signatures<::nstd::execution::set_value_t(int, bool),
+                                             ::nstd::execution::set_error_t(void*),
+                                             ::nstd::execution::set_stopped_t()
+                                             >
+    >);
 
 // ----------------------------------------------------------------------------
 
