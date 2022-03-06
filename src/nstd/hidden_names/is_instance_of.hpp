@@ -27,6 +27,7 @@
 #define INCLUDED_SRC_NSTD_HIDDEN_NAMES_IS_INSTANCE_OF
 
 // ----------------------------------------------------------------------------
+// [exec.snd]
 
 namespace nstd::hidden_names {
     template <typename, template <typename...> class>
