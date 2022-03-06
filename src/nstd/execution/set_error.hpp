@@ -31,6 +31,7 @@
 #include "nstd/utility/forward.hpp"
 
 // ----------------------------------------------------------------------------
+// [exec.set_error]
 
 namespace nstd::execution
 {

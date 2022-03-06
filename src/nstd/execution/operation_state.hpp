@@ -31,6 +31,7 @@
 #include <type_traits>
 
 // ----------------------------------------------------------------------------
+// [exec.op_state]
 
 namespace nstd::execution {
     template <typename State>
@@ -38,7 +39,7 @@ namespace nstd::execution {
         = ::std::destructible<State>
         && ::std::is_object_v<State>
         && requires(State& state) {
-	    { ::nstd::execution::start(state) } noexcept;
+	        { ::nstd::execution::start(state) } noexcept;
         }
         ;
 }

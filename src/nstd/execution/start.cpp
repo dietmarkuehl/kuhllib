@@ -27,4 +27,6 @@
 
 // ----------------------------------------------------------------------------
 
-int start_dummy = 0;
+namespace nstd::execution {
+    int start_dummy{};
+}
