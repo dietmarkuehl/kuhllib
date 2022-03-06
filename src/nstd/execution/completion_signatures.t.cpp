@@ -35,7 +35,9 @@ namespace EX = ::nstd::execution;
 
 namespace test_declarations {
     namespace {
-        struct type {};
+        struct error {};
+        template <int> struct type {};
+
         template <typename... T>
         struct list:
             EX::completion_signatures<T...>
@@ -49,8 +51,16 @@ namespace test_declarations {
 
 static KT::testcase const tests[] = {
     KT::expect_success("breathing", []{
-            return sizeof(TD::list<int, int, int>) == sizeof(int)
-                && 0u != sizeof(EX::completion_signatures<TD::type, TD::type>)
+            return sizeof(TD::list<EX::set_stopped_t(),
+                                   EX::set_error_t(TD::error),
+                                   EX::set_value_t(),
+                                   EX::set_value_t(TD::type<0>),
+                                   EX::set_value_t(TD::type<0>, TD::type<1>),
+                                   EX::set_value_t(TD::type<0>, TD::type<1>, TD::type<2>)
+                                   >) == sizeof(int)
+                && 0u != sizeof(EX::completion_signatures<EX::set_stopped_t()>)
+                && 0u != sizeof(EX::completion_signatures<EX::set_error_t(TD::error)>)
+                && 0u != sizeof(EX::completion_signatures<EX::set_value_t(TD::type<0>)>)
                 ;
         }),
 };

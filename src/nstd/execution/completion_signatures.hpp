@@ -26,11 +26,15 @@
 #ifndef INCLUDED_SRC_NSTD_EXECUTION_COMPLETION_SIGNATURES
 #define INCLUDED_SRC_NSTD_EXECUTION_COMPLETION_SIGNATURES
 
+#include "nstd/hidden_names/completion_signature.hpp"
+
 // ----------------------------------------------------------------------------
 // [exec.utils.cmplsigs]
 
 namespace nstd::execution {
-    template <typename...> struct completion_signatures {};
+    template <::nstd::hidden_names::completion_signature ...>
+    struct completion_signatures {
+    };
 }
 
 // ----------------------------------------------------------------------------
