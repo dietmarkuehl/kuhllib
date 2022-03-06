@@ -48,13 +48,16 @@ namespace KT = ::kuhl::test;
 
 namespace test_declarations {
     namespace {
+        struct env {};
+        struct error {};
         struct result {};
 
         template <typename T>
         struct receiver
         {
+            friend auto tag_invoke(EX::get_env_t, receiver const&) noexcept -> TD::env { return {}; }
             friend auto tag_invoke(EX::set_value_t, receiver&&, T) noexcept -> void {}
-            friend auto tag_invoke(EX::set_error_t, receiver&&, ::std::exception_ptr) noexcept -> void {}
+            friend auto tag_invoke(EX::set_error_t, receiver&&, TD::error) noexcept -> void {}
             friend auto tag_invoke(EX::set_stopped_t, receiver&&) noexcept -> void {}
         };
 
@@ -74,9 +77,8 @@ namespace test_declarations {
         };
 
         struct sender
-            : EX::sender_base
         {
-            using completion_signatures = EX::completion_signatures<>;
+            using completion_signatures = EX::completion_signatures<EX::set_value_t(TD::result)>;
 
             template <typename Receiver>
             friend auto tag_invoke(EX::connect_t, sender&&, Receiver&& receiver) {
@@ -102,10 +104,10 @@ static KT::testcase const tests[] = {
             return EX::operation_state<TD::state<TD::receiver<TD::result>>>;
         }),
     KT::expect_success("sender_to<int, int> is false", []{
-            return !EX::sender_to<int, int>;
+            return not EX::sender_to<int, int>;
         }),
     KT::expect_success("sender_to<TD::sender, TD::receiver<int>> is false", []{
-            return !EX::sender_to<TD::sender, TD::receiver<int>>;
+            return not EX::sender_to<TD::sender, TD::receiver<int>>;
         }),
     KT::expect_success("sender_to<TD::sender, TD::receiver<TD::result>> is true", []{
             return EX::sender_to<TD::sender, TD::receiver<TD::result>>;

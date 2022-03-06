@@ -26,8 +26,11 @@
 #ifndef INCLUDED_NSTD_EXECUTION_SENDER_TO
 #define INCLUDED_NSTD_EXECUTION_SENDER_TO
 
+#include "nstd/execution/completion_signatures_of_t.hpp"
 #include "nstd/execution/connect.hpp"
+#include "nstd/execution/env_of_t.hpp"
 #include "nstd/execution/receiver.hpp"
+#include "nstd/execution/receiver_of.hpp"
 #include "nstd/execution/sender.hpp"
 #include "nstd/utility/forward.hpp"
 
@@ -36,8 +39,11 @@
 namespace nstd::execution {
     template <typename Sender, typename Receiver>
     concept sender_to
-        =  ::nstd::execution::sender<Sender>
-        && ::nstd::execution::receiver<Receiver>
+        =  ::nstd::execution::sender<Sender, ::nstd::execution::env_of_t<Receiver>>
+        && ::nstd::execution::receiver_of<
+                Receiver,
+                ::nstd::execution::completion_signatures_of_t<Sender, ::nstd::execution::env_of_t<Receiver>>
+                >
         && requires(Sender&& sender, Receiver&& receiver) {
                 ::nstd::execution::connect(::nstd::utility::forward<Sender>(sender),
                                            ::nstd::utility::forward<Receiver>(receiver));

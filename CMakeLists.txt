@@ -96,6 +96,7 @@ list(APPEND kuhllib_execution_components
     src/nstd/execution/receiver
     src/nstd/execution/receiver_of
     src/nstd/execution/sender
+    src/nstd/execution/sender_to
     src/nstd/execution/set_error
     src/nstd/execution/set_stopped
     src/nstd/execution/set_value
@@ -131,7 +132,6 @@ list(APPEND kuhllib_xexecution_components
     src/nstd/execution/run
     src/nstd/execution/schedule
     src/nstd/execution/sender_base
-    src/nstd/execution/sender_to
     src/nstd/execution/sender_traits
     src/nstd/execution/sequenced_policy
     src/nstd/execution/start_detached
