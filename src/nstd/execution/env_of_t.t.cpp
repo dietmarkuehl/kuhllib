@@ -1,4 +1,4 @@
-// nstd/hidden_names/sender_base.hpp                                  -*-C++-*-
+// nstd/execution/env_of_t.t.cpp                                      -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2022 Dietmar Kuehl http://www.dietmar-kuehl.de
 //
@@ -23,28 +23,34 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_HIDDEN_NAMES_SENDER_BASE
-#define INCLUDED_NSTD_HIDDEN_NAMES_SENDER_BASE
+#include "nstd/execution/env_of_t.hpp"
+#include "kuhl/test.hpp"
 
-#include "nstd/execution/get_completion_signatures.hpp"
-#include "nstd/hidden_names/valid_completion_signatures.hpp"
-#include "nstd/utility/forward.hpp"
+namespace test_declaration {}
+namespace TD = ::test_declaration;
+namespace EX = ::nstd::execution;
+namespace KT = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
-// [exec.snd]
 
-namespace nstd::hidden_names {
-    template <typename Sender, typename Env>
-    concept sender_base
-        = requires (Sender&& s, Env&& e) {
-            {
-                ::nstd::execution::get_completion_signatures(::nstd::utility::forward<Sender>(s),
-                                                             ::nstd::utility::forward<Env>(e))
-            } -> ::nstd::hidden_names::valid_completion_signatures<Env>;
-        }
-        ;
+namespace test_declaration {
+    namespace {
+        struct env {};
+        struct receiver {
+            friend auto tag_invoke(EX::get_env_t, receiver const&) -> TD::env {
+                return {};
+            }
+        };
+    }
 }
 
 // ----------------------------------------------------------------------------
 
-#endif
+static KT::testcase const tests[] = {
+    KT::expect_success("breathing", []{
+            return KT::type<TD::env> == KT::type<EX::env_of_t<TD::receiver>>
+                ;
+        }),
+};
+
+static KT::add_tests suite("nstd/execution/env_of_t", ::tests);

@@ -34,15 +34,15 @@
 #include <concepts>
 
 // ----------------------------------------------------------------------------
+// [exec.snd]
 
 namespace nstd::execution {
 
     template <typename Sender, typename Env = ::nstd::hidden_names::exec_envs::no_env>
     concept sender
-        =  ::nstd::hidden_names::xsender_base<Sender, Env>
-        && ::nstd::hidden_names::xsender_base<Sender, ::nstd::hidden_names::exec_envs::no_env>
+        =  ::nstd::hidden_names::sender_base<Sender, Env>
+        && ::nstd::hidden_names::sender_base<Sender, ::nstd::hidden_names::exec_envs::no_env>
         && ::std::move_constructible<::nstd::type_traits::remove_cvref_t<Sender>>
-        && !requires{ typename ::nstd::execution::sender_traits<::nstd::type_traits::remove_cvref_t<Sender>>::not_specialized; }
         ;
 
     template <::nstd::execution::sender Sender, typename Fun>
