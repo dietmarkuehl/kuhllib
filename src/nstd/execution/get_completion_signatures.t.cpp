@@ -24,6 +24,9 @@
 // ----------------------------------------------------------------------------
 
 #include "nstd/execution/get_completion_signatures.hpp"
+#include "nstd/execution/set_error.hpp"
+#include "nstd/execution/set_stopped.hpp"
+#include "nstd/execution/set_value.hpp"
 #include "nstd/type_traits/declval.hpp"
 #include <tuple>
 #include "kuhl/test.hpp"
@@ -40,22 +43,27 @@ namespace KT = ::kuhl::test;
 namespace test_declarations
 {
     namespace {
+        struct error {};
         struct non_sender {};
 
         struct sender {
-            friend auto tag_invoke(EX::get_completion_signatures_t, sender, auto&&) {
-                return EX::completion_signatures<bool, int>{};
+            friend auto tag_invoke(EX::get_completion_signatures_t, sender, auto&&)
+                -> EX::completion_signatures<EX::set_stopped_t(), EX::set_error_t(TD::error)>
+            {
+                return {};
             }
         };
 
         struct typedef_sender {
-            using completion_signatures = EX::completion_signatures<bool, int>;
+            using completion_signatures = EX::completion_signatures<EX::set_stopped_t(), EX::set_value_t(int)>;
         };
 
         struct dependent_sender {
             template <typename E>
-            friend auto tag_invoke(EX::get_completion_signatures_t, dependent_sender, E&&) {
-                return EX::dependent_completion_signatures<E>{};
+            friend auto tag_invoke(EX::get_completion_signatures_t, dependent_sender, E&&)
+                -> EX::dependent_completion_signatures<E>
+            {
+                return {};
             }
         };
 
@@ -79,7 +87,7 @@ namespace test_declarations
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
-    KT::expect_success("placehlolder", []{ return true; }),
+    KT::expect_success("placeholder", []{ return true; }),
     KT::expect_success("non-sender", []{
             return KT::type<HN::no_completion_signatures::type>
                     == KT::type<decltype(EX::get_completion_signatures(TT::declval<TD::non_sender>()))>
@@ -92,28 +100,28 @@ static KT::testcase const tests[] = {
                 ;
         }),
     KT::expect_success("sender", []{
-            return KT::type<EX::completion_signatures<bool, int>>
+            return KT::type<EX::completion_signatures<EX::set_stopped_t(), EX::set_error_t(TD::error)>>
                     == KT::type<decltype(::nstd::tag_invoke(EX::get_completion_signatures, TT::declval<TD::sender>(), HN::exec_envs::no_env{}))>
-                && KT::type<EX::completion_signatures<bool, int>>
+                && KT::type<EX::completion_signatures<EX::set_stopped_t(), EX::set_error_t(TD::error)>>
                     == KT::type<decltype(EX::get_completion_signatures(TT::declval<TD::sender>()))>
-                && KT::type<EX::completion_signatures<bool, int>>
+                && KT::type<EX::completion_signatures<EX::set_stopped_t(), EX::set_error_t(TD::error)>>
                     == KT::type<decltype(EX::get_completion_signatures(TT::declval<TD::sender const&&>()))>
-                && KT::type<EX::completion_signatures<bool, int>>
+                && KT::type<EX::completion_signatures<EX::set_stopped_t(), EX::set_error_t(TD::error)>>
                     == KT::type<decltype(EX::get_completion_signatures(TT::declval<TD::sender&>()))>
-                && KT::type<EX::completion_signatures<bool, int>>
+                && KT::type<EX::completion_signatures<EX::set_stopped_t(), EX::set_error_t(TD::error)>>
                     == KT::type<decltype(EX::get_completion_signatures(TT::declval<TD::sender const&>()))>
                 ;
         }),
     KT::expect_success("sender with nested typedef", []{
-            return KT::type<EX::completion_signatures<bool, int>>
+            return KT::type<EX::completion_signatures<EX::set_stopped_t(), EX::set_value_t(int)>>
                     == KT::type<TD::typedef_sender::completion_signatures>
-                && KT::type<EX::completion_signatures<bool, int>>
+                && KT::type<EX::completion_signatures<EX::set_stopped_t(), EX::set_value_t(int)>>
                     == KT::type<decltype(EX::get_completion_signatures(TT::declval<TD::typedef_sender>()))>
-                && KT::type<EX::completion_signatures<bool, int>>
+                && KT::type<EX::completion_signatures<EX::set_stopped_t(), EX::set_value_t(int)>>
                     == KT::type<decltype(EX::get_completion_signatures(TT::declval<TD::typedef_sender const&&>()))>
-                && KT::type<EX::completion_signatures<bool, int>>
+                && KT::type<EX::completion_signatures<EX::set_stopped_t(), EX::set_value_t(int)>>
                     == KT::type<decltype(EX::get_completion_signatures(TT::declval<TD::typedef_sender&>()))>
-                && KT::type<EX::completion_signatures<bool, int>>
+                && KT::type<EX::completion_signatures<EX::set_stopped_t(), EX::set_value_t(int)>>
                     == KT::type<decltype(EX::get_completion_signatures(TT::declval<TD::typedef_sender const&>()))>
                 ;
         }),
