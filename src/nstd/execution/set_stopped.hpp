@@ -32,21 +32,27 @@
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::execution::inline customization_points {
-    inline constexpr struct set_stopped_t {
-        template <typename Receiver>
-            requires requires(Receiver&& receiver) {
-                ::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::execution::set_stopped_t>(),
-                                   ::nstd::utility::forward<Receiver>(receiver));
+namespace nstd::execution{
+    namespace hidden_names::set_stopped {
+        struct cpo {
+            template <typename Receiver>
+                requires requires(Receiver&& receiver) {
+                    ::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::execution::hidden_names::set_stopped::cpo>(),
+                                       ::nstd::utility::forward<Receiver>(receiver));
+                }
+            constexpr auto operator()(Receiver&& receiver) const
+                noexcept(noexcept(::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::execution::hidden_names::set_stopped::cpo>(),
+                                                     ::nstd::utility::forward<Receiver>(receiver))))
+                -> void //-dk:TODO verify if expression-equivalent may mean it can have a [reference?] return type
+            {
+                return ::nstd::tag_invoke(*this, ::nstd::utility::forward<Receiver>(receiver));
             }
-        constexpr auto operator()(Receiver&& receiver) const
-            noexcept(noexcept(::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::execution::set_stopped_t>(),
-                                                 ::nstd::utility::forward<Receiver>(receiver))))
-            -> void //-dk:TODO verify if expression-equivalent may mean it can have a [reference?] return type
-        {
-            return ::nstd::tag_invoke(*this, ::nstd::utility::forward<Receiver>(receiver));
-        }
-    } set_stopped;
+        };
+    }
+    inline namespace customization_points {
+        using set_stopped_t = ::nstd::execution::hidden_names::set_stopped::cpo;
+        inline constexpr set_stopped_t set_stopped{};
+    }
 }
 
 // ----------------------------------------------------------------------------

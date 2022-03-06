@@ -27,4 +27,6 @@
 
 // ----------------------------------------------------------------------------
 
-int set_error_dummy = 0;
+namespace nstd::execution {
+    int set_error_dummy{};
+}
