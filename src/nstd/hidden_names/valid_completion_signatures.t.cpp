@@ -25,6 +25,7 @@
 
 #include "nstd/hidden_names/valid_completion_signatures.hpp"
 #include "nstd/execution/no_env.hpp"
+#include "nstd/execution/set_value.hpp"
 #include <tuple>
 #include "kuhl/test.hpp"
 
@@ -48,15 +49,15 @@ namespace test_declarations {
 
 static KT::testcase const tests[] = {
     KT::expect_success("non-completion signature", []{
-            return not HN::valid_completion_signatures<TD::completion_signatures<TD::type>, TD::env>
-                && not HN::valid_completion_signatures<TD::completion_signatures<TD::type>, HN::exec_envs::no_env>
-                && not HN::valid_completion_signatures<::std::tuple<TD::type>, TD::env>
-                && not HN::valid_completion_signatures<::std::tuple<TD::type>, HN::exec_envs::no_env>
+            return not HN::valid_completion_signatures<TD::completion_signatures<EX::set_value_t(TD::type)>, TD::env>
+                && not HN::valid_completion_signatures<TD::completion_signatures<EX::set_value_t(TD::type)>, HN::exec_envs::no_env>
+                && not HN::valid_completion_signatures<::std::tuple<EX::set_value_t(TD::type)>, TD::env>
+                && not HN::valid_completion_signatures<::std::tuple<EX::set_value_t(TD::type)>, HN::exec_envs::no_env>
                 ;
         }),
     KT::expect_success("valid completion signature", []{
-            return HN::valid_completion_signatures<EX::completion_signatures<TD::type>, TD::env>
-                && HN::valid_completion_signatures<EX::completion_signatures<TD::type>, HN::exec_envs::no_env>
+            return HN::valid_completion_signatures<EX::completion_signatures<EX::set_value_t(TD::type)>, TD::env>
+                && HN::valid_completion_signatures<EX::completion_signatures<EX::set_value_t(TD::type)>, HN::exec_envs::no_env>
                 ;
         }),
     KT::expect_success("dependent completion signature", []{
