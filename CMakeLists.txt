@@ -113,6 +113,7 @@ list(APPEND kuhllib_execution_todo
     src/nstd/execution/get_scheduler
     src/nstd/execution/get_stop_token
     src/nstd/execution/scheduler
+    src/nstd/execution/sender_of
 )
 
 list(APPEND kuhllib_xexecution_components
@@ -195,6 +196,7 @@ list(APPEND kuhllib_hidden_components
     src/nstd/hidden_names/sender_base
     src/nstd/hidden_names/valid_completion_for
     src/nstd/hidden_names/valid_completion_signatures
+    src/nstd/hidden_names/variant_or_empty
 )
 list(APPEND kuhllib_xhidden_components
     src/nstd/hidden_names/add_signatures
@@ -208,7 +210,6 @@ list(APPEND kuhllib_xhidden_components
     src/nstd/hidden_names/message_flags
     src/nstd/hidden_names/no_completion_signatures
     src/nstd/hidden_names/type_list
-    src/nstd/hidden_names/variant_or_empty
 )
 
 list(APPEND kuhllib_iterator_components
