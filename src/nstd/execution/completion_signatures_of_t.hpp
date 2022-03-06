@@ -33,8 +33,10 @@
 #include <concepts>
 
 // ----------------------------------------------------------------------------
+// [exec.sndtraitst]
 
 namespace nstd::execution {
+    //-dk:TODO deal with awaitable
     template <typename Sender, typename Env>
         requires (::nstd::execution::sender<Sender, Env>
                   && not ::std::same_as<decltype(

@@ -23,8 +23,10 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/completion_signatures_of_t.hpp"
+#include "nstd/execution/completion_signatures.hpp"
+#include "nstd/execution/set_stopped.hpp"
+#include "nstd/execution/set_value.hpp"
 #include "nstd/execution/sender.hpp"
 #include "kuhl/test.hpp"
 
@@ -37,15 +39,10 @@ namespace KT = ::kuhl::test;
 
 namespace test_declarations {
     namespace {
+        struct env {};
+        struct type {};
         struct sender {
-            using completion_signatures = EX::completion_signatures<>;
-
-            //-dk:TODO remove old-style value_types, error_types, and sends_done
-            template <template <typename...> class T, template <typename...> class V>
-            using value_types = T<V<>>;
-            template <template <typename...> class T>
-            using error_types = T<int>;
-            static constexpr bool sends_done = false;
+            using completion_signatures = EX::completion_signatures<EX::set_stopped_t(), EX::set_value_t(TD::type)>;
         };
 
         static_assert(EX::sender<TD::sender>);
@@ -56,7 +53,9 @@ namespace test_declarations {
 
 static KT::testcase const tests[] = {
     KT::expect_success("placeholder", []{
-           return true;
+           return KT::type<EX::completion_signatures<EX::set_stopped_t(), EX::set_value_t(TD::type)>>
+                   == KT::type<EX::completion_signatures_of_t<TD::sender, TD::env>>
+                ;
         }),
 };
 

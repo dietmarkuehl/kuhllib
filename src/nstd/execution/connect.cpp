@@ -27,4 +27,6 @@
 
 // ----------------------------------------------------------------------------
 
-int connect_dummy = 0;
+namespace nstd::execution {
+    int connect_dummy{};
+}
