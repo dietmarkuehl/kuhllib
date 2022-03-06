@@ -27,4 +27,6 @@
 
 // ----------------------------------------------------------------------------
 
-int operation_state_dummy = 0;
+namespace nstd::execution {
+    int operation_state_dummy{};
+}

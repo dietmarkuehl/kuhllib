@@ -87,16 +87,19 @@ list(APPEND kuhllib_execution_components
     src/nstd/execution/completion_signatures
     src/nstd/execution/get_env
     src/nstd/execution/no_env
+    src/nstd/execution/operation_state
     src/nstd/execution/receiver
     src/nstd/execution/receiver_of
     src/nstd/execution/set_error
     src/nstd/execution/set_stopped
     src/nstd/execution/set_value
+    src/nstd/execution/start
 )
 
 list(APPEND kuhllib_execution_todo
     src/nstd/execution/forward_progress_guarantee
     src/nstd/execution/forwarding_env_query
+    src/nstd/execution/forwarding_receiver_query
     src/nstd/execution/forwarding_scheduler_query
     src/nstd/execution/get_allocator
     src/nstd/execution/get_delegatee_scheduler
@@ -119,7 +122,6 @@ list(APPEND kuhllib_xexecution_components
     src/nstd/execution/just_done
     src/nstd/execution/lazy_then
     src/nstd/execution/let_value
-    src/nstd/execution/operation_state
     src/nstd/execution/parallel_policy
     src/nstd/execution/parallel_unsequenced_policy
     src/nstd/execution/repeat_effect
@@ -131,7 +133,6 @@ list(APPEND kuhllib_xexecution_components
     src/nstd/execution/sender_to
     src/nstd/execution/sender_traits
     src/nstd/execution/sequenced_policy
-    src/nstd/execution/start
     src/nstd/execution/start_detached
     src/nstd/execution/stop_token_type
     src/nstd/execution/task

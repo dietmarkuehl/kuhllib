@@ -31,6 +31,7 @@
 #include "nstd/utility/forward.hpp"
 
 // ----------------------------------------------------------------------------
+// [exec.set_stopped]
 
 namespace nstd::execution{
     namespace hidden_names::set_stopped {
