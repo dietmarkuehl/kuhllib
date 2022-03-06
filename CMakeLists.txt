@@ -89,6 +89,9 @@ list(APPEND kuhllib_execution_components
     src/nstd/execution/no_env
     src/nstd/execution/receiver
     src/nstd/execution/receiver_of
+    src/nstd/execution/set_error
+    src/nstd/execution/set_stopped
+    src/nstd/execution/set_value
 )
 
 list(APPEND kuhllib_execution_todo
@@ -128,9 +131,6 @@ list(APPEND kuhllib_xexecution_components
     src/nstd/execution/sender_to
     src/nstd/execution/sender_traits
     src/nstd/execution/sequenced_policy
-    src/nstd/execution/set_error
-    src/nstd/execution/set_stopped
-    src/nstd/execution/set_value
     src/nstd/execution/start
     src/nstd/execution/start_detached
     src/nstd/execution/stop_token_type

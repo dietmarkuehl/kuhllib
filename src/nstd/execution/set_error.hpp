@@ -32,26 +32,32 @@
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::execution::inline customization_points
+namespace nstd::execution
 {
-    inline constexpr struct set_error_t {
-        template <typename Receiver, typename Error>
-            requires requires(Receiver&& receiver, Error&& error) {
-                ::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::execution::set_error_t>(),
+    namespace hidden_names::set_error {
+        struct cpo {
+            template <typename Receiver, typename Error>
+                requires requires(Receiver&& receiver, Error&& error) {
+                    ::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::execution::hidden_names::set_error::cpo>(),
+                                       ::nstd::utility::forward<Receiver>(receiver),
+                                       ::nstd::utility::forward<Error>(error));
+                }
+            constexpr auto operator()(Receiver&& receiver, Error&& error) const
+                noexcept(noexcept(::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::execution::hidden_names::set_error::cpo>(),
+                                                     ::nstd::utility::forward<Receiver>(receiver),
+                                                     ::nstd::utility::forward<Error>(error))))
+                -> void //-dk:TODO verify if expression-equivalent may mean it can have a [reference?] return type
+            {
+                ::nstd::tag_invoke(*this, //set_error
                                    ::nstd::utility::forward<Receiver>(receiver),
                                    ::nstd::utility::forward<Error>(error));
             }
-        constexpr auto operator()(Receiver&& receiver, Error&& error) const
-            noexcept(noexcept(::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::execution::set_error_t>(),
-                                                 ::nstd::utility::forward<Receiver>(receiver),
-                                                 ::nstd::utility::forward<Error>(error))))
-            -> void //-dk:TODO verify if expression-equivalent may mean it can have a [reference?] return type
-        {
-            ::nstd::tag_invoke(*this, //set_error
-                               ::nstd::utility::forward<Receiver>(receiver),
-                               ::nstd::utility::forward<Error>(error));
-        }
-    } set_error;
+        };
+    }
+    inline namespace customization_points {
+        using set_error_t = ::nstd::execution::hidden_names::set_error::cpo;
+        inline constexpr set_error_t set_error{};
+    }
 }
 
 // ----------------------------------------------------------------------------

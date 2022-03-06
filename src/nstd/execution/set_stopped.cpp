@@ -28,5 +28,5 @@
 // ----------------------------------------------------------------------------
 
 namespace nstd::execution {
-    int set_stopped_dummy = 0;
+    int set_stopped_dummy{};
 }

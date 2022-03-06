@@ -32,26 +32,32 @@
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::execution::inline customization_points
+namespace nstd::execution
 {
-    inline constexpr struct set_value_t {
-        template <typename Receiver, typename... Args>
-            requires requires(Receiver&& receiver, Args&&... args) {
-                ::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::execution::set_value_t>(),
+    namespace hidden_names::set_value {
+        struct cpo {
+            template <typename Receiver, typename... Args>
+                requires requires(Receiver&& receiver, Args&&... args) {
+                    ::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::execution::hidden_names::set_value::cpo>(),
+                                       ::nstd::utility::forward<Receiver>(receiver),
+                                       ::nstd::utility::forward<Args>(args)...);
+                }
+            constexpr auto operator()(Receiver&& receiver, Args&&... args) const
+                noexcept(noexcept(::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::execution::hidden_names::set_value::cpo>(),
+                                                     ::nstd::utility::forward<Receiver>(receiver),
+                                                     ::nstd::utility::forward<Args>(args)...)))
+                -> void //-dk:TODO verify if expression-equivalent may mean it can have a [reference?] return type
+            {
+                ::nstd::tag_invoke(*this, // set_value_t
                                    ::nstd::utility::forward<Receiver>(receiver),
                                    ::nstd::utility::forward<Args>(args)...);
             }
-        constexpr auto operator()(Receiver&& receiver, Args&&... args) const
-            noexcept(noexcept(::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::execution::set_value_t>(),
-                                                 ::nstd::utility::forward<Receiver>(receiver),
-                                                 ::nstd::utility::forward<Args>(args)...)))
-            -> void //-dk:TODO verify if expression-equivalent may mean it can have a [reference?] return type
-        {
-            ::nstd::tag_invoke(*this, // set_value_t
-                               ::nstd::utility::forward<Receiver>(receiver),
-                               ::nstd::utility::forward<Args>(args)...);
-        }
-    } set_value;
+        };
+    }
+    inline namespace customization_points {
+        using set_value_t = ::nstd::execution::hidden_names::set_value::cpo;
+        inline constexpr set_value_t set_value{};
+    }
 }
 
 // ----------------------------------------------------------------------------
