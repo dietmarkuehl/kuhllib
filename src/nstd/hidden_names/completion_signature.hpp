@@ -1,4 +1,4 @@
-// src/nstd/execution/completion_signatures.hpp                       -*-C++-*-
+// nstd/hidden_names/completion_signature.hpp                         -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2022 Dietmar Kuehl http://www.dietmar-kuehl.de
 //
@@ -23,14 +23,30 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_SRC_NSTD_EXECUTION_COMPLETION_SIGNATURES
-#define INCLUDED_SRC_NSTD_EXECUTION_COMPLETION_SIGNATURES
+#ifndef INCLUDED_NSTD_HIDDEN_NAMES_COMPLETION_SIGNATURE
+#define INCLUDED_NSTD_HIDDEN_NAMES_COMPLETION_SIGNATURE
+
+#include "nstd/execution/set_error.hpp"
+#include "nstd/execution/set_stopped.hpp"
+#include "nstd/execution/set_value.hpp"
+#include "nstd/type_traits/integral_constant.hpp"
+#include <concepts>
 
 // ----------------------------------------------------------------------------
 // [exec.utils.cmplsigs]
 
-namespace nstd::execution {
-    template <typename...> struct completion_signatures {};
+namespace nstd::hidden_names {
+    namespace completion_signal_impl {
+        template <typename> struct test: ::nstd::type_traits::false_type {};
+
+        template <typename E> struct test<::nstd::execution::set_error_t(E)>: ::nstd::type_traits::true_type {};
+        template <> struct test<::nstd::execution::set_stopped_t()>: ::nstd::type_traits::true_type {};
+        template <typename... T> struct test<::nstd::execution::set_value_t(T...)>: ::nstd::type_traits::true_type {};
+    }
+    template <typename Signature>
+    concept completion_signature
+        =  ::nstd::hidden_names::completion_signal_impl::test<Signature>::value
+        ;
 }
 
 // ----------------------------------------------------------------------------

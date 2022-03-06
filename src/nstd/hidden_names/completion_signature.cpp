@@ -1,4 +1,4 @@
-// src/nstd/execution/completion_signatures.hpp                       -*-C++-*-
+// nstd/hidden_names/completion_signature.cpp                         -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2022 Dietmar Kuehl http://www.dietmar-kuehl.de
 //
@@ -23,16 +23,10 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_SRC_NSTD_EXECUTION_COMPLETION_SIGNATURES
-#define INCLUDED_SRC_NSTD_EXECUTION_COMPLETION_SIGNATURES
+#include <nstd/hidden_names/completion_signature.hpp>
 
 // ----------------------------------------------------------------------------
-// [exec.utils.cmplsigs]
 
-namespace nstd::execution {
-    template <typename...> struct completion_signatures {};
+namespace nstd::hidden_names {
+    int completion_signature_dummy{};
 }
-
-// ----------------------------------------------------------------------------
-
-#endif
