@@ -24,18 +24,64 @@
 // ----------------------------------------------------------------------------
 
 #include "nstd/execution/value_types_of_t.hpp"
+#include "nstd/execution/completion_signatures.hpp"
+#include "nstd/execution/sender.hpp"
+#include "nstd/execution/set_error.hpp"
+#include "nstd/execution/set_stopped.hpp"
+#include "nstd/execution/set_value.hpp"
+#include "nstd/execution/connect.hpp"
+#include "nstd/execution/start.hpp"
 #include "kuhl/test.hpp"
 
 namespace test_declarations {}
 namespace TD = ::test_declarations;
 namespace EX = ::nstd::execution;
+namespace HN = ::nstd::hidden_names;
 namespace KT = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
 
+namespace test_declarations {
+    namespace {
+        struct error {};
+        struct type {};
+
+        template <typename... Signatures>
+        struct sender {
+            using completion_signatures = EX::completion_signatures<Signatures...>;
+        };
+    }
+}
+
+// ----------------------------------------------------------------------------
+
 static KT::testcase const tests[] = {
-    KT::expect_success("placeholder", []{
-           return true; //-dk:TODO provide actual tests
+    KT::expect_success("TD::sender is sender", []{
+            return EX::sender<TD::sender<EX::set_value_t(int)>>
+                && EX::sender<TD::sender<EX::set_value_t(int), EX::set_value_t(TD::type&, int)>>
+                && EX::sender<TD::sender<EX::set_value_t(TD::type), EX::set_error_t(TD::error), EX::set_stopped_t()>>
+                ;
+        }),
+    KT::expect_success("no element", []{
+            return KT::type<HN::variant_or_empty<>>
+                      == KT::type<EX::value_types_of_t<TD::sender<>>>
+                && KT::type<HN::variant_or_empty<>>
+                      == KT::type<EX::value_types_of_t<TD::sender<EX::set_stopped_t()>>>
+                ;
+        }),
+    KT::expect_success("one element", []{
+            return KT::type<HN::variant_or_empty<::std::tuple<int>>>
+                      == KT::type<EX::value_types_of_t<TD::sender<EX::set_value_t(int)>>>
+                && KT::type<HN::variant_or_empty<::std::tuple<int>>>
+                      == KT::type<EX::value_types_of_t<TD::sender<EX::set_value_t(int), EX::set_stopped_t()>>>
+                ;
+        }),
+    KT::expect_success("two elements", []{
+            return KT::type<HN::variant_or_empty<::std::tuple<int>, ::std::tuple<TD::type, int>>>
+                      == KT::type<EX::value_types_of_t<TD::sender<EX::set_value_t(int), EX::set_value_t(TD::type&, int)>>>
+                && KT::type<HN::variant_or_empty<::std::tuple<int>, ::std::tuple<TD::type, int>>>
+                      == KT::type<EX::value_types_of_t<TD::sender<EX::set_value_t(int), EX::set_value_t(TD::type&, int), EX::set_stopped_t()>>>
+                ;
         }),
 };
 

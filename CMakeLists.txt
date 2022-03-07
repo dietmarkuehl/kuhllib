@@ -101,6 +101,7 @@ list(APPEND kuhllib_execution_components
     src/nstd/execution/set_stopped
     src/nstd/execution/set_value
     src/nstd/execution/start
+    src/nstd/execution/value_types_of_t
 )
 
 list(APPEND kuhllib_execution_todo
@@ -142,7 +143,6 @@ list(APPEND kuhllib_xexecution_components
     src/nstd/execution/timeout
     src/nstd/execution/typed_sender
     src/nstd/execution/upon_done
-    src/nstd/execution/value_types_of_t
     src/nstd/execution/when_all
 )
 
@@ -191,6 +191,7 @@ list(APPEND kuhllib_functional_components
 
 list(APPEND kuhllib_hidden_components
     src/nstd/hidden_names/completion_signature
+    src/nstd/hidden_names/decayed_tuple
     src/nstd/hidden_names/is_instance_of
     src/nstd/hidden_names/movable_value
     src/nstd/hidden_names/sender_base
@@ -204,7 +205,6 @@ list(APPEND kuhllib_xhidden_components
     src/nstd/hidden_names/callable
     src/nstd/hidden_names/check_type_alias_exists
     src/nstd/hidden_names/constexpr_expression
-    src/nstd/hidden_names/decayed_tuple
     src/nstd/hidden_names/derives_from_sender_base
     src/nstd/hidden_names/has_sender_types
     src/nstd/hidden_names/message_flags
