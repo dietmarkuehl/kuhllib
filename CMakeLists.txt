@@ -89,6 +89,7 @@ list(APPEND kuhllib_execution_components
     src/nstd/execution/connect
     src/nstd/execution/dependent_completion_signatures
     src/nstd/execution/env_of_t
+    src/nstd/execution/error_types_of_t
     src/nstd/execution/get_completion_signatures
     src/nstd/execution/get_env
     src/nstd/execution/no_env

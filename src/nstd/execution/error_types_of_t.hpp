@@ -1,4 +1,4 @@
-// src/nstd/execution/value_types_of_t.hpp                            -*-C++-*-
+// nstd/execution/error_types_of_t.hpp                                -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2022 Dietmar Kuehl http://www.dietmar-kuehl.de
 //
@@ -23,45 +23,40 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_SRC_NSTD_EXECUTION_VALUE_TYPES_OF
-#define INCLUDED_SRC_NSTD_EXECUTION_VALUE_TYPES_OF
+#ifndef INCLUDED_NSTD_EXECUTION_ERROR_TYPES_OF
+#define INCLUDED_NSTD_EXECUTION_ERROR_TYPES_OF
 
 #include "nstd/execution/completion_signatures_of_t.hpp"
 #include "nstd/execution/no_env.hpp"
 #include "nstd/execution/sender.hpp"
-#include "nstd/hidden_names/decayed_tuple.hpp"
 #include "nstd/hidden_names/filter_completions.hpp"
 #include "nstd/hidden_names/variant_or_empty.hpp"
 
 // ----------------------------------------------------------------------------
 // [exec.sndtraitst]
 
-namespace nstd::execution::hidden_names::value_types_of_t {
-    template <typename, template <typename...> class> struct transform;
-    template <typename... Args, template <typename...> class Tuple>
-    struct transform<::nstd::execution::set_value_t(Args...), Tuple> {
-        using type = Tuple<Args...>;
+namespace nstd::execution::hidden_names::error_types_of_t {
+    template <typename> struct transform;
+    template <typename Arg>
+    struct transform<::nstd::execution::set_error_t(Arg)> {
+        using type = Arg;
     };
-    template <typename, template <typename...> class, template <typename...> class>
+    template <typename, template <typename...> class>
     struct transform_list;
-    template <typename... Signature, template <typename...> class Tuple, template <typename...> class Variant>
-    struct transform_list<::nstd::execution::completion_signatures<Signature...>, Tuple, Variant> {
-        using type = Variant<typename transform<Signature, Tuple>::type...>;
+    template <typename... Signature, template <typename...> class Variant>
+    struct transform_list<::nstd::execution::completion_signatures<Signature...>, Variant> {
+        using type = Variant<typename transform<Signature>::type...>;
     };
 }
 
 namespace nstd::execution {
-    template <typename Sender,
-              typename Env = ::nstd::hidden_names::exec_envs::no_env,
-              template <typename...> class Tuple = ::nstd::hidden_names::decayed_tuple,
-              template <typename...> class Variant = ::nstd::hidden_names::variant_or_empty>
-        requires ::nstd::execution::sender<Sender, Env>
-    using value_types_of_t = typename ::nstd::execution::hidden_names::value_types_of_t::transform_list<
+    template <::nstd::execution::sender Sender, typename Env, template <typename...> class Variant = nstd::hidden_names::variant_or_empty>
+    using error_types_of_t = typename ::nstd::execution::hidden_names::error_types_of_t::transform_list<
             typename nstd::hidden_names::filter_completions<
-            ::nstd::execution::set_value_t,
-            ::nstd::execution::completion_signatures<>,
-            ::nstd::execution::completion_signatures_of_t<Sender, Env>
-            >::type, Tuple, Variant>::type;
+                ::nstd::execution::set_error_t,
+                ::nstd::execution::completion_signatures<>,
+                ::nstd::execution::completion_signatures_of_t<Sender, Env>
+            >::type, Variant>::type;
 }
 
 // ----------------------------------------------------------------------------
