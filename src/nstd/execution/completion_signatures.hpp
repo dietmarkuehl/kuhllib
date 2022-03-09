@@ -27,13 +27,15 @@
 #define INCLUDED_SRC_NSTD_EXECUTION_COMPLETION_SIGNATURES
 
 #include "nstd/hidden_names/completion_signature.hpp"
+#include <concepts>
 
 // ----------------------------------------------------------------------------
 // [exec.utils.cmplsigs]
 
 namespace nstd::execution {
-    template <::nstd::hidden_names::completion_signature ...>
+    template <::nstd::hidden_names::completion_signature ... Signatures>
     struct completion_signatures {
+        static constexpr bool sends_stopped = (false || ... || ::std::same_as<Signatures, ::nstd::execution::set_stopped_t()>);
     };
 }
 
