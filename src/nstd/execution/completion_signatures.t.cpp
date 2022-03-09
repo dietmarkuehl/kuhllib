@@ -63,6 +63,14 @@ static KT::testcase const tests[] = {
                 && 0u != sizeof(EX::completion_signatures<EX::set_value_t(TD::type<0>)>)
                 ;
         }),
+    KT::expect_success("stopped", []{
+            return not EX::completion_signatures<EX::set_value_t(), EX::set_error_t(TD::error)>::sends_stopped
+                && EX::completion_signatures<EX::set_value_t(), EX::set_stopped_t(), EX::set_error_t(TD::error)>::sends_stopped
+                && EX::completion_signatures<EX::set_stopped_t(), EX::set_value_t(), EX::set_error_t(TD::error)>::sends_stopped
+                && EX::completion_signatures<EX::set_value_t(), EX::set_error_t(TD::error), EX::set_stopped_t()>::sends_stopped
+                && EX::completion_signatures<EX::set_stopped_t()>::sends_stopped
+                ;
+        }),
 };
 
 static KT::add_tests suite("completion_signatures", ::tests);
