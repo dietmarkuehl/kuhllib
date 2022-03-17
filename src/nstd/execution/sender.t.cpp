@@ -37,7 +37,6 @@ namespace KT = ::kuhl::test;
 namespace test_declarations {
     namespace {
         struct sender
-            : EX::sender_base
         {
             using completion_signatures = EX::completion_signatures<>;
         };

@@ -93,6 +93,7 @@ list(APPEND kuhllib_execution_components
     src/nstd/execution/get_completion_scheduler
     src/nstd/execution/get_completion_signatures
     src/nstd/execution/get_env
+    src/nstd/execution/just
     src/nstd/execution/no_env
     src/nstd/execution/operation_state
     src/nstd/execution/receiver
@@ -125,8 +126,6 @@ list(APPEND kuhllib_xexecution_components
     src/nstd/execution/execution
     src/nstd/execution/inject_cancel
     src/nstd/execution/is_execution_policy
-    src/nstd/execution/just
-    src/nstd/execution/just_done
     src/nstd/execution/lazy_then
     src/nstd/execution/let_value
     src/nstd/execution/parallel_policy
@@ -134,15 +133,12 @@ list(APPEND kuhllib_xexecution_components
     src/nstd/execution/repeat_effect
     src/nstd/execution/repeat_effect_until
     src/nstd/execution/run
-    src/nstd/execution/sender_base
-    src/nstd/execution/sender_traits
     src/nstd/execution/sequenced_policy
     src/nstd/execution/start_detached
     src/nstd/execution/stop_token_type
     src/nstd/execution/task
     src/nstd/execution/then
     src/nstd/execution/timeout
-    src/nstd/execution/typed_sender
     src/nstd/execution/upon_done
     src/nstd/execution/when_all
 )

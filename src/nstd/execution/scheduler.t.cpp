@@ -27,7 +27,6 @@
 #include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/get_completion_scheduler.hpp"
 #include "nstd/execution/schedule.hpp"
-#include "nstd/execution/sender_base.hpp"
 #include "nstd/utility/move.hpp"
 #include "kuhl/test.hpp"
 

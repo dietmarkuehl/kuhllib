@@ -27,7 +27,6 @@
 #define INCLUDED_NSTD_EXECUTION_SENDER
 
 #include "nstd/hidden_names/sender_base.hpp"
-#include "nstd/execution/sender_traits.hpp"
 #include "nstd/execution/no_env.hpp"
 #include "nstd/utility/forward.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"

@@ -43,30 +43,32 @@ namespace nstd::execution {
         }
         ;
 
-    template <typename> struct test_receiver_of_base;
-    template <typename Tag, typename... Args> struct test_receiver_of_base<Tag(Args...)>;
-    template <typename...> struct test_receiver_of;
+    namespace hidden_names {
+        template <typename> struct test_receiver_of_base;
+        template <typename Tag, typename... Args> struct test_receiver_of_base<Tag(Args...)>;
+        template <typename...> struct test_receiver_of;
+    }
 }
 
 // ----------------------------------------------------------------------------
 
 template <typename Tag, typename... Args>
-struct nstd::execution::test_receiver_of_base<Tag(Args...)> {
+struct nstd::execution::hidden_names::test_receiver_of_base<Tag(Args...)> {
     friend auto tag_invoke(Tag, test_receiver_of_base&, Args...) noexcept -> void {}
     friend auto tag_invoke(Tag, test_receiver_of_base &&, Args...) noexcept -> void {}
     friend auto tag_invoke(Tag, test_receiver_of_base const&, Args...) noexcept -> void {}
 };
 
 template <typename... Signatures>
-struct nstd::execution::test_receiver_of
-    : ::nstd::execution::test_receiver_of_base<Signatures>...
+struct nstd::execution::hidden_names::test_receiver_of
+    : ::nstd::execution::hidden_names::test_receiver_of_base<Signatures>...
 {
     test_receiver_of(test_receiver_of&&) = default;
     friend auto tag_invoke(::nstd::execution::get_env_t, test_receiver_of const&) -> int { return {}; }
 };
 
 static_assert(::nstd::execution::receiver_of<
-    ::nstd::execution::test_receiver_of<::nstd::execution::set_value_t(int, bool),
+    ::nstd::execution::hidden_names::test_receiver_of<::nstd::execution::set_value_t(int, bool),
                                         ::nstd::execution::set_error_t(void*),
                                         ::nstd::execution::set_stopped_t()
                                        >,

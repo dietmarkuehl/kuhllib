@@ -27,7 +27,6 @@
 #include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/schedule.hpp"
 #include "nstd/execution/sender.hpp"
-#include "nstd/execution/sender_base.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/set_error.hpp"
 #include "nstd/execution/set_stopped.hpp"
@@ -45,7 +44,6 @@ namespace KT = ::kuhl::test;
 namespace test_declarations {
     namespace {
         struct scheduler_sender
-            : EX::sender_base
         {
             using completion_signatures = EX::completion_signatures<>;
         };
@@ -65,7 +63,7 @@ namespace test_declarations {
 
         template <bool Sender, bool Noexcept, bool Scheduler, typename CPO>
         struct sender
-            : TT::conditional_t<Sender, EX::sender_base, empty>
+            //: TT::conditional_t<Sender, EX::sender_base, empty>
         {
             using completion_signatures = TT::conditional_t<Sender, EX::completion_signatures<>, empty>;
             TT::conditional_t<Scheduler, TD::scheduler, int> scheduler;
