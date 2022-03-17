@@ -90,12 +90,15 @@ list(APPEND kuhllib_execution_components
     src/nstd/execution/dependent_completion_signatures
     src/nstd/execution/env_of_t
     src/nstd/execution/error_types_of_t
+    src/nstd/execution/get_completion_scheduler
     src/nstd/execution/get_completion_signatures
     src/nstd/execution/get_env
     src/nstd/execution/no_env
     src/nstd/execution/operation_state
     src/nstd/execution/receiver
     src/nstd/execution/receiver_of
+    src/nstd/execution/schedule
+    src/nstd/execution/scheduler
     src/nstd/execution/sender
     src/nstd/execution/sender_to
     src/nstd/execution/set_error
@@ -114,14 +117,12 @@ list(APPEND kuhllib_execution_todo
     src/nstd/execution/get_delegatee_scheduler
     src/nstd/execution/get_scheduler
     src/nstd/execution/get_stop_token
-    src/nstd/execution/scheduler
     src/nstd/execution/sender_of
 )
 
 list(APPEND kuhllib_xexecution_components
     src/nstd/execution
     src/nstd/execution/execution
-    src/nstd/execution/get_completion_scheduler
     src/nstd/execution/inject_cancel
     src/nstd/execution/is_execution_policy
     src/nstd/execution/just
@@ -133,7 +134,6 @@ list(APPEND kuhllib_xexecution_components
     src/nstd/execution/repeat_effect
     src/nstd/execution/repeat_effect_until
     src/nstd/execution/run
-    src/nstd/execution/schedule
     src/nstd/execution/sender_base
     src/nstd/execution/sender_traits
     src/nstd/execution/sequenced_policy

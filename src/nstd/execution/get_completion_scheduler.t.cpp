@@ -26,7 +26,6 @@
 #include "nstd/execution/get_completion_scheduler.hpp"
 #include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/schedule.hpp"
-#include "nstd/execution/scheduler.hpp"
 #include "nstd/execution/sender.hpp"
 #include "nstd/execution/sender_base.hpp"
 #include "nstd/execution/set_value.hpp"
@@ -101,7 +100,7 @@ namespace test_declarations {
 
 static KT::testcase const tests[] = {
     KT::expect_success("scheduler_sender is a sender", []{ return EX::sender<TD::scheduler_sender>; }),
-    KT::expect_success("scheduler is a scheduler", []{ return EX::scheduler<TD::scheduler>; }),
+    KT::expect_success("scheduler supports schedule()", []{ return requires(TD::scheduler s){  EX::schedule(s); }; }),
     KT::expect_success("sender<true, true, true, set_value_t> is a sender", []{ return EX::sender<TD::sender<true, true, true, EX::set_value_t>>; }),
     KT::expect_success("sender<false, true, true, set_value_t> is not a sender", []{ return not EX::sender<TD::sender<false, true, true, EX::set_value_t>>; }),
     KT::expect_success("sender<true, false, true, set_value_t> is a sender", []{ return EX::sender<TD::sender<true, false, true, EX::set_value_t>>; }),

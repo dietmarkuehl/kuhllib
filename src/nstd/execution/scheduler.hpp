@@ -27,8 +27,12 @@
 #define INCLUDED_NSTD_EXECUTION_SCHEDULER
 
 #include "nstd/execution/schedule.hpp"
+#include "nstd/execution/get_completion_scheduler.hpp"
+#include "nstd/execution/sender.hpp"
+#include "nstd/execution/set_value.hpp"
+#include "nstd/functional/tag_invoke.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
-#include "nstd/utility/move.hpp"
+#include "nstd/utility/forward.hpp"
 #include <concepts>
 
 // ----------------------------------------------------------------------------
@@ -39,8 +43,9 @@ namespace nstd::execution {
     concept scheduler
         =  ::std::copy_constructible<::nstd::type_traits::remove_cvref_t<Scheduler>>
         && ::std::equality_comparable<::nstd::type_traits::remove_cvref_t<Scheduler>>
-        && requires(Scheduler&& s) {
-            ::nstd::execution::schedule(::nstd::utility::move(s));
+        && requires(Scheduler&& s, ::nstd::execution::get_completion_scheduler_t<::nstd::execution::set_value_t> const& cpo) {
+            { ::nstd::execution::schedule(::nstd::utility::forward<Scheduler>(s)) } -> ::nstd::execution::sender;
+	    { tag_invoke(cpo, ::nstd::execution::schedule(::nstd::utility::forward<Scheduler>(s))) } -> ::std::same_as<::nstd::type_traits::remove_cvref_t<Scheduler>>;
         }
         ;
 }

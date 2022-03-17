@@ -27,4 +27,6 @@
 
 // ----------------------------------------------------------------------------
 
-int get_completion_scheduler_dummy = 0;
+namespace nstd::execution {
+    int get_completion_scheduler_dummy{};
+}

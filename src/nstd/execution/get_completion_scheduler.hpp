@@ -27,7 +27,7 @@
 #define INCLUDED_NSTD_EXECUTION_GET_COMPLETION_SCHEDULER
 
 #include "nstd/concepts/same_as.hpp"
-#include "nstd/execution/scheduler.hpp"
+#include "nstd/execution/schedule.hpp"
 #include "nstd/execution/sender.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/set_error.hpp"
@@ -45,7 +45,8 @@ namespace nstd::hidden_names::get_completion_scheduler {
     struct cpo {
         template <::nstd::execution::sender Sender>
             requires requires(cpo<CPO> const& gcs, Sender&& sender) {
-                { ::nstd::tag_invoke(gcs, ::nstd::utility::as_const(sender)) } noexcept -> ::nstd::execution::scheduler;
+                { ::nstd::tag_invoke(gcs, ::nstd::utility::as_const(sender)) } noexcept; //-dk:TODO check scheduler?
+		::nstd::execution::schedule(::nstd::tag_invoke(gcs, ::nstd::utility::as_const(sender)));
             }
         auto operator()(Sender&& sender) const noexcept
         {
