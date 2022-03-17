@@ -29,7 +29,6 @@
 #include "nstd/execution/operation_state.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/receiver.hpp"
-#include "nstd/execution/sender_base.hpp"
 #include "nstd/execution/sender.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
 #include "nstd/utility/forward.hpp"

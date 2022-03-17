@@ -30,7 +30,6 @@
 #include "nstd/execution/connect.hpp"
 #include "nstd/execution/receiver.hpp"
 #include "nstd/execution/receiver_of.hpp"
-#include "nstd/execution/sender_base.hpp"
 #include "nstd/execution/set_stopped.hpp"
 #include "nstd/execution/set_error.hpp"
 #include "nstd/execution/set_value.hpp"
@@ -40,25 +39,17 @@
 #include "nstd/type_traits/is_nothrow_constructible.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
 #include "nstd/utility/move.hpp"
-#include <exception>
 #include <tuple>
 
 // ----------------------------------------------------------------------------
+// [exec.just]
 
 namespace nstd::hidden_names {
     template <typename Signal, typename... A>
     struct just_sender
-        : ::nstd::execution::piped_sender_base
     {
         using completion_signatures
-            = ::nstd::execution::completion_signatures<
-                Signal(A...)
-                >;
-        template <template <typename...> class T, template <typename...> class V>
-        using value_types = V<T<A...>>;
-        template <template <typename...> class V>
-        using error_types = V<::std::exception_ptr>;
-        static constexpr bool sends_done = false;
+            = ::nstd::execution::completion_signatures<Signal(A...)>;
 
         template <::nstd::execution::receiver Receiver>
         struct operation_state {
@@ -66,11 +57,9 @@ namespace nstd::hidden_names {
             Receiver            d_receiver;
             friend auto tag_invoke(::nstd::execution::start_t, operation_state& s) noexcept -> void
                 try {
-                    (void)s;
                     ::std::apply([&s](A&&... a){
-                                        constexpr Signal signal{};
-                                        signal(::nstd::utility::move(s.d_receiver),
-                                               ::nstd::utility::forward<decltype(a)>(a)...);
+                                        Signal{}(::nstd::utility::move(s.d_receiver),
+                                                 ::nstd::utility::forward<decltype(a)>(a)...);
                                  },
                                  ::nstd::utility::move(s.d_value));
                 }
@@ -83,7 +72,7 @@ namespace nstd::hidden_names {
         ::std::tuple<A...> d_value;
 
         template <::nstd::execution::receiver Receiver>
-            requires ::nstd::execution::receiver_of<Receiver, A...>
+            requires ::nstd::execution::receiver_of<Receiver, completion_signatures>
         friend auto tag_invoke(::nstd::execution::connect_t,
                                just_sender const& sender,
                                Receiver&&  receiver)
@@ -91,7 +80,7 @@ namespace nstd::hidden_names {
             return operation_state<Receiver>{sender.d_value, ::nstd::utility::forward<Receiver>(receiver)};
         }
         template <::nstd::execution::receiver Receiver>
-            requires ::nstd::execution::receiver_of<Receiver, A...>
+            requires ::nstd::execution::receiver_of<Receiver, completion_signatures>
         friend auto tag_invoke(::nstd::execution::connect_t,
                                just_sender&& sender,
                                Receiver&&  receiver)
@@ -101,9 +90,10 @@ namespace nstd::hidden_names {
         }
     };
 
-    static_assert(::nstd::execution::operation_state<::nstd::hidden_names::just_sender<::nstd::execution::set_value_t, int>::operation_state<::nstd::execution::test_receiver>>);
-    static_assert(::nstd::execution::operation_state<::nstd::hidden_names::just_sender<::nstd::execution::set_error_t, int>::operation_state<::nstd::execution::test_receiver>>);
-    static_assert(::nstd::execution::operation_state<::nstd::hidden_names::just_sender<::nstd::execution::set_stopped_t>::operation_state<::nstd::execution::test_receiver>>);
+    //static_assert(::nstd::execution::operation_state<::nstd::hidden_names::just_sender<::nstd::execution::set_value_t, int>
+    //              ::operation_state<::nstd::execution::hidden_names::test_receiver_of<::nstd::execution::set_value_t(int)>>>);
+    //static_assert(::nstd::execution::operation_state<::nstd::hidden_names::just_sender<::nstd::execution::set_error_t, int>::operation_state<::nstd::execution::hidden_names::test_receiver>>);
+    //static_assert(::nstd::execution::operation_state<::nstd::hidden_names::just_sender<::nstd::execution::set_stopped_t>::operation_state<::nstd::execution::hidden_names::test_receiver>>);
 }
 
 namespace nstd::execution {
@@ -111,7 +101,7 @@ namespace nstd::execution {
     inline auto just(A&&... a) noexcept((::std::is_nothrow_constructible_v<::nstd::type_traits::remove_cvref_t<A>, A> && ...))
         -> ::nstd::hidden_names::just_sender<::nstd::execution::set_value_t, ::nstd::type_traits::remove_cvref_t<A>...> {
         return ::nstd::hidden_names::just_sender<::nstd::execution::set_value_t, ::nstd::type_traits::remove_cvref_t<A>...>{
-            {}, ::std::make_tuple(::nstd::utility::forward<A>(a)...)
+            ::std::make_tuple(::nstd::utility::forward<A>(a)...)
             };
     }
 
@@ -119,14 +109,14 @@ namespace nstd::execution {
     inline auto just_error(E&& e) noexcept(::std::is_nothrow_constructible_v<::nstd::type_traits::remove_cvref_t<E>, E>)
         -> ::nstd::hidden_names::just_sender<::nstd::execution::set_error_t, ::nstd::type_traits::remove_cvref_t<E>> {
         return ::nstd::hidden_names::just_sender<::nstd::execution::set_error_t, ::nstd::type_traits::remove_cvref_t<E>>{
-            {}, ::std::make_tuple(::nstd::utility::forward<E>(e))
+            ::std::make_tuple(::nstd::utility::forward<E>(e))
             };
     }
 
-    inline auto just_done() noexcept
+    inline auto just_stopped() noexcept
         -> ::nstd::hidden_names::just_sender<::nstd::execution::set_stopped_t> {
         return ::nstd::hidden_names::just_sender<::nstd::execution::set_stopped_t>{
-            {}, ::std::make_tuple()
+            ::std::make_tuple()
             };
     }
 }

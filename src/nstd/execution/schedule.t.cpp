@@ -25,7 +25,6 @@
 
 #include "nstd/execution/schedule.hpp"
 #include "nstd/execution/completion_signatures.hpp"
-#include "nstd/execution/sender_base.hpp"
 #include "nstd/utility/forward.hpp"
 #include <type_traits> //-dk:TODO "nstd/utility/conditional.hpp"
 #include "kuhl/test.hpp"
@@ -46,7 +45,7 @@ namespace test_declarations
         struct empty {};
         template <bool Sender>
         struct sender
-            : TT::conditional_t<Sender, EX::sender_base, empty>
+            // : TT::conditional_t<Sender, EX::sender_base, empty>
         {
             using completion_signatures = TT::conditional_t<Sender, EX::completion_signatures<>, empty>;
             int value;
@@ -57,7 +56,7 @@ namespace test_declarations
             int value;
             bool operator== (scheduler const&) const { return true; }
             friend TD::sender<Sender> tag_invoke(EX::schedule_t, scheduler s) {
-                return TD::sender<Sender>{{}, s.value};
+                return TD::sender<Sender>{s.value};
             } 
         };
 
