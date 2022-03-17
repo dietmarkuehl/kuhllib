@@ -27,4 +27,6 @@
 
 // ----------------------------------------------------------------------------
 
-int schedule_dummy = 0;
+namespace nstd::execution {
+    int schedule_dummy{};
+}

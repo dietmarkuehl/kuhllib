@@ -34,18 +34,21 @@
 // ----------------------------------------------------------------------------
 
 namespace nstd::execution {
-    struct schedule_t {
-        template <typename Scheduler>
-            requires requires(Scheduler&& s){
-                { ::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::execution::schedule_t>(), ::nstd::utility::forward<Scheduler>(s)) }
-                    -> nstd::execution::sender; 
+    namespace hidden_names::schedule {
+        struct cpo {
+            template <typename Scheduler>
+                requires requires(Scheduler&& s){
+                    { ::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::execution::hidden_names::schedule::cpo>(), ::nstd::utility::forward<Scheduler>(s)) }
+                        -> nstd::execution::sender; 
+                }
+            auto operator()(Scheduler&& s) const
+                noexcept(noexcept(::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::execution::hidden_names::schedule::cpo>(), ::nstd::utility::forward<Scheduler>(s))))
+            {
+                return ::nstd::tag_invoke(*this, ::nstd::utility::forward<Scheduler>(s));
             }
-        auto operator()(Scheduler&& s) const
-            noexcept(noexcept(::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::execution::schedule_t>(), ::nstd::utility::forward<Scheduler>(s))))
-        {
-            return ::nstd::tag_invoke(*this, ::nstd::utility::forward<Scheduler>(s));
-        }
-    };
+        };
+    }
+    using schedule_t = ::nstd::execution::hidden_names::schedule::cpo;
     inline constexpr schedule_t schedule;
 }
 

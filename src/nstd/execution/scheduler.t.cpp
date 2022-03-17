@@ -25,6 +25,7 @@
 
 #include "nstd/execution/scheduler.hpp"
 #include "nstd/execution/completion_signatures.hpp"
+#include "nstd/execution/get_completion_scheduler.hpp"
 #include "nstd/execution/schedule.hpp"
 #include "nstd/execution/sender_base.hpp"
 #include "nstd/utility/move.hpp"
@@ -42,33 +43,37 @@ namespace test_declarations
 {
     namespace
     {
-        struct sender: EX::sender_base {
+        struct scheduler;
+	template <typename Scheduler>
+        struct sender {
             using completion_signatures = EX::completion_signatures<>;
         };
+	template <typename Scheduler>
+        auto tag_invoke(EX::get_completion_scheduler_t<EX::set_value_t> const&, sender<Scheduler> const&) -> Scheduler;
 
         struct scheduler {
             scheduler(scheduler const&) = default;
-            bool operator== (scheduler const&) const { return true; }
-            friend sender tag_invoke(::nstd::execution::schedule_t, scheduler) { return sender{}; } 
+            auto operator== (scheduler const&) const -> bool { return true; }
+            friend auto tag_invoke(::nstd::execution::schedule_t, scheduler) -> sender<scheduler> { return sender<scheduler>{}; } 
         };
 
         struct non_copyable_scheduler {
             non_copyable_scheduler() = default;
             non_copyable_scheduler(non_copyable_scheduler&&) = default;
             non_copyable_scheduler(non_copyable_scheduler const&) = delete;
-            bool operator== (non_copyable_scheduler const&) const { return true; }
-            friend sender tag_invoke(::nstd::execution::schedule_t, non_copyable_scheduler) { return sender{}; } 
+            auto operator== (non_copyable_scheduler const&) const -> bool { return true; }
+            friend auto tag_invoke(::nstd::execution::schedule_t, non_copyable_scheduler) -> sender<non_copyable_scheduler> { return sender<non_copyable_scheduler>{}; } 
         };
 
         struct non_comparable_scheduler {
             non_comparable_scheduler() = default;
             non_comparable_scheduler(non_comparable_scheduler const&) = default;
-            friend sender tag_invoke(::nstd::execution::schedule_t, non_comparable_scheduler) { return sender{}; } 
+            friend auto tag_invoke(::nstd::execution::schedule_t, non_comparable_scheduler) -> sender<non_comparable_scheduler> { return sender<non_comparable_scheduler>{}; } 
         };
 
         struct non_scheduling_scheduler {
             non_scheduling_scheduler(non_scheduling_scheduler const&) = default;
-            bool operator== (non_scheduling_scheduler const&) const { return true; }
+            auto operator== (non_scheduling_scheduler const&) const -> bool { return true; }
         };
     }
 }
@@ -76,7 +81,7 @@ namespace test_declarations
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
-    KT::expect_success("scheduler gets classified correctly", [](KT::context& ){
+    KT::expect_success("scheduler gets classified correctly", []{
         return EX::scheduler<TD::scheduler>
             ;
     }),
