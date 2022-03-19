@@ -14,7 +14,6 @@ build the code, and run tests. To have more control over the build-process
 you can use `cmake` with the `CMakeLists.txt` in the `src` directory.
 
 ## Concept Overview
-## Concept Overview
 
 This section is intended to yield an overview of the used concepts.
 The primary purpose is to serve as a quick reference of what needs

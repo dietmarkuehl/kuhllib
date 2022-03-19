@@ -69,7 +69,7 @@ namespace nstd::hidden_names {
                 }
         };
 
-        ::std::tuple<A...> d_value;
+        [[no_unique_address]] ::std::tuple<A...> d_value;
 
         template <::nstd::execution::receiver Receiver>
             requires ::nstd::execution::receiver_of<Receiver, completion_signatures>

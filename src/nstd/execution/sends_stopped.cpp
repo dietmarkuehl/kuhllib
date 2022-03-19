@@ -1,6 +1,6 @@
-// nstd/execution/then.cpp                                            -*-C++-*-
+// nstd/execution/sends_stopped.cpp                                   -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
+//  Copyright (C) 2022 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
 //  Permission is hereby granted, free of charge, to any person          
 //  obtaining a copy of this software and associated documentation       
@@ -23,10 +23,10 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/execution/then.hpp"
+#include "nstd/execution/sends_stopped.hpp"
 
 // ----------------------------------------------------------------------------
 
 namespace nstd::execution {
-    int then_dummy{};
+    int sends_stopped_dummy{};
 }

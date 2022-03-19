@@ -1,6 +1,6 @@
-// nstd/execution/then.cpp                                            -*-C++-*-
+// nstd/execution/sends_stopped.hpp                                   -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
+//  Copyright (C) 2022 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
 //  Permission is hereby granted, free of charge, to any person          
 //  obtaining a copy of this software and associated documentation       
@@ -23,10 +23,20 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/execution/then.hpp"
+#ifndef INCLUDED_NSTD_EXECUTION_SENDS_STOPPED
+#define INCLUDED_NSTD_EXECUTION_SENDS_STOPPED
+
+#include "nstd/execution/sender.hpp"
+#include "nstd/execution/completion_signatures_of_t.hpp"
 
 // ----------------------------------------------------------------------------
 
 namespace nstd::execution {
-    int then_dummy{};
+    template <typename Sender, typename Env>
+        requires ::nstd::execution::sender<Sender>
+    inline constexpr bool sends_stopped = ::nstd::execution::completion_signatures_of_t<Sender, Env>::sends_stopped;
 }
+
+// ----------------------------------------------------------------------------
+
+#endif
