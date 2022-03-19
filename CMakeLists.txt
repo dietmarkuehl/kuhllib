@@ -94,6 +94,7 @@ list(APPEND kuhllib_execution_components
     src/nstd/execution/get_completion_signatures
     src/nstd/execution/get_env
     src/nstd/execution/just
+    src/nstd/execution/make_completion_signatures
     src/nstd/execution/no_env
     src/nstd/execution/operation_state
     src/nstd/execution/receiver
@@ -102,6 +103,7 @@ list(APPEND kuhllib_execution_components
     src/nstd/execution/scheduler
     src/nstd/execution/sender
     src/nstd/execution/sender_to
+    src/nstd/execution/sends_stopped
     src/nstd/execution/set_error
     src/nstd/execution/set_stopped
     src/nstd/execution/set_value
@@ -118,7 +120,12 @@ list(APPEND kuhllib_execution_todo
     src/nstd/execution/get_delegatee_scheduler
     src/nstd/execution/get_scheduler
     src/nstd/execution/get_stop_token
+    src/nstd/execution/on
+    src/nstd/execution/read
+    src/nstd/execution/schedule_from
     src/nstd/execution/sender_of
+    src/nstd/execution/transfer
+    src/nstd/execution/transfer_just
 )
 
 list(APPEND kuhllib_xexecution_components

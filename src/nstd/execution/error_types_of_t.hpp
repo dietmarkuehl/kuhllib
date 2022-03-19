@@ -50,7 +50,9 @@ namespace nstd::execution::hidden_names::error_types_of_t {
 }
 
 namespace nstd::execution {
-    template <::nstd::execution::sender Sender, typename Env, template <typename...> class Variant = nstd::hidden_names::variant_or_empty>
+    template <::nstd::execution::sender Sender,
+               typename Env,
+               template <typename...> class Variant = nstd::hidden_names::variant_or_empty>
     using error_types_of_t = typename ::nstd::execution::hidden_names::error_types_of_t::transform_list<
             typename nstd::hidden_names::filter_completions<
                 ::nstd::execution::set_error_t,
