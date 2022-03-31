@@ -254,6 +254,7 @@ add_test(NAME kuhllib_test COMMAND $<TARGET_FILE:kuhllib_test>)
 
 
 list(APPEND kuhllib_examples
+    cs2
     coroutine_echo_server
     simple_echo_server
     echo_server
