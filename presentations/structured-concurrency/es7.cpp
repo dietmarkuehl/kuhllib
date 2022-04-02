@@ -181,7 +181,7 @@ void run_client(NN::io_context& context, stream_socket&& stream) {
         | EX::let_value([&, c = client(std::move(stream))]() mutable {
 	    return EX::when_all(
 	        make_reader(context, c),
-		make_writer(context, c)
+		    make_writer(context, c)
 		);
             })
     );
