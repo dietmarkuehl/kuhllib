@@ -55,10 +55,8 @@ int main()
     io_context    context;
     socket_acceptor server(endpoint(ip::address_v4::any(), 12345));
 
-    sender auto s = schedule(context.scheduler())
+    run(context, schedule(context.scheduler())
         | async_accept(server)
         | then([](auto, auto){ std::cout << "accepted a client\n"; })
-        ;
-    
-    run(context, std::move(s));
+        );
 }
