@@ -66,7 +66,8 @@ void run_client(io_context& context, stream_socket&& stream)
         = schedule(context.scheduler())
         | async_read_some(client.stream, buffer(client.buffer))
         ;
-    (void)s;
+
+    start_detached(s);
 }
 
 // ----------------------------------------------------------------------------
