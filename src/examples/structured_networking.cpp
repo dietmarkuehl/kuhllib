@@ -54,4 +54,8 @@ int main()
     std::cout << std::unitbuf;
     io_context    context;
     socket_acceptor server(endpoint(ip::address_v4::any(), 12345));
+
+    sender auto s = schedule(context.scheduler())
+        ;
+    (void)s;
 }
