@@ -52,6 +52,7 @@ using endpoint = NI::basic_endpoint<NI::tcp>;
 struct connection
 {
     stream_socket stream;
+    char          buffer[4];
     connection(stream_socket&& stream): stream(std::move(stream)) {}
     ~connection() { std::cout << "destroying connection\n"; }
 };
@@ -63,6 +64,7 @@ void run_client(io_context& context, stream_socket&& stream)
 
     sender auto s
         = schedule(context.scheduler())
+        | async_read_some(client.stream, buffer(client.buffer))
         ;
     (void)s;
 }
