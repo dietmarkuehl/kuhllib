@@ -46,7 +46,6 @@ sub usage() {
 
 sub switch_commit($) {
     my $num = shift;
-    printf("switch(%d)\n", $num);
     if (exists $commits{$num}) {
         my $command = "git checkout -f $commits{$num}";
         system($command);
