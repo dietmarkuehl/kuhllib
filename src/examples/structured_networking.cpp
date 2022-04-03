@@ -69,13 +69,14 @@ void run_client(io_context& context, stream_socket&& stream)
     sender auto s
         = just()
         | let_value([&, client = connection(std::move(stream))]() mutable {
-            return schedule(context.scheduler())
+            return repeat_effect(
+                   schedule(context.scheduler())
                 |  async_read_some(client.stream, buffer(client.buffer))
-                | then([&](int n){
+                |  then([&](int n){
                     std::cout << "read(" << n << ")='"
                               << std::string_view(client.buffer, n) << "'\n";
                     })
-                ;
+                );
         })
         ;
 
