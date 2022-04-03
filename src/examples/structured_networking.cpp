@@ -53,8 +53,12 @@ struct connection
 {
     stream_socket stream;
     char          buffer[4];
-    connection(stream_socket&& stream): stream(std::move(stream)) {}
-    connection(connection&& other): stream(std::move(other.stream)) {}
+    connection(stream_socket&& stream): stream(std::move(stream)) {
+        std::cout << "creating connection\n";
+    }
+    connection(connection&& other): stream(std::move(other.stream)) {
+        std::cout << "moving connection\n";
+    }
     ~connection() { std::cout << "destroying connection\n"; }
 };
 
