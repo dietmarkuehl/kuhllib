@@ -23,9 +23,6 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include <iostream>
-
-#include "nstd/concepts/same_as.hpp"
 #include "nstd/execution.hpp"
 #include "nstd/execution/upon_done.hpp"
 #include "nstd/net/io_context.hpp"
@@ -34,11 +31,10 @@
 #include "nstd/net/basic_stream_socket.hpp"
 #include "nstd/net/ip/basic_endpoint.hpp"
 #include "nstd/net/ip/tcp.hpp"
-#include "nstd/thread/sync_wait.hpp"
-#include <deque>
-#include <list>
+
+#include <iostream>
+#include <coroutine>
 #include <memory>
-#include <mutex>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -305,12 +301,157 @@ void run_client(NN::io_context& context, stream_socket&& stream) {
 
 // ----------------------------------------------------------------------------
 
+struct task {
+    struct state_base {
+        virtual void complete() = 0;
+    };
+    struct promise_type {
+        state_base* completion{nullptr};
+
+        auto initial_suspend() { return std::suspend_always(); }
+        auto final_suspend() noexcept { return std::suspend_always(); }
+        void return_void() {
+            std::cout << "return_void\n";
+            this->completion->complete();
+        }
+        auto get_return_object() {
+            std::cout << "get_return_object()\n";
+            return std::coroutine_handle<promise_type>::from_promise(*this);
+        }
+        void unhandled_exception() {
+            std::cout << "unhandled_exception()\n";
+            std::terminate();
+        }
+
+        template <EX::sender Sender>
+        struct awaitable {
+            using result_type = typename Sender::template value_types<std::tuple, std::type_identity_t>;
+
+            //awaitable(awaitable&&) = delete;
+            //awaitable(awaitable const&) = delete;
+            struct receiver {
+                std::optional<result_type>*  result;
+                std::coroutine_handle<void>* handle;
+
+                template <typename... Args>
+                friend void tag_invoke(EX::set_value_t, receiver&& self, Args&&... args) noexcept {
+                    ((std::cout << "awaitable::receiver::set_value_t ") << ... << args) << "\n";
+                    *self.result = std::make_tuple(std::forward<Args>(args + 1)...);
+                    self.handle->resume();
+                }
+                template <typename Error>
+                friend void tag_invoke(EX::set_error_t, receiver&&, Error&& ) noexcept {
+                    std::cout << "awaitable::receiver::set_error_t\n";
+                }
+                friend void tag_invoke(EX::set_stopped_t, receiver&&) noexcept {
+                    std::cout << "awaitable::receiver::set_stopped_t\n";
+                }
+            };
+
+            struct state {
+                using op_state = decltype(EX::connect(std::declval<Sender>(), std::declval<receiver>()));
+
+                std::coroutine_handle<void> handle;
+                std::optional<result_type>  result;
+                op_state                    d_op_state;
+                state(std::coroutine_handle<void> handle,
+                      Sender&&                    sender)
+                    : handle(std::move(handle))
+                    , d_op_state(EX::connect(std::move(sender), receiver(&this->result, &this->handle)))
+                {
+                    std::cout << "state::state()\n";
+                }
+                ~state() {
+                    std::cout << "state::~state()\n";
+                }
+                state(state&&) = delete;
+                state(state const&) = delete;
+            };
+
+            std::remove_cvref_t<Sender> d_sender;
+            std::shared_ptr<state>      d_state;
+
+
+            bool await_ready() { std::cout << "awaitable::await_ready()\n"; return false; }
+            void await_suspend(std::coroutine_handle<void> handle){
+                std::cout << "awaitable::await_suspend\n";
+                this->d_state = std::make_shared<state>(std::move(handle), std::move(this->d_sender));
+                EX::start(this->d_state->d_op_state);
+            }
+            auto await_resume() {
+                std::cout << "await_resume()\n";
+                return *this->d_state->result;
+            }
+        };
+
+        template <EX::sender Sender>
+        auto await_transform(Sender&&) {
+            std::cout << "await_transform\n";
+            return awaitable<Sender>();
+        }
+    };
+
+    template <EX::receiver Receiver>
+    struct state
+        : state_base
+    {
+        std::coroutine_handle<promise_type> handle;
+        std::remove_cvref_t<Receiver>       receiver;
+        template <EX::receiver R>
+        state(std::coroutine_handle<promise_type>&& handle, R&& r)
+            : handle(std::move(handle))
+            , receiver(std::forward<R>(r)) {
+        }
+
+        friend auto tag_invoke(EX::start_t, state& self) noexcept {
+            std::cout << "task::start\n";
+            self.handle.promise().completion = &self;
+            self.handle.resume();
+        }
+        void complete() override {
+            std::cout << "task::complete\n";
+            EX::set_value(std::move(this->receiver));
+        }
+    };
+
+    template <template <typename...> class T, template <typename...> class V>
+    using value_types = V<T<>>;
+    template <template <typename...> class V>
+    using error_types = V<int>;
+    static constexpr bool sends_done = true;
+
+    using completion_signatures = EX::completion_signatures<
+    EX::set_value_t(),
+    EX::set_error_t(),
+    EX::set_stopped_t()
+    >;
+
+    std::coroutine_handle<promise_type> handle;
+
+    template <EX::receiver Receiver>
+    friend auto tag_invoke(EX::connect_t, task&& self, Receiver&& receiver) {
+        std::cout << "task::connect\n";
+        return state<Receiver>(std::move(self.handle), std::forward<Receiver>(receiver));
+    }
+};
+
 int main()
 {
     ::std::cout << ::std::unitbuf;
     NN::io_context  c;
     socket_acceptor server(endpoint(NI::address_v4::any(), 12345));
 
+    EX::sender auto coro = []()->task {
+        auto[v0, v1] = co_await EX::just(17, 42);
+        std::cout << "hello, world: " << v0 << " " << v1 << "\n";
+        co_return;
+        }();
+
+    EX::run(c, std::move(coro)
+        // | [](int value)->task { std::cout << "hello, world: " << value << "\n"; co_return; })
+        // | EX::then([](int value){ std::cout << "hello, world: " << value << "\n"; })
+    );
+#if 0
     EX::run(c,
         EX::repeat_effect(
         EX::schedule(c.scheduler())
@@ -319,5 +460,5 @@ int main()
              if (!ec) run_client(c, std::move(stream));
           })
         ));
-
+#endif
 }
