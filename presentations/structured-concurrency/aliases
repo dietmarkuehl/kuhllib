@@ -3,3 +3,5 @@ function g() {
 }
 alias n="switch.pl next"
 alias p="switch.pl prev"
+alias l="switch.pl last"
+alias f="switch.pl first"
