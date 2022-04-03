@@ -49,9 +49,16 @@ using endpoint = NI::basic_endpoint<NI::tcp>;
 
 // ----------------------------------------------------------------------------
 
-void run_client(io_context&, stream_socket)
+struct connection
+{
+    stream_socket stream;
+    connection(stream_socket&& stream): stream(std::move(stream)) {}
+};
+
+void run_client(io_context&, stream_socket&& stream)
 {
     std::cout << "accepted a client\n";
+    connection client(std::move(stream));
 }
 
 // ----------------------------------------------------------------------------
