@@ -335,8 +335,7 @@ struct task {
 
                 template <typename... Args>
                 friend void tag_invoke(EX::set_value_t, receiver&& self, Args&&... args) noexcept {
-                    ((std::cout << "awaitable::receiver::set_value_t ") << ... << args) << "\n";
-                    *self.result = std::make_tuple(std::forward<Args>(args + 1)...);
+                    *self.result = std::make_tuple(std::forward<Args>(args)...);
                     self.handle->resume();
                 }
                 template <typename Error>
@@ -371,6 +370,8 @@ struct task {
             std::remove_cvref_t<Sender> d_sender;
             std::shared_ptr<state>      d_state;
 
+            template <EX::sender S>
+            awaitable(S&& s): d_sender(std::forward<S>(s)) {}
 
             bool await_ready() { std::cout << "awaitable::await_ready()\n"; return false; }
             void await_suspend(std::coroutine_handle<void> handle){
@@ -385,9 +386,9 @@ struct task {
         };
 
         template <EX::sender Sender>
-        auto await_transform(Sender&&) {
+        auto await_transform(Sender&& s) {
             std::cout << "await_transform\n";
-            return awaitable<Sender>();
+            return awaitable<Sender>(std::forward<Sender>(s));
         }
     };
 
