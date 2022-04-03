@@ -59,5 +59,6 @@ int main()
         | async_accept(server)
         | then([](auto, auto){ std::cout << "accepted a client\n"; })
         ;
-    (void)s;
+    
+    run(context, std::move(s));
 }
