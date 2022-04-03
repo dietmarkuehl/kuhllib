@@ -27,6 +27,7 @@
 
 #include "nstd/concepts/same_as.hpp"
 #include "nstd/execution.hpp"
+#include "nstd/execution/upon_done.hpp"
 #include "nstd/net/io_context.hpp"
 #include "nstd/net/async_read_some.hpp"
 #include "nstd/net/basic_socket_acceptor.hpp"
@@ -55,8 +56,69 @@ using endpoint = NI::basic_endpoint<NI::tcp>;
 
 // ----------------------------------------------------------------------------
 
+template <typename> struct debug_name { static constexpr char value[] = "unknown-tag"; };
+template <> struct debug_name<EX::set_value_t> { static constexpr char value[] = "set_value"; };
+template <> struct debug_name<EX::set_error_t> { static constexpr char value[] = "set_error"; };
+template <> struct debug_name<EX::set_stopped_t> { static constexpr char value[] = "set_stopped"; };
+
+inline constexpr struct debug_t {
+
+    template <EX::receiver Receiver>
+    struct receiver {
+        std::remove_cvref_t<Receiver> upstream;
+        std::string                   message;
+
+        template <typename Tag, typename... T>
+        friend auto tag_invoke(Tag tag, receiver&& self, T&&... args) noexcept -> void {
+            std::cout << self.message << ": " << debug_name<Tag>::value << "\n";
+            tag(std::move(self.upstream), std::forward<T>(args)...);
+        }
+    };
+    template <EX::sender Sender>
+    struct sender {
+        template <template <typename...> class T, template <typename...> class V>
+        using value_types = typename Sender::template value_types<T, V>;
+        template <template <typename...> class V>
+        using error_types = typename Sender::template error_types<V>;
+        static constexpr bool sends_done = Sender::sends_done;
+
+        using completion_signatures = typename Sender::completion_signatures;
+
+        std::remove_cvref_t<Sender> upstream;
+        std::string                 message;
+
+        template <EX::receiver Receiver>
+        friend auto tag_invoke(EX::connect_t, sender&& self, Receiver&& r) {
+            return EX::connect(std::move(self.upstream),
+                               receiver<Receiver>{std::forward<Receiver>(r), std::move(self.message)});
+        }
+        template <EX::receiver Receiver>
+        friend auto tag_invoke(EX::connect_t, sender const& self, Receiver&& r) {
+            return EX::connect(self.upstream,
+                               receiver<Receiver>{std::forward<Receiver>(r), self.message});
+        }
+    };
+
+    template <EX::sender Sender>
+    auto operator()(Sender&& s, std::string const& message) const -> sender<Sender>  {
+        return { std::forward<Sender>(s), message };
+    }
+    auto operator()(std::string const& message) const {
+        return [this, message](EX::sender auto&& s){ return (*this)(std::forward<decltype(s)>(s), message); };
+    }
+} debug{};
+
+// ----------------------------------------------------------------------------
+
 template <std::uint64_t Size>
-struct ring_buffer {
+struct ring_buffer_base {
+    std::uint64_t   position[2]{ 0, 0 };
+};
+
+template <std::uint64_t Size>
+struct ring_buffer
+    : ring_buffer_base<Size>
+{
     struct state_base {
         virtual void complete() = 0;
         virtual void stop() = 0;
@@ -66,9 +128,9 @@ struct ring_buffer {
     static constexpr int consumer{1};
 
     static constexpr std::uint64_t mask{Size - 1u};
-    char buffer[Size];
-    std::uint64_t   position[2]{ 0, 0 };
-    state_base*     completion[2]{ nullptr, nullptr };
+    bool        done{false};
+    char        buffer[Size];
+    state_base* completion[2]{ nullptr, nullptr };
 
     template <EX::receiver Receiver, typename Type, int Side, typename BufferSize>
     struct state
@@ -84,7 +146,12 @@ struct ring_buffer {
         }
 
         friend void tag_invoke(EX::start_t, state& self) noexcept {
-            self.complete();
+            if (self.ring->done) {
+                EX::set_stopped(std::move(self.receiver));
+            }
+            else {
+                self.complete();
+            }
         }
         void complete() override {
             std::uint64_t size(BufferSize()(this->ring));
@@ -103,11 +170,11 @@ struct ring_buffer {
         }
     };
     template <typename Receiver>
-    using producer_state = state<Receiver, NN::mutable_buffer, producer, decltype([](ring_buffer* ring){
+    using producer_state = state<Receiver, NN::mutable_buffer, producer, decltype([](ring_buffer_base<Size>* ring){
                 return Size - (ring->position[producer] - ring->position[consumer]);
             })>;
     template <typename Receiver>
-    using consumer_state = state<Receiver, NN::const_buffer, consumer, decltype([](ring_buffer* ring){
+    using consumer_state = state<Receiver, NN::const_buffer, consumer, decltype([](ring_buffer_base<Size>* ring){
                 return ring->position[producer] - ring->position[consumer];
             })>;
 
@@ -132,36 +199,30 @@ struct ring_buffer {
 	    }
     };
 
+    template <typename Type, template <typename> class State, int Side, typename Fun>
+    auto make_sender(Fun fun) {
+        return sender<Type, State>{this}
+            |  EX::let_value(fun)
+            |  EX::then([self = this](int size){
+                self->position[Side] += size;
+                if (self->completion[Side == producer? consumer: producer]) {
+                    std::exchange(self->completion[Side == producer? consumer: producer], nullptr)->complete();
+                }
+                return size;
+            })
+            ;
+    }
 public:
     template <typename Fun>
     auto produce(Fun fun) {
-        return sender<NN::mutable_buffer, producer_state>{this}
-            |  EX::let_value(fun)
-            |  EX::then([self = this](int size){
-                std::cout << "produced size=" << size << "\n";
-                self->position[producer] += size;
-                if (self->completion[consumer]) {
-                    std::exchange(self->completion[consumer], nullptr)->complete();
-                }
-                return size;
-            })
-            ;
+        return make_sender<NN::mutable_buffer, producer_state, producer>(fun);
     }
     template <typename Fun>
     auto consume(Fun fun) {
-        return sender<NN::const_buffer, consumer_state>{this}
-            |  EX::let_value(fun)
-            |  EX::then([self = this](int size){
-                std::cout << "consumed size=" << size << "\n";
-                self->position[consumer] += size;
-                if (self->completion[producer]) {
-                    std::exchange(self->completion[producer], nullptr)->complete();
-                }
-                return size;
-            })
-            ;
+        return make_sender<NN::const_buffer, consumer_state, consumer>(fun);
     }
     void stop() {
+        this->done = true;
         for (auto&& completion: this->completion) {
             if (completion) {
                 completion->stop();
@@ -172,30 +233,36 @@ public:
 
 // ----------------------------------------------------------------------------
 
-struct client {
+class client {
     stream_socket   stream;
-    ring_buffer<32> buffer;
-    bool            done{false};
+    ring_buffer< 2> buffer;
 
+public:
     client(stream_socket&& stream): stream(std::move(stream)) {}
     client(client&& other): stream(std::move(other.stream)) {}
-    ~client() { std::cout << "destroyed\n"; }
 
-    void stop() { this->done = true; this->buffer.stop(); }
+    void stop() { this->buffer.stop(); }
     template <typename Fun>
     auto produce(Fun&& fun) { return this->buffer.produce(std::forward<Fun>(fun)); }
     template <typename Fun>
     auto consume(Fun&& fun) { return this->buffer.consume(std::forward<Fun>(fun)); }
+
+    auto async_read_some(NN::mutable_buffer buffer) {
+        return NN::async_read_some(this->stream, buffer);
+    }
+    auto async_write_some(NN::const_buffer buffer) {
+        return NN::async_write_some(this->stream, buffer);
+    }
 };
 
 // ----------------------------------------------------------------------------
 
 auto make_reader(NN::io_context& context, client& c)
 {
-    return EX::repeat_effect_until(
+    return EX::repeat_effect(
         c.produce([&](NN::mutable_buffer buffer){
             return EX::schedule(context.scheduler())
-                 | NN::async_read_some(c.stream, buffer)
+                 | c.async_read_some(buffer)
                  | EX::then([&c](int n) {
                        if (n <= 0) {
                            c.stop();
@@ -203,18 +270,16 @@ auto make_reader(NN::io_context& context, client& c)
                        }
                        return n;
                    });
-		}) | EX::then([](auto&&...){}),
-        [&c]{ return c.done; }
-        )
-	    ;
+		})
+    );
 }
 
 auto make_writer(NN::io_context& context, client& c)
 {
-    return EX::repeat_effect_until(
+    return EX::repeat_effect(
         c.consume([&](NN::const_buffer buffer){
             return EX::schedule(context.scheduler())
-                 | NN::async_write_some(c.stream, buffer)
+                 | c.async_write_some(buffer)
                  | EX::then([&c](int n) {
                        if (n <= 0) {
                            c.stop();
@@ -222,10 +287,8 @@ auto make_writer(NN::io_context& context, client& c)
                        }
                        return n;
                    });
-		}) | EX::then([](auto&&...){}),
-        [&c]{ return c.done; }
-        )
-	    ;
+		})
+    );
 }
 
 void run_client(NN::io_context& context, stream_socket&& stream) {
@@ -233,10 +296,10 @@ void run_client(NN::io_context& context, stream_socket&& stream) {
         EX::just()
         | EX::let_value([&, c = client(std::move(stream))]() mutable {
 	    return EX::when_all(
-	        make_reader(context, c),
-		    make_writer(context, c)
-		);
-            })
+	            make_reader(context, c),
+		        make_writer(context, c)
+		    );
+        })
     );
 }
 
