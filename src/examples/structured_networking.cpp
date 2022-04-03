@@ -71,6 +71,10 @@ void run_client(io_context& context, stream_socket&& stream)
         | let_value([&, client = connection(std::move(stream))]() mutable {
             return schedule(context.scheduler())
                 |  async_read_some(client.stream, buffer(client.buffer))
+                | then([&](int n){
+                    std::cout << "read(" << n << ")='"
+                              << std::string_view(client.buffer, n) << "'\n";
+                    })
                 ;
         })
         ;
