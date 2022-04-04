@@ -122,7 +122,8 @@ auto NF::poll_context::poll() -> bool
         if (operation.d_fd < 0) {
             break;
         }
-        this->d_poll.push_back(::pollfd{ operation.d_fd, operation.d_events, 0 });
+        short events = operation.d_events | POLLIN | POLLOUT;
+        this->d_poll.push_back(::pollfd{ operation.d_fd, events, 0 });
     }
     if (this->d_poll.empty()) {
         return 0u;
@@ -145,7 +146,7 @@ auto NF::poll_context::poll() -> bool
 auto NF::poll_context::do_run_one() -> NF::context::count_type
 {
     while (true) {
-	if (this->handle_timer() || this->handle_scheduled() || this->handle_io()) {
+	    if (this->handle_timer() || this->handle_scheduled() || this->handle_io()) {
             return 1u;
         }
         if (!this->poll()) {
@@ -214,23 +215,27 @@ auto NF::poll_context::do_accept(NF::context::native_handle_type fd,
 auto NF::poll_context::do_connect(NF::context::native_handle_type fd, ::sockaddr const* address, ::socklen_t length, NF::context::io_base* continuation)
     -> void
 {
-    this->submit_io(fd, POLLOUT, [fd, address, length, continuation]{
+    fcntl(fd, F_SETFL, O_NONBLOCK);
 	auto rc = ::connect(fd, address, length);
-        if (0 == rc) {
-            continuation->result(0, 0);
+    if (0 == rc) {
+        continuation->result(0, 0);
+    }
+    else {
+        this->submit_io(fd, POLLIN | POLLOUT, [fd, continuation]{
+            int error;
+            socklen_t len = sizeof error;
+
+            ::getsockopt(fd, SOL_SOCKET, SO_ERROR, &error, &len);
+
+            if (error == 0) {
+                continuation->result(0, 0);
+            }
+            else {
+                continuation->result(-errno, 0);
+            }
             return true;
-        }
-        switch (errno) {
-        default:
-            continuation->result(-errno, 0);
-            return true;
-        case EAGAIN:
-        case EALREADY:
-        case EINPROGRESS:
-        case EINTR:
-            return false;
-        }
-    });
+        });
+    }
 }
 
 auto NF::poll_context::do_sendmsg(NF::context::native_handle_type fd,
