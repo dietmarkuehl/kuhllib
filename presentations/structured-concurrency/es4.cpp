@@ -1,4 +1,4 @@
-// nstd/execution/scheduler.hpp                                       -*-C++-*-
+// examples/echo_server.cpp                                           -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,28 +23,70 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_EXECUTION_SCHEDULER
-#define INCLUDED_NSTD_EXECUTION_SCHEDULER
+#include <iostream>
 
-#include "nstd/execution/schedule.hpp"
-#include "nstd/type_traits/remove_cvref.hpp"
-#include "nstd/utility/move.hpp"
-#include <concepts>
+#include "nstd/concepts/same_as.hpp"
+#include "nstd/execution.hpp"
+#include "nstd/net/io_context.hpp"
+#include "nstd/net/async_read_some.hpp"
+#include "nstd/net/basic_socket_acceptor.hpp"
+#include "nstd/net/basic_stream_socket.hpp"
+#include "nstd/net/ip/basic_endpoint.hpp"
+#include "nstd/net/ip/tcp.hpp"
+#include <deque>
+#include <list>
+#include <memory>
+#include <mutex>
+#include <string>
+#include <string_view>
+#include <type_traits>
+#include <utility>
+
+namespace EX = ::nstd::execution;
+namespace NC = ::nstd::concepts;
+namespace NN = ::nstd::net;
+namespace NI = ::nstd::net::ip;
+namespace TT = ::nstd::type_traits;
+
+using socket_acceptor = NN::basic_socket_acceptor<NI::tcp>;
+using stream_socket = NN::basic_stream_socket<NI::tcp>;
+using endpoint = NI::basic_endpoint<NI::tcp>;
 
 // ----------------------------------------------------------------------------
-// [exec.sched]
 
-namespace nstd::execution {
-    template <typename Scheduler>
-    concept scheduler
-        =  ::std::copy_constructible<::nstd::type_traits::remove_cvref_t<Scheduler>>
-        && ::std::equality_comparable<::nstd::type_traits::remove_cvref_t<Scheduler>>
-        && requires(Scheduler&& s) {
-            ::nstd::execution::schedule(::nstd::utility::move(s));
-        }
-        ;
+struct client {
+    stream_socket stream;
+    char          buffer[1024];
+    client(stream_socket&& stream): stream(std::move(stream)) {}
+    client(client&& other): stream(std::move(other.stream)) {}
+
+};
+
+void run_client(NN::io_context& context, stream_socket&& stream) {
+    std::cout << "run_client\n";
+    client c(std::move(stream));
+    EX::start_detached(
+        EX::schedule(context.scheduler())
+        | NN::async_read_some(c.stream, NN::buffer(c.buffer))
+        | EX::then([](int n) { std::cout << "read=>" << n << "\n"; })
+        );
 }
 
 // ----------------------------------------------------------------------------
 
-#endif
+int main()
+{
+    ::std::cout << ::std::unitbuf;
+    NN::io_context  c;
+    socket_acceptor server(endpoint(NI::address_v4::any(), 12345));
+
+    EX::run(c,
+        EX::repeat_effect(
+        EX::schedule(c.scheduler())
+        | NN::async_accept(server)
+        | EX::then([&c](std::error_code ec, stream_socket stream) {
+             if (!ec) run_client(c, std::move(stream));
+          })
+        ));
+
+}

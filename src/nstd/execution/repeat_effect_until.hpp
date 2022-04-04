@@ -34,6 +34,7 @@
 #include "nstd/type_traits/declval.hpp"
 #include <exception>
 #include <new>
+#include <iostream>
 
 // ----------------------------------------------------------------------------
 
@@ -43,7 +44,7 @@ namespace nstd::execution {
         struct state {
             struct receiver {
                 state* d_state;
-                friend auto tag_invoke(::nstd::execution::set_value_t, receiver&& r)
+                friend auto tag_invoke(::nstd::execution::set_value_t, receiver&& r, auto&&...)
                     noexcept -> void {
                     r.d_state->next();
                 }
