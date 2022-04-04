@@ -69,7 +69,12 @@ NF::poll_context::poll_context()
 
 auto NF::poll_context::submit_io(int fd, short events, ::std::function<auto()->bool> op) -> void
 {
-    this->d_outstanding.emplace_front(fd, events, UT::move(op));
+    if (0 <= fd) {
+        this->d_outstanding.emplace_front(fd, events, UT::move(op));
+    }
+    else {
+        this->d_outstanding.emplace_back(fd, events, UT::move(op));
+    }
     //-dk:TODO trigger the new work to be picked up
 }
 
@@ -89,8 +94,9 @@ auto NF::poll_context::handle_timer() -> NF::context::count_type {
 
 auto NF::poll_context::handle_scheduled() -> NF::context::count_type {
     if (!this->d_outstanding.empty() && this->d_outstanding.back().d_fd == -1) {
-        this->d_outstanding.back().d_operation();
-        this->d_outstanding.pop_back();
+        auto it = --this->d_outstanding.end();
+        it->d_operation();
+        this->d_outstanding.erase(it);
         return 1u;
     }
     return 0u;
@@ -200,7 +206,6 @@ auto NF::poll_context::do_accept(NF::context::native_handle_type fd,
 	case EPROTO:
 	case ENOPROTOOPT:
 	case EHOSTDOWN:
-	case ENONET:
 	case EHOSTUNREACH:
 	case EOPNOTSUPP:
 	case ENETUNREACH:
