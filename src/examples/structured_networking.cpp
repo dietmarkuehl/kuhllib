@@ -54,4 +54,5 @@ using endpoint = NI::basic_endpoint<NI::tcp>;
 int main()
 {
     std::cout << std::unitbuf;
+    io_context    context;
 }
