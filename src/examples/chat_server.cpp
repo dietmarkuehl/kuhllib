@@ -253,8 +253,12 @@ int main()
     clients         cs;
     ::std::cout << "using port=" << port << "\n";
 
+#ifndef __APPLE__
     NF::ring_context     ring(nstd::file::ring_context::queue_size{64});
     NN::io_context       context(::std::make_unique<NF::observer_context>(ring));
+#else
+    NN::io_context       context;
+#endif
     EX::run(context, run_server(cs, context.scheduler(), server));
 
     ::std::cout << "done\n";

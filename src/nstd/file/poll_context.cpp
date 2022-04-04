@@ -200,7 +200,9 @@ auto NF::poll_context::do_accept(NF::context::native_handle_type fd,
 	case EPROTO:
 	case ENOPROTOOPT:
 	case EHOSTDOWN:
+#ifndef __APPLE__
 	case ENONET:
+#endif
 	case EHOSTUNREACH:
 	case EOPNOTSUPP:
 	case ENETUNREACH:
