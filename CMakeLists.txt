@@ -102,6 +102,7 @@ list(APPEND kuhllib_components
     src/nstd/execution/start
     src/nstd/execution/start_detached
     src/nstd/execution/stop_token_type
+    src/nstd/execution/task
     src/nstd/execution/then
     src/nstd/execution/timeout
     src/nstd/execution/typed_sender
