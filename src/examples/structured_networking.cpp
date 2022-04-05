@@ -56,9 +56,10 @@ struct connection
     connection(stream_socket&& stream): stream(std::move(stream)) {}
 };
 
-void run_client(io_scheduler, stream_socket&&)
+void run_client(io_scheduler, stream_socket&& stream)
 {
     std::cout << "accepted a client\n";
+    connection client(std::move(stream));
 }
 
 // ----------------------------------------------------------------------------
