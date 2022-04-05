@@ -59,6 +59,7 @@ int main()
 
     sender auto s = schedule(context.scheduler())
         | async_accept(server)
+        | then([](auto, auto){ std::cout << "accept completed\n"; })
         ;
     (void)s;
 }
