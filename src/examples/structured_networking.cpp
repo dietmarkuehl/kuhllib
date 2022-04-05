@@ -67,9 +67,9 @@ int main()
         repeat_effect(
               schedule(context.scheduler())
             | async_accept(server)
-            | then([](std::error_code ec, auto){
+            | then([&](std::error_code ec, stream_socket stream){
                 if (!ec) {
-                    std::cout << "accepted a client\n";
+                    run_client(context.scheduler(), std::move(stream));
                 }
               })
             )
