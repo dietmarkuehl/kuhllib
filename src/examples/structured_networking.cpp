@@ -57,10 +57,15 @@ struct connection
     ~connection() { std::cout << "destroying connection\n"; }
 };
 
-void run_client(io_scheduler, stream_socket&& stream)
+void run_client(io_scheduler scheduler, stream_socket&& stream)
 {
     std::cout << "accepted a client\n";
     connection client(std::move(stream));
+
+    sender auto s
+        = schedule(scheduler)
+        ;
+    (void)s;
 }
 
 // ----------------------------------------------------------------------------
