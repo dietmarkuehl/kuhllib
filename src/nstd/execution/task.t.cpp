@@ -24,10 +24,15 @@
 // ----------------------------------------------------------------------------
 
 #include "nstd/execution/task.hpp"
+#include "nstd/execution/just.hpp"
+#include "nstd/execution/then.hpp"
+#include "nstd/thread/sync_wait.hpp"
 #include "kuhl/test.hpp"
 
 namespace test_declaration {}
 namespace TD = ::test_declaration;
+namespace EX = ::nstd::execution;
+namespace TT = ::nstd::this_thread;
 namespace KT = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
@@ -40,8 +45,19 @@ namespace test_declaration {
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
-    KT::expect_success("placeholder", []{
-            return false;
+    KT::expect_success("task<int>", []{
+	    auto t = []()->EX::task<int> {
+	        std::cout << "within the coroutine\n";
+	        auto[x] = co_await EX::just(10);
+		std::cout << "x=" << x << "\n";
+		co_return 11;
+            }();
+	    auto v = TT::sync_wait(t | EX::then([](auto&& value){
+	        std::cout << "then(" << value << ")\n";
+	        return value;
+		}));
+            return v && (*v).index() == 0 && std::get<0>(*v) == 11
+	        ;
         }),
 };
 

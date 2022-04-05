@@ -44,22 +44,52 @@
 // ----------------------------------------------------------------------------
 
 namespace nstd::execution {
-    struct task;
+    template <typename> struct task_state_base;
+    template <>         struct task_state_base<void>;
+    template <typename> struct task_promise_base;
+    template <>         struct task_promise_base<void>;
+    template <typename = void> struct task;
 }
 
-struct nstd::execution::task {
-    struct state_base {
-        virtual void complete() = 0;
-    };
-    struct promise_type {
-        state_base* completion{nullptr};
+template <typename Type>
+struct nstd::execution::task_state_base {
+    virtual void complete(Type const&) = 0;
+    virtual void complete(Type&) = 0;
+    virtual void complete(Type&&) = 0;
+};
 
+template <>
+struct nstd::execution::task_state_base<void> {
+    virtual void complete() = 0;
+};
+
+template <typename Type>
+struct nstd::execution::task_promise_base {
+    task_state_base<Type>* completion{nullptr};
+    template <typename T>
+    void return_value(T&& value) {
+        std::cout << "return_value: " << value<< "\n";
+        this->completion->complete(std::forward<T>(value));
+    }
+};
+
+template <>
+struct nstd::execution::task_promise_base<void> {
+    task_state_base<void>* completion{nullptr};
+    void return_void() {
+        std::cout << "return_void\n";
+        this->completion->complete();
+    }
+};
+
+template <typename Type>
+struct nstd::execution::task {
+    using state_base = task_state_base<Type>;
+    struct promise_type
+        : task_promise_base<Type>
+    {
         auto initial_suspend() { return std::suspend_always(); }
         auto final_suspend() noexcept { return std::suspend_always(); }
-        void return_void() {
-            std::cout << "return_void\n";
-            this->completion->complete();
-        }
         auto get_return_object() {
             std::cout << "get_return_object()\n";
             return std::coroutine_handle<promise_type>::from_promise(*this);
@@ -155,20 +185,35 @@ struct nstd::execution::task {
             self.handle.promise().completion = &self;
             self.handle.resume();
         }
+#if 0
         void complete() override {
             std::cout << "task::complete\n";
             ::nstd::execution::set_value(std::move(this->receiver));
         }
+#endif
+        void complete(Type const& value) override {
+            std::cout << "task::complete(Type const&)\n";
+            ::nstd::execution::set_value(std::move(this->receiver), value);
+	}
+        void complete(Type& value) override {
+            std::cout << "task::complete(Type&)\n";
+            ::nstd::execution::set_value(std::move(this->receiver), value);
+	}
+        void complete(Type&& value) override {
+            std::cout << "task::complete(Type&&)\n";
+            ::nstd::execution::set_value(std::move(this->receiver), std::move(value));
+	}
+
     };
 
     template <template <typename...> class T, template <typename...> class V>
-    using value_types = V<T<>>;
+    using value_types = V<T<Type>>;
     template <template <typename...> class V>
     using error_types = V<int>;
     static constexpr bool sends_done = true;
 
     using completion_signatures = ::nstd::execution::completion_signatures<
-    ::nstd::execution::set_value_t(),
+    ::nstd::execution::set_value_t(Type),
     ::nstd::execution::set_error_t(),
     ::nstd::execution::set_stopped_t()
     >;
