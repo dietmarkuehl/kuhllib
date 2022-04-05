@@ -66,7 +66,7 @@ void run_client(io_scheduler scheduler, stream_socket&& stream)
     
     sender auto s
         = just()
-        | let_value([&, client = connection(std::move(stream))]() mutable {
+        | let_value([=, client = connection(std::move(stream))]() mutable {
             return repeat_effect_until(
                    schedule(scheduler)
                 |  async_read_some(client.stream, buffer(client.buffer))
