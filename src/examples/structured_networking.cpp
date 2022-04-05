@@ -53,6 +53,7 @@ using io_scheduler = NN::io_context::scheduler_type;
 struct connection
 {
     stream_socket stream;
+    char          buffer[4];
     connection(stream_socket&& stream): stream(std::move(stream)) {}
     ~connection() { std::cout << "destroying connection\n"; }
 };
