@@ -61,5 +61,5 @@ int main()
         | async_accept(server)
         | then([](auto, auto){ std::cout << "accept completed\n"; })
         ;
-    (void)s;
+    run(context, std::move(s));
 }
