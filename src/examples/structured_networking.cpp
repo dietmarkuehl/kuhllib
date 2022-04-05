@@ -55,17 +55,21 @@ struct connection
     stream_socket stream;
     char          buffer[4];
     connection(stream_socket&& stream): stream(std::move(stream)) {}
+    connection(connection&& other): stream(std::move(other.stream)) {}
     ~connection() { std::cout << "destroying connection\n"; }
 };
 
 void run_client(io_scheduler scheduler, stream_socket&& stream)
 {
     std::cout << "accepted a client\n";
-    connection client(std::move(stream));
-
+    
     sender auto s
-        = schedule(scheduler)
-        | async_read_some(client.stream, buffer(client.buffer))
+        = just()
+        | let_value([&, client = connection(std::move(stream))]() mutable {
+            return schedule(scheduler)
+                |  async_read_some(client.stream, buffer(client.buffer))
+                ;
+        })
         ;
 
     start_detached(std::move(s));
