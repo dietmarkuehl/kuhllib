@@ -65,6 +65,7 @@ void run_client(io_scheduler scheduler, stream_socket&& stream)
 
     sender auto s
         = schedule(scheduler)
+        | async_read_some(client.stream, buffer(client.buffer))
         ;
     (void)s;
 }
