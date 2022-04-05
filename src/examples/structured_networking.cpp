@@ -54,6 +54,7 @@ struct connection
 {
     stream_socket stream;
     char          buffer[4];
+    bool          done{false};
     connection(stream_socket&& stream): stream(std::move(stream)) {}
     connection(connection&& other): stream(std::move(other.stream)) {}
     ~connection() { std::cout << "destroying connection\n"; }
@@ -66,13 +67,15 @@ void run_client(io_scheduler scheduler, stream_socket&& stream)
     sender auto s
         = just()
         | let_value([&, client = connection(std::move(stream))]() mutable {
-            return repeat_effect(
+            return repeat_effect_until(
                    schedule(scheduler)
                 |  async_read_some(client.stream, buffer(client.buffer))
                 |  then([&](int n){
                     std::cout << "read(" << n << ")='"
                               << std::string_view(client.buffer, n) << "'\n";
+                    client.done = n <= 0;
                     })
+                , [&client]{ return client.done; }
                 );
         })
         ;
