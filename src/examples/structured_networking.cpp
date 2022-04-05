@@ -50,6 +50,12 @@ using io_scheduler = NN::io_context::scheduler_type;
 
 // ----------------------------------------------------------------------------
 
+struct connection
+{
+    stream_socket stream;
+    connection(stream_socket&& stream): stream(std::move(stream)) {}
+};
+
 void run_client(io_scheduler, stream_socket&&)
 {
     std::cout << "accepted a client\n";
