@@ -46,8 +46,14 @@ namespace NI = ::nstd::net::ip;
 using socket_acceptor = NN::basic_socket_acceptor<NI::tcp>;
 using stream_socket = NN::basic_stream_socket<NI::tcp>;
 using endpoint = NI::basic_endpoint<NI::tcp>;
+using io_scheduler = NN::io_context::scheduler_type;
 
 // ----------------------------------------------------------------------------
+
+void run_client(io_scheduler, stream_socket&&)
+{
+    std::cout << "accepted a client\n";
+}
 
 // ----------------------------------------------------------------------------
 
