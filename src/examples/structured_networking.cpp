@@ -74,7 +74,14 @@ void run_client(io_scheduler scheduler, stream_socket&& stream)
                     std::cout << "read(" << n << ")='"
                               << std::string_view(client.buffer, n) << "'\n";
                     client.done = n <= 0;
+                    return n;
                     })
+                |  let_value([&](int n){
+                    return schedule(scheduler)
+                        |  async_write(client.stream,
+                                       buffer(client.buffer, std::max(0, n)))
+                        ;
+                   })
                 , [&client]{ return client.done; }
                 );
         })
