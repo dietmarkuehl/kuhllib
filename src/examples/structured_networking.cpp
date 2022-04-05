@@ -61,7 +61,11 @@ int main()
         repeat_effect(
               schedule(context.scheduler())
             | async_accept(server)
-            | then([](auto, auto){ std::cout << "accept completed\n"; })
+            | then([](std::error_code ec, auto){
+                if (!ec) {
+                    std::cout << "accepted a client\n";
+                }
+              })
             )
         );
 }
