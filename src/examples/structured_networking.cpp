@@ -54,5 +54,6 @@ using endpoint = NI::basic_endpoint<NI::tcp>;
 int main()
 {
     std::cout << std::unitbuf;
-    io_context    context;
+    io_context      context;
+    socket_acceptor server(endpoint(ip::address_v4::any(), 12345));
 }
