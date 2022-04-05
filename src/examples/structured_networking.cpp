@@ -58,6 +58,7 @@ int main()
     socket_acceptor server(endpoint(ip::address_v4::any(), 12345));
 
     sender auto s = schedule(context.scheduler())
+        | async_accept(server)
         ;
     (void)s;
 }
