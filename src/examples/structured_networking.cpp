@@ -67,7 +67,8 @@ void run_client(io_scheduler scheduler, stream_socket&& stream)
         = schedule(scheduler)
         | async_read_some(client.stream, buffer(client.buffer))
         ;
-    (void)s;
+
+    start_detached(std::move(s));
 }
 
 // ----------------------------------------------------------------------------
