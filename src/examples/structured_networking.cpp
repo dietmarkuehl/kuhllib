@@ -54,6 +54,7 @@ struct connection
 {
     stream_socket stream;
     connection(stream_socket&& stream): stream(std::move(stream)) {}
+    ~connection() { std::cout << "destroying connection\n"; }
 };
 
 void run_client(io_scheduler, stream_socket&& stream)
