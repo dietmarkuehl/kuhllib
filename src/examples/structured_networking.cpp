@@ -68,6 +68,10 @@ void run_client(io_scheduler scheduler, stream_socket&& stream)
         | let_value([&, client = connection(std::move(stream))]() mutable {
             return schedule(scheduler)
                 |  async_read_some(client.stream, buffer(client.buffer))
+                |  then([&](int n){
+                    std::cout << "read(" << n << ")='"
+                              << std::string_view(client.buffer, n) << "'\n";
+                    })
                 ;
         })
         ;
