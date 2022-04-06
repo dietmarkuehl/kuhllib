@@ -6,3 +6,8 @@ mkerr
 olderr
 *~
 .vs
+
+Testing
+ci-build
+ci-debug
+src/async_operations.txt
