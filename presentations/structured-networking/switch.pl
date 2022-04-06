@@ -52,6 +52,7 @@ sub switch_commit($) {
         my $command = "git checkout -f $commits{$num}";
         system($command);
         system("gmk");
+        print "\nbuild code version $num\n";
     }
     else {
         printf("no such commit $num\n");
