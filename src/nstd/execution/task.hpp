@@ -175,7 +175,7 @@ struct nstd::execution::task {
         auto final_suspend() noexcept { return std::suspend_always(); }
         auto get_return_object() {
             std::cout << "get_return_object()\n";
-            return std::coroutine_handle<promise_type>::from_promise(*this);
+            return task{std::coroutine_handle<promise_type>::from_promise(*this)};
         }
         void unhandled_exception() {
             std::cout << "unhandled_exception()\n";
@@ -215,7 +215,7 @@ struct nstd::execution::task {
                 state(std::coroutine_handle<void> handle,
                       Sender&&                    sender)
                     : handle(std::move(handle))
-                    , d_op_state(::nstd::execution::connect(std::move(sender), receiver(&this->result, &this->handle)))
+                    , d_op_state(::nstd::execution::connect(std::move(sender), receiver{&this->result, &this->handle}))
                 {
                     std::cout << "state::state()\n";
                 }

@@ -10,7 +10,7 @@ if(CMAKE_COMPILER_IS_GNUCXX)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -W -Wall -Werror -fconcepts-diagnostics-depth=4 -ftemplate-backtrace-limit=0")
 endif()
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -W -Wall -Werror")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -W -Wall -Werror -stdlib=libc++")
 endif()
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DNOMINMAX")
@@ -254,6 +254,9 @@ target_link_libraries(kuhllib_test PUBLIC kuhllib kuhltest pthread)
 add_test(NAME kuhllib_test COMMAND $<TARGET_FILE:kuhllib_test>)
 
 
+list(APPEND kuhllib_disabled_examples
+    audio
+)
 list(APPEND kuhllib_examples
     es
     cs2
@@ -261,7 +264,6 @@ list(APPEND kuhllib_examples
     simple_echo_server
     echo_server
     chat_server
-    audio
 )
 foreach(example ${kuhllib_examples})
     add_executable(${example} src/examples/${example}.cpp)
