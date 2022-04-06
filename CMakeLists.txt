@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.12.0)
 project(kuhllib VERSION 0.1.0)
 include(CheckIncludeFiles)
 include(CheckSymbolExists)
-include(CTest)
+# include(CTest)
 
 set(CMAKE_CXX_STANDARD 20)
 
@@ -22,7 +22,7 @@ CHECK_SYMBOL_EXISTS("unistd.h;sys/mman.h" MAP_POPULATE NSTD_HAS_MAP_POPULATE)
 CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/src/nstd/nstd-config.hpp.in ${CMAKE_BINARY_DIR}/include/nstd/nstd-config.hpp)
 
 include_directories(${CMAKE_BINARY_DIR}/include ${CMAKE_SOURCE_DIR}/src)
-enable_testing()
+# enable_testing()
 
 set(KUHLLIB_HEADER_SUFFIX .hpp)
 set(KUHLLIB_SOURCE_SUFFIX .cpp)
@@ -241,29 +241,29 @@ list(APPEND kuhllib_components
 
 list(TRANSFORM kuhllib_test_components APPEND ${KUHLLIB_SOURCE_SUFFIX} OUTPUT_VARIABLE kuhllib_test_libfiles)
 list(TRANSFORM kuhllib_test_components APPEND ${KUHLLIB_TEST_SUFFIX}   OUTPUT_VARIABLE kuhllib_test_tstfiles)
-add_library(kuhltest STATIC ${kuhllib_test_libfiles})
-add_executable(kuhltest_test ${kuhllib_test_tstfiles})
-target_link_libraries(kuhltest_test PUBLIC kuhltest)
-add_test(NAME kuhltest_test COMMAND $<TARGET_FILE:kuhltest_test>)
+# add_library(kuhltest STATIC ${kuhllib_test_libfiles})
+# add_executable(kuhltest_test ${kuhllib_test_tstfiles})
+# target_link_libraries(kuhltest_test PUBLIC kuhltest)
+# add_test(NAME kuhltest_test COMMAND $<TARGET_FILE:kuhltest_test>)
 
 list(TRANSFORM kuhllib_components APPEND ${KUHLLIB_SOURCE_SUFFIX} OUTPUT_VARIABLE kuhllib_libfiles)
 list(TRANSFORM kuhllib_components APPEND ${KUHLLIB_TEST_SUFFIX}   OUTPUT_VARIABLE kuhllib_tstfiles)
 add_library(kuhllib STATIC ${kuhllib_libfiles})
-add_executable(kuhllib_test ${kuhllib_tstfiles})
-target_link_libraries(kuhllib_test PUBLIC kuhllib kuhltest pthread)
-add_test(NAME kuhllib_test COMMAND $<TARGET_FILE:kuhllib_test>)
-
+# add_executable(kuhllib_test ${kuhllib_tstfiles})
+# target_link_libraries(kuhllib_test PUBLIC kuhllib kuhltest pthread)
+# add_test(NAME kuhllib_test COMMAND $<TARGET_FILE:kuhllib_test>)
 
 list(APPEND kuhllib_disabled_examples
     audio
-)
-list(APPEND kuhllib_examples
     es
     cs2
     coroutine_echo_server
     simple_echo_server
     echo_server
     chat_server
+)
+list(APPEND kuhllib_examples
+    structured-networking
 )
 foreach(example ${kuhllib_examples})
     add_executable(${example} src/examples/${example}.cpp)

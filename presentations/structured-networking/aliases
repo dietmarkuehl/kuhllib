@@ -1,0 +1,7 @@
+function g() {
+    switch.pl goto $1
+}
+alias n="switch.pl next"
+alias p="switch.pl prev"
+alias l="switch.pl last"
+alias f="switch.pl first"
