@@ -34,10 +34,12 @@
 #include <iostream>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <utility>
 
 using namespace nstd::execution;
 using namespace nstd::net;
+using namespace nstd::type_traits;
 
 namespace EX = ::nstd::execution;
 namespace NN = ::nstd::net;
@@ -48,26 +50,98 @@ using stream_socket = NN::basic_stream_socket<NI::tcp>;
 using endpoint = NI::basic_endpoint<NI::tcp>;
 using io_scheduler = NN::io_context::scheduler_type;
 
+auto wait_for_read() { return just(0); }
+
 // ----------------------------------------------------------------------------
+
+template <std::size_t N>
+struct ring_buffer {
+    static constexpr int      producer{0};
+    static constexpr int      consumer{1};
+    static constexpr uint64_t mask{N - 1};
+    uint64_t next[2];
+    char buffer[N];
+
+    template <EX::receiver Receiver>
+    struct state {
+        std::remove_cvref_t<Receiver> receiver;
+        
+        template <EX::receiver R>
+        state(R&& r): receiver(std::forward<R>(r)) {}
+        void complete() {}
+        friend void tag_invoke(start_t, state&) noexcept {}
+    };
+    template <typename Type>
+    struct sender {
+        template <template <typename...> class T, template <typename...> class V>
+        using value_types = V<T<Type>>;
+        template <template <typename...> class V>
+        using error_types = V<>;
+        static constexpr bool sends_done = true;
+
+        using completion_signatures = EX::completion_signatures<
+            set_value_t(Type)
+            >;
+        template <EX::receiver Receiver>
+        friend auto tag_invoke(connect_t, sender const&, Receiver&& r) {
+            return state<Receiver>{ std::forward<Receiver>(r) };
+        }
+    };
+    sender<mutable_buffer> produce() {
+        return sender<mutable_buffer>{};
+    }
+    sender<const_buffer> consume() {
+        return sender<const_buffer>{};
+    }
+};
 
 struct connection
 {
-    stream_socket stream;
-    char          buffer[4];
+    stream_socket   stream;
+    char            buffer[4];
+    ring_buffer<4>  ring;
+    bool            done{false};
     connection(stream_socket&& stream): stream(std::move(stream)) {}
+    connection(connection&& other): stream(std::move(other.stream)) {}
     ~connection() { std::cout << "destroying connection\n"; }
 };
 
 void run_client(io_scheduler scheduler, stream_socket&& stream)
 {
     std::cout << "accepted a client\n";
-    connection client(std::move(stream));
-
+    
     sender auto s
-        = schedule(scheduler)
-        | async_read_some(client.stream, buffer(client.buffer))
+        = just()
+        | let_value([=, client = connection(std::move(stream))]() mutable {
+            return when_all(
+                repeat_effect_until(
+		    just() | let_value([&]{
+		        return client.ring.produce()
+			    |  let_value([&](mutable_buffer buffer){
+                                   return schedule(scheduler)
+                                       |  async_read_some(client.stream, buffer)
+                                       |  then([&](int n){
+                                              client.done = n <= 0;
+                                              return n;
+                                          });
+			       });
+                    }),
+                    [&client]{ return client.done; }),
+                repeat_effect_until(
+		    just() | let_value([&]{
+                        return client.ring.consume()
+                            |  let_value([&](const_buffer buffer){
+                                   return schedule(scheduler)
+                                       |  async_write(client.stream, buffer);
+                               });
+                    })
+		    ,
+                    [&client]{ return client.done; })
+                );
+        })
         ;
-    (void)s;
+
+    start_detached(std::move(s));
 }
 
 // ----------------------------------------------------------------------------

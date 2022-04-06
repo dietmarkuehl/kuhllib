@@ -48,18 +48,71 @@ using stream_socket = NN::basic_stream_socket<NI::tcp>;
 using endpoint = NI::basic_endpoint<NI::tcp>;
 using io_scheduler = NN::io_context::scheduler_type;
 
+auto wait_for_read() { return just(0); }
+
 // ----------------------------------------------------------------------------
+
+template <std::size_t N>
+struct ring_buffer {
+    static constexpr int      producer{0};
+    static constexpr int      consumer{1};
+    static constexpr uint64_t mask{N - 1};
+    uint64_t next[2];
+    char buffer[N];
+
+    struct state {
+        friend void tag_invoke(start_t, state&) noexcept {}
+    };
+    struct sender {
+        template <EX::receiver Receiver>
+        friend auto tag_invoke(connect_t, sender&&, Receiver&&) {
+            return state{};
+        }
+    };
+};
 
 struct connection
 {
     stream_socket stream;
+    char          buffer[4];
+    bool          done{false};
     connection(stream_socket&& stream): stream(std::move(stream)) {}
+    connection(connection&& other): stream(std::move(other.stream)) {}
+    ~connection() { std::cout << "destroying connection\n"; }
 };
 
-void run_client(io_scheduler, stream_socket&& stream)
+void run_client(io_scheduler scheduler, stream_socket&& stream)
 {
     std::cout << "accepted a client\n";
-    connection client(std::move(stream));
+    
+    sender auto s
+        = just()
+        | let_value([=, client = connection(std::move(stream))]() mutable {
+            return when_all(
+                repeat_effect_until(
+                       schedule(scheduler)
+                    |  async_read_some(client.stream, buffer(client.buffer))
+                    |  then([&](int n){
+                        std::cout << "read(" << n << ")='"
+                                  << std::string_view(client.buffer, n) << "'\n";
+                        client.done = n <= 0;
+                        return n;
+                        }),
+                    [&client]{ return client.done; }),
+                repeat_effect_until(
+                       wait_for_read()
+                    |  let_value([&](int n){
+                        return schedule(scheduler)
+                            |  async_write(client.stream,
+                                           buffer(client.buffer, std::max(0, n)))
+                            ;
+                       }),
+                    [&client]{ return client.done; })
+                );
+        })
+        ;
+
+    start_detached(std::move(s));
 }
 
 // ----------------------------------------------------------------------------

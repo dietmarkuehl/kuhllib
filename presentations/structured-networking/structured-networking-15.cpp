@@ -69,7 +69,7 @@ int main()
 {
     std::cout << std::unitbuf;
     io_context      context;
-    socket_acceptor server(endpoint(ip::address_v4::any(), 12345));
+    socket_acceptor server(endpoint(NN::ip::address_v4::any(), 12345));
 
     run(context,
         repeat_effect(

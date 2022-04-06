@@ -34,10 +34,12 @@
 #include <iostream>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <utility>
 
 using namespace nstd::execution;
 using namespace nstd::net;
+using namespace nstd::type_traits;
 
 namespace EX = ::nstd::execution;
 namespace NN = ::nstd::net;
@@ -48,12 +50,77 @@ using stream_socket = NN::basic_stream_socket<NI::tcp>;
 using endpoint = NI::basic_endpoint<NI::tcp>;
 using io_scheduler = NN::io_context::scheduler_type;
 
+auto wait_for_read() { return just(0); }
+
 // ----------------------------------------------------------------------------
+
+template <std::size_t N>
+struct ring_buffer {
+    static constexpr int      producer{0};
+    static constexpr int      consumer{1};
+    static constexpr uint64_t mask{N - 1};
+    uint64_t next[2];
+    char buffer[N];
+
+    template <int Side>
+    using buffer_type
+        = std::conditional_t<Side == producer, mutable_buffer, const_buffer>;
+
+    template <int Side, EX::receiver Receiver>
+    struct state {
+        std::remove_cvref_t<Receiver> receiver;
+        ring_buffer*                  ring;
+        
+        template <EX::receiver R>
+        state(R&& r, ring_buffer* ring)
+            : receiver(std::forward<R>(r))
+            , ring(ring) {}
+        void complete() {
+            auto available = ring->next[producer] - ring->next[consumer];
+            auto size = Side == producer? N - available: available;
+	    if (0 < size) {
+	        auto begin = ring->next[Side] % mask;
+		set_value(std::move(receiver),
+		          buffer_type<Side>(ring->buffer + begin,
+			                    std::min(N - begin, size)));
+	    }
+        }
+        friend void tag_invoke(start_t, state& self) noexcept {
+            self.complete();
+        }
+    };
+    template <int Side>
+    struct sender {
+        template <template <typename...> class T, template <typename...> class V>
+        using value_types = V<T<buffer_type<Side>>>;
+        template <template <typename...> class V>
+        using error_types = V<>;
+        static constexpr bool sends_done = true;
+
+        using completion_signatures = EX::completion_signatures<
+            set_value_t(buffer_type<Side>)
+            >;
+
+        ring_buffer* ring;
+        template <EX::receiver Receiver>
+        friend auto tag_invoke(connect_t, sender const& self, Receiver&& r) {
+            return state<Side, Receiver>{ std::forward<Receiver>(r), self.ring };
+        }
+    };
+    sender<producer> produce() {
+        return sender<producer>{ this };
+    }
+    sender<consumer> consume() {
+        return sender<consumer>{ this };
+    }
+};
 
 struct connection
 {
-    stream_socket stream;
-    char          buffer[4];
+    stream_socket   stream;
+    char            buffer[4];
+    ring_buffer<4>  ring;
+    bool            done{false};
     connection(stream_socket&& stream): stream(std::move(stream)) {}
     connection(connection&& other): stream(std::move(other.stream)) {}
     ~connection() { std::cout << "destroying connection\n"; }
@@ -66,13 +133,30 @@ void run_client(io_scheduler scheduler, stream_socket&& stream)
     sender auto s
         = just()
         | let_value([=, client = connection(std::move(stream))]() mutable {
-            return repeat_effect(
-                   schedule(scheduler)
-                |  async_read_some(client.stream, buffer(client.buffer))
-                |  then([&](int n){
-                    std::cout << "read(" << n << ")='"
-                              << std::string_view(client.buffer, n) << "'\n";
+            return when_all(
+                repeat_effect_until(
+		    just() | let_value([&]{
+		        return client.ring.produce()
+			    |  let_value([&](mutable_buffer buffer){
+                                   return schedule(scheduler)
+                                       |  async_read_some(client.stream, buffer)
+                                       |  then([&](int n){
+                                              client.done = n <= 0;
+                                              return n;
+                                          });
+			       });
+                    }),
+                    [&client]{ return client.done; }),
+                repeat_effect_until(
+		    just() | let_value([&]{
+                        return client.ring.consume()
+                            |  let_value([&](const_buffer buffer){
+                                   return schedule(scheduler)
+                                       |  async_write(client.stream, buffer);
+                               });
                     })
+		    ,
+                    [&client]{ return client.done; })
                 );
         })
         ;

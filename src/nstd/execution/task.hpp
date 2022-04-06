@@ -241,7 +241,7 @@ struct nstd::execution::task {
             }
             auto await_resume() {
                 std::cout << "await_resume()\n";
-                return *this->d_state->result;
+                return std::move(*this->d_state->result);
             }
         };
 
