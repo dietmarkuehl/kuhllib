@@ -2,7 +2,7 @@
 use strict;
 
 my $name = "structured-networking";
-my $gitlog = "$(name)-commits";
+my $gitlog = "$name-commits";
 open(GITLOG, "< $gitlog") || die("no $gitlog dump");
 my $commit = "";
 my $last   = 0;
