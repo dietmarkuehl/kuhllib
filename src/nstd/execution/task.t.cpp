@@ -47,16 +47,25 @@ namespace test_declaration {
 static KT::testcase const tests[] = {
     KT::expect_success("task<int>", []{
 	    auto t = []()->EX::task<int> {
-	        std::cout << "within the coroutine\n";
-	        auto[x] = co_await EX::just(10);
-		std::cout << "x=" << x << "\n";
-		co_return 11;
+	        auto[x] = co_await EX::just(11);
+		co_return x;
             }();
 	    auto v = TT::sync_wait(t | EX::then([](auto&& value){
-	        std::cout << "then(" << value << ")\n";
 	        return value;
 		}));
             return v && (*v).index() == 0 && std::get<0>(*v) == 11
+	        ;
+        }),
+    KT::expect_success("task<>", []{
+            bool called{false};
+	    auto t = []()->EX::task<> {
+	        co_await EX::just();
+            }();
+	    TT::sync_wait(t | EX::then([&](){
+	        called = true;
+		return 0;
+		}));
+            return called
 	        ;
         }),
 };
