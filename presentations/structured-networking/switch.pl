@@ -16,12 +16,14 @@ while (<GITLOG>) {
     }
     elsif (/$name step (\d*)/) {
         my $id = $1;
-        $commits{$id} = $commit;
-        if ($last < $id) {
-            $last = $id;
-        }
-        if ($id < $first) {
-            $first = $id;
+        if (!exists $commits{$id}) {
+            $commits{$id} = $commit;
+            if ($last < $id) {
+                $last = $id;
+            }
+            if ($id < $first) {
+                $first = $id;
+            }
         }
     }
 }
