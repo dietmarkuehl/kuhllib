@@ -164,29 +164,18 @@ void run_client(io_scheduler scheduler, stream_socket&& stream)
         = just()
         | let_value([=, client = connection(std::move(stream))]() mutable {
             return when_all(
-                repeat_effect(
-		    just() | let_value([&]{
-		        return client.ring.produce()
-			    |  let_value([&](mutable_buffer buffer){
-                                   return schedule(scheduler)
-                                       |  async_read_some(client.stream, buffer)
-                                       |  then([&](int n){
-                                              client.ring.advance(0, n);
-                                          });
-			       });
-                    })),
-                repeat_effect(
-		    just() | let_value([&]{
-                        return client.ring.consume()
-                            |  let_value([&](const_buffer buffer){
-                                   return schedule(scheduler)
-                                       |  async_write_some(client.stream, buffer)
-                                       |  then([&](int n){
-                                              client.ring.advance(1, n);
-                                          });
-                               });
-                    }))
-                );
+		[&]()->task<> {
+		    auto[buffer] = co_await client.ring.produce();
+		    auto[n] = co_await (schedule(scheduler)
+		                       | async_read_some(client.stream, buffer));
+		    client.ring.advance(0, n);
+		}(),
+		[&]()->task<> {
+		    auto[buffer] = co_await client.ring.consume();
+		    auto[n] = co_await (schedule(scheduler)
+		                       | async_write_some(client.stream, buffer));
+		    client.ring.advance(1, n);
+		}());
         })
         ;
 
