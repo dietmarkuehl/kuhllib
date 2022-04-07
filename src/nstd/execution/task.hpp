@@ -80,20 +80,19 @@ struct nstd::execution::task_state
     }
 
     friend auto tag_invoke(::nstd::execution::start_t, task_state& self) noexcept {
-        std::cout << "task<Type>::start\n";
         self.handle.promise().completion = &self;
         self.handle.resume();
     }
     void complete(Type const& value) override {
-        std::cout << "task::complete(Type const&)\n";
+        // std::cout << "task::complete(Type const&)\n";
         ::nstd::execution::set_value(std::move(this->receiver), value);
     }
     void complete(Type& value) override {
-        std::cout << "task::complete(Type&)\n";
+        // std::cout << "task::complete(Type&)\n";
         ::nstd::execution::set_value(std::move(this->receiver), value);
     }
     void complete(Type&& value) override {
-        std::cout << "task::complete(Type&&)\n";
+        // std::cout << "task::complete(Type&&)\n";
         ::nstd::execution::set_value(std::move(this->receiver), std::move(value));
     }
 };
@@ -119,12 +118,11 @@ struct nstd::execution::task_state<void, Promise, Receiver>
     }
 
     friend auto tag_invoke(::nstd::execution::start_t, task_state& self) noexcept {
-        std::cout << "task<void>::start\n";
         self.handle.promise().completion = &self;
         self.handle.resume();
     }
     void complete() override {
-        std::cout << "task<void>::complete\n";
+        // std::cout << "task<void>::complete\n";
         ::nstd::execution::set_value(std::move(this->receiver));
     }
 };
@@ -144,8 +142,7 @@ struct nstd::execution::task_promise_base {
     task_state_base<Type>* completion{nullptr};
     template <typename T>
     void return_value(T&& value) {
-        std::cout << "return_value: " << value<< "\n";
-        this->completion->complete(std::forward<T>(value));
+        std::exchange(this->completion, nullptr)->complete(std::forward<T>(value));
     }
 };
 
@@ -161,8 +158,7 @@ struct nstd::execution::task_promise_base<void> {
 
     task_state_base<void>* completion{nullptr};
     void return_void() {
-        std::cout << "return_void\n";
-        this->completion->complete();
+        std::exchange(this->completion, nullptr)->complete();
     }
 };
 
@@ -175,11 +171,9 @@ struct nstd::execution::task {
         auto initial_suspend() { return std::suspend_always(); }
         auto final_suspend() noexcept { return std::suspend_always(); }
         auto get_return_object() {
-            std::cout << "get_return_object()\n";
             return task{std::coroutine_handle<promise_type>::from_promise(*this)};
         }
         void unhandled_exception() {
-            std::cout << "unhandled_exception()\n";
             std::terminate();
         }
 
@@ -196,14 +190,15 @@ struct nstd::execution::task {
                 template <typename... Args>
                 friend void tag_invoke(::nstd::execution::set_value_t, receiver&& self, Args&&... args) noexcept {
                     *self.result = std::make_tuple(std::forward<Args>(args)...);
+                    // std::cout << "awaitable::receiver::set_value\n";
                     self.handle->resume();
                 }
                 template <typename Error>
                 friend void tag_invoke(::nstd::execution::set_error_t, receiver&&, Error&& ) noexcept {
-                    std::cout << "awaitable::receiver::set_error_t\n";
+                    // std::cout << "awaitable::receiver::set_error_t\n";
                 }
                 friend void tag_invoke(::nstd::execution::set_stopped_t, receiver&&) noexcept {
-                    std::cout << "awaitable::receiver::set_stopped_t\n";
+                    // std::cout << "awaitable::receiver::set_stopped_t\n";
                 }
             };
 
@@ -218,10 +213,8 @@ struct nstd::execution::task {
                     : handle(std::move(handle))
                     , d_op_state(::nstd::execution::connect(std::move(sender), receiver{&this->result, &this->handle}))
                 {
-                    std::cout << "state::state()\n";
                 }
                 ~state() {
-                    std::cout << "state::~state()\n";
                 }
                 state(state&&) = delete;
                 state(state const&) = delete;
@@ -233,21 +226,19 @@ struct nstd::execution::task {
             template <::nstd::execution::sender S>
             awaitable(S&& s): d_sender(std::forward<S>(s)) {}
 
-            bool await_ready() { std::cout << "awaitable::await_ready()\n"; return false; }
+            bool await_ready() { return false; }
             void await_suspend(std::coroutine_handle<void> handle){
-                std::cout << "awaitable::await_suspend\n";
                 this->d_state = std::make_shared<state>(std::move(handle), std::move(this->d_sender));
                 ::nstd::execution::start(this->d_state->d_op_state);
             }
             auto await_resume() {
-                std::cout << "await_resume()\n";
+                // std::cout << "await_resume()\n";
                 return std::move(*this->d_state->result);
             }
         };
 
         template <::nstd::execution::sender Sender>
         auto await_transform(Sender&& s) {
-            std::cout << "await_transform\n";
             return awaitable<Sender>(std::forward<Sender>(s));
         }
     };
@@ -265,7 +256,6 @@ struct nstd::execution::task {
 
     template <::nstd::execution::receiver Receiver>
     friend auto tag_invoke(::nstd::execution::connect_t, task&& self, Receiver&& receiver) {
-        std::cout << "task::connect\n";
         return ::nstd::execution::task_state<Type, promise_type, Receiver>(
 	    std::move(self.handle),
 	    std::forward<Receiver>(receiver)
