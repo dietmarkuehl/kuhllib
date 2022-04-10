@@ -11,8 +11,8 @@ build-code:
 	git checkout -B $(NAME)
 	for f in $(NAME)-*.cpp; \
 	do \
-	    cp $$f ../../examples/$(NAME).cpp; \
-	    git add ../../examples/$(NAME).cpp; \
+	    cp $$f ../../src/examples/$(NAME).cpp; \
+	    git add ../../src/examples/$(NAME).cpp; \
 	    git commit -m "$(NAME) step `echo $$f | sed -e 's/$(NAME)-\(.*\).cpp/\1/'`"; \
 	done
 	git log > $(NAME)-commits
