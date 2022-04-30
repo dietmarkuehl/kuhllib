@@ -47,10 +47,13 @@ namespace test_declarations
         struct sender {
             using completion_signatures = EX::completion_signatures<>;
         };
-	template <typename Scheduler>
-        auto tag_invoke(EX::get_completion_scheduler_t<EX::set_value_t> const&, sender<Scheduler> const&) -> Scheduler;
+        template <typename Scheduler>
+        auto tag_invoke(EX::get_completion_scheduler_t<EX::set_value_t> const&, sender<Scheduler> const&) -> Scheduler {
+            return Scheduler();
+        }
 
         struct scheduler {
+            scheduler() = default;
             scheduler(scheduler const&) = default;
             auto operator== (scheduler const&) const -> bool { return true; }
             friend auto tag_invoke(::nstd::execution::schedule_t, scheduler) -> sender<scheduler> { return sender<scheduler>{}; } 
