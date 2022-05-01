@@ -27,6 +27,6 @@
 
 // ----------------------------------------------------------------------------
 
-namespace std::stop_token {
+namespace std::stop_token_ns {
     int never_stop_token_dummy = 0;
 }

@@ -33,7 +33,7 @@
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::stop_token {
+namespace nstd::stop_token_ns {
     template <typename StopToken>
     concept stoppable_token
         =  ::std::copy_constructible<StopToken>

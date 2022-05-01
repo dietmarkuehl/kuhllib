@@ -32,11 +32,11 @@
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::stop_token
+namespace nstd::stop_token_ns
 {
     template <typename Token>
     concept unstoppable_token
-        =  ::nstd::stop_token::stoppable_token<Token>
+        =  ::nstd::stop_token_ns::stoppable_token<Token>
         && requires {
             { Token::stop_possible() } -> ::nstd::concepts::boolean_testable;
             typename ::nstd::hidden_names::constexpr_expression<Token::stop_possible()>;

@@ -31,10 +31,10 @@
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::stop_token {
+namespace nstd::stop_token_ns {
     template<typename Token, typename Callback, typename Initializer = Callback>
     concept stoppable_token_for
-        =  ::nstd::stop_token::stoppable_token<Token>
+        =  ::nstd::stop_token_ns::stoppable_token<Token>
         && ::std::invocable<Callback>
         && requires {
             typename Token::template callback_type<Callback>;
