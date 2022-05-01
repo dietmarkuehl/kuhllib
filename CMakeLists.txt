@@ -270,8 +270,15 @@ list(APPEND kuhllib_xprojection_components
 )
 
 list(APPEND kuhllib_stop_token_components
+    src/nstd/stop_token
     src/nstd/stop_token/in_place_stop_token
     src/nstd/stop_token/never_stop_token
+    src/nstd/stop_token/nostopstate
+    src/nstd/stop_token/stop_callback_base
+    src/nstd/stop_token/stop_callback
+    src/nstd/stop_token/stop_source
+    src/nstd/stop_token/stop_state
+    src/nstd/stop_token/stop_token
     src/nstd/stop_token/stoppable_token
     src/nstd/stop_token/stoppable_token_for
     src/nstd/stop_token/unstoppable_token
