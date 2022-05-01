@@ -28,7 +28,7 @@
 
 namespace test_declarations {}
 namespace TD = ::test_declarations;
-namespace ST = ::nstd::stop_token;
+namespace ST = ::nstd::stop_token_ns;
 namespace KT = ::kuhl::test;
 
 // ----------------------------------------------------------------------------

@@ -27,6 +27,6 @@
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::stop_token {
+namespace nstd::stop_token_ns {
     int stoppable_token_for_dummy = 0;
 }

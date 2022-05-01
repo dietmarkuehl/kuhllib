@@ -44,19 +44,40 @@ namespace test_declaration {
 
 static KT::testcase const tests[] = {
     KT::expect_success("stop_source", []{
-            return KT::assert_type_exists<nstd::stop_source>;
+            return KT::assert_type_exists<::nstd::stop_source>;
         }),
     KT::expect_success("stop_token", []{
-            return KT::assert_type_exists<nstd::stop_token>;
+            return KT::assert_type_exists<::nstd::stop_token>;
         }),
     KT::expect_success("nostopstate_t", []{
-            return KT::assert_type_exists<nstd::nostopstate_t>;
+            return KT::assert_type_exists<::nstd::nostopstate_t>;
         }),
     KT::expect_success("nostopstate", []{
-            return KT::type<nstd::nostopstate_t const> == KT::type<decltype(nstd::nostopstate)>;
+            return KT::type<::nstd::nostopstate_t const> == KT::type<decltype(::nstd::nostopstate)>;
         }),
     KT::expect_success("stop_callback", []{
-            return KT::assert_template_exists<nstd::stop_callback, TD::callback>;
+            return KT::assert_template_exists<::nstd::stop_callback, TD::callback>;
+        }),
+    KT::expect_success("stoppable_token", []{
+            return not ::nstd::stoppable_token<int>;
+        }),
+    KT::expect_success("stoppable_token_for", []{
+            return not ::nstd::stoppable_token_for<int, int, int>;
+        }),
+    KT::expect_success("unstoppable_token", []{
+            return not ::nstd::unstoppable_token<int>;
+        }),
+    KT::expect_success("never_stop_token", []{
+            return KT::assert_type_exists<::nstd::never_stop_token>;
+        }),
+    KT::expect_success("in_place_stop_token", []{
+            return KT::assert_type_exists<::nstd::in_place_stop_token>;
+        }),
+    KT::expect_success("in_place_stop_source", []{
+            return KT::assert_type_exists<::nstd::in_place_stop_source>;
+        }),
+    KT::expect_success("in_place_stop_callback", []{
+            return KT::assert_template_exists<::nstd::in_place_stop_callback, TD::callback>;
         }),
 };
 

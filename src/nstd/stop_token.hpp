@@ -33,15 +33,27 @@
 #include "nstd/stop_token/stop_callback.hpp"
 #include "nstd/stop_token/stop_source.hpp"
 #include "nstd/stop_token/stop_token.hpp"
+#include "nstd/stop_token/stoppable_token.hpp"
+#include "nstd/stop_token/stoppable_token_for.hpp"
+#include "nstd/stop_token/unstoppable_token.hpp"
+#include "nstd/stop_token/never_stop_token.hpp"
+#include "nstd/stop_token/in_place_stop_token.hpp"
 
 // ----------------------------------------------------------------------------
 
 namespace nstd {
-    using ::nstd::stop_token_ns::stop_token;
-    using ::nstd::stop_token_ns::nostopstate_t;
     using ::nstd::stop_token_ns::nostopstate;
-    using ::nstd::stop_token_ns::stop_source;
+    using ::nstd::stop_token_ns::nostopstate_t;
     using ::nstd::stop_token_ns::stop_callback;
+    using ::nstd::stop_token_ns::stop_source;
+    using ::nstd::stop_token_ns::stop_token;
+    using ::nstd::stop_token_ns::stoppable_token;
+    using ::nstd::stop_token_ns::stoppable_token_for;
+    using ::nstd::stop_token_ns::unstoppable_token;
+    using ::nstd::stop_token_ns::never_stop_token;
+    using ::nstd::stop_token_ns::in_place_stop_token;
+    using ::nstd::stop_token_ns::in_place_stop_source;
+    using ::nstd::stop_token_ns::in_place_stop_callback;
 }
 
 // ----------------------------------------------------------------------------

@@ -27,6 +27,6 @@
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::stop_token::hidden_names {
+namespace nstd::stop_token_ns::hidden_names {
     int stop_state_dummy{};
 }

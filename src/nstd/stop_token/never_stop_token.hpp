@@ -30,7 +30,7 @@
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::stop_token {
+namespace nstd::stop_token_ns {
     class never_stop_token
     {
     public:

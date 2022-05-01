@@ -28,5 +28,5 @@
 // ----------------------------------------------------------------------------
 
 namespace nstd {
-    int nstd_stop_token_dummy{};
+    int stop_token_dummy{};
 }
