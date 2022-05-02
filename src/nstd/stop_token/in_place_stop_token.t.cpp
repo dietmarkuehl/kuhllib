@@ -70,14 +70,11 @@ static KT::testcase const tests[] = {
             bool value0{false};
             bool value1{false};
             bool value2{false};
-            ST::in_place_stop_callback cb0(token, [&value0]{ value0 = true; });
-            //-dk:TODO ST::in_place_stop_token::callback_type cb0(token, [&value0]{ value0 = true; });
+            ST::in_place_stop_token::callback_type cb0(token, [&value0]{ value0 = true; });
             {
-                ST::in_place_stop_callback cb1(token, [&value1]{ value1 = true; });
-                //-dk:TODO ST::in_place_stop_token::callback_type cb1(token, [&value1]{ value1 = true; });
+                ST::in_place_stop_token::callback_type cb1(token, [&value1]{ value1 = true; });
             }
-            ST::in_place_stop_callback cb2(token, [&value2]{ value2 = true; });
-            // ST::in_place_stop_token::callback_type cb2(token, [&value2]{ value2 = true; });
+            ST::in_place_stop_token::callback_type cb2(token, [&value2]{ value2 = true; });
 
             state.stop();
             return value0 == true
@@ -91,12 +88,9 @@ static KT::testcase const tests[] = {
             bool value0{false};
             bool value1{false};
             bool value2{false};
-            ST::in_place_stop_callback cb0(token, [&value0]{ value0 = true; });
-            //-dk:TODO ST::in_place_stop_token::callback_type cb0(token, [&value0]{ value0 = true; });
-            auto cb1 = new ST::in_place_stop_callback(token, [&value1]{ value1 = true; });
-            //-dk:TODO auto cb1 = new ST::in_place_stop_token::callback_type(token, [&value1]{ value1 = true; });
-            ST::in_place_stop_callback cb2(token, [&value2]{ value2 = true; });
-            //-dk:TODO ST::in_place_stop_token::callback_type cb2(token, [&value2]{ value2 = true; });
+            ST::in_place_stop_token::callback_type cb0(token, [&value0]{ value0 = true; });
+            auto cb1 = new ST::in_place_stop_token::callback_type(token, [&value1]{ value1 = true; });
+            ST::in_place_stop_token::callback_type cb2(token, [&value2]{ value2 = true; });
             delete cb1;
 
             state.stop();
