@@ -26,6 +26,7 @@
 #ifndef INCLUDED_NSTD_CONTAINER_INTRUSIVE_LIST
 #define INCLUDED_NSTD_CONTAINER_INTRUSIVE_LIST
 
+#include "nstd/utility/swap.hpp"
 #include <iterator>
 
 // ----------------------------------------------------------------------------
@@ -141,6 +142,11 @@ public:
     auto make_iterator(T* ptr) const -> iterator { return ptr; }
     auto begin() const -> iterator { return this->link(this->d_head).d_next; }
     auto end() const   -> iterator { return &this->d_head; }
+
+    auto swap(intrusive_list& other) -> void {
+        ::nstd::utility::swap(this->link(this->d_head).d_next, this->link(other.d_head).d_next);
+        ::nstd::utility::swap(this->link(this->d_head).d_prev, this->link(other.d_head).d_prev);
+    }
 };
 
 // ----------------------------------------------------------------------------
