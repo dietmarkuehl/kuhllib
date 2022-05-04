@@ -24,9 +24,35 @@
 // ----------------------------------------------------------------------------
 
 #include "kuhl/test/kuhltest_test.hpp"
+#include <exception>
 #include <sstream>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 namespace KT = kuhl::test;
+
+// ----------------------------------------------------------------------------
+
+bool kuhl::test::test_terminate(void (*fun)())
+{
+    constexpr int magic{42};
+    switch (::pid_t id = ::fork()) {
+    case -1: return false;
+    case 0: {
+            ::std::set_terminate([]{ ::exit(magic); });
+            fun();
+            ::exit(0);
+        }
+    default: {
+        int status{};
+        return id == ::waitpid(id, &status, 0)
+            && WIFEXITED(status)
+            && WEXITSTATUS(status) == magic
+            ;
+        }
+    }
+}
 
 // ----------------------------------------------------------------------------
 

@@ -84,6 +84,7 @@ list(APPEND kuhllib_endian_components
 )
 
 list(APPEND kuhllib_execution_components
+    src/nstd/execution/async_scope
     src/nstd/execution/completion_signatures
     src/nstd/execution/completion_signatures_of_t
     src/nstd/execution/connect

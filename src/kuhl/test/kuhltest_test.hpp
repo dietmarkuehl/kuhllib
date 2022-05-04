@@ -74,6 +74,8 @@ namespace kuhl
         int run_tests(char const*, int, char*[], 
                       kuhl::test::testcase const (&tests)[NoTests]);
 
+        bool test_terminate(void(*)());
+
         template <typename T>
         bool use(T&&);
         inline bool use(bool); // work-around for clang bug
