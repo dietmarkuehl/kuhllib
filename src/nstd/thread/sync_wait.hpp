@@ -27,14 +27,15 @@
 #define INCLUDED_NSTD_THREAD_SYNC_WAIT
 
 #include "nstd/functional/tag_invoke.hpp"
-#include "nstd/execution/typed_sender.hpp"
-#include "nstd/execution/sender_traits.hpp"
+#include "nstd/execution/sender.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/set_error.hpp"
 #include "nstd/execution/set_stopped.hpp"
 #include "nstd/execution/start.hpp"
 #include "nstd/execution/connect.hpp"
 #include "nstd/execution/get_completion_scheduler.hpp"
+#include "nstd/execution/value_types_of_t.hpp"
+#include "nstd/hidden_names/decayed_tuple.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
 #include "nstd/type_traits/type_identity.hpp"
 #include <exception>
@@ -54,15 +55,14 @@ namespace nstd::hidden_names {
     template <typename... T>
     using type_identity_or_monostate_t = typename ::nstd::hidden_names::type_identity_or_monostate<T...>::type;
 
-    template <::nstd::execution::typed_sender S>
+    template <::nstd::execution::sender S, typename sync_wait_env>
     using sync_wait_type = ::std::optional<
-            typename ::nstd::execution::sender_traits<::nstd::type_traits::remove_cvref_t<S>>
-                ::template value_types<::nstd::hidden_names::type_identity_or_monostate_t, ::std::variant>
+        ::nstd::execution::value_types_of_t<S, sync_wait_env, ::nstd::hidden_names::decayed_tuple, ::nstd::type_traits::type_identity_t>
         >;
 }
 namespace nstd::this_thread {
     inline constexpr struct sync_wait_t {
-        template <::nstd::execution::typed_sender Sender>
+        template <::nstd::execution::sender Sender>
             requires requires(Sender&& s, nstd::this_thread::sync_wait_t const& sync_wait) {
                 {
                     ::nstd::tag_invoke(sync_wait,
@@ -77,7 +77,7 @@ namespace nstd::this_thread {
                                       s);
         }
 
-        template <::nstd::execution::typed_sender Sender>
+        template <::nstd::execution::sender Sender>
             requires requires(Sender&& s, nstd::this_thread::sync_wait_t const& sync_wait) {
                 {
                     ::nstd::tag_invoke(sync_wait, s)
@@ -127,7 +127,7 @@ namespace nstd::this_thread {
             }
         };
 
-        template <::nstd::execution::typed_sender Sender>
+        template <::nstd::execution::sender Sender>
         auto operator()(Sender&& s) const -> ::nstd::hidden_names::sync_wait_type<Sender> {
             using type = ::nstd::hidden_names::sync_wait_type<Sender>;
 

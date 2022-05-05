@@ -32,10 +32,10 @@ to be implemented rather than necessarily capturing all details.
 
         templatete <typename R>
         concept receiver
-        =  move_constructible<remove_cvref_t<R>>
-        && constructible_from<remove_cvref_t<R>, R>
-        && requires(const remove_cvref_t<R>& r) { <a href="#get_env-cpo">execution::get_env(rec)</a>; }
-        ;
+            =  move_constructible<remove_cvref_t<R>>
+            && constructible_from<remove_cvref_t<R>, R>
+            && requires(const remove_cvref_t<R>& r) { <a href="#get_env-cpo">execution::get_env(rec)</a>; }
+            ;
 
 - `receiver_of`
 
@@ -46,6 +46,49 @@ to be implemented rather than necessarily capturing all details.
                 []<valid_completion_for<R>... Sigs>(completion_signatures<Sigs...>*){}(comps);
             }
 	    ;
+
+- `scheduler`
+
+        template <typename S>
+        concept scheduler
+            =  copy_constructible<remove_cvref_t<S>>
+            && equality_comparable<remove_cvref_t<S>>
+            && requires(S&& s, get_completion_scheduler_t<set_value_t> const& cpo) {
+                { schedule(forward<S>(s)) } -> sender;
+	            { tag_invoke(cpo, schedule(forward<S>(s))) } -> same_as<remove_cvref_t<S>>;
+            }
+            ;
+
+- `sender_base` (exposition-only)
+
+        template <typename S, typename E>
+        concept sender_base
+            = requires (S&& s, E&& e) {
+                {
+                    get_completion_signatures(forward<S>(s), forward<E>(e))
+                } -> valid_completion_signatures<E>;
+            }
+            ;
+
+- `sender`
+
+        template <typename S, typename E = no_env>
+        concept sender
+            =  sender_base<S, E>
+            && sender_base<S, no_env>
+            && move_constructible<remove_cvref_t<Sender>>
+            ;
+
+- `sender_to`
+
+        template <typename S, typename R>
+        concept sender_to
+            =  sender<S, env_of_t<R>>
+            && receiver_of<R, completion_signatures_of_t<S, env_of_t<R>>>
+            && requires(S&& s, R&& r) {
+                connect(forward<S>(s), forward<R>(r));
+            }
+            ;
 
 - `valid_completion_for` (exposition-only)
 
