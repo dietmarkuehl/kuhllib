@@ -100,6 +100,7 @@ list(APPEND kuhllib_execution_components
     src/nstd/execution/operation_state
     src/nstd/execution/receiver
     src/nstd/execution/receiver_of
+    src/nstd/execution/run_loop
     src/nstd/execution/schedule
     src/nstd/execution/scheduler
     src/nstd/execution/sender
@@ -289,7 +290,7 @@ list(APPEND kuhllib_thread_todo
     src/nstd/thread/may_block_caller
 )
 
-list(APPEND kuhllib_xthread_components
+list(APPEND xkuhllib_thread_components
     src/nstd/thread/sync_wait
 )
 
