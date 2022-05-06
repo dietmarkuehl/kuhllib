@@ -29,6 +29,8 @@
 // ----------------------------------------------------------------------------
 
 namespace nstd::hidden_names {
+    template <typename...> struct type_list {}; //-dk:TODO add tests
+
     template <template <typename...> class, typename>
     struct type_list_transform;
     template <template <typename...> class To, template <typename...> class From, typename... T>
