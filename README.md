@@ -79,6 +79,15 @@ to be implemented rather than necessarily capturing all details.
             && move_constructible<remove_cvref_t<Sender>>
             ;
 
+- `sender_of`
+
+        template <typename S, typename E = no_env, typename...T> 
+        concept sender_of
+            =  sender<S, E>
+            && same_as<type_list<T...>,
+                       value_types_of_t<S, E, type_list, type_identity_t>>
+            ;
+
 - `sender_to`
 
         template <typename S, typename R>
