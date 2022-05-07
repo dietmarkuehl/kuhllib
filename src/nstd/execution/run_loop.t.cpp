@@ -27,6 +27,7 @@
 #include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/connect.hpp"
 #include "nstd/execution/get_completion_scheduler.hpp"
+#include "nstd/execution/get_stop_token.hpp"
 #include "nstd/execution/get_env.hpp"
 #include "nstd/execution/receiver.hpp"
 #include "nstd/execution/receiver_of.hpp"
@@ -35,6 +36,8 @@
 #include "nstd/execution/sender_of.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/set_stopped.hpp"
+#include "nstd/stop_token/in_place_stop_token.hpp"
+#include "nstd/type_traits/declval.hpp"
 #include "nstd/utility/move.hpp"
 #include "kuhl/test.hpp"
 #include <exception>
@@ -42,6 +45,8 @@
 
 namespace EX = ::nstd::execution;
 namespace UT = ::nstd::utility;
+namespace ST = ::nstd::stop_token_ns;
+namespace TT = ::nstd::type_traits;
 namespace test_declaration {}
 namespace TD = ::test_declaration;
 namespace KT = ::kuhl::test;
@@ -50,15 +55,43 @@ namespace KT = ::kuhl::test;
 
 namespace test_declaration {
     namespace {
+        enum class result { none, value, stopped };
         struct env {};
+        struct arg {
+            arg() = default;
+            arg(arg&&) = delete;
+            TD::result result = TD::result::none;
+        };
 
         template <bool Noexcept>
         struct receiver {
-            receiver() noexcept {}
-            receiver(receiver&&) noexcept(Noexcept) {}
-            friend auto tag_invoke(EX::set_value_t, receiver&&) noexcept -> void {}
-            friend auto tag_invoke(EX::set_stopped_t, receiver&&) noexcept -> void {}
+            TD::arg* d_arg;
+            receiver(TD::arg& a) noexcept: d_arg(&a) {}
+            receiver(receiver&&) noexcept(Noexcept) = default;
+            friend auto tag_invoke(EX::set_value_t, receiver&& self) noexcept -> void {
+                self.d_arg->result = TD::result::value;
+            }
+            friend auto tag_invoke(EX::set_stopped_t, receiver&& self) noexcept -> void {
+                self.d_arg->result = TD::result::stopped;
+            }
             friend auto tag_invoke(EX::get_env_t, receiver const&) noexcept -> TD::env { return {}; }
+        };
+
+        struct stop_receiver {
+            ST::in_place_stop_source* d_source;
+            TD::arg*                  d_arg;
+            stop_receiver(ST::in_place_stop_source& source, TD::arg& a) noexcept: d_source(&source), d_arg(&a) {}
+            stop_receiver(stop_receiver&&) noexcept = default;
+            friend auto tag_invoke(EX::set_value_t, stop_receiver&& self) noexcept -> void {
+                self.d_arg->result = TD::result::value;
+            }
+            friend auto tag_invoke(EX::set_stopped_t, stop_receiver&& self) noexcept -> void {
+                self.d_arg->result = TD::result::stopped;
+            }
+            friend auto tag_invoke(EX::get_env_t, stop_receiver const&) noexcept -> TD::env { return {}; }
+            friend auto tag_invoke(EX::get_stop_token_t, stop_receiver const& self) noexcept -> ST::in_place_stop_token {
+                return self.d_source->token();
+            }
         };
     }
 }
@@ -72,7 +105,14 @@ static KT::testcase const tests[] = {
                 && EX::receiver<TD::receiver<false>>
                 && EX::receiver_of<TD::receiver<true>, completion_signatures>
                 && EX::receiver_of<TD::receiver<false>, completion_signatures>
-                && noexcept(TD::receiver(TD::receiver<true>()))
+                && noexcept(TD::receiver(TD::receiver<true>(TT::declval<TD::arg&>())))
+                ;
+        }),
+    KT::expect_success("TD::stop_receiver", []{
+            using completion_signatures = EX::completion_signatures<EX::set_value_t(), EX::set_stopped_t()>;
+            return EX::receiver<TD::stop_receiver>
+                && EX::receiver<TD::stop_receiver>
+                && EX::receiver_of<TD::stop_receiver, completion_signatures>
                 ;
         }),
     KT::expect_success("exec.run_loop.ctor", []{
@@ -84,8 +124,11 @@ static KT::testcase const tests[] = {
                 && not ::std::is_copy_assignable_v<EX::run_loop>
                 && not ::std::is_move_assignable_v<EX::run_loop>
                 && KT::test_terminate([]{
-                    // if count == 0 or state is running
-                    ::std::terminate(); //-dk:TODO
+                    TD::arg      arg;
+                    EX::run_loop loop;
+                    auto state = EX::connect(EX::schedule(loop.get_scheduler()),
+                                             TD::receiver<true>(arg));
+                    EX::start(state);
                 })
                 ;
         }),
@@ -106,14 +149,41 @@ static KT::testcase const tests[] = {
             using sender_type = decltype(EX::schedule(EX::run_loop().get_scheduler()));
             EX::run_loop loop;
             sender_type  sender = EX::schedule(loop.get_scheduler());
+            TD::arg      arg;
 
             return EX::sender_of<sender_type>
                 && EX::sender<sender_type>
                 && noexcept(EX::get_completion_scheduler<EX::set_value_t>(sender))
                 && KT::type<scheduler_type> == KT::type<decltype(EX::get_completion_scheduler<EX::set_value_t>(sender))>
                 && loop.get_scheduler() == EX::get_completion_scheduler<EX::set_value_t>(sender)
-                && noexcept(EX::connect(UT::move(sender), TD::receiver<true>()))
-                && not noexcept(EX::connect(UT::move(sender), TD::receiver<false>()))
+                && noexcept(EX::connect(UT::move(sender), TD::receiver<true>(arg)))
+                && not noexcept(EX::connect(UT::move(sender), TD::receiver<false>(arg)))
+                ;
+        }),
+    KT::expect_success("run_loop operation state (running)", []{
+            EX::run_loop loop;
+            TD::arg arg;
+            auto sender = EX::schedule(loop.get_scheduler());
+            auto state = EX::connect(UT::move(sender), TD::receiver<true>(arg));
+            EX::start(state);
+            loop.finish();
+            loop.run();
+
+            return arg.result == TD::result::value
+                ;
+        }),
+    KT::expect_success("run_loop operation state (stopped)", []{
+            EX::run_loop loop;
+            ST::in_place_stop_source source;
+            source.stop();
+            TD::arg arg;
+            auto sender = EX::schedule(loop.get_scheduler());
+            auto state = EX::connect(UT::move(sender), TD::stop_receiver(source, arg));
+            EX::start(state);
+            loop.finish();
+            loop.run();
+
+            return arg.result == TD::result::stopped
                 ;
         }),
 };
