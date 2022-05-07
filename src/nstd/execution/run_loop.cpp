@@ -33,13 +33,13 @@ namespace nstd::execution {
 
 // ----------------------------------------------------------------------------
 
-auto nstd::hidden_names::run_loop::sender::get_completion_scheduler() const
+auto nstd::hidden_names::run_loop::sender::get_completion_scheduler() const noexcept
     -> ::nstd::hidden_names::run_loop::scheduler {
     return ::nstd::hidden_names::run_loop::scheduler(this->d_loop);
 }
 
 auto nstd::hidden_names::run_loop::tag_invoke(::nstd::execution::get_completion_scheduler_t<::nstd::execution::set_value_t>,
-                                              ::nstd::execution::run_loop::sender const& self)
+                                              ::nstd::execution::run_loop::sender const& self) noexcept
     -> ::nstd::hidden_names::run_loop::scheduler {
     return self.get_completion_scheduler();
 }

@@ -57,6 +57,16 @@ namespace test_declaration {
                     EX::set_value_t(T...)
                 >;
         };
+
+        template <typename... T>
+        class multi_sender {
+        public:
+            using completion_signatures
+                = EX::completion_signatures<
+                    EX::set_value_t(bool),
+                    EX::set_value_t(T...)
+                >;
+        };
     }
 }
 
@@ -75,6 +85,11 @@ static KT::testcase const tests[] = {
                 && EX::sender_of<TD::sender<int>, TD::env, int>
                 ;
         }),
+    //KT::expect_success("multi_sender", []{
+    //        return not EX::sender_of<TD::multi_sender<>>
+    //            && EX::sender_of<TD::multi_sender<bool>, TD::env, bool>
+    //            ;
+    //    }),
 };
 
 static KT::add_tests suite("nstd/execution/sender_of", ::tests);

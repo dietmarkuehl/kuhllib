@@ -34,6 +34,9 @@
 #include "nstd/execution/scheduler.hpp"
 #include "nstd/execution/sender.hpp"
 #include "nstd/execution/set_value.hpp"
+#include "nstd/execution/start.hpp"
+#include "nstd/type_traits/remove_cvref.hpp"
+#include "nstd/utility/forward.hpp"
 
 // ----------------------------------------------------------------------------
 
@@ -47,7 +50,7 @@ namespace nstd::hidden_names::run_loop {
     class sender;
     class scheduler;
     auto tag_invoke(::nstd::execution::get_completion_scheduler_t<::nstd::execution::set_value_t>,
-                    ::nstd::hidden_names::run_loop::sender const&)
+                    ::nstd::hidden_names::run_loop::sender const&) noexcept
         -> ::nstd::hidden_names::run_loop::scheduler;
 }
 
@@ -76,9 +79,13 @@ public:
 class nstd::hidden_names::run_loop::sender
 {
 private:
+    friend class ::nstd::hidden_names::run_loop::scheduler;
+
     ::nstd::execution::run_loop* d_loop;
 
-    auto get_completion_scheduler() const -> ::nstd::hidden_names::run_loop::scheduler;
+    auto get_completion_scheduler() const noexcept -> ::nstd::hidden_names::run_loop::scheduler;
+
+    sender(::nstd::execution::run_loop* loop): d_loop(loop) {}
 
 public:
     using completion_signatures = ::nstd::execution::completion_signatures<
@@ -86,11 +93,14 @@ public:
         >;
 
     friend auto tag_invoke(::nstd::execution::get_completion_scheduler_t<::nstd::execution::set_value_t>,
-                           ::nstd::hidden_names::run_loop::sender const&)
+                           ::nstd::hidden_names::run_loop::sender const&) noexcept
         -> ::nstd::execution::run_loop::scheduler;
     template <::nstd::execution::receiver Receiver>
-    friend auto tag_invoke(::nstd::execution::connect_t, sender&&, Receiver&&)
-        -> ::nstd::execution::run_loop::state<Receiver>;
+    friend auto tag_invoke(::nstd::execution::connect_t, sender&&, Receiver&& r)
+        noexcept(noexcept(::nstd::type_traits::remove_cvref_t<Receiver>(::nstd::utility::forward<Receiver>(r))))
+        -> ::nstd::execution::run_loop::state<Receiver> {
+        return {};
+    }
 };
 
 static_assert(::nstd::execution::sender<::nstd::execution::run_loop::sender>);
@@ -106,13 +116,27 @@ private:
     ::nstd::execution::run_loop* d_loop;
 
     scheduler(::nstd::execution::run_loop*);
+    auto schedule() const noexcept -> ::nstd::execution::run_loop::sender {
+        return ::nstd::execution::run_loop::sender(this->d_loop);
+    }
 public:
     auto operator== (scheduler const&) const -> bool = default;
-    friend auto tag_invoke(::nstd::execution::schedule_t, scheduler const&) noexcept
-        -> ::nstd::execution::run_loop::sender;
+    friend auto tag_invoke(::nstd::execution::schedule_t, scheduler const& self) noexcept
+        -> ::nstd::execution::run_loop::sender {
+        return self.schedule();
+    }
 };
 
 static_assert(::nstd::execution::scheduler<::nstd::execution::run_loop::scheduler>);
+
+// ----------------------------------------------------------------------------
+
+template <::nstd::execution::receiver>
+class nstd::hidden_names::run_loop::state
+{
+    friend auto tag_invoke(::nstd::execution::start_t, state&) noexcept -> void {
+    }
+};
 
 // ----------------------------------------------------------------------------
 
