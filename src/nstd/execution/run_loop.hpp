@@ -27,8 +27,10 @@
 #define INCLUDED_NSTD_EXECUTION_RUN_LOOP
 
 #include "nstd/execution/completion_signatures.hpp"
+#include "nstd/container/intrusive_list.hpp"
 #include "nstd/execution/connect.hpp"
 #include "nstd/execution/get_completion_scheduler.hpp"
+#include "nstd/execution/get_stop_token.hpp"
 #include "nstd/execution/receiver.hpp"
 #include "nstd/execution/schedule.hpp"
 #include "nstd/execution/scheduler.hpp"
@@ -37,6 +39,9 @@
 #include "nstd/execution/start.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
 #include "nstd/utility/forward.hpp"
+#include <atomic>
+#include <condition_variable>
+#include <mutex>
 
 // ----------------------------------------------------------------------------
 
@@ -56,8 +61,33 @@ namespace nstd::hidden_names::run_loop {
 
 // ----------------------------------------------------------------------------
 
+class nstd::hidden_names::run_loop::state_base
+{
+protected:
+    virtual auto do_execute() -> void {};
+
+public:
+    ::nstd::container::intrusive_list_node<state_base> link;
+
+    auto add_to_back_of(::nstd::execution::run_loop&) noexcept -> void;
+    auto execute() -> void { return this->do_execute(); }
+};
+
+// ----------------------------------------------------------------------------
+
 class nstd::execution::run_loop
 {
+    friend class nstd::hidden_names::run_loop::state_base;
+private:
+    enum class phase { starting, running, finishing };
+    ::std::mutex              d_guard;
+    ::std::condition_variable d_cond;
+    ::std::atomic<phase>      d_phase{phase::starting};
+    ::nstd::container::intrusive_list<::nstd::hidden_names::run_loop::state_base> d_list;
+
+    auto push_back(::nstd::hidden_names::run_loop::state_base* s) noexcept -> void;
+    auto pop_front() noexcept -> ::nstd::hidden_names::run_loop::state_base*;
+
 public:
     using state_base = ::nstd::hidden_names::run_loop::state_base;
     template <::nstd::execution::receiver Receiver>
@@ -67,7 +97,7 @@ public:
 
     run_loop() noexcept = default;
     run_loop(run_loop&&) = delete;
-    ~run_loop() = default;
+    ~run_loop();
 
     auto get_scheduler() -> scheduler;
     auto run() -> void;
@@ -96,10 +126,10 @@ public:
                            ::nstd::hidden_names::run_loop::sender const&) noexcept
         -> ::nstd::execution::run_loop::scheduler;
     template <::nstd::execution::receiver Receiver>
-    friend auto tag_invoke(::nstd::execution::connect_t, sender&&, Receiver&& r)
+    friend auto tag_invoke(::nstd::execution::connect_t, sender&& self, Receiver&& r)
         noexcept(noexcept(::nstd::type_traits::remove_cvref_t<Receiver>(::nstd::utility::forward<Receiver>(r))))
         -> ::nstd::execution::run_loop::state<Receiver> {
-        return {};
+        return ::nstd::execution::run_loop::state<Receiver>(self.d_loop, ::nstd::utility::forward<Receiver>(r));
     }
 };
 
@@ -131,12 +161,40 @@ static_assert(::nstd::execution::scheduler<::nstd::execution::run_loop::schedule
 
 // ----------------------------------------------------------------------------
 
-template <::nstd::execution::receiver>
+template <::nstd::execution::receiver Receiver>
 class nstd::hidden_names::run_loop::state
+    : public ::nstd::hidden_names::run_loop::state_base
 {
-    friend auto tag_invoke(::nstd::execution::start_t, state&) noexcept -> void {
+private:
+    ::nstd::execution::run_loop*                  d_loop;
+    ::nstd::type_traits::remove_cvref_t<Receiver> d_receiver;
+
+protected:
+    auto do_execute() -> void override;
+
+public:
+    template <::nstd::execution::receiver R>
+    state(::nstd::execution::run_loop* l, R&& r)
+        : d_loop(l)
+        , d_receiver(::nstd::utility::forward<R>(r)) {
+    }
+    friend auto tag_invoke(::nstd::execution::start_t, state& s) noexcept -> void {
+        s.add_to_back_of(*s.d_loop);
     }
 };
+
+// ----------------------------------------------------------------------------
+
+template <::nstd::execution::receiver Receiver>
+auto nstd::hidden_names::run_loop::state<Receiver>::do_execute() -> void
+{
+    if (::nstd::execution::get_stop_token(this->d_receiver).stop_requested()) {
+        ::nstd::execution::set_stopped(::nstd::utility::move(this->d_receiver));
+    }
+    else {
+        ::nstd::execution::set_value(::nstd::utility::move(this->d_receiver));
+    }
+}
 
 // ----------------------------------------------------------------------------
 

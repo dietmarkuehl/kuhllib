@@ -53,8 +53,57 @@ nstd::execution::run_loop::scheduler::scheduler(::nstd::execution::run_loop* loo
 
 // ----------------------------------------------------------------------------
 
+auto nstd::hidden_names::run_loop::state_base::add_to_back_of(::nstd::execution::run_loop& loop) noexcept -> void
+{
+    loop.push_back(this);
+}
+
+// ----------------------------------------------------------------------------
+
+nstd::execution::run_loop::~run_loop() {
+    ::std::lock_guard kerberos(this->d_guard);
+    if (!this->d_list.empty()) {
+        ::std::terminate();
+    }
+}
+auto nstd::execution::run_loop::push_back(::nstd::hidden_names::run_loop::state_base* s) noexcept -> void {
+    ::std::lock_guard kerberos(this->d_guard);
+    this->d_list.push_back(*s);
+}
+
+auto nstd::execution::run_loop::pop_front() noexcept -> ::nstd::hidden_names::run_loop::state_base* {
+    ::std::unique_lock kerberos(this->d_guard);
+    this->d_cond.wait(kerberos, [this]{ return not this->d_list.empty() || this->d_phase == phase::finishing; });
+    if (this->d_list.empty()) {
+        return nullptr;
+    }
+    else {
+        auto rc = &this->d_list.front();
+        this->d_list.pop_front();
+        return rc;
+    }
+}
+
 auto nstd::execution::run_loop::get_scheduler()
     -> ::nstd::execution::run_loop::scheduler
 {
     return ::nstd::execution::run_loop::scheduler(this);
+}
+
+auto nstd::execution::run_loop::run()
+    -> void
+{
+    while (auto* s = this->pop_front()) {
+        s->execute();
+    }
+}
+
+auto nstd::execution::run_loop::finish()
+    -> void
+{
+    {
+        ::std::lock_guard kerberos(this->d_guard);
+        this->d_phase = phase::finishing;
+    }
+    this->d_cond.notify_one();
 }
