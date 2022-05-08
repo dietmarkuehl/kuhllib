@@ -95,6 +95,7 @@ list(APPEND kuhllib_execution_components
     src/nstd/execution/get_completion_signatures
     src/nstd/execution/get_env
     src/nstd/execution/get_scheduler
+    src/nstd/execution/get_delegatee_scheduler
     src/nstd/execution/just
     src/nstd/execution/make_completion_signatures
     src/nstd/execution/no_env
@@ -122,7 +123,6 @@ list(APPEND kuhllib_execution_todo
     src/nstd/execution/forwarding_receiver_query
     src/nstd/execution/forwarding_scheduler_query
     src/nstd/execution/get_allocator
-    src/nstd/execution/get_delegatee_scheduler
     src/nstd/execution/get_stop_token
     src/nstd/execution/on
     src/nstd/execution/read
