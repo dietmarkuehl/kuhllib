@@ -26,27 +26,36 @@
 #ifndef INCLUDED_NSTD_EXECUTION_GET_SCHEDULER
 #define INCLUDED_NSTD_EXECUTION_GET_SCHEDULER
 
-#include "nstd/execution/receiver.hpp"
+#include "nstd/concepts/same_as.hpp"
 #include "nstd/execution/scheduler.hpp"
+#include "nstd/execution/no_env.hpp"
 #include "nstd/functional/tag_invoke.hpp"
 #include "nstd/type_traits/declval.hpp"
+#include "nstd/type_traits/remove_cvref.hpp"
 #include "nstd/utility/as_const.hpp"
 
 // ----------------------------------------------------------------------------
+// [exec.queries.get_scheduler]
 
-namespace nstd::execution::inline customization_points {
-    inline constexpr struct get_scheduler_t {
-        template <nstd::execution::receiver Receiver>
-            requires requires(Receiver&& receiver) {
-                    { ::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::execution::get_scheduler_t>(), ::nstd::utility::as_const(receiver)) } noexcept
+namespace nstd::hidden_names::get_scheduler {
+    struct cpo {
+        template <typename Env>
+            requires requires(Env&& env, cpo const& get_scheduler) {
+                    { ::nstd::tag_invoke(get_scheduler, ::nstd::utility::as_const(env)) } noexcept
                         -> nstd::execution::scheduler;
                 }
-        constexpr auto operator()(Receiver&& receiver) const
-            noexcept(noexcept(::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::execution::get_scheduler_t>(), ::nstd::utility::as_const(receiver))))
+                && (not ::nstd::concepts::same_as<::nstd::hidden_names::exec_envs::no_env,
+                                                  ::nstd::type_traits::remove_cvref_t<Env>>)
+        constexpr auto operator()(Env&& env) const noexcept
         {
-            return ::nstd::tag_invoke(*this, ::nstd::utility::as_const(receiver));
+            return ::nstd::tag_invoke(*this, ::nstd::utility::as_const(env));
         }
-    } get_scheduler;
+    };
+}
+
+namespace nstd::execution::inline customization_points {
+    using get_scheduler_t = ::nstd::hidden_names::get_scheduler::cpo;
+    inline constexpr get_scheduler_t get_scheduler{};
 }
 
 // ----------------------------------------------------------------------------

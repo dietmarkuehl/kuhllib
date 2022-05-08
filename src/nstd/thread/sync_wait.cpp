@@ -27,4 +27,6 @@
 
 // ----------------------------------------------------------------------------
 
-int sync_wait_dummy = 0;
+namespace nstd::thread {
+    int sync_wait_dummy = 0;
+}
