@@ -27,7 +27,10 @@
 #define INCLUDED_NSTD_EXECUTION_THEN
 
 #include "nstd/execution/completion_signatures.hpp"
+#include "nstd/execution/connect.hpp"
+#include "nstd/execution/get_env.hpp"
 #include "nstd/execution/get_completion_scheduler.hpp"
+#include "nstd/execution/receiver.hpp"
 #include "nstd/execution/sender.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/functional/tag_invoke.hpp"
@@ -36,21 +39,103 @@
 #include "nstd/utility/move.hpp"
 
 // ----------------------------------------------------------------------------
+// [exec.then]
 
 namespace nstd::hidden_names::then {
-    struct sender {
-        using completion_signatures = ::nstd::execution::completion_signatures<>;
+    struct cpo;
+
+    template <typename Sender, typename Fun>
+    concept has_custom_scheduler_then
+        =  ::nstd::execution::sender<Sender>
+        && requires (Sender&& sender, Fun&& fun) {
+            {
+                ::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::hidden_names::then::cpo const&>(),
+                                   ::nstd::execution::get_completion_scheduler<::nstd::execution::set_value_t>(sender),
+                                   ::nstd::utility::forward<Sender>(sender),
+                                   ::nstd::utility::forward<Fun>(fun))
+            } -> nstd::execution::sender;
+        }
+        ;
+
+    template <typename Sender, typename Fun>
+    concept has_custom_then
+        =  ::nstd::execution::sender<Sender>
+        && requires (Sender&& sender, Fun&& fun) {
+            {
+                ::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::hidden_names::then::cpo const&>(),
+                                   ::nstd::utility::forward<Sender>(sender),
+                                   ::nstd::utility::forward<Fun>(fun))
+            } -> nstd::execution::sender;
+        }
+        ;
+
+    template <::nstd::execution::receiver Receiver, typename Fun>
+    struct receiver {
+        ::nstd::type_traits::remove_cvref_t<Receiver> d_receiver;
+        ::nstd::type_traits::remove_cvref_t<Fun>      d_fun;
+
+        friend auto tag_invoke(::nstd::execution::get_env_t, receiver const& self) -> receiver {
+            return self;
+        }
+        template <typename... Args>
+        friend auto tag_invoke(::nstd::execution::set_value_t, receiver&& self, Args&&... args) noexcept -> void {
+            try {
+                if constexpr (::nstd::concepts::same_as<void, decltype(::std::invoke(self.d_fun, ::nstd::utility::forward<Args>(args)...))>) {
+                    ::std::invoke(self.d_fun, ::nstd::utility::forward<Args>(args)...);
+                    ::nstd::execution::set_value(::nstd::utility::move(self.d_receiver));
+                }
+                else {
+                    ::nstd::execution::set_value(::nstd::utility::move(self.d_receiver),
+                                                 ::std::invoke(self.d_fun, ::nstd::utility::forward<Args>(args)...));
+                }
+            }
+            catch (...) {
+                ::nstd::execution::set_error(::nstd::utility::move(self.d_receiver),
+                                             ::std::current_exception());
+            }
+        }
+        template <typename Error>
+        friend auto tag_invoke(::nstd::execution::set_error_t, receiver&& self, Error&& error) noexcept -> void {
+            ::nstd::execution::set_error(::nstd::utility::move(self.d_receiver),
+                                         ::nstd::utility::forward<Error>(error));
+        }
+        friend auto tag_invoke(::nstd::execution::set_stopped_t, receiver&& self) noexcept -> void {
+            ::nstd::execution::set_stopped(::nstd::utility::move(self.d_receiver));
+        }
     };
+
+    template <::nstd::execution::sender Sender, typename Fun>
+    struct sender: ::nstd::execution::sender_tag {
+        using completion_signatures = ::nstd::execution::completion_signatures</*-dk:TODO sort of the completion signatures*/>;
+
+        ::nstd::type_traits::remove_cvref_t<Sender> d_sender;
+        ::nstd::type_traits::remove_cvref_t<Fun>    d_fun;
+
+        template <typename Tag>
+        friend auto tag_invoke(::nstd::execution::get_completion_scheduler_t<Tag>, sender const& self) noexcept {
+            return ::nstd::execution::get_completion_scheduler_t<Tag>(self.d_sender);
+        }
+        template <::nstd::execution::receiver Receiver>
+        friend auto tag_invoke(::nstd::execution::connect_t, sender&& self, Receiver r) {
+            return ::nstd::execution::connect(::nstd::utility::move(self.d_sender),
+                                              ::nstd::hidden_names::then::receiver<Receiver, Fun>{
+                                                  ::nstd::utility::forward<Receiver>(r),
+                                                  ::nstd::utility::move(self.d_fun)
+                                              });
+        }
+        template <::nstd::execution::receiver Receiver>
+        friend auto tag_invoke(::nstd::execution::connect_t, sender const& self, Receiver r) {
+            return ::nstd::execution::connect(self.d_sender,
+                                              ::nstd::hidden_names::then::receiver<Receiver, Fun>{
+                                                  ::nstd::utility::forward<Receiver>(r),
+                                                  self.d_fun
+                                              });
+        }
+    };
+
     struct cpo {
         template <::nstd::execution::sender Sender, typename Fun>
-            requires requires (Sender&& sender, Fun&& fun) {
-                {
-                    ::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::hidden_names::then::cpo const&>(),
-                                       ::nstd::execution::get_completion_scheduler<::nstd::execution::set_value_t>(sender),
-                                       ::nstd::utility::forward<Sender>(sender),
-                                       ::nstd::utility::forward<Fun>(fun))
-                } -> nstd::execution::sender;
-            }
+            requires ::nstd::hidden_names::then::has_custom_scheduler_then<Sender, Fun>
         auto operator()(Sender&& sender, Fun&& fun) const {
             return ::nstd::tag_invoke(*this,
                                       ::nstd::execution::get_completion_scheduler<::nstd::execution::set_value_t>(sender),
@@ -58,50 +143,17 @@ namespace nstd::hidden_names::then {
                                       ::nstd::utility::forward<Fun>(fun));
         }
         template <::nstd::execution::sender Sender, typename Fun>
-            requires
-                (not requires (Sender&& sender, Fun&& fun) {
-                    {
-                        ::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::hidden_names::then::cpo const&>(),
-                                           ::nstd::execution::get_completion_scheduler<::nstd::execution::set_value_t>(sender),
-                                           ::nstd::utility::forward<Sender>(sender),
-                                           ::nstd::utility::forward<Fun>(fun))
-                    } -> nstd::execution::sender;
-                })
-                && requires (Sender&& sender, Fun&& fun) {
-                    {
-                        ::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::hidden_names::then::cpo const&>(),
-                                           ::nstd::utility::forward<Sender>(sender),
-                                           ::nstd::utility::forward<Fun>(fun))
-                    } -> nstd::execution::sender;
-                }
+            requires (not ::nstd::hidden_names::then::has_custom_scheduler_then<Sender, Fun>)
+                && ::nstd::hidden_names::then::has_custom_then<Sender, Fun>
         auto operator()(Sender&& sender, Fun&& fun) const {
             return ::nstd::tag_invoke(*this,
                                       ::nstd::utility::forward<Sender>(sender),
                                       ::nstd::utility::forward<Fun>(fun));
         }
+
         template <::nstd::execution::sender Sender, typename Fun>
-            requires
-                (not requires (Sender&& sender, Fun&& fun) {
-                    {
-                        ::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::hidden_names::then::cpo const&>(),
-                                           ::nstd::execution::get_completion_scheduler<::nstd::execution::set_value_t>(sender),
-                                           ::nstd::utility::forward<Sender>(sender),
-                                           ::nstd::utility::forward<Fun>(fun))
-                    } -> nstd::execution::sender;
-                })
-                && (not requires (Sender&& sender, Fun&& fun) {
-                    {
-                        ::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::hidden_names::then::cpo const&>(),
-                                           ::nstd::utility::forward<Sender>(sender),
-                                           ::nstd::utility::forward<Fun>(fun))
-                    } -> nstd::execution::sender;
-                })
-        auto operator()(Sender&& sender, Fun&& fun) const {
-            return ::nstd::hidden_names::then::sender(
-                    ::nstd::utility::forward<Sender>(sender),
-                    ::nstd::utility::forward<Fun>(fun)
-                );
-        }
+        auto operator()(Sender&& sender, Fun&& fun) const;
+
         template <typename Fun>
         auto operator()(Fun&& fun) const;
     };
@@ -109,7 +161,7 @@ namespace nstd::hidden_names::then {
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::execution {
+namespace nstd::execution::inline customization_points {
     using then_t = ::nstd::hidden_names::then::cpo;
     inline constexpr then_t then{};
 }

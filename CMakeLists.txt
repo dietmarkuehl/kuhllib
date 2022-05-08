@@ -113,11 +113,11 @@ list(APPEND kuhllib_execution_components
     src/nstd/execution/set_stopped
     src/nstd/execution/set_value
     src/nstd/execution/start
+    src/nstd/execution/then
     src/nstd/execution/value_types_of_t
 )
 
 list(APPEND kuhllib_execution_todo
-    src/nstd/execution/then
     src/nstd/execution/forward_progress_guarantee
     src/nstd/execution/forwarding_env_query
     src/nstd/execution/forwarding_receiver_query

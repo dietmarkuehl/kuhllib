@@ -43,6 +43,8 @@ namespace nstd::execution {
         && ::nstd::hidden_names::sender_base<Sender, ::nstd::hidden_names::exec_envs::no_env>
         && ::std::move_constructible<::nstd::type_traits::remove_cvref_t<Sender>>
         ;
+    
+    struct sender_tag {};
 
     template <::nstd::execution::sender Sender, typename Fun>
     auto operator|(Sender&& sender, Fun&& fun)
