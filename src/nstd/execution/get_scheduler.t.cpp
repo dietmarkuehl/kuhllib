@@ -23,9 +23,9 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
+#include "nstd/execution/get_scheduler.hpp"
 #include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/get_completion_scheduler.hpp"
-#include "nstd/execution/get_scheduler.hpp"
 #include "nstd/execution/no_env.hpp"
 #include "nstd/execution/schedule.hpp"
 #include "nstd/execution/scheduler.hpp"
@@ -43,6 +43,7 @@ namespace KT = ::kuhl::test;
 
 namespace test_declarations
 {
+    namespace {
     template <typename Env>
     concept has_get_scheduler
         = requires(Env const& r) { EX::get_scheduler(r); }
@@ -74,6 +75,7 @@ namespace test_declarations
             return { self.object };
         }
     };
+    }
 }
 
 // ----------------------------------------------------------------------------
