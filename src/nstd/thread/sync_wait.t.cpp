@@ -24,8 +24,16 @@
 // ----------------------------------------------------------------------------
 
 #include "nstd/thread/sync_wait.hpp"
+#include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/just.hpp"
 #include "nstd/execution/scheduler.hpp"
+#include "nstd/execution/set_value.hpp"
+#include "nstd/execution/set_error.hpp"
+#include "nstd/execution/set_stopped.hpp"
+#include "nstd/execution/sender.hpp"
+#include "nstd/execution/get_env.hpp"
+#include "nstd/execution/get_scheduler.hpp"
+#include "nstd/execution/get_delegatee_scheduler.hpp"
 #include "nstd/type_traits/declval.hpp"
 #include "kuhl/test.hpp"
 #include <optional>
@@ -37,8 +45,9 @@
 namespace test_declarations {}
 namespace TD = ::test_declarations;
 namespace EX = ::nstd::execution;
+namespace NF = ::nstd;
 namespace HN = ::nstd::hidden_names::sync_wait;
-namespace TR = ::nstd::this_thread;
+namespace NT = ::nstd::this_thread;
 namespace TT = ::nstd::type_traits;
 namespace KT = ::kuhl::test;
 
@@ -46,29 +55,117 @@ namespace KT = ::kuhl::test;
 
 namespace test_declarations {
     namespace {
+        template <typename... S>
+        struct sender {
+            using completion_signatures
+                = EX::completion_signatures<S...>;
+
+        };
+
+        struct scheduler;
+        struct sender_with_scheduler {
+            using completion_signatures = EX::completion_signatures<EX::set_value_t(int)>;
+
+            friend auto tag_invoke(EX::get_completion_scheduler_t<EX::set_value_t>, sender_with_scheduler const&) noexcept -> scheduler;
+            friend auto tag_invoke(NT::sync_wait_t, TD::scheduler const&, sender_with_scheduler const&) -> ::std::optional<::std::tuple<int>> {
+                return 42;
+            }
+            friend auto tag_invoke(NT::sync_wait_t, sender_with_scheduler const&) -> ::std::optional<::std::tuple<int>> {
+                return 17;
+            }
+        };
+
+        struct scheduler {
+            auto operator== (scheduler const&) const -> bool = default;
+            friend auto tag_invoke(EX::schedule_t, scheduler const&) -> TD::sender_with_scheduler {
+                return {};
+            }
+        };
+        auto tag_invoke(EX::get_completion_scheduler_t<EX::set_value_t>, sender_with_scheduler const&) noexcept -> scheduler {
+            return {};
+        }
+
+        struct sender_with_sync_wait {
+            using completion_signatures = EX::completion_signatures<EX::set_value_t(int)>;
+
+            friend auto tag_invoke(NT::sync_wait_t, sender_with_sync_wait const&) -> ::std::optional<::std::tuple<int>> {
+                return 17;
+            }
+        };
     }
 }
 
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
+    KT::expect_success("TD::sender", []{
+            return EX::sender<TD::sender<>>
+                && EX::sender<TD::sender<EX::set_value_t()>>
+                && EX::sender<TD::sender<EX::set_value_t(int, bool&)>>
+                && EX::sender<TD::sender<EX::set_value_t(int, bool&)>, EX::set_value_t(float)>
+                && EX::sender<TD::sender<EX::set_error_t(int), EX::set_stopped_t()>>
+                ;
+        }),
+    KT::expect_success("TD::scheduler", []{
+            return EX::scheduler<TD::scheduler>
+                && KT::type<TD::sender_with_scheduler> == KT::type<decltype(EX::schedule(TD::scheduler()))>
+                ;
+        }),
+    KT::expect_success("TD::sender_with_scheduler", []{
+            return EX::sender<TD::sender_with_scheduler>
+                && KT::type<TD::scheduler> == KT::type<decltype(EX::get_completion_scheduler<EX::set_value_t>(TD::sender_with_scheduler()))>
+                && KT::type<::std::optional<::std::tuple<int>>> == KT::type<decltype(NF::tag_invoke(NT::sync_wait, TD::scheduler(), TD::sender_with_scheduler()))>
+                ;
+        }),
+    KT::expect_success("TD::sender_with_sender", []{
+            return EX::sender<TD::sender_with_sync_wait>
+                && KT::type<::std::optional<::std::tuple<int>>> == KT::type<decltype(NF::tag_invoke(NT::sync_wait, TD::sender_with_sync_wait()))>
+                ;
+        }),
     KT::expect_success("sync_wait receiver", []{
         return EX::receiver<HN::receiver>
-            //&& EX::scheduler<EX::get_scheduler(EX::get_env(TT::declval<HN::receiver const&>()))>
+            && EX::scheduler<decltype(EX::get_scheduler(EX::get_env(TT::declval<HN::receiver const&>())))>
+            && EX::scheduler<decltype(EX::get_delegatee_scheduler(EX::get_env(TT::declval<HN::receiver const&>())))>
             ;
+        }),
+    KT::expect_success("sync_wait type", []{
+        return KT::type<::std::optional<::std::tuple<>>>
+                == KT::type<HN::type<TD::sender<EX::set_value_t()>>>
+            && KT::type<::std::optional<::std::tuple<int, bool, float>>>
+                == KT::type<HN::type<TD::sender<EX::set_value_t(int&&, bool&, float const&)>>>
+            && KT::type<::std::optional<::std::tuple<int, bool, float>>>
+                == KT::type<HN::type<TD::sender<EX::set_value_t(int&&, bool&, float const&), EX::set_error_t(int)>>>
+            && KT::type<::std::optional<::std::tuple<int, bool, float>>>
+                == KT::type<HN::type<TD::sender<EX::set_value_t(int&&, bool&, float const&), EX::set_error_t(int), EX::set_stopped_t()>>>
+            && KT::type<::std::optional<::std::monostate>>
+                == KT::type<HN::type<TD::sender<EX::set_error_t(int), EX::set_stopped_t()>>>
+            ;
+        }),
+    KT::expect_success("special sync_wait for scheduler/sender", []{
+            auto[value] =  *NT::sync_wait(TD::sender_with_scheduler());
+            return KT::type<::std::optional<::std::tuple<int>>> == KT::type<decltype(NT::sync_wait(TD::sender_with_scheduler()))>
+                && value == 42
+                ;
+        }),
+    KT::expect_success("special sync_wait for sender", []{
+            auto[value] =  *NT::sync_wait(TD::sender_with_sync_wait());
+            return KT::type<::std::optional<::std::tuple<int>>> == KT::type<decltype(NT::sync_wait(TD::sender_with_sync_wait()))>
+                && value == 17
+                ;
         }),
 #if 0
     KT::expect_success("sync_wait usage", []{
-            auto res = TT::sync_wait(EX::just(64));
-            return KT::use(res)
-                && KT::type<decltype(res)> == KT::type<::std::optional<::std::variant<int>>>
+            auto res = NT::sync_wait(EX::just(64));
+            return KT::type<decltype(res)> == KT::type<::std::optional<::std::tuple<int>>>
                 && res
                 && ::std::get<0>(*res) == 64
                 ;
         }),
+#endif
+#if 0
     KT::expect_success("sync_wait error_code", []{
         try {
-            TT::sync_wait(EX::just_error(::std::error_code(0, ::std::generic_category())));
+            NT::sync_wait(EX::just_error(::std::error_code(0, ::std::generic_category())));
             return false;
         }
         catch (::std::error_code const&) {
@@ -84,7 +181,7 @@ static KT::testcase const tests[] = {
     }),
     KT::expect_success("sync_wait exception object", []{
         try {
-            TT::sync_wait(EX::just_error(::std::runtime_error("error")));
+            NT::sync_wait(EX::just_error(::std::runtime_error("error")));
             return false;
         }
         catch (::std::runtime_error const&) {
@@ -96,7 +193,7 @@ static KT::testcase const tests[] = {
     }),
     KT::expect_success("sync_wait exception_ptr", []{
         try {
-            TT::sync_wait(EX::just_error(::std::make_exception_ptr(::std::logic_error("error"))));
+            NT::sync_wait(EX::just_error(::std::make_exception_ptr(::std::logic_error("error"))));
             return false;
         }
         catch (::std::logic_error const&) {
@@ -108,7 +205,7 @@ static KT::testcase const tests[] = {
     }),
     KT::expect_success("sync_wait cancel", []{
         try {
-            TT::sync_wait(EX::just_done());
+            NT::sync_wait(EX::just_done());
             return true;
         }
         catch (...) {
@@ -116,7 +213,7 @@ static KT::testcase const tests[] = {
         }
     }),
     KT::expect_success("sync_wait with void result", []{
-        TT::sync_wait(EX::just());
+        NT::sync_wait(EX::just());
         return true;
     }),
 #endif

@@ -26,10 +26,12 @@
 #ifndef INCLUDED_NSTD_THREAD_SYNC_WAIT
 #define INCLUDED_NSTD_THREAD_SYNC_WAIT
 
+#include "nstd/concepts/same_as.hpp"
 #include "nstd/execution/connect.hpp"
 #include "nstd/execution/get_completion_scheduler.hpp"
 #include "nstd/execution/get_env.hpp"
 #include "nstd/execution/get_scheduler.hpp"
+#include "nstd/execution/get_delegatee_scheduler.hpp"
 #include "nstd/execution/run_loop.hpp"
 #include "nstd/execution/sender.hpp"
 #include "nstd/execution/set_error.hpp"
@@ -56,7 +58,9 @@ namespace nstd::hidden_names::sync_wait {
         using scheduler_type = decltype(::nstd::execution::run_loop().get_scheduler());
         scheduler_type d_scheduler;
 
-        friend auto tag_invoke(::nstd::execution::get_scheduler_t, env const& self)
+        friend auto tag_invoke(::nstd::execution::get_scheduler_t, env const& self) noexcept
+            -> scheduler_type { return self.d_scheduler; }
+        friend auto tag_invoke(::nstd::execution::get_delegatee_scheduler_t, env const& self) noexcept
             -> scheduler_type { return self.d_scheduler; }
     };
 
@@ -65,48 +69,63 @@ namespace nstd::hidden_names::sync_wait {
         friend auto tag_invoke(::nstd::execution::get_env_t, receiver const& self)
             -> ::nstd::hidden_names::sync_wait::env { return self.d_env; }
     };
-#if 0
+
     template <typename...> struct type_identity_or_monostate;
     template <> struct type_identity_or_monostate<> { using type = ::std::monostate; };
     template <typename T> struct type_identity_or_monostate<T> { using type = T; };
-
     template <typename... T>
-    using type_identity_or_monostate_t = typename ::nstd::hidden_names::type_identity_or_monostate<T...>::type;
+    using type_identity_or_monostate_t = typename ::nstd::hidden_names::sync_wait::type_identity_or_monostate<T...>::type;
 
-    template <::nstd::execution::sender S, typename sync_wait_env>
-    using sync_wait_type = ::std::optional<
-        ::nstd::execution::value_types_of_t<S, sync_wait_env, ::nstd::hidden_names::decayed_tuple, ::nstd::type_traits::type_identity_t>
-        >;
-#endif
+    template <::nstd::execution::sender<::nstd::hidden_names::sync_wait::env> Sender>
+    using type
+        = ::std::optional<::nstd::execution::value_types_of_t<
+            Sender,
+            ::nstd::hidden_names::sync_wait::env,
+            ::nstd::hidden_names::decayed_tuple,
+            ::nstd::hidden_names::sync_wait::type_identity_or_monostate_t>>;
+
+    struct cpo;
+
+    template <typename Sender>
+    concept has_sync_wait_with_scheduler
+        =  ::nstd::execution::sender<Sender>
+        && requires(Sender&& s, nstd::hidden_names::sync_wait::cpo const& sync_wait) {
+            {
+                ::nstd::tag_invoke(sync_wait,
+                                  ::nstd::execution::get_completion_scheduler<::nstd::execution::set_value_t>(s),
+                                  ::nstd::utility::forward<Sender>(s))
+            } -> nstd::concepts::same_as<::nstd::hidden_names::sync_wait::type<Sender>>
+            ;
+        }
+        ;
+
+    template <typename Sender>
+    concept has_sync_wait_with_sender
+        =  ::nstd::execution::sender<Sender>
+        && requires(Sender&& s, nstd::hidden_names::sync_wait::cpo const& sync_wait) {
+            {
+                ::nstd::tag_invoke(sync_wait, ::nstd::utility::forward<Sender>(s))
+            } -> nstd::concepts::same_as<::nstd::hidden_names::sync_wait::type<Sender>>
+            ;
+        }
+        ;
 
     struct cpo {
-#if 0
         template <::nstd::execution::sender Sender>
-            requires requires(Sender&& s, nstd::hidden_names::sync_wait::cpo const& sync_wait) {
-                {
-                    ::nstd::tag_invoke(sync_wait,
-                                      ::nstd::execution::get_completion_scheduler<::nstd::execution::set_value_t>(s),
-                                      s)
-                } //-dk:TODO -> ::nstd::hidden_names::sync_wait_type<Sender>
-                ;
-            }
+            requires has_sync_wait_with_scheduler<Sender>
         auto operator()(Sender&& s) const {
             return ::nstd::tag_invoke(*this,
                                       ::nstd::execution::get_completion_scheduler<::nstd::execution::set_value_t>(s),
-                                      s);
+                                      ::nstd::utility::forward<Sender>(s));
         }
 
         template <::nstd::execution::sender Sender>
-            requires requires(Sender&& s, nstd::hidden_names::sync_wait::cpo const& sync_wait) {
-                {
-                    ::nstd::tag_invoke(sync_wait, s)
-                } //-dk:TODO -> ::nstd::hidden_names::sync_wait_type<Sender>
-                ;
-            }
+            requires has_sync_wait_with_sender<Sender> &&  (not has_sync_wait_with_scheduler<Sender>)
         auto operator()(Sender&& s) const {
-            return ::nstd::tag_invoke(*this, s);
+            return ::nstd::tag_invoke(*this, ::nstd::utility::forward<Sender>(s));
         }
 
+#if 0
         template <typename Type>
         struct receiver {
             ::std::mutex*                           bottleneck;
@@ -145,15 +164,22 @@ namespace nstd::hidden_names::sync_wait {
                 r.complete();
             }
         };
+#endif
 
         template <::nstd::execution::sender Sender>
-        auto operator()(Sender&& s) const -> ::nstd::hidden_names::sync_wait_type<Sender> {
-            using type = ::nstd::hidden_names::sync_wait_type<Sender>;
+        auto operator()(Sender&& s) const -> ::nstd::hidden_names::sync_wait::type<Sender> {
+            using type = ::nstd::hidden_names::sync_wait::type<Sender>;
 
+            type                        res(std::nullopt);
+            ::nstd::execution::run_loop loop;
+            auto                        sender(::nstd::execution::schedule(loop.get_scheduler()));
+
+            (void)s;
+            (void)sender;
+#if 0
             ::std::mutex                          bottleneck;
             ::std::condition_variable             condition;
             bool                                  done(false);
-            type                                  res(std::nullopt);
             ::std::optional<::std::exception_ptr> ex;
 
             auto state = ::nstd::execution::connect(::nstd::utility::forward<Sender>(s),
@@ -165,13 +191,13 @@ namespace nstd::hidden_names::sync_wait {
             if (ex) {
                 ::std::rethrow_exception(*ex);
             }
+#endif
             return res;
         }
-#endif
-    } sync_wait;
+    };
 }
 
-namespace nstd::this_thread {
+namespace nstd::this_thread::inline customization_points {
     using sync_wait_t = nstd::hidden_names::sync_wait::cpo;
     inline constexpr sync_wait_t sync_wait{};
 }
