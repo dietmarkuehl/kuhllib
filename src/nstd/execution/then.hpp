@@ -37,6 +37,7 @@
 #include "nstd/type_traits/declval.hpp"
 #include "nstd/utility/forward.hpp"
 #include "nstd/utility/move.hpp"
+#include <functional>
 
 // ----------------------------------------------------------------------------
 // [exec.then]
