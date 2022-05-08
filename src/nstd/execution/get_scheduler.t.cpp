@@ -24,9 +24,14 @@
 // ----------------------------------------------------------------------------
 
 #include "nstd/execution/completion_signatures.hpp"
+#include "nstd/execution/get_completion_scheduler.hpp"
 #include "nstd/execution/get_scheduler.hpp"
-#include "nstd/execution/receiver.hpp"
+#include "nstd/execution/no_env.hpp"
+#include "nstd/execution/schedule.hpp"
 #include "nstd/execution/scheduler.hpp"
+#include "nstd/execution/sender.hpp"
+#include "nstd/execution/set_value.hpp"
+
 #include "kuhl/test.hpp"
 
 namespace test_declarations {}
@@ -38,29 +43,35 @@ namespace KT = ::kuhl::test;
 
 namespace test_declarations
 {
-    template <typename Receiver>
+    template <typename Env>
     concept has_get_scheduler
-        = requires(Receiver const& r) { EX::get_scheduler(r); }
+        = requires(Env const& r) { EX::get_scheduler(r); }
         ;
 
-    struct non_scheduler {};
-    struct sender: EX::sender_base {
-        //-dk:TODO remove sender_base
+    struct scheduler;
+    struct non_scheduler { int* object; };
+    struct sender {
         using completion_signatures = EX::completion_signatures<>;
+
+        friend auto tag_invoke(EX::get_completion_scheduler_t<EX::set_value_t>, sender&&)
+            -> scheduler;
     };
     struct scheduler {
+        int* object;
         bool operator== (scheduler const&) const = default;
         friend auto tag_invoke(EX::schedule_t, scheduler&&) -> sender { return {}; }
     };
+    auto tag_invoke(EX::get_completion_scheduler_t<EX::set_value_t>, sender&&)
+        -> scheduler {
+        return {};
+    }
 
-    template <typename Scheduler, bool Noexcept, bool IsReceiver = true>
-    struct receiver {
-        bool* const value;
-        friend auto tag_invoke(EX::set_stopped_t, receiver&&) noexcept(IsReceiver) {}
-        friend auto tag_invoke(EX::set_error_t, receiver&&, std::exception_ptr) noexcept {}
-        friend auto tag_invoke(EX::get_scheduler_t, receiver const& r) noexcept(Noexcept) {
-            *r.value = true;
-            return Scheduler();
+    template <bool Noexcept, typename Scheduler>
+    struct env {
+        int* object;
+        friend auto tag_invoke(EX::get_scheduler_t, env const& self) noexcept(Noexcept)
+            -> Scheduler {
+            return { self.object };
         }
     };
 }
@@ -73,37 +84,37 @@ static KT::testcase const tests[] = {
             && KT::type<EX::get_scheduler_t const> == KT::type<decltype(EX::get_scheduler)>
             ;
     }),
-    KT::expect_success("test declarations behave as expected", []{
-           return  EX::receiver<TD::receiver<TD::non_scheduler, true>>
-                && EX::receiver<TD::receiver<TD::non_scheduler, false>>
-                && EX::receiver<TD::receiver<TD::scheduler, true>>
-                && EX::receiver<TD::receiver<TD::scheduler, false>>
-                && !EX::receiver<TD::receiver<TD::scheduler, true, false>>
-                && !EX::scheduler<TD::non_scheduler>
-                && EX::scheduler<TD::scheduler>
+    KT::expect_success("TD::sender is a sender", []{
+            return EX::sender<TD::sender>;
+        }),
+    KT::expect_success("TD::non_scheduler is not a scheduler", []{
+            return not EX::scheduler<TD::non_scheduler>;
+        }),
+    KT::expect_success("TD::scheduler is a scheduler", []{
+            return EX::scheduler<TD::scheduler>;
+        }),
+    KT::expect_success("no_env doesn't have get_scheduler", []{
+            return not TD::has_get_scheduler<::nstd::hidden_names::exec_envs::no_env>
+                && not TD::has_get_scheduler<::nstd::hidden_names::exec_envs::no_env const>
+                && not TD::has_get_scheduler<::nstd::hidden_names::exec_envs::no_env volatile>
+                && not TD::has_get_scheduler<::nstd::hidden_names::exec_envs::no_env const volatile>
                 ;
         }),
-    KT::expect_success("receiver returning a scheduler has get_scheduler", []{
-            bool                              value(false);
-            TD::receiver<TD::scheduler, true> r{&value};
-            EX::get_scheduler(r);
-            return TD::has_get_scheduler<TD::receiver<TD::scheduler, true>>
-                && KT::type<decltype(EX::get_scheduler(r))> == KT::type<TD::scheduler>
-                && value
+    KT::expect_success("get_scheduler on an object supporting it", []{
+            int object;
+            return TD::has_get_scheduler<TD::env<true, TD::scheduler>>
+                && noexcept(EX::get_scheduler(TD::env<true, TD::scheduler>{&object}))
+                && TD::scheduler{&object} == EX::get_scheduler(TD::env<true, TD::scheduler>{&object})
                 ;
         }),
-    KT::expect_success("non-receiver doesn't have get_scheduler", []{
-            return !TD::has_get_scheduler<TD::receiver<TD::scheduler, true, false>>
+    KT::expect_success("get_scheduler can't throw", []{
+            return not TD::has_get_scheduler<TD::env<false, TD::scheduler>>
                 ;
         }),
-    KT::expect_success("throwing get_scheduler isn't allowed ", []{
-            return !TD::has_get_scheduler<TD::receiver<TD::scheduler, false>>
-                ;
-        }),
-    KT::expect_success("get_scheduler returning non-scheduler isn't allowed ", []{
-            return !TD::has_get_scheduler<TD::receiver<TD::non_scheduler, true>>
+    KT::expect_success("get_scheduler returns a scheduler", []{
+            return not TD::has_get_scheduler<TD::env<true, TD::non_scheduler>>
                 ;
         }),
 };
 
-static KT::add_tests suite("get_scheduler", ::tests);
+static KT::add_tests suite("[exec.queries.get_scheduler]", ::tests);

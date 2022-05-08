@@ -27,4 +27,6 @@
 
 // ----------------------------------------------------------------------------
 
-int get_scheduler_dummy = 0;
+namespace get_scheduler {
+    int get_scheduler_dummy = 0;
+}

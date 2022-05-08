@@ -94,6 +94,7 @@ list(APPEND kuhllib_execution_components
     src/nstd/execution/get_completion_scheduler
     src/nstd/execution/get_completion_signatures
     src/nstd/execution/get_env
+    src/nstd/execution/get_scheduler
     src/nstd/execution/just
     src/nstd/execution/make_completion_signatures
     src/nstd/execution/no_env
@@ -115,13 +116,13 @@ list(APPEND kuhllib_execution_components
 )
 
 list(APPEND kuhllib_execution_todo
+    src/nstd/execution/then
     src/nstd/execution/forward_progress_guarantee
     src/nstd/execution/forwarding_env_query
     src/nstd/execution/forwarding_receiver_query
     src/nstd/execution/forwarding_scheduler_query
     src/nstd/execution/get_allocator
     src/nstd/execution/get_delegatee_scheduler
-    src/nstd/execution/get_scheduler
     src/nstd/execution/get_stop_token
     src/nstd/execution/on
     src/nstd/execution/read
@@ -147,7 +148,6 @@ list(APPEND kuhllib_xexecution_components
     src/nstd/execution/start_detached
     src/nstd/execution/stop_token_type
     src/nstd/execution/task
-    src/nstd/execution/then
     src/nstd/execution/timeout
     src/nstd/execution/upon_done
     src/nstd/execution/when_all
@@ -291,7 +291,7 @@ list(APPEND kuhllib_thread_todo
     src/nstd/thread/may_block_caller
 )
 
-list(APPEND xkuhllib_thread_components
+list(APPEND kuhllib_thread_components
     src/nstd/thread/sync_wait
 )
 

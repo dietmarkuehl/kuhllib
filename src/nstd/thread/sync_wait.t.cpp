@@ -25,6 +25,8 @@
 
 #include "nstd/thread/sync_wait.hpp"
 #include "nstd/execution/just.hpp"
+#include "nstd/execution/scheduler.hpp"
+#include "nstd/type_traits/declval.hpp"
 #include "kuhl/test.hpp"
 #include <optional>
 #include <variant>
@@ -35,7 +37,9 @@
 namespace test_declarations {}
 namespace TD = ::test_declarations;
 namespace EX = ::nstd::execution;
-namespace TT = ::nstd::this_thread;
+namespace HN = ::nstd::hidden_names::sync_wait;
+namespace TR = ::nstd::this_thread;
+namespace TT = ::nstd::type_traits;
 namespace KT = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
@@ -48,6 +52,12 @@ namespace test_declarations {
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
+    KT::expect_success("sync_wait receiver", []{
+        return EX::receiver<HN::receiver>
+            //&& EX::scheduler<EX::get_scheduler(EX::get_env(TT::declval<HN::receiver const&>()))>
+            ;
+        }),
+#if 0
     KT::expect_success("sync_wait usage", []{
             auto res = TT::sync_wait(EX::just(64));
             return KT::use(res)
@@ -109,6 +119,7 @@ static KT::testcase const tests[] = {
         TT::sync_wait(EX::just());
         return true;
     }),
+#endif
 };
 
-static KT::add_tests suite("sync_wait", ::tests);
+static KT::add_tests suite("[exec.sync_wait]", ::tests);
