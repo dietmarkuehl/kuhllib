@@ -35,7 +35,9 @@ namespace KT = ::kuhl::test;
 
 namespace test_declarations
 {
-    struct type {};
+    namespace {
+        struct type {};
+    }
 }
 
 // ----------------------------------------------------------------------------

@@ -27,4 +27,6 @@
 
 // ----------------------------------------------------------------------------
 
-int add_const_dummy = 0;
+namespace nstd::type_traits {
+    int add_const_dummy = 0;
+}
