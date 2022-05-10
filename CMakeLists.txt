@@ -300,6 +300,7 @@ list(APPEND kuhllib_type_traits_components
     src/nstd/type_traits/add_const
     src/nstd/type_traits/add_lvalue_reference
     src/nstd/type_traits/add_rvalue_reference
+    src/nstd/type_traits/add_volatile
     src/nstd/type_traits/choose_type
     src/nstd/type_traits/conditional
     src/nstd/type_traits/decay
