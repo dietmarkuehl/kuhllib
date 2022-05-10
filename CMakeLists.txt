@@ -198,6 +198,7 @@ list(APPEND kuhllib_functional_components
 
 list(APPEND kuhllib_hidden_components
     src/nstd/hidden_names/completion_signature
+    src/nstd/hidden_names/compl_sig
     src/nstd/hidden_names/decayed_tuple
     src/nstd/hidden_names/filter_completions
     src/nstd/hidden_names/is_instance_of
