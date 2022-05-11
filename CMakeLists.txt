@@ -304,6 +304,7 @@ list(APPEND kuhllib_type_traits_components
     src/nstd/type_traits/choose_type
     src/nstd/type_traits/conditional
     src/nstd/type_traits/copy_const
+    src/nstd/type_traits/copy_cvref
     src/nstd/type_traits/copy_reference
     src/nstd/type_traits/copy_volatile
     src/nstd/type_traits/copy_cv
