@@ -303,15 +303,20 @@ list(APPEND kuhllib_type_traits_components
     src/nstd/type_traits/add_volatile
     src/nstd/type_traits/choose_type
     src/nstd/type_traits/conditional
+    src/nstd/type_traits/copy_const
+    src/nstd/type_traits/copy_volatile
+    src/nstd/type_traits/copy_cv
     src/nstd/type_traits/decay
     src/nstd/type_traits/declval
     src/nstd/type_traits/enable_if
     src/nstd/type_traits/integral_constant
     src/nstd/type_traits/is_array
     src/nstd/type_traits/is_assignable
+    src/nstd/type_traits/is_const
     src/nstd/type_traits/is_constructible
     src/nstd/type_traits/is_convertible
     src/nstd/type_traits/is_function
+    src/nstd/type_traits/is_lvalue_reference
     src/nstd/type_traits/is_member_function_pointer
     src/nstd/type_traits/is_member_object_pointer
     src/nstd/type_traits/is_member_pointer
@@ -319,8 +324,10 @@ list(APPEND kuhllib_type_traits_components
     src/nstd/type_traits/is_nothrow_constructible
     src/nstd/type_traits/is_nothrow_move_assignable
     src/nstd/type_traits/is_nothrow_move_constructible
+    src/nstd/type_traits/is_rvalue_reference
     src/nstd/type_traits/is_same
     src/nstd/type_traits/is_void
+    src/nstd/type_traits/is_volatile
     src/nstd/type_traits/remove_const
     src/nstd/type_traits/remove_cv
     src/nstd/type_traits/remove_cvref
