@@ -96,13 +96,19 @@ namespace nstd::execution {
             template <typename... T>
             using alias = merge_completion_signatures_t<E, T...>;
         };
+
+        template <typename Env, template <typename> class SetError>
+        struct bound_transform_error_signatures {
+            template <typename... E>
+            using alias = merge_completion_signatures_t<Env, SetError<E>...>;
+        };
     }
 
     template <::nstd::execution::sender Sender,
                typename Env = ::nstd::hidden_names::exec_envs::no_env,
                ::nstd::hidden_names::valid_completion_signatures<Env> Add = ::nstd::execution::completion_signatures<>,
                template <typename...> class SetValue = ::nstd::execution::hidden_names::default_set_value,
-               template <typename...> class SetError = ::nstd::execution::hidden_names::default_set_error,
+               template <typename> class SetError = ::nstd::execution::hidden_names::default_set_error,
                ::nstd::hidden_names::valid_completion_signatures<Env> SetStopped = ::nstd::execution::completion_signatures<::nstd::execution::set_stopped_t()>
                >
             requires ::nstd::execution::sender<Sender, Env>
@@ -110,7 +116,7 @@ namespace nstd::execution {
             Env,
             Add,
             ::nstd::execution::value_types_of_t<Sender, Env, SetValue, ::nstd::execution::hidden_names::bound_merge_completion_signatures<Env>::template alias>,
-            ::nstd::execution::error_types_of_t<Sender, Env, SetError>,
+            ::nstd::execution::error_types_of_t<Sender, Env, ::nstd::execution::hidden_names::bound_transform_error_signatures<Env, SetError>::template alias>,
             ::nstd::type_traits::conditional_t<::nstd::execution::sends_stopped<Sender, Env>,
                                                ::nstd::execution::completion_signatures<::nstd::execution::set_stopped_t()>,
                                                ::nstd::execution::completion_signatures<>
