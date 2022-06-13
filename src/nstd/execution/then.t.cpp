@@ -45,6 +45,7 @@ namespace KT = ::kuhl::test;
 
 namespace test_declarations {
     namespace {
+        template <int> struct type {};
         struct env {};
 
         enum class result { none, value, error, stopped};
@@ -56,6 +57,22 @@ namespace test_declarations {
             receiver(::std::optional<Value>& called, TD::result& result): d_called(called), d_result(result) {}
             friend auto tag_invoke(EX::set_value_t, receiver&& self, Value&& value) noexcept -> void {
                 self.d_called = value;
+                self.d_result = result::value;
+            }
+            friend auto tag_invoke(EX::set_error_t, receiver&& self, auto&& ) noexcept -> void {
+                self.d_result = result::error;
+            }
+            friend auto tag_invoke(EX::set_stopped_t, receiver&& self) noexcept -> void {
+                self.d_result = result::stopped;
+            }
+            friend auto tag_invoke(EX::get_env_t, receiver const&) -> TD::env { return {}; }
+        };
+
+        template <>
+        struct receiver<void> {
+            TD::result& d_result;
+            receiver(TD::result& result): d_result(result) {}
+            friend auto tag_invoke(EX::set_value_t, receiver&& self) noexcept -> void {
                 self.d_result = result::value;
             }
             friend auto tag_invoke(EX::set_error_t, receiver&& self, auto&& ) noexcept -> void {
@@ -118,6 +135,20 @@ namespace test_declarations {
                 return TD::scheduler();
             }
         };
+
+        template <typename ConstSigs, typename RvalueSigs = ConstSigs>
+        struct type_sender {
+            template <typename E>
+            friend auto tag_invoke(EX::get_completion_signatures_t, type_sender const&, E)
+                -> ConstSigs {
+                return {};
+            }
+            template <typename E>
+            friend auto tag_invoke(EX::get_completion_signatures_t, type_sender&&, E)
+                -> RvalueSigs {
+                return {};
+            }
+        };
     }
 }
 
@@ -147,6 +178,24 @@ static KT::testcase const tests[] = {
         TD::run(EX::just_stopped(), TD::receiver(value, result));
         return not value.has_value()
             && result == TD::result::stopped
+            ;
+    }),
+    KT::expect_success("TD::run(): void receiver/value", []{
+        TD::result           result(TD::result::none);
+        TD::run(EX::just(), TD::receiver<void>(result));
+        return result == TD::result::value
+            ;
+    }),
+    KT::expect_success("TD::run(): void receiver/error", []{
+        TD::result           result(TD::result::none);
+        TD::run(EX::just_error(17), TD::receiver<void>(result));
+        return result == TD::result::error
+            ;
+    }),
+    KT::expect_success("TD::run(): void receiver/stopped", []{
+        TD::result           result(TD::result::none);
+        TD::run(EX::just_stopped(), TD::receiver<void>(result));
+        return result == TD::result::stopped
             ;
     }),
     KT::expect_success("TD::sender", []{
@@ -201,9 +250,87 @@ static KT::testcase const tests[] = {
             && result == TD::result::value
             ;
     }),
-    KT::expect_success("dummy", []{
-            return true;
+    KT::expect_success("TD::type_sender is a sender", []{
+        return EX::sender<TD::type_sender<EX::completion_signatures<EX::set_value_t()>>>
+            ;
     }),
+    KT::expect_success("normal then with void function", []{
+        double               number(3.125);
+        TD::result           result(TD::result::none);
+        TD::run(EX::then(EX::just(&number, 3), [](double* n, int v){ *n *= v; }), TD::receiver<void>(result));
+
+        return EX::sender<decltype(EX::then(EX::just(&number, 3), [](double*, int){}))>
+            && number == 9.375
+            && result == TD::result::value
+            ;
+    }),
+    KT::expect_success("normal then with void function piped", []{
+        TD::result           result(TD::result::none);
+        double               number(3.125);
+        TD::run(EX::just(3, &number) | EX::then([](int v, double* n){ *n *= v; }), TD::receiver<void>(result));
+
+        return EX::sender<decltype(EX::just(&number, 3) | EX::then([](double*, int){ return 0; }))>
+            && number == 9.375
+            && result == TD::result::value
+            ;
+    }),
+    KT::expect_success("normal then with throwing void function", []{
+        TD::result           result(TD::result::none);
+        double               number(3.125);
+        TD::run(EX::just(3, &number) | EX::then([](int v, double* n){ *n *= v; throw int(); }), TD::receiver<void>(result));
+
+        return EX::sender<decltype(EX::just(&number, 3) | EX::then([](double*, int){ return 0; }))>
+            && number == 9.375
+            && result == TD::result::error
+            ;
+    }),
+    KT::expect_success("normal then with non-void function", []{
+        ::std::optional<int> value;
+        double               number(3.125);
+        TD::result           result(TD::result::none);
+        TD::run(EX::then(EX::just(&number, 3), [](double* n, int v){ *n *= v; return 2 * v; }), TD::receiver(value, result));
+
+        return EX::sender<decltype(EX::then(EX::just(&number, 3), [](double*, int){ return 0; }))>
+            && *value == 6
+            && number == 9.375
+            && result == TD::result::value
+            ;
+    }),
+    KT::expect_success("normal then with non-void function piped", []{
+        ::std::optional<int> value;
+        TD::result           result(TD::result::none);
+        double               number(3.125);
+        TD::run(EX::just(3, &number) | EX::then([](int v, double* n){ *n *= v; return 2 * v; }), TD::receiver(value, result));
+
+        return EX::sender<decltype(EX::just(&number, 3) | EX::then([](double*, int){ return 0; }))>
+            && *value == 6
+            && number == 9.375
+            && result == TD::result::value
+            ;
+    }),
+    KT::expect_success("normal then with throwing non-void function", []{
+        ::std::optional<int> value;
+        TD::result           result(TD::result::none);
+        double               number(3.125);
+        TD::run(EX::just(3, &number) | EX::then([](int v, double* n){ *n *= v; if (v == 3) throw 0; return 2 * v; }), TD::receiver(value, result));
+
+        return EX::sender<decltype(EX::just(&number, 3) | EX::then([](double*, int v){ if (v ==1) throw 0; return 0; }))>
+            && not value
+            && number == 9.375
+            && result == TD::result::error
+            ;
+    }),
+#if 0
+    //-dk:TODO fix this test
+    KT::expect_success("then() const type", []{
+            auto sender = TD::type_sender<EX::completion_signatures<>>()
+                | EX::then([](auto x){ return x; })
+                ;
+            using type = decltype(EX::get_completion_signatures(sender, TD::env{}));
+            return KT::type<void> == KT::type<type>
+                ;
+    }),
+#endif
 };
 
 static KT::add_tests suite("[exec.then]", ::tests);
