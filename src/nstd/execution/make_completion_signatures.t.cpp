@@ -52,7 +52,7 @@ namespace test_declarations {
         };
 
         template <typename... T>
-        using set_value_ref = EX::set_value_t(TT::add_lvalue_reference_t<T>...);
+        using set_value_ref = EX::completion_signatures<EX::set_value_t(TT::add_lvalue_reference_t<T>...)>;
     }
 }
 
@@ -94,10 +94,18 @@ static KT::testcase const tests[] = {
                ;
         }),
     KT::expect_success("basic make_completionsignatures", []{
-           return KT::type<EX::make_completion_signatures<TD::sender<EX::set_value_t(), EX::set_error_t(int), EX::set_stopped_t()>>>
-                   == KT::type<EX::completion_signatures<EX::set_value_t(), EX::set_error_t(int), EX::set_stopped_t()>>
+           using S = TD::sender<EX::set_value_t(TD::type), EX::set_error_t(int), EX::set_stopped_t()>;
+           return KT::type<S> == KT::type<S>
+               && KT::type<EX::make_completion_signatures<TD::sender<EX::set_value_t(TD::type), EX::set_error_t(int), EX::set_stopped_t()>>>
+                    == KT::type<EX::completion_signatures<EX::set_value_t(TD::type), EX::set_error_t(int), EX::set_stopped_t()>>
                && KT::type<EX::make_completion_signatures<TD::sender<EX::set_value_t(), EX::set_error_t(int), EX::set_stopped_t()>, TD::env>>
-                   == KT::type<EX::completion_signatures<EX::set_value_t(), EX::set_error_t(int), EX::set_stopped_t()>>
+                    == KT::type<EX::completion_signatures<EX::set_value_t(), EX::set_error_t(int), EX::set_stopped_t()>>
+               && KT::type<EX::make_completion_signatures<TD::sender<EX::set_value_t(), EX::set_error_t(int)>, TD::env>>
+                    == KT::type<EX::completion_signatures<EX::set_value_t(), EX::set_error_t(int)>>
+               && KT::type<EX::make_completion_signatures<TD::sender<EX::set_value_t(), EX::set_error_t(int), EX::set_error_t(TD::error)>, TD::env>>
+                    == KT::type<EX::completion_signatures<EX::set_value_t(), EX::set_error_t(int), EX::set_error_t(TD::error)>>
+               && KT::type<EX::make_completion_signatures<TD::sender<EX::set_value_t(), EX::set_error_t(int), EX::set_error_t(TD::error), EX::set_error_t(bool)>, TD::env>>
+                    == KT::type<EX::completion_signatures<EX::set_value_t(), EX::set_error_t(int), EX::set_error_t(TD::error), EX::set_error_t(bool)>>
                ;
         }),
     KT::expect_success("make_completionsignatures set_value_transform", []{
