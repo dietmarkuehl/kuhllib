@@ -30,6 +30,7 @@
 #include "nstd/execution/connect.hpp"
 #include "nstd/execution/get_env.hpp"
 #include "nstd/execution/get_completion_scheduler.hpp"
+#include "nstd/execution/get_completion_signatures.hpp"
 #include "nstd/execution/receiver.hpp"
 #include "nstd/execution/sender.hpp"
 #include "nstd/execution/set_value.hpp"
@@ -107,8 +108,6 @@ namespace nstd::hidden_names::then {
 
     template <::nstd::execution::sender Sender, typename Fun>
     struct sender: ::nstd::execution::sender_tag {
-        using completion_signatures = ::nstd::execution::completion_signatures</*-dk:TODO sort of the completion signatures*/>;
-
         ::nstd::type_traits::remove_cvref_t<Sender> d_sender;
         ::nstd::type_traits::remove_cvref_t<Fun>    d_fun;
 
@@ -132,6 +131,16 @@ namespace nstd::hidden_names::then {
                                                   self.d_fun
                                               });
         }
+        template <typename Tag>
+        friend auto tag_invoke(::nstd::execution::get_completion_signatures_t, sender const&, Tag&&)
+            -> ::nstd::execution::completion_signatures<::nstd::execution::set_value_t()>
+            { return {}; }
+        template <typename Tag>
+        friend auto tag_invoke(::nstd::execution::get_completion_signatures_t, sender&, Tag&&)
+            -> ::nstd::execution::completion_signatures<::nstd::execution::set_error_t(int)> { return {}; }
+        template <typename Tag>
+        friend auto tag_invoke(::nstd::execution::get_completion_signatures_t, sender&&, Tag&&)
+            -> ::nstd::execution::completion_signatures<::nstd::execution::set_stopped_t()> { return {}; }
     };
 
     struct cpo {
@@ -168,6 +177,14 @@ namespace nstd::execution::inline customization_points {
 }
 
 // ----------------------------------------------------------------------------
+
+template <::nstd::execution::sender Sender, typename Fun>
+auto nstd::hidden_names::then::cpo::operator()(Sender&& sender, Fun&& fun) const {
+    return nstd::hidden_names::then::sender<Sender, Fun>{{},
+                                            ::nstd::utility::forward<Sender>(sender),
+                                            ::nstd::utility::forward<Fun>(fun)
+                                            };
+}
 
 template <typename Fun>
 auto nstd::hidden_names::then::cpo::operator()(Fun&& fun) const {

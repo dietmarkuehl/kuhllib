@@ -47,6 +47,7 @@
 namespace nstd::hidden_names {
     template <typename Signal, typename... A>
     struct just_sender
+        : ::nstd::execution::sender_tag
     {
         using completion_signatures
             = ::nstd::execution::completion_signatures<Signal(A...)>;
@@ -101,7 +102,7 @@ namespace nstd::execution {
     inline auto just(A&&... a) noexcept((::std::is_nothrow_constructible_v<::nstd::type_traits::remove_cvref_t<A>, A> && ...))
         -> ::nstd::hidden_names::just_sender<::nstd::execution::set_value_t, ::nstd::type_traits::remove_cvref_t<A>...> {
         return ::nstd::hidden_names::just_sender<::nstd::execution::set_value_t, ::nstd::type_traits::remove_cvref_t<A>...>{
-            ::std::make_tuple(::nstd::utility::forward<A>(a)...)
+            {}, ::std::make_tuple(::nstd::utility::forward<A>(a)...)
             };
     }
 
@@ -109,14 +110,14 @@ namespace nstd::execution {
     inline auto just_error(E&& e) noexcept(::std::is_nothrow_constructible_v<::nstd::type_traits::remove_cvref_t<E>, E>)
         -> ::nstd::hidden_names::just_sender<::nstd::execution::set_error_t, ::nstd::type_traits::remove_cvref_t<E>> {
         return ::nstd::hidden_names::just_sender<::nstd::execution::set_error_t, ::nstd::type_traits::remove_cvref_t<E>>{
-            ::std::make_tuple(::nstd::utility::forward<E>(e))
+            {}, ::std::make_tuple(::nstd::utility::forward<E>(e))
             };
     }
 
     inline auto just_stopped() noexcept
         -> ::nstd::hidden_names::just_sender<::nstd::execution::set_stopped_t> {
         return ::nstd::hidden_names::just_sender<::nstd::execution::set_stopped_t>{
-            ::std::make_tuple()
+            {}, ::std::make_tuple()
             };
     }
 }
