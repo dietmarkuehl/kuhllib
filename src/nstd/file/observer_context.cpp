@@ -26,6 +26,7 @@
 #include <nstd/file/observer_context.hpp>
 #include <nstd/utility/forward.hpp>
 #include <nstd/utility/move.hpp>
+#include <algorithm>
 #include <iostream>
 
 // ----------------------------------------------------------------------------
