@@ -56,7 +56,6 @@ template <std::size_t N>
 struct ring_buffer {
     static constexpr int      producer{0};
     static constexpr int      consumer{1};
-    static constexpr uint64_t mask{N - 1};
     uint64_t next[2];
     char buffer[N];
 

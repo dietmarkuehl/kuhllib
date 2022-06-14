@@ -62,7 +62,6 @@ struct ring_buffer {
     };
     static constexpr int      producer{0};
     static constexpr int      consumer{1};
-    static constexpr uint64_t mask{N - 1};
     state_base* completion[2]{};
     uint64_t    next[2];
     char        buffer[N];
@@ -88,7 +87,7 @@ struct ring_buffer {
             auto available = ring->next[producer] - ring->next[consumer];
             auto size = Side == producer? N - available: available;
 	    if (0 < size) {
-	        auto begin = ring->next[Side] % mask;
+	        auto begin = ring->next[Side] % N;
 		set_value(std::move(receiver),
 		          buffer_type<Side>(ring->buffer + begin,
 			                    std::min(N - begin, size)));
