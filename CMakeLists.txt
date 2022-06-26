@@ -96,10 +96,13 @@ list(APPEND kuhllib_execution_components
     src/nstd/execution/get_env
     src/nstd/execution/get_scheduler
     src/nstd/execution/get_delegatee_scheduler
+    src/nstd/execution/is_execution_policy
     src/nstd/execution/just
     src/nstd/execution/make_completion_signatures
     src/nstd/execution/no_env
     src/nstd/execution/operation_state
+    src/nstd/execution/parallel_policy
+    src/nstd/execution/parallel_unsequenced_policy
     src/nstd/execution/receiver
     src/nstd/execution/receiver_of
     src/nstd/execution/run_loop
@@ -109,10 +112,12 @@ list(APPEND kuhllib_execution_components
     src/nstd/execution/sender_of
     src/nstd/execution/sender_to
     src/nstd/execution/sends_stopped
+    src/nstd/execution/sequenced_policy
     src/nstd/execution/set_error
     src/nstd/execution/set_stopped
     src/nstd/execution/set_value
     src/nstd/execution/start
+    src/nstd/execution/stop_token_of_t
     src/nstd/execution/then
     src/nstd/execution/value_types_of_t
 )
@@ -136,17 +141,11 @@ list(APPEND kuhllib_xexecution_components
     src/nstd/execution
     src/nstd/execution/execution
     src/nstd/execution/inject_cancel
-    src/nstd/execution/is_execution_policy
-    src/nstd/execution/lazy_then
     src/nstd/execution/let_value
-    src/nstd/execution/parallel_policy
-    src/nstd/execution/parallel_unsequenced_policy
     src/nstd/execution/repeat_effect
     src/nstd/execution/repeat_effect_until
     src/nstd/execution/run
-    src/nstd/execution/sequenced_policy
     src/nstd/execution/start_detached
-    src/nstd/execution/stop_token_type
     src/nstd/execution/task
     src/nstd/execution/timeout
     src/nstd/execution/upon_done

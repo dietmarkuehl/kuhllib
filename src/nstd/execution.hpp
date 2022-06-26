@@ -53,7 +53,6 @@
 #include "nstd/execution/schedule.hpp"
 #include "nstd/execution/just.hpp"
 #include "nstd/thread/sync_wait.hpp"
-#include "nstd/execution/lazy_then.hpp"
 #include "nstd/execution/then.hpp"
 #include "nstd/execution/let_value.hpp"
 #include "nstd/execution/start_detached.hpp"
