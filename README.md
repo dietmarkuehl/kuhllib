@@ -53,9 +53,9 @@ to be implemented rather than necessarily capturing all details.
         concept scheduler
             =  copy_constructible<remove_cvref_t<S>>
             && equality_comparable<remove_cvref_t<S>>
-            && requires(S&& s, get_completion_scheduler_t<set_value_t> const& cpo) {
+            && requires(S&& s, get_completion_scheduler_t<set_value_t> const& gcs) {
                 { schedule(forward<S>(s)) } -> sender;
-	            { tag_invoke(cpo, schedule(forward<S>(s))) } -> same_as<remove_cvref_t<S>>;
+	            { tag_invoke(gcs, schedule(forward<S>(s))) } noexcept -> same_as<remove_cvref_t<S>>;
             }
             ;
 

@@ -1,4 +1,4 @@
-// nstd/execution/let_value.hpp                                       -*-C++-*-
+// nstd/execution/let.hpp                                             -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,10 +23,11 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_EXECUTION_LET_VALUE
-#define INCLUDED_NSTD_EXECUTION_LET_VALUE
+#ifndef INCLUDED_NSTD_EXECUTION_LET
+#define INCLUDED_NSTD_EXECUTION_LET
 
 #include "nstd/execution/completion_signatures.hpp"
+#include "nstd/execution/get_completion_scheduler.hpp"
 #include "nstd/execution/sender.hpp"
 #include "nstd/execution/receiver.hpp"
 #include "nstd/execution/connect.hpp"
@@ -36,6 +37,7 @@
 #include "nstd/execution/set_stopped.hpp"
 #include "nstd/functional/tag_invoke.hpp"
 #include "nstd/utility/forward.hpp"
+#include "nstd/utility/move.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
 #include "nstd/type_traits/declval.hpp"
 #include "nstd/type_traits/type_identity.hpp"
@@ -45,8 +47,10 @@
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::execution {
-    inline constexpr struct let_value_t {
+namespace nstd::hidden_names::let {
+    template <typename Tag>
+    struct cpo {
+#if 0
         template <::nstd::execution::sender, typename> struct connector;
         template <::nstd::execution::sender Sender, typename Function, typename Receiver>
         struct state;
@@ -60,12 +64,46 @@ namespace nstd::execution {
                 ::nstd::utility::forward<Function>(fun)
                 };
         }
+#endif
+        template <::nstd::execution::sender Sender, typename Function>
+            requires ((not ::std::same_as<Tag, ::nstd::execution::set_stopped_t>) || ::std::invocable<Function>)
+                  && requires(Sender&& sender, Function&& fun, cpo<Tag> const& lv){
+                    { tag_invoke(lv, ::nstd::execution::get_completion_scheduler<::nstd::execution::set_value_t>(sender), sender, fun) } -> ::nstd::execution::sender;
+                  }
+        auto operator()(Sender&& sender, Function&& fun) const
+        {
+            return tag_invoke(*this, ::nstd::execution::get_completion_scheduler<::nstd::execution::set_value_t>(sender), sender, fun);
+        }
 
         template <::nstd::execution::sender Sender, typename Function>
-        auto operator()(Sender&& sender, Function&& fun) const {
+            requires ((not ::std::same_as<Tag, ::nstd::execution::set_stopped_t>) || ::std::invocable<Function>)
+                  && (not requires(Sender&& sender, Function&& fun, cpo<Tag> const& lv){
+                    { tag_invoke(lv, ::nstd::execution::get_completion_scheduler<::nstd::execution::set_value_t>(sender), sender, fun) } -> ::nstd::execution::sender;
+                  })
+                  && requires(Sender&& sender, Function&& fun, cpo<Tag> const& lv){
+                    { tag_invoke(lv, sender, fun) } -> ::nstd::execution::sender;
+                  }
+        auto operator()(Sender&& sender, Function&& fun) const
+        {
+            return tag_invoke(*this, sender, fun);
+        }
+
+        template <::nstd::execution::sender Sender, typename Function>
+            requires ((not ::std::same_as<Tag, ::nstd::execution::set_stopped_t>) || ::std::invocable<Function>)
+                  && (not requires(Sender&& sender, Function&& fun, cpo<Tag> const& lv){
+                    { tag_invoke(lv, ::nstd::execution::get_completion_scheduler<::nstd::execution::set_value_t>(sender), sender, fun) } -> ::nstd::execution::sender;
+                  })
+                  && (not requires(Sender&& sender, Function&& fun, cpo<Tag> const& lv){
+                    { tag_invoke(lv, sender, fun) } -> ::nstd::execution::sender;
+                  })
+        auto operator()(Sender&& sender, Function&& fun) const -> void
+        {
+            (void)sender; (void)fun;
+#if 0
             return ::nstd::tag_invoke(*this,
                                       ::nstd::utility::forward<Sender>(sender),
                                       ::nstd::utility::forward<Function>(fun));
+#endif
         }
         template <typename Function>
         auto operator()(Function&& fun) const {
@@ -74,11 +112,24 @@ namespace nstd::execution {
                                ::nstd::utility::move(fun));
             };
         }
-    } let_value;
+    };
 }
 
 // ----------------------------------------------------------------------------
 
+namespace nstd::execution::inline customization_points {
+    using let_error_t   = ::nstd::hidden_names::let::cpo<::nstd::execution::set_error_t>;
+    using let_stopped_t = ::nstd::hidden_names::let::cpo<::nstd::execution::set_stopped_t>;
+    using let_value_t   = ::nstd::hidden_names::let::cpo<::nstd::execution::set_value_t>;
+
+    inline constexpr let_error_t   let_error{};
+    inline constexpr let_stopped_t let_stopped{};
+    inline constexpr let_value_t   let_value{};
+}
+
+// ----------------------------------------------------------------------------
+
+#if 0
 template <::nstd::execution::sender Sender, typename Receiver>
 struct nstd::execution::let_value_t::connector
 {
@@ -225,6 +276,7 @@ struct nstd::execution::let_value_t::sender
             };
     }
 };
+#endif
 
 // ----------------------------------------------------------------------------
 

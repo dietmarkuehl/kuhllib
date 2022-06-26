@@ -98,6 +98,7 @@ list(APPEND kuhllib_execution_components
     src/nstd/execution/get_delegatee_scheduler
     src/nstd/execution/is_execution_policy
     src/nstd/execution/just
+    src/nstd/execution/let
     src/nstd/execution/make_completion_signatures
     src/nstd/execution/no_env
     src/nstd/execution/operation_state
@@ -141,7 +142,6 @@ list(APPEND kuhllib_xexecution_components
     src/nstd/execution
     src/nstd/execution/execution
     src/nstd/execution/inject_cancel
-    src/nstd/execution/let_value
     src/nstd/execution/repeat_effect
     src/nstd/execution/repeat_effect_until
     src/nstd/execution/run
