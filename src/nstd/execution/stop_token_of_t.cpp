@@ -1,4 +1,4 @@
-// nstd/execution/stop_token_type.cpp                                 -*-C++-*-
+// nstd/execution/stop_token_of_t.cpp                                 -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,10 +23,10 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/execution/stop_token_type.hpp"
+#include "nstd/execution/stop_token_of_t.hpp"
 
 // ----------------------------------------------------------------------------
 
 namespace nstd::execution {
-    int stop_token_type_dummy = 0;
+    int stop_token_of_t_dummy = 0;
 }
