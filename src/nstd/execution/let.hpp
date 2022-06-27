@@ -47,7 +47,41 @@
 
 // ----------------------------------------------------------------------------
 
+namespace nstd::hidden_names {
+    template <typename CPO, typename Sender, typename... Args>
+    concept cpo_scheduler_tag_invocable
+        = requires(CPO const& cpo, Sender&& sender, Args&&... args){
+                {
+                    tag_invoke(cpo,
+                               ::nstd::execution::get_completion_scheduler<::nstd::execution::set_value_t>(sender),
+                               ::nstd::utility::forward<Sender>(sender), ::nstd::utility::forward<Args>(args)...)
+                } -> ::nstd::execution::sender;
+            }
+        ;
+    template <typename CPO, typename Sender, typename... Args>
+    concept cpo_tag_invocable
+        = requires(CPO const& cpo, Sender&& sender, Args&&... args){
+                {
+                    tag_invoke(cpo,
+                               ::nstd::utility::forward<Sender>(sender), ::nstd::utility::forward<Args>(args)...)
+                } -> ::nstd::execution::sender;
+            }
+        ;
+}
+
 namespace nstd::hidden_names::let {
+    template <typename Tag, typename Fun>
+    concept invocable
+        =  (not ::std::same_as<Tag, ::nstd::execution::set_stopped_t>)
+        || ::std::invocable<Fun>
+        ;
+
+    template <typename Tag, ::nstd::execution::sender Sender, typename Fun>
+    struct sender {
+        ::nstd::type_traits::remove_cvref_t<Sender> d_sender;
+        ::nstd::type_traits::remove_cvref_t<Fun>    d_fun;
+    };
+
     template <typename Tag>
     struct cpo {
 #if 0
@@ -65,45 +99,34 @@ namespace nstd::hidden_names::let {
                 };
         }
 #endif
-        template <::nstd::execution::sender Sender, typename Function>
-            requires ((not ::std::same_as<Tag, ::nstd::execution::set_stopped_t>) || ::std::invocable<Function>)
-                  && requires(Sender&& sender, Function&& fun, cpo<Tag> const& lv){
-                    { tag_invoke(lv, ::nstd::execution::get_completion_scheduler<::nstd::execution::set_value_t>(sender), sender, fun) } -> ::nstd::execution::sender;
-                  }
-        auto operator()(Sender&& sender, Function&& fun) const
+        template <::nstd::execution::sender Sender, typename Fun>
+            requires ::nstd::hidden_names::let::invocable<Tag, Fun>
+                  && cpo_scheduler_tag_invocable<cpo<Tag>, Sender, Fun>
+        auto operator()(Sender&& sender, Fun&& fun) const
         {
-            return tag_invoke(*this, ::nstd::execution::get_completion_scheduler<::nstd::execution::set_value_t>(sender), sender, fun);
+            auto scheduler = ::nstd::execution::get_completion_scheduler<::nstd::execution::set_value_t>(sender);
+            return tag_invoke(*this, scheduler, ::nstd::utility::forward<Sender>(sender), ::nstd::utility::forward<Fun>(fun));
         }
 
-        template <::nstd::execution::sender Sender, typename Function>
-            requires ((not ::std::same_as<Tag, ::nstd::execution::set_stopped_t>) || ::std::invocable<Function>)
-                  && (not requires(Sender&& sender, Function&& fun, cpo<Tag> const& lv){
-                    { tag_invoke(lv, ::nstd::execution::get_completion_scheduler<::nstd::execution::set_value_t>(sender), sender, fun) } -> ::nstd::execution::sender;
-                  })
-                  && requires(Sender&& sender, Function&& fun, cpo<Tag> const& lv){
-                    { tag_invoke(lv, sender, fun) } -> ::nstd::execution::sender;
-                  }
-        auto operator()(Sender&& sender, Function&& fun) const
+        template <::nstd::execution::sender Sender, typename Fun>
+            requires ::nstd::hidden_names::let::invocable<Tag, Fun>
+                  && (not cpo_scheduler_tag_invocable<cpo<Tag>, Sender, Fun>)
+                  && cpo_tag_invocable<cpo<Tag>, Sender, Fun>
+        auto operator()(Sender&& sender, Fun&& fun) const
         {
-            return tag_invoke(*this, sender, fun);
+            return tag_invoke(*this, ::nstd::utility::forward<Sender>(sender), ::nstd::utility::forward<Fun>(fun));
         }
 
-        template <::nstd::execution::sender Sender, typename Function>
-            requires ((not ::std::same_as<Tag, ::nstd::execution::set_stopped_t>) || ::std::invocable<Function>)
-                  && (not requires(Sender&& sender, Function&& fun, cpo<Tag> const& lv){
-                    { tag_invoke(lv, ::nstd::execution::get_completion_scheduler<::nstd::execution::set_value_t>(sender), sender, fun) } -> ::nstd::execution::sender;
-                  })
-                  && (not requires(Sender&& sender, Function&& fun, cpo<Tag> const& lv){
-                    { tag_invoke(lv, sender, fun) } -> ::nstd::execution::sender;
-                  })
-        auto operator()(Sender&& sender, Function&& fun) const -> void
+        template <::nstd::execution::sender Sender, typename Fun>
+            requires ::nstd::hidden_names::let::invocable<Tag, Fun>
+                  && (not cpo_scheduler_tag_invocable<cpo<Tag>, Sender, Fun>)
+                  && (not cpo_tag_invocable<cpo<Tag>, Sender, Fun>)
+        auto operator()(Sender&& sender, Fun&& fun) const -> ::nstd::hidden_names::let::sender<Tag, Sender, Fun>
         {
-            (void)sender; (void)fun;
-#if 0
-            return ::nstd::tag_invoke(*this,
-                                      ::nstd::utility::forward<Sender>(sender),
-                                      ::nstd::utility::forward<Function>(fun));
-#endif
+            return ::nstd::hidden_names::let::sender<Tag, Sender, Fun>{
+                ::nstd::utility::forward<Sender>(sender),
+                ::nstd::utility::forward<Fun>(fun)
+                };
         }
         template <typename Function>
         auto operator()(Function&& fun) const {
