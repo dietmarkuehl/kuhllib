@@ -4,7 +4,7 @@ JOBS = 4
 default: check
 
 run:
-	../build-$(COMPILER)/es
+	../build-$(COMPILER)/kuhllib_test
 
 clean check build:
 	cd ..; $(MAKE) -j$(JOBS) $@
