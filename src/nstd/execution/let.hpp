@@ -162,10 +162,65 @@ namespace nstd::hidden_names::let {
         }
     };
 
+    template <typename...> struct join_completions;
+    template <>
+    struct join_completions<> {
+        using type = ::nstd::execution::completion_signatures<>;
+    };
+    template <typename... C>
+    struct join_completions<::nstd::execution::completion_signatures<C...>> {
+        using type = ::nstd::execution::completion_signatures<C...>;
+    };
+    template <typename... A, typename... B, typename... T>
+    struct join_completions<::nstd::execution::completion_signatures<A...>, ::nstd::execution::completion_signatures<B...>, T...> {
+        using type = typename join_completions<::nstd::execution::completion_signatures<A..., B...>, T...>::type;
+    };
+
+    template <typename, ::nstd::execution::sender> struct rest;
+    template <::nstd::execution::sender Sender>
+    struct rest<::nstd::execution::set_value_t, Sender>
+    {
+        using type = typename nstd::hidden_names::let::join_completions<
+            ::nstd::hidden_names::filter_completions_t<::nstd::execution::set_error_t, typename Sender::completion_signatures>,
+            ::nstd::hidden_names::filter_completions_t<::nstd::execution::set_stopped_t, typename Sender::completion_signatures>
+            >::type;
+    };
+    template <::nstd::execution::sender Sender>
+    struct rest<::nstd::execution::set_error_t, Sender>
+    {
+        using type = typename nstd::hidden_names::let::join_completions<
+            ::nstd::hidden_names::filter_completions_t<::nstd::execution::set_value_t, typename Sender::completion_signatures>,
+            ::nstd::hidden_names::filter_completions_t<::nstd::execution::set_stopped_t, typename Sender::completion_signatures>
+            >::type;
+    };
+    template <::nstd::execution::sender Sender>
+    struct rest<::nstd::execution::set_stopped_t, Sender>
+    {
+        using type = typename nstd::hidden_names::let::join_completions<
+            ::nstd::hidden_names::filter_completions_t<::nstd::execution::set_value_t, typename Sender::completion_signatures>,
+            ::nstd::hidden_names::filter_completions_t<::nstd::execution::set_error_t, typename Sender::completion_signatures>
+            >::type;
+    };
+
+    template <typename, typename> struct transform_completion;
+    template <typename Fun, typename Tag, typename... A>
+    struct transform_completion<Fun, Tag(A...)> {
+        using type = typename decltype(::nstd::type_traits::declval<Fun>()(::nstd::type_traits::declval<A>()...))::completion_signatures;
+    };
+
+    template <typename, typename> struct transform_completions;
+    template <typename Fun, typename... C>
+    struct transform_completions<Fun, ::nstd::execution::completion_signatures<C...>> {
+        using type = typename join_completions<typename transform_completion<Fun, C>::type...>::type;
+    };
+
     template <typename Tag, ::nstd::execution::sender Sender, typename Fun>
     struct sender {
-        // using completion_signatures = ::nstd::execution::completion_signatures<>;
-        using completion_signatures = typename Sender::completion_signatures;
+        using completion_signatures
+            = typename ::nstd::hidden_names::let::join_completions<
+                   typename transform_completions<Fun, ::nstd::hidden_names::filter_completions_t<Tag, typename Sender::completion_signatures>>::type,
+                   typename rest<Tag, Sender>::type
+                   >::type;
 
         ::nstd::type_traits::remove_cvref_t<Sender> d_sender;
         ::nstd::type_traits::remove_cvref_t<Fun>    d_fun;
