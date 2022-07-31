@@ -39,11 +39,13 @@
 #include "nstd/utility/forward.hpp"
 #include "nstd/utility/move.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
+#include "nstd/type_traits/remove_reference.hpp"
 #include "nstd/type_traits/declval.hpp"
 #include "nstd/type_traits/type_identity.hpp"
 #include <optional>
 #include <tuple>
 #include <variant>
+#include <iostream>
 
 // ----------------------------------------------------------------------------
 
@@ -76,10 +78,89 @@ namespace nstd::hidden_names::let {
         || ::std::invocable<Fun>
         ;
 
+    template <::nstd::execution::receiver Receiver, typename Fun>
+    struct state_base {
+        ::nstd::type_traits::remove_cvref_t<Receiver> d_receiver;
+        ::nstd::type_traits::remove_cvref_t<Fun>      d_fun;
+    };
+
+    template <typename Tag, ::nstd::execution::receiver Receiver, typename Fun>
+    struct receiver {
+        ::nstd::hidden_names::let::state_base<Receiver, Fun>& d_state;
+        template <typename... A>
+        friend auto tag_invoke(Tag, receiver&& self, A&&... a) noexcept -> void {
+            ::std::cout << "special tag_invoke\n";
+            ::std::tuple<::nstd::type_traits::remove_reference_t<A>...> args(::nstd::utility::forward<A>(a)...);
+            auto sender = ::std::apply(self.d_state.d_fun, args);
+            auto state = ::nstd::execution::connect(::nstd::utility::move(sender), ::nstd::utility::move(self.d_state.d_receiver));
+            ::nstd::execution::start(state);
+        }
+        template <typename T, typename... A>
+        friend auto tag_invoke(T, receiver&& self, A&&... args) noexcept {
+            ::std::cout << "forwarded r-value tag_invoke\n";
+            return T()(::nstd::utility::move(self.d_state.d_receiver), ::nstd::utility::forward<A>(args)...);
+        }
+        template <typename T, typename... A>
+        friend auto tag_invoke(T, receiver const& self, A&&... args) noexcept {
+            ::std::cout << "forwarded const l-value tag_invoke\n";
+            return T()(::nstd::utility::move(self.d_state.d_receiver), ::nstd::utility::forward<A>(args)...);
+        }
+    };
+
+    template <typename                    Tag,
+              ::nstd::execution::sender   Sender,
+              ::nstd::execution::receiver Receiver,
+              typename                    Fun>
+    struct state
+        : ::nstd::hidden_names::let::state_base<Receiver, Fun> {
+        using receiver_t = ::nstd::hidden_names::let::receiver<Tag, Receiver, Fun>;
+        static_assert(::nstd::execution::receiver<receiver_t>);
+        static_assert(::nstd::execution::receiver_of<receiver_t, typename Sender::completion_signatures>);
+        using state_t = decltype(::nstd::execution::connect(::nstd::type_traits::declval<Sender>(),
+                                                            ::nstd::type_traits::declval<receiver_t>()));
+
+        state_t d_state;
+
+        template <typename F, ::nstd::execution::receiver R>
+        state(Sender&& sender, F&& fun, R&& receiver)
+            : ::nstd::hidden_names::let::state_base<Receiver, Fun> { ::nstd::utility::forward<R>(receiver), ::nstd::utility::forward<F>(fun) }
+            , d_state(::nstd::execution::connect(::nstd::utility::forward<Sender>(sender),
+                                                 receiver_t{ *this }))
+        {
+        }
+        friend auto tag_invoke(::nstd::execution::start_t, state& self) noexcept -> void {
+            ::std::cout << "state.start()\n";
+            (void)self;
+            ::nstd::execution::start(self.d_state);
+        }
+    };
+
     template <typename Tag, ::nstd::execution::sender Sender, typename Fun>
     struct sender {
+        // using completion_signatures = ::nstd::execution::completion_signatures<>;
+        using completion_signatures = typename Sender::completion_signatures;
+
         ::nstd::type_traits::remove_cvref_t<Sender> d_sender;
         ::nstd::type_traits::remove_cvref_t<Fun>    d_fun;
+
+        template <::nstd::execution::receiver Receiver>
+        friend auto tag_invoke(::nstd::execution::connect_t, sender&& self, Receiver&& receiver)
+            -> ::nstd::hidden_names::let::state<Tag, Sender, Receiver, Fun> {
+            return ::nstd::hidden_names::let::state<Tag, Sender, Receiver, Fun>(
+                ::nstd::utility::move(self.d_sender),
+                ::nstd::utility::move(self.d_fun),
+                ::nstd::utility::forward<Receiver>(receiver)
+            );
+        }
+        template <::nstd::execution::receiver Receiver>
+        friend auto tag_invoke(::nstd::execution::connect_t, sender const& self, Receiver&& receiver)
+            -> ::nstd::hidden_names::let::state<Tag, Sender const&, Fun, Receiver> {
+            return ::nstd::hidden_names::let::state<Tag, Sender const&, Fun, Receiver>(
+                self.d_sender,
+                ::nstd::utility::move(self.d_fun),
+                ::nstd::utility::forward<Receiver>(receiver)
+            );
+        }
     };
 
     template <typename Tag>

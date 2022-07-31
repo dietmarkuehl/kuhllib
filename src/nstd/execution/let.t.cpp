@@ -34,6 +34,7 @@
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/start.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
+#include "nstd/thread/sync_wait.hpp"
 #include "nstd/utility/forward.hpp"
 #include "nstd/utility/move.hpp"
 #include <concepts>
@@ -44,6 +45,7 @@ namespace TD = test_declarations;
 namespace KT = ::kuhl::test;
 namespace EX = ::nstd::execution;
 namespace TT = ::nstd::type_traits;
+namespace TTh = ::nstd::this_thread;
 namespace UT = ::nstd::utility;
 
 // ----------------------------------------------------------------------------
@@ -95,6 +97,15 @@ namespace test_declarations {
             template <typename... T>
             void operator()(T&&...) const noexcept {}
         };
+
+        struct env {};
+        struct receiver {
+            friend env tag_invoke(EX::get_env_t, receiver const&) noexcept { return {}; }
+            friend void tag_invoke(EX::set_value_t, receiver, auto&&...) noexcept {}
+            friend void tag_invoke(EX::set_error_t, receiver, auto&&) noexcept {}
+            friend void tag_invoke(EX::set_stopped_t, receiver) noexcept {}
+        };
+        static_assert(EX::receiver<TD::receiver>);
     }
 }
 
@@ -173,26 +184,67 @@ static KT::testcase const tests[] = {
                 ;
         }),
 #if 0
-    KT::expect_success("custom let_value with pip", []{
+    KT::expect_success("custom let_value with pipe", []{
             //-dk:TODO enable pipe for let
             EX::sender auto sender = TD::scheduler_sender<int, TD::static_just<2>>() | EX::let_value([]{});
             return KT::type<decltype(sender)> == KT::type<TD::static_just<2>>
                 ;
         }),
 #endif
-    #if 0
+    KT::expect_success("TD::receiver is a receiver", []{
+            TD::receiver r;
+            auto env = EX::get_env(r);
+            EX::set_value(UT::move(r), 1, 2);
+            EX::set_error(UT::move(r), 1);
+            EX::set_stopped(UT::move(r));
+            return KT::use(env)
+                ;
+        }),
+#if 0
     KT::expect_success("send one value", []{
-        ::std::optional<::std::variant<::std::string>> value;
+            std::cout << std::unitbuf << "running send one value\n";
+            //::std::optional<::std::variant<::std::string>> value;
             auto sender = EX::let_value(EX::just(::std::string("hello, "), ::std::string("world")),
                                     [](auto&&... a){ return EX::just((a + ...)); })
                                     ;
-            value = TT::sync_wait(UT::move(sender));
+            static_assert(EX::sender<decltype(sender)>);
+            static_assert(EX::receiver_of<TD::receiver, decltype(sender)::completion_signatures>);
+            auto state = EX::connect(UT::move(sender), TD::receiver());
+            EX::start(state);
+            std::cout << "after manual start1\n";
+
+            auto value = TTh::sync_wait(UT::move(sender));
+            std::cout << "after sync_wait\n";
+
             return KT::use(sender)
                 && value
-                && value->index() == 0
-                && ::std::get<0>(*value) == "hello, world"
+                //&& value->index() == 0
+                //&& ::std::get<0>(*value) == "hello, world"
                 ;
         }),
+    KT::expect_success("send stopped", []{
+            std::cout << std::unitbuf << "running send stopped\n";
+            //::std::optional<::std::variant<::std::string>> value;
+            auto sender = EX::let_stopped(EX::just_stopped(),
+                                    [](){ return EX::just(std::string("stopped")); })
+                                    ;
+            static_assert(EX::sender<decltype(sender)>);
+            static_assert(EX::receiver_of<TD::receiver, decltype(sender)::completion_signatures>);
+            auto state = EX::connect(UT::move(sender), TD::receiver());
+            EX::start(state);
+            std::cout << "after manual start1\n";
+
+            auto value = TTh::sync_wait(UT::move(sender));
+            std::cout << "after sync_wait\n";
+
+            return KT::use(sender)
+                && value
+                //&& value->index() == 0
+                //&& ::std::get<0>(*value) == "hello, world"
+                ;
+        }),
+#endif
+#if 0
     KT::expect_success("repeat send one value", []{
             auto sender =
                 EX::repeat_effect_until(
@@ -206,7 +258,7 @@ static KT::testcase const tests[] = {
             return KT::use(sender)
                 ;
         }),
-    #endif
+#endif
     KT::expect_success("dummy", []{
         return true;
         })
