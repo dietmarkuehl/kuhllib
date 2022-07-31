@@ -203,30 +203,18 @@ static KT::testcase const tests[] = {
     KT::expect_success("send one value", []{
             std::cout << std::unitbuf << "running send one value\n";
             //::std::optional<::std::variant<::std::string>> value;
-            auto sender = EX::let_value(EX::just(::std::string("hello, ")), // , ::std::string("world")),
+            auto sender = EX::let_value(EX::just(::std::string("hello, "), ::std::string("world")),
                                     [](auto&&... a){
                                         ::std::cout << "let_value fun\n";
                                         return EX::just((a + ...)); })
                                     ;
             static_assert(EX::sender<decltype(sender)>);
             static_assert(EX::receiver_of<TD::receiver, decltype(sender)::completion_signatures>);
-            auto state = EX::connect(UT::move(sender), TD::receiver());
-            EX::start(state);
-            std::cout << "after manual start1\n";
 
-            //auto value = TTh::sync_wait(UT::move(sender));
-            auto value = TTh::sync_wait(EX::just(std::string("hello")));
-            if (value) {
-                std::cout << "after sync_wait: value=" << ::std::get<0>(*value) << "'\n";
-            }
-            else {
-                std::cout << "after sync_wait: no value set\n";
-            }
-
+            auto value = TTh::sync_wait(UT::move(sender));
             return KT::use(sender)
-                //&& value
-                //&& value->index() == 0
-                //&& ::std::get<0>(*value) == "hello, world"
+                && value
+                && ::std::get<0>(*value) == "hello, world"
                 ;
         }),
 #if 0
