@@ -78,6 +78,25 @@ namespace nstd::hidden_names::let {
         || ::std::invocable<Fun>
         ;
 
+    template <::nstd::execution::receiver, typename, typename> struct inner_state;
+    template <::nstd::execution::receiver Receiver, typename Fun, typename Tag, typename... Args>
+    struct inner_state<Receiver, Fun, Tag(Args...)> {
+        using sender_t = decltype(::nstd::type_traits::declval<Fun>()(::nstd::type_traits::declval<::nstd::type_traits::remove_reference_t<Args>>()...));
+        using state_t  = decltype(::nstd::execution::connect(::nstd::type_traits::declval<sender_t>(), ::nstd::type_traits::declval<Receiver>()));
+
+        ::std::tuple<::nstd::type_traits::remove_reference_t<Args>...> d_args;
+        state_t                                                        d_state;
+
+        template <::nstd::execution::receiver R, typename F, typename... A>
+        inner_state(R&& receiver, F&& fun, A&&... args)
+            : d_args(::nstd::utility::forward<A>(args)...)
+            , d_state(::nstd::execution::connect(::std::apply(::nstd::utility::forward<F>(fun), this->d_args),
+                                                 ::nstd::utility::move(receiver)))
+        {
+            ::nstd::execution::start(this->d_state);
+        }
+    };
+
     template <::nstd::execution::receiver Receiver, typename Fun>
     struct state_base {
         ::nstd::type_traits::remove_cvref_t<Receiver> d_receiver;
@@ -87,12 +106,18 @@ namespace nstd::hidden_names::let {
     template <typename Tag, ::nstd::execution::receiver Receiver, typename Fun>
     struct receiver {
         ::nstd::hidden_names::let::state_base<Receiver, Fun>& d_state;
+
         template <typename... A>
         friend auto tag_invoke(Tag, receiver&& self, A&&... a) noexcept -> void {
             ::std::cout << "special tag_invoke\n";
+            inner_state<Receiver, Fun, Tag(A...)> xstate(::nstd::utility::move(self.d_state.d_receiver),
+                                                         ::nstd::utility::move(self.d_state.d_fun),
+                                                         ::nstd::utility::forward<A>(a)...);
+            (void)xstate;
+
             ::std::tuple<::nstd::type_traits::remove_reference_t<A>...> args(::nstd::utility::forward<A>(a)...);
-            auto sender = ::std::apply(self.d_state.d_fun, args);
-            auto state = ::nstd::execution::connect(::nstd::utility::move(sender), ::nstd::utility::move(self.d_state.d_receiver));
+            auto state = ::nstd::execution::connect(::std::apply(self.d_state.d_fun, args),
+                                                    ::nstd::utility::move(self.d_state.d_receiver));
             ::nstd::execution::start(state);
         }
         template <typename T, typename... A>
