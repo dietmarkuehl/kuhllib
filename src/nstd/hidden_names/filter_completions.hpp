@@ -53,6 +53,8 @@ namespace nstd::hidden_names {
                                      ::nstd::execution::completion_signatures<From...>>::type;
     };
 
+    template <typename CPO, typename List>
+    using filter_completions_t = typename ::nstd::hidden_names::filter_completions<CPO, ::nstd::execution::completion_signatures<>, List>::type;
 }
 
 // ----------------------------------------------------------------------------

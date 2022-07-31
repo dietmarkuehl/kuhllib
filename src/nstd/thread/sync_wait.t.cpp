@@ -130,15 +130,15 @@ static KT::testcase const tests[] = {
         }),
     KT::expect_success("sync_wait type", []{
         return KT::type<::std::optional<::std::tuple<>>>
-                == KT::type<HN::type<TD::sender<EX::set_value_t()>>>
+                == KT::type<HN::return_type<TD::sender<EX::set_value_t()>>>
             && KT::type<::std::optional<::std::tuple<int, bool, float>>>
-                == KT::type<HN::type<TD::sender<EX::set_value_t(int&&, bool&, float const&)>>>
+                == KT::type<HN::return_type<TD::sender<EX::set_value_t(int&&, bool&, float const&)>>>
             && KT::type<::std::optional<::std::tuple<int, bool, float>>>
-                == KT::type<HN::type<TD::sender<EX::set_value_t(int&&, bool&, float const&), EX::set_error_t(int)>>>
+                == KT::type<HN::return_type<TD::sender<EX::set_value_t(int&&, bool&, float const&), EX::set_error_t(int)>>>
             && KT::type<::std::optional<::std::tuple<int, bool, float>>>
-                == KT::type<HN::type<TD::sender<EX::set_value_t(int&&, bool&, float const&), EX::set_error_t(int), EX::set_stopped_t()>>>
+                == KT::type<HN::return_type<TD::sender<EX::set_value_t(int&&, bool&, float const&), EX::set_error_t(int), EX::set_stopped_t()>>>
             && KT::type<::std::optional<::std::monostate>>
-                == KT::type<HN::type<TD::sender<EX::set_error_t(int), EX::set_stopped_t()>>>
+                == KT::type<HN::return_type<TD::sender<EX::set_error_t(int), EX::set_stopped_t()>>>
             ;
         }),
     KT::expect_success("special sync_wait for scheduler/sender", []{
@@ -153,7 +153,6 @@ static KT::testcase const tests[] = {
                 && value == 17
                 ;
         }),
-#if 0
     KT::expect_success("sync_wait usage", []{
             auto res = NT::sync_wait(EX::just(64));
             return KT::type<decltype(res)> == KT::type<::std::optional<::std::tuple<int>>>
@@ -161,7 +160,6 @@ static KT::testcase const tests[] = {
                 && ::std::get<0>(*res) == 64
                 ;
         }),
-#endif
 #if 0
     KT::expect_success("sync_wait error_code", []{
         try {
