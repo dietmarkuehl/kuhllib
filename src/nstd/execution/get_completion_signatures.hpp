@@ -31,6 +31,7 @@
 #include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/dependent_completion_signatures.hpp"
 #include "nstd/execution/no_env.hpp"
+#include "nstd/execution/get_env.hpp"
 #include "nstd/functional/tag_invoke.hpp"
 #include "nstd/type_traits/declval.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
@@ -75,6 +76,19 @@ namespace nstd::hidden_names::get_completion_signatures
             return nstd::hidden_names::no_completion_signatures::type{};
         }
     };
+
+    template <typename Sender, typename Env>
+    using from_sender_env = decltype(
+        ::nstd::type_traits::declval<::nstd::hidden_names::get_completion_signatures::cpo const&>()(
+            ::nstd::type_traits::declval<Sender>(),
+            ::nstd::type_traits::declval<Env>())
+        );
+    template <typename Sender, typename Receiver>
+    using from_sender_receiver =
+        ::nstd::hidden_names::get_completion_signatures::from_sender_env<
+            Sender,
+            decltype(::nstd::execution::get_env(::nstd::type_traits::declval<Receiver>()))
+        >;
 }
 
 namespace nstd::execution {

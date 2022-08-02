@@ -202,7 +202,6 @@ static KT::testcase const tests[] = {
         }),
     KT::expect_success("send one value", []{
             std::cout << std::unitbuf << "running send one value\n";
-            //::std::optional<::std::variant<::std::string>> value;
             auto sender = EX::let_value(EX::just(::std::string("hello, "), ::std::string("world")),
                                     [](auto&&... a){
                                         ::std::cout << "let_value fun\n";
@@ -217,29 +216,22 @@ static KT::testcase const tests[] = {
                 && ::std::get<0>(*value) == "hello, world"
                 ;
         }),
-#if 0
     KT::expect_success("send stopped", []{
             std::cout << std::unitbuf << "running send stopped\n";
-            //::std::optional<::std::variant<::std::string>> value;
             auto sender = EX::let_stopped(EX::just_stopped(),
                                     [](){ return EX::just(std::string("stopped")); })
                                     ;
             static_assert(EX::sender<decltype(sender)>);
             static_assert(EX::receiver_of<TD::receiver, decltype(sender)::completion_signatures>);
-            auto state = EX::connect(UT::move(sender), TD::receiver());
-            EX::start(state);
-            std::cout << "after manual start1\n";
 
             auto value = TTh::sync_wait(UT::move(sender));
-            std::cout << "after sync_wait\n";
 
             return KT::use(sender)
                 && value
                 //&& value->index() == 0
-                //&& ::std::get<0>(*value) == "hello, world"
+                && ::std::get<0>(*value) == "stopped"
                 ;
         }),
-#endif
 #if 0
     KT::expect_success("repeat send one value", []{
             auto sender =
