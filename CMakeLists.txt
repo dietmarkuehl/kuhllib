@@ -110,6 +110,7 @@ list(APPEND kuhllib_execution_components
     src/nstd/execution/schedule
     src/nstd/execution/scheduler
     src/nstd/execution/sender
+    src/nstd/execution/sender_adaptor_closure
     src/nstd/execution/sender_of
     src/nstd/execution/sender_to
     src/nstd/execution/sends_stopped
