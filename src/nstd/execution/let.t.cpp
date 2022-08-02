@@ -201,10 +201,8 @@ static KT::testcase const tests[] = {
                 ;
         }),
     KT::expect_success("send one value", []{
-            std::cout << std::unitbuf << "running send one value\n";
             auto sender = EX::let_value(EX::just(::std::string("hello, "), ::std::string("world")),
                                     [](auto&&... a){
-                                        ::std::cout << "let_value fun\n";
                                         return EX::just((a + ...)); })
                                     ;
             static_assert(EX::sender<decltype(sender)>);
@@ -217,7 +215,6 @@ static KT::testcase const tests[] = {
                 ;
         }),
     KT::expect_success("send stopped", []{
-            std::cout << std::unitbuf << "running send stopped\n";
             auto sender = EX::let_stopped(EX::just_stopped(),
                                     [](){ return EX::just(std::string("stopped")); })
                                     ;

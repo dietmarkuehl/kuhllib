@@ -58,12 +58,12 @@ namespace nstd::hidden_names::sync_wait {
         using scheduler_type = decltype(::nstd::execution::run_loop().get_scheduler());
         scheduler_type d_scheduler;
 
+        env(): d_scheduler(::nstd::execution::run_loop().get_scheduler()) {}
         friend auto tag_invoke(::nstd::execution::get_scheduler_t, env const& self) noexcept
             -> scheduler_type { return self.d_scheduler; }
         friend auto tag_invoke(::nstd::execution::get_delegatee_scheduler_t, env const& self) noexcept
             -> scheduler_type { return self.d_scheduler; }
     };
-    struct env2 {}; //-dk:TODO remove
 
     struct receiver {
         ::nstd::hidden_names::sync_wait::env d_env;
@@ -77,11 +77,12 @@ namespace nstd::hidden_names::sync_wait {
     template <typename... T>
     using type_identity_or_monostate_t = typename ::nstd::hidden_names::sync_wait::type_identity_or_monostate<T...>::type;
 
-    template <::nstd::execution::sender<::nstd::hidden_names::sync_wait::env> Sender>
+    // template <::nstd::execution::sender<::nstd::hidden_names::sync_wait::env> Sender>
+    template <::nstd::execution::sender Sender>
     using result_type
         = ::nstd::execution::value_types_of_t<
             Sender,
-            ::nstd::hidden_names::sync_wait::env2,
+            ::nstd::hidden_names::sync_wait::env,
             ::nstd::hidden_names::decayed_tuple,
             ::nstd::hidden_names::sync_wait::type_identity_or_monostate_t>;
     template <::nstd::execution::sender<::nstd::hidden_names::sync_wait::env> Sender>
@@ -141,7 +142,7 @@ namespace nstd::hidden_names::sync_wait {
             }
 
             friend auto tag_invoke(::nstd::execution::get_env_t, receiver const& ) noexcept
-                -> ::nstd::hidden_names::sync_wait::env2 {
+                -> ::nstd::hidden_names::sync_wait::env {
                 return {};
             }
             friend auto tag_invoke(::nstd::execution::set_value_t, receiver&&  r) noexcept {
