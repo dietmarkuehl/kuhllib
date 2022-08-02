@@ -145,8 +145,11 @@ namespace nstd::hidden_names::then {
         ::nstd::type_traits::remove_cvref_t<Fun>    d_fun;
 
         template <typename Tag>
+            requires requires(Sender&& sender) {
+                ::nstd::execution::get_completion_scheduler<Tag>(sender);
+            }
         friend auto tag_invoke(::nstd::execution::get_completion_scheduler_t<Tag>, sender const& self) noexcept {
-            return ::nstd::execution::get_completion_scheduler_t<Tag>(self.d_sender);
+            return ::nstd::execution::get_completion_scheduler<Tag>(self.d_sender);
         }
         template <::nstd::execution::receiver Receiver>
         friend auto tag_invoke(::nstd::execution::connect_t, sender&& self, Receiver r) {
@@ -164,6 +167,7 @@ namespace nstd::hidden_names::then {
                                                   self.d_fun
                                               });
         }
+#if 0
         template <typename Tag>
         friend auto tag_invoke(::nstd::execution::get_completion_signatures_t, sender const&, Tag&&)
             -> ::nstd::execution::completion_signatures<::nstd::execution::set_value_t()>
@@ -174,6 +178,7 @@ namespace nstd::hidden_names::then {
         template <typename Tag>
         friend auto tag_invoke(::nstd::execution::get_completion_signatures_t, sender&&, Tag&&)
             -> ::nstd::execution::completion_signatures<::nstd::execution::set_stopped_t()> { return {}; }
+#endif
     };
 
     struct cpo {

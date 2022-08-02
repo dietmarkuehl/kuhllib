@@ -47,7 +47,6 @@
 #include <optional>
 #include <tuple>
 #include <variant>
-#include <iostream>
 
 // ----------------------------------------------------------------------------
 
@@ -116,19 +115,16 @@ namespace nstd::hidden_names::let {
 
         template <typename... A>
         friend auto tag_invoke(Tag, receiver&& self, A&&... a) noexcept -> void {
-            ::std::cout << "special tag_invoke\n";
             self.d_state.d_inner_state.template emplace<inner_state<Receiver, Fun, Tag(A...)>>(::nstd::utility::move(self.d_state.d_receiver),
                                                                                                ::nstd::utility::move(self.d_state.d_fun),
                                                                                                ::nstd::utility::forward<A>(a)...);
         }
         template <typename T, typename... A>
         friend auto tag_invoke(T, receiver&& self, A&&... args) noexcept {
-            ::std::cout << "forwarded r-value tag_invoke\n";
             return T()(::nstd::utility::move(self.d_state.d_receiver), ::nstd::utility::forward<A>(args)...);
         }
         template <typename T, typename... A>
         friend auto tag_invoke(T, receiver const& self, A&&... args) noexcept {
-            ::std::cout << "forwarded const l-value tag_invoke\n";
             return T()(::nstd::utility::move(self.d_state.d_receiver), ::nstd::utility::forward<A>(args)...);
         }
     };
@@ -158,7 +154,6 @@ namespace nstd::hidden_names::let {
         {
         }
         friend auto tag_invoke(::nstd::execution::start_t, state& self) noexcept -> void {
-            ::std::cout << "state.start()\n";
             ::nstd::execution::start(self.d_state);
         }
     };

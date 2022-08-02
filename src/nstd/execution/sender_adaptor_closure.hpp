@@ -49,7 +49,7 @@ namespace nstd::hidden_names::sender_adaptor_closure_ns
     struct sender_adaptor_closure {
         template <typename... A>
         auto operator()(A&&... a) const {
-            return ::nstd::hidden_names::sender_adaptor_closure_ns::adaptor<C, A...>(::nstd::utility::forward<A>(a)...);
+            return ::nstd::hidden_names::sender_adaptor_closure_ns::adaptor<C, A...>{{::nstd::utility::forward<A>(a)...}};
         }
     };
 
