@@ -32,14 +32,19 @@
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::execution {
-    inline constexpr struct repeat_effect_t {
+namespace nstd::hidden_names::repeat_effect {
+    struct cpo {
         template <::nstd::execution::sender Sender>
         auto operator()(Sender&& sender) const {
             return ::nstd::execution::repeat_effect_until(::nstd::utility::forward<Sender>(sender),
                                                           []{ return false; });
         }
-    } repeat_effect;
+    };
+}
+
+namespace nstd::execution {
+    using repeat_effect_t = ::nstd::hidden_names::repeat_effect::cpo;
+    inline constexpr repeat_effect_t repeat_effect{};
 }
 
 // ----------------------------------------------------------------------------
