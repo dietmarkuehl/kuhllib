@@ -106,6 +106,8 @@ list(APPEND kuhllib_execution_components
     src/nstd/execution/parallel_unsequenced_policy
     src/nstd/execution/receiver
     src/nstd/execution/receiver_of
+    src/nstd/execution/repeat_effect
+    src/nstd/execution/repeat_effect_until
     src/nstd/execution/run_loop
     src/nstd/execution/schedule
     src/nstd/execution/scheduler
@@ -143,13 +145,10 @@ list(APPEND kuhllib_xexecution_components
     src/nstd/execution
     src/nstd/execution/execution
     src/nstd/execution/inject_cancel
-    src/nstd/execution/repeat_effect
-    src/nstd/execution/repeat_effect_until
     src/nstd/execution/run
     src/nstd/execution/start_detached
     src/nstd/execution/task
     src/nstd/execution/timeout
-    src/nstd/execution/upon_done
     src/nstd/execution/when_all
 )
 

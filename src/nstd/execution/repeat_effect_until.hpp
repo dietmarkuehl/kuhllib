@@ -27,9 +27,11 @@
 #define INCLUDED_NSTD_EXECUTION_REPEAT_EFFECT_UNTIL
 
 #include "nstd/execution/completion_signatures.hpp"
+#include "nstd/execution/get_env.hpp"
 #include "nstd/execution/sender.hpp"
 #include "nstd/execution/connect.hpp"
 #include "nstd/execution/start.hpp"
+#include "nstd/utility/move.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
 #include "nstd/type_traits/declval.hpp"
 #include <exception>
@@ -38,107 +40,140 @@
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::execution {
-    inline constexpr struct repeat_effect_until_t {
-        template <::nstd::execution::sender Sender, typename Predicate, typename Receiver>
-        struct state {
-            struct receiver {
-                state* d_state;
-                friend auto tag_invoke(::nstd::execution::set_value_t, receiver&& r, auto&&...)
-                    noexcept -> void {
-                    r.d_state->next();
-                }
-                template <typename Error>
-                friend auto tag_invoke(::nstd::execution::set_error_t, receiver&& r, Error&& e)
-                    noexcept -> void {
-                    ::nstd::execution::set_error(::nstd::utility::move(r.d_state->d_receiver),
-                                                 ::nstd::utility::forward<Error>(e));
-                }
-                friend auto tag_invoke(::nstd::execution::set_stopped_t, receiver&& r)
-                    noexcept -> void {
-                    ::nstd::execution::set_stopped(::nstd::utility::move(r.d_state->d_receiver));
-                }
-            };
-            using sender_type = ::nstd::type_traits::remove_cvref_t<Sender>;
+namespace nstd::hidden_names::repeat_effect_until
+{
+    template <::nstd::execution::sender Sender, typename Predicate, typename Receiver>
+    struct state_base
+    {
+        using sender_type = ::nstd::type_traits::remove_cvref_t<Sender>;
 
-            sender_type d_sender;
-            ::nstd::type_traits::remove_cvref_t<Predicate> d_predicate;
-            ::nstd::type_traits::remove_cvref_t<Receiver> d_receiver;
-            using internal_state
-                = decltype(::nstd::execution::connect(::nstd::type_traits::declval<sender_type>(),
-                                                      ::nstd::type_traits::declval<receiver>()));
+        sender_type                                    d_sender;
+        ::nstd::type_traits::remove_cvref_t<Predicate> d_predicate;
+        ::nstd::type_traits::remove_cvref_t<Receiver>  d_receiver;
 
-            bool d_engaged = false;
-            union holder {
-                holder(){}
-                ~holder(){}
-                internal_state d_state;
-            } d_internal_state;
-
-            template <typename P, typename R>
-            state(Sender&& sndr, P&& predicate, R&& receiver)
-                : d_sender(::nstd::utility::move(sndr))
-                , d_predicate(::nstd::utility::forward<P>(predicate))
-                , d_receiver(::nstd::utility::forward<R>(receiver))
-            {
-            }
-            ~state() {
-                if (this->d_engaged) {
-                    this->d_internal_state.d_state.~internal_state();
-                }
-            }
-
-            friend auto tag_invoke(::nstd::execution::start_t, state& s) noexcept {
-                new(&s.d_internal_state.d_state)
-                    internal_state(::nstd::execution::connect(s.d_sender,
-                                                              receiver{&s}));
-                s.d_engaged = true;
-                ::nstd::execution::start(s.d_internal_state.d_state);
-            }
-            auto next() noexcept -> void try {
-                if (this->d_predicate()) {
-                    ::nstd::execution::set_value(::nstd::utility::move(this->d_receiver));
-                }
-                else {
-                    this->d_internal_state.d_state.~internal_state();
-                    new(&this->d_internal_state.d_state)
-                        internal_state(::nstd::execution::connect(this->d_sender,
-                                                                  receiver{this}));
-                    ::nstd::execution::start(this->d_internal_state.d_state);
-                }
-            }
-            catch (...) {
-                ::nstd::execution::set_error(::nstd::utility::move(this->d_receiver),
-                                             ::std::current_exception());
-            }
-        };
-        template <::nstd::execution::sender Sender, typename Predicate>
-        struct sender {
-            using completion_signatures = ::nstd::execution::completion_signatures<
-                    ::nstd::execution::set_value_t(),
-                    ::nstd::execution::set_stopped_t()
-                >;
-            template <template <typename...> class T, template <typename...> class V>
-            using value_types = V<T<>>;
-            template <template <typename...> class V>
-            using error_types = V<::std::exception_ptr>;
-            static constexpr bool sends_done = true;
-
-            ::nstd::type_traits::remove_cvref_t<Sender> d_sender;
-            ::nstd::type_traits::remove_cvref_t<Predicate> d_predicate;
-
-            template <typename Receiver>
-            friend auto tag_invoke(::nstd::execution::connect_t, sender&& sndr, Receiver&& receiver) noexcept {
-                return state<Sender, Predicate, Receiver>(::nstd::utility::move(sndr.d_sender),
-                             ::nstd::utility::move(sndr.d_predicate),
-                             ::nstd::utility::forward<Receiver>(receiver));
-            }
-        };
-
-        template <::nstd::execution::sender Sender, typename Predicate>
-        friend auto tag_invoke(repeat_effect_until_t, Sender&& sndr, Predicate&& predicate)
+        template <::nstd::execution::sender S,
+                  typename P,
+                  ::nstd::execution::receiver R>
+        state_base(S&& sender, P&& predicate, R&& receiver)
+            : d_sender(::nstd::utility::forward<S>(sender))
+            , d_predicate(::nstd::utility::forward<P>(predicate))
+            , d_receiver(::nstd::utility::forward<R>(receiver))
         {
-            return sender<Sender, Predicate>{::nstd::utility::forward<Sender>(sndr),
+        }
+
+        static_assert(::nstd::execution::sender<sender_type>);
+
+        virtual auto next() -> void = 0;
+    };
+
+    template <::nstd::execution::sender Sender, typename Predicate, typename Receiver>
+    struct receiver {
+        state_base<Sender, Predicate, Receiver>* d_state;
+        friend auto tag_invoke(::nstd::execution::get_env_t, receiver const& self) noexcept
+            -> decltype(::nstd::execution::get_env(::nstd::type_traits::declval<Receiver const&>()))
+        {
+            return ::nstd::execution::get_env(self.d_state->d_receiver);
+        }
+        friend auto tag_invoke(::nstd::execution::set_value_t, receiver&& r, auto&&...)
+            noexcept -> void
+        {
+            r.d_state->next();
+        }
+        template <typename Error>
+        friend auto tag_invoke(::nstd::execution::set_error_t, receiver&& r, Error&& e)
+            noexcept -> void {
+            ::nstd::execution::set_error(::nstd::utility::move(r.d_state->d_receiver),
+                                         ::nstd::utility::forward<Error>(e));
+        }
+        friend auto tag_invoke(::nstd::execution::set_stopped_t, receiver&& r)
+            noexcept -> void
+        {
+            ::nstd::execution::set_stopped(::nstd::utility::move(r.d_state->d_receiver));
+        }
+    };
+
+    template <::nstd::execution::sender Sender, typename Predicate, typename Receiver>
+    struct state
+        : state_base<Sender, Predicate, Receiver>
+    {
+        using state_base   = ::nstd::hidden_names::repeat_effect_until::state_base<Sender, Predicate, Receiver>;
+        using sender_type   = typename state_base::sender_type;
+        using receiver_type = ::nstd::hidden_names::repeat_effect_until::receiver<Sender, Predicate, Receiver>;
+        static_assert(::nstd::execution::receiver<receiver_type>);
+        using internal_state
+            = decltype(::nstd::execution::connect(::nstd::type_traits::declval<sender_type>(),
+                                                  ::nstd::type_traits::declval<receiver_type>()));
+
+        bool d_engaged = false;
+        union holder {
+            holder(){}
+            ~holder(){}
+            internal_state d_state;
+        } d_internal_state;
+
+        template <typename P, typename R>
+        state(Sender&& sndr, P&& predicate, R&& receiver)
+            : state_base(::nstd::utility::move(sndr),
+                         ::nstd::utility::forward<P>(predicate),
+                         ::nstd::utility::forward<R>(receiver))
+        {
+        }
+        ~state() {
+            if (this->d_engaged) {
+                this->d_internal_state.d_state.~internal_state();
+            }
+        }
+
+        friend auto tag_invoke(::nstd::execution::start_t, state& s) noexcept {
+            new(&s.d_internal_state.d_state)
+                internal_state(::nstd::execution::connect(s.d_sender,
+                                                          receiver_type{&s}));
+            s.d_engaged = true;
+            ::nstd::execution::start(s.d_internal_state.d_state);
+        }
+        auto next() noexcept -> void override try {
+            if (this->d_predicate()) {
+                ::nstd::execution::set_value(::nstd::utility::move(this->d_receiver));
+            }
+            else {
+                this->d_internal_state.d_state.~internal_state();
+                new(&this->d_internal_state.d_state)
+                    internal_state(::nstd::execution::connect(this->d_sender,
+                                                              receiver_type{this}));
+                ::nstd::execution::start(this->d_internal_state.d_state);
+            }
+        }
+        catch (...) {
+            ::nstd::execution::set_error(::nstd::utility::move(this->d_receiver),
+                                         ::std::current_exception());
+        }
+    };
+
+
+    template <::nstd::execution::sender Sender, typename Predicate>
+    struct sender {
+        using completion_signatures = ::nstd::execution::completion_signatures<
+                ::nstd::execution::set_value_t(),
+                ::nstd::execution::set_error_t(::std::exception_ptr),
+                ::nstd::execution::set_stopped_t()
+            >;
+
+        ::nstd::type_traits::remove_cvref_t<Sender> d_sender;
+        ::nstd::type_traits::remove_cvref_t<Predicate> d_predicate;
+
+        template <typename Receiver>
+        friend auto tag_invoke(::nstd::execution::connect_t, sender&& sndr, Receiver&& receiver) noexcept {
+            return ::nstd::hidden_names::repeat_effect_until::state<Sender, Predicate, Receiver>(::nstd::utility::move(sndr.d_sender),
+                         ::nstd::utility::move(sndr.d_predicate),
+                         ::nstd::utility::forward<Receiver>(receiver));
+        }
+    };
+
+    struct cpo {
+        template <::nstd::execution::sender Sender, typename Predicate>
+        friend auto tag_invoke(cpo, Sender&& sndr, Predicate&& predicate)
+        {
+            return ::nstd::hidden_names::repeat_effect_until::sender<Sender, Predicate>{::nstd::utility::forward<Sender>(sndr),
                                              ::nstd::utility::forward<Predicate>(predicate)};
         }
 
@@ -148,7 +183,14 @@ namespace nstd::execution {
                                       ::nstd::utility::forward<Sender>(sndr),
                                       ::nstd::utility::forward<Predicate>(predicate));
         }
-    } repeat_effect_until;
+    };
+}
+
+// ----------------------------------------------------------------------------
+
+namespace nstd::execution {
+    using repeat_effect_until_t = ::nstd::hidden_names::repeat_effect_until::cpo;
+    inline constexpr repeat_effect_until_t repeat_effect_until{};
 }
 
 // ----------------------------------------------------------------------------
