@@ -124,6 +124,17 @@ list(APPEND kuhllib_execution_components
     src/nstd/execution/stop_token_of_t
     src/nstd/execution/then
     src/nstd/execution/value_types_of_t
+    src/nstd/execution/when_all
+)
+
+list(APPEND kuhllib_xexecution_components
+    src/nstd/execution
+    src/nstd/execution/execution
+    src/nstd/execution/inject_cancel
+    src/nstd/execution/run
+    src/nstd/execution/start_detached
+    src/nstd/execution/task
+    src/nstd/execution/timeout
 )
 
 list(APPEND kuhllib_execution_todo
@@ -139,17 +150,6 @@ list(APPEND kuhllib_execution_todo
     src/nstd/execution/sender_of
     src/nstd/execution/transfer
     src/nstd/execution/transfer_just
-)
-
-list(APPEND kuhllib_xexecution_components
-    src/nstd/execution
-    src/nstd/execution/execution
-    src/nstd/execution/inject_cancel
-    src/nstd/execution/run
-    src/nstd/execution/start_detached
-    src/nstd/execution/task
-    src/nstd/execution/timeout
-    src/nstd/execution/when_all
 )
 
 list(APPEND kuhllib_xexecutor_components
@@ -202,6 +202,7 @@ list(APPEND kuhllib_hidden_components
     src/nstd/hidden_names/filter_completions
     src/nstd/hidden_names/is_instance_of
     src/nstd/hidden_names/movable_value
+    src/nstd/hidden_names/print_completion_signatures
     src/nstd/hidden_names/sender_base
     src/nstd/hidden_names/valid_completion_for
     src/nstd/hidden_names/valid_completion_signatures

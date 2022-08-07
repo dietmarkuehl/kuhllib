@@ -44,14 +44,63 @@ namespace UT = ::nstd::utility;
 
 namespace test_declarations {
     namespace {
-        template <typename...> class variant;
-        template <typename...> class tuple;
+        template <int... I>
+        struct static_just {
+            template <EX::receiver R>
+            struct state {
+                TT::remove_cvref_t<R> d_receiver;
+                friend auto tag_invoke(EX::start_t, state& self) noexcept -> void {
+                    EX::set_value(UT::move(self.d_receiver), I...);
+                }
+            };
+            friend auto tag_invoke(EX::get_completion_signatures_t, static_just const&, auto&&) noexcept
+                -> EX::completion_signatures<EX::set_value_t(decltype(I)...)> {
+                return {};
+            }
+            template <EX::receiver R>
+            friend auto tag_invoke(EX::connect_t, static_just const&, R&& receiver) noexcept
+                -> state<R>
+            {
+                return { UT::forward<R>(receiver) };
+            }
+        };
+
+        auto tag_invoke(EX::when_all_t, TD::static_just<1>, TD::static_just<2, 3>) {
+            return TD::static_just<2, 4, 6>();
+        }
     }
 }
 
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
+    KT::expect_success("TD::static_just is a sender", []{
+            static_assert(EX::sender<TD::static_just<>>);
+            auto value = TR::sync_wait(TD::static_just<1, 2>());
+
+            return EX::sender<TD::static_just<>>
+                && EX::sender<TD::static_just<1>>
+                && EX::sender<TD::static_just<1, 2>>
+                && KT::use(value)
+                && value
+                && ::std::make_tuple(1, 2) == value
+                ;
+        }),
+    KT::expect_success("when_all without arguments is ill-formed", []{
+            return not ::std::invocable<EX::when_all_t>;
+        }),
+    KT::expect_success("when_all is a CPO", []{
+            auto sender = EX::when_all(TD::static_just<1>(), TD::static_just<2, 3>());
+            auto value  = TR::sync_wait(UT::move(sender));
+            return KT::use(value)
+                && value
+                && ::std::make_tuple(2, 4, 6) == *value
+                ;
+        }),
+#if 0
+    KT::expect_success("todo", []{
+            return false;
+        }),
     KT::expect_success("when_all without any sender", []{
             auto sender = EX::when_all();
             using Sender = decltype(sender);
@@ -61,9 +110,24 @@ static KT::testcase const tests[] = {
 
             return KT::use(sender)
                 && EX::sender<Sender>
-                && KT::type<Sender::value_types<TD::tuple, TD::variant>>
-                   == KT::type<TD::variant<TD::tuple<>>>
+                && KT::type<Sender::completion_signatures>
+                   == KT::type<EX::completion_signatures<EX::set_value_t()>>
                 && called
+                ;
+        }),
+    KT::expect_success("when_all with one sender", []{
+            ::std::size_t sum(0);
+            auto sender = EX::when_all(EX::just(1));
+            using Sender = TT::remove_cvref_t<decltype(sender)>;
+            bool called = false;
+            TR::sync_wait(UT::move(sender)
+                          //| EX::then([&](auto&&...){ called = true; }));
+            );
+
+            return KT::use(sender)
+                && EX::sender<Sender>
+                && called
+                && sum == 6u
                 ;
         }),
     KT::expect_success("when_all with multiple senders", []{
@@ -83,6 +147,10 @@ static KT::testcase const tests[] = {
                 && called
                 && sum == 6u
                 ;
+        }),
+#endif
+    KT::expect_success("dummy", []{
+            return true;
         }),
 };
 
