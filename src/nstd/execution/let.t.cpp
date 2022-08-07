@@ -39,6 +39,7 @@
 #include "nstd/utility/move.hpp"
 #include <concepts>
 #include "kuhl/test.hpp"
+#include "nstd/hidden_names/print_completion_signatures.hpp"
 
 namespace test_declarations {}
 namespace TD = test_declarations;
@@ -202,9 +203,10 @@ static KT::testcase const tests[] = {
         }),
     KT::expect_success("send value", []{
             auto sender = EX::let_value(EX::just(::std::string("hello, "), ::std::string("world")),
-                                    [](auto&&... a){
-                                        return EX::just((a + ...)); })
-                                    ;
+                                        [](auto&&... a){
+                                            return EX::just((a + ...));
+                                            }
+                                        );
             static_assert(EX::sender<decltype(sender)>);
             static_assert(EX::receiver_of<TD::receiver, decltype(EX::get_completion_signatures(sender, EX::get_env(TD::receiver())))>);
 

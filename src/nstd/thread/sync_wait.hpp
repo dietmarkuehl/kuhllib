@@ -48,8 +48,8 @@
 #include <mutex>
 #include <condition_variable>
 #include <optional>
-#include <tuple>
 #include <variant>
+#include <iostream>
 
 // ----------------------------------------------------------------------------
 
@@ -149,12 +149,14 @@ namespace nstd::hidden_names::sync_wait {
                 (*r.res) = {};
                 r.complete();
             }
-            friend auto tag_invoke(::nstd::execution::set_value_t, receiver&&  r, Type const& t) noexcept {
-                (*r.res) = t;
-                r.complete();
-            }
-            friend auto tag_invoke(::nstd::execution::set_value_t, receiver&&  r, Type&& t) noexcept {
-                (*r.res) = ::nstd::utility::move(t);
+            template <typename... Args>
+            friend auto tag_invoke(::nstd::execution::set_value_t, receiver&&  r, Args&&... args) noexcept {
+                if constexpr (::std::is_assignable_v<decltype(*r.res), ::std::tuple<Args...>>) {
+                    r.res->emplace(::nstd::utility::forward<Args>(args)...);
+                }
+                else {
+                    ::std::cerr << "non-assigning branch called\n";
+                }
                 r.complete();
             }
             friend auto tag_invoke(::nstd::execution::set_error_t, receiver&& r, ::std::exception_ptr ex) noexcept {

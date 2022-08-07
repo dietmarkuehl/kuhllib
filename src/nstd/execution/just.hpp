@@ -72,6 +72,12 @@ namespace nstd::hidden_names {
 
         [[no_unique_address]] ::std::tuple<A...> d_value;
 
+        template <typename... Args>
+        just_sender(Args&&... args): d_value(::nstd::utility::forward<Args>(args)...) {}
+        just_sender(just_sender&) = default;
+        just_sender(just_sender&&) = default;
+        just_sender(just_sender const&) = default;
+
         template <::nstd::execution::receiver Receiver>
             requires ::nstd::execution::receiver_of<Receiver, completion_signatures>
         friend auto tag_invoke(::nstd::execution::connect_t,
@@ -90,35 +96,28 @@ namespace nstd::hidden_names {
                                              ::nstd::utility::forward<Receiver>(receiver)};
         }
     };
-
-    //static_assert(::nstd::execution::operation_state<::nstd::hidden_names::just_sender<::nstd::execution::set_value_t, int>
-    //              ::operation_state<::nstd::execution::hidden_names::test_receiver_of<::nstd::execution::set_value_t(int)>>>);
-    //static_assert(::nstd::execution::operation_state<::nstd::hidden_names::just_sender<::nstd::execution::set_error_t, int>::operation_state<::nstd::execution::hidden_names::test_receiver>>);
-    //static_assert(::nstd::execution::operation_state<::nstd::hidden_names::just_sender<::nstd::execution::set_stopped_t>::operation_state<::nstd::execution::hidden_names::test_receiver>>);
 }
 
 namespace nstd::execution {
     template <::nstd::hidden_names::movable_value... A>
     inline auto just(A&&... a) noexcept((::std::is_nothrow_constructible_v<::nstd::type_traits::remove_cvref_t<A>, A> && ...))
         -> ::nstd::hidden_names::just_sender<::nstd::execution::set_value_t, ::nstd::type_traits::remove_cvref_t<A>...> {
-        return ::nstd::hidden_names::just_sender<::nstd::execution::set_value_t, ::nstd::type_traits::remove_cvref_t<A>...>{
-            {}, ::std::make_tuple(::nstd::utility::forward<A>(a)...)
-            };
+        return ::nstd::hidden_names::just_sender<::nstd::execution::set_value_t, ::nstd::type_traits::remove_cvref_t<A>...>(
+            ::nstd::utility::forward<A>(a)...
+            );
     }
 
     template <::nstd::hidden_names::movable_value E>
     inline auto just_error(E&& e) noexcept(::std::is_nothrow_constructible_v<::nstd::type_traits::remove_cvref_t<E>, E>)
         -> ::nstd::hidden_names::just_sender<::nstd::execution::set_error_t, ::nstd::type_traits::remove_cvref_t<E>> {
-        return ::nstd::hidden_names::just_sender<::nstd::execution::set_error_t, ::nstd::type_traits::remove_cvref_t<E>>{
-            {}, ::std::make_tuple(::nstd::utility::forward<E>(e))
-            };
+        return ::nstd::hidden_names::just_sender<::nstd::execution::set_error_t, ::nstd::type_traits::remove_cvref_t<E>>(
+            ::nstd::utility::forward<E>(e)
+            );
     }
 
     inline auto just_stopped() noexcept
         -> ::nstd::hidden_names::just_sender<::nstd::execution::set_stopped_t> {
-        return ::nstd::hidden_names::just_sender<::nstd::execution::set_stopped_t>{
-            {}, ::std::make_tuple()
-            };
+        return ::nstd::hidden_names::just_sender<::nstd::execution::set_stopped_t>();
     }
 }
 

@@ -27,6 +27,7 @@
 #define INCLUDED_NSTD_EXECUTION_WHEN_ALL
 
 #include "nstd/execution/completion_signatures.hpp"
+#include "nstd/execution/get_env.hpp"
 #include "nstd/execution/just.hpp"
 #include "nstd/execution/receiver.hpp"
 #include "nstd/execution/sender.hpp"
@@ -43,7 +44,23 @@
 
 // ----------------------------------------------------------------------------
 
+namespace nstd::hidden_names::when_all {
+    struct cpo {
+        template <::nstd::execution::sender... Sender>
+            requires (0ul != sizeof...(Sender))
+        auto operator()(Sender&&... sender) const {
+            return ::nstd::tag_invoke(*this, ::nstd::utility::forward<Sender>(sender)...);
+        }
+    };
+}
+
+// ----------------------------------------------------------------------------
+
 namespace nstd::execution {
+    using when_all_t = ::nstd::hidden_names::when_all::cpo;
+    inline constexpr ::nstd::execution::when_all_t when_all{};
+
+#if 0
     inline constexpr struct when_all_t
     {
         template <::nstd::execution::receiver Receiver>
@@ -59,17 +76,20 @@ namespace nstd::execution {
         template <::nstd::execution::receiver Receiver>
         struct receiver {
             common<Receiver>* d_common;
-            friend auto tag_invoke(::nstd::execution::set_value_t, receiver&& r, auto&&...)
-                noexcept -> void {
-                r.d_common->complete();
+            friend auto tag_invoke(::nstd::execution::get_env_t, receiver const& self) noexcept {
+                return ::nstd::execution::get_env(self.d_common->d_receiver);
             }
-            friend auto tag_invoke(::nstd::execution::set_error_t, receiver&& r, auto&&)
+            friend auto tag_invoke(::nstd::execution::set_value_t, receiver&& self, auto&&...)
                 noexcept -> void {
-                r.d_common->complete();
+                self.d_common->complete();
             }
-            friend auto tag_invoke(::nstd::execution::set_stopped_t, receiver&& r)
+            friend auto tag_invoke(::nstd::execution::set_error_t, receiver&& self, auto&&)
                 noexcept -> void {
-                r.d_common->complete();
+                self.d_common->complete();
+            }
+            friend auto tag_invoke(::nstd::execution::set_stopped_t, receiver&& self)
+                noexcept -> void {
+                self.d_common->complete();
             }
         };
         template <::nstd::execution::sender Sender, ::nstd::execution::receiver Receiver>
@@ -114,12 +134,6 @@ namespace nstd::execution {
                     ::nstd::execution::set_stopped_t()
                 >;
 
-            template <template <typename...> class T, template <typename...> class V>
-            using value_types = V<T<>>;
-            template <template <typename...> class V>
-            using error_types = V<::std::exception_ptr>;
-            static constexpr bool sends_done = true;
-
             ::std::tuple<::nstd::type_traits::remove_cvref_t<Sender>...> d_sender;
             template <::nstd::execution::receiver Receiver>
             friend auto tag_invoke(::nstd::execution::connect_t,
@@ -141,6 +155,7 @@ namespace nstd::execution {
             return ::nstd::execution::just();
         }
     } when_all;
+#endif
 }
 
 // ----------------------------------------------------------------------------
