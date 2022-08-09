@@ -202,6 +202,7 @@ static KT::testcase const tests[] = {
                 ;
         }),
     KT::expect_success("send value", []{
+            std::cout << "=== let_value test ====\n";
             auto sender = EX::let_value(EX::just(::std::string("hello, "), ::std::string("world")),
                                         [](auto&&... a){
                                             return EX::just((a + ...));
@@ -210,7 +211,9 @@ static KT::testcase const tests[] = {
             static_assert(EX::sender<decltype(sender)>);
             static_assert(EX::receiver_of<TD::receiver, decltype(EX::get_completion_signatures(sender, EX::get_env(TD::receiver())))>);
 
+            std::cout << "=== sync_wait'ing\n";
             auto value = TTh::sync_wait(UT::move(sender));
+            std::cout << "=== let_value test done ====\n";
             return KT::use(sender)
                 && value
                 && ::std::get<0>(*value) == "hello, world"
@@ -220,6 +223,7 @@ static KT::testcase const tests[] = {
             auto sender = EX::just(::std::string("hello, "), ::std::string("world")) | EX::let_value(
                                     [](auto&&... a){
                                         return EX::just((a + ...)); })
+                                    | EX::then([](::std::string s, auto...){ return s; })
                                     ;
             static_assert(EX::sender<decltype(sender)>);
             static_assert(EX::receiver_of<TD::receiver, decltype(EX::get_completion_signatures(sender, EX::get_env(TD::receiver())))>);
