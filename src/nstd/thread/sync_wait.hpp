@@ -49,7 +49,6 @@
 #include <condition_variable>
 #include <optional>
 #include <variant>
-#include <iostream>
 
 // ----------------------------------------------------------------------------
 
@@ -145,32 +144,27 @@ namespace nstd::hidden_names::sync_wait {
                 -> ::nstd::hidden_names::sync_wait::env {
                 return {};
             }
-            friend auto tag_invoke(::nstd::execution::set_value_t, receiver&&  r) noexcept {
-                (*r.res) = {};
-                r.complete();
+            friend auto tag_invoke(::nstd::execution::set_value_t, receiver&&  self) noexcept {
+                (*self.res) = {};
+                self.complete();
             }
             template <typename... Args>
-            friend auto tag_invoke(::nstd::execution::set_value_t, receiver&&  r, Args&&... args) noexcept {
-                if constexpr (::std::is_assignable_v<decltype(*r.res), ::std::tuple<Args...>>) {
-                    r.res->emplace(::nstd::utility::forward<Args>(args)...);
-                }
-                else {
-                    ::std::cerr << "non-assigning branch called\n";
-                }
-                r.complete();
+                requires ::std::is_assignable_v<::std::optional<Type>&, ::std::tuple<Args...>>
+            friend auto tag_invoke(::nstd::execution::set_value_t, receiver&&  self, Args&&... args) noexcept {
+                self.res->emplace(::nstd::utility::forward<Args>(args)...);
+                self.complete();
             }
-            friend auto tag_invoke(::nstd::execution::set_error_t, receiver&& r, ::std::exception_ptr ex) noexcept {
-                (*r.ex) = ex;
-                r.complete();
+            friend auto tag_invoke(::nstd::execution::set_error_t, receiver&& self, ::std::exception_ptr ex) noexcept {
+                (*self.ex) = ex;
+                self.complete();
             }
             template <typename E>
-            friend auto tag_invoke(::nstd::execution::set_error_t, receiver&& r, E ex) noexcept {
-                try { throw ex; }
-                catch (...) { (*r.ex) = ::std::current_exception(); }
-                r.complete();
+            friend auto tag_invoke(::nstd::execution::set_error_t, receiver&& self, E ex) noexcept {
+                *self.ex = ::std::make_exception_ptr(ex);
+                self.complete();
             }
-            friend auto tag_invoke(::nstd::execution::set_stopped_t, receiver&& r) noexcept {
-                r.complete();
+            friend auto tag_invoke(::nstd::execution::set_stopped_t, receiver&& self) noexcept {
+                self.complete();
             }
         };
 

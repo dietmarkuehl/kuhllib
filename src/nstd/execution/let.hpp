@@ -48,6 +48,8 @@
 #include <optional>
 #include <tuple>
 #include <variant>
+#include "nstd/hidden_names/print_completion_signatures.hpp" //-dk:TODO remove
+#include <string> //-dk:TODO remove
 
 // ----------------------------------------------------------------------------
 
@@ -96,7 +98,7 @@ namespace nstd::hidden_names::let {
         using state_t  = ::std::invoke_result_t<::nstd::execution::connect_t, sender_t, FinalReceiver>;
 
         ::std::tuple<::nstd::type_traits::remove_reference_t<Args>...> d_args;
-        state_t                                                    d_state;
+        state_t                                                        d_state;
 
         template <::nstd::execution::receiver R, typename F>
         inner_state(R&& receiver, F&& fun, Args... args)
@@ -127,15 +129,25 @@ namespace nstd::hidden_names::let {
             requires (::nstd::hidden_names::let::is_completion_signal<CPO>)
         friend auto tag_invoke(CPO cpo, receiver&& self, A&&... a) noexcept -> void {
             if constexpr (::std::same_as<Tag, ::nstd::type_traits::remove_cvref_t<CPO>>) {
+                ::std::cout << "building inner state\n";
                 self.d_state.d_inner_state.template emplace<inner_state<FinalReceiver, Fun, Tag(A...)>>(::nstd::utility::move(self.d_state.d_receiver),
                                                                                                         ::nstd::utility::move(self.d_state.d_fun),
                                                                                                         ::nstd::utility::forward<A>(a)...);
+                ::std::cout << "done building inner state\n";
             }
             else {
+                //static_assert(::std::same_as<::nstd::execution::set_error_t(::std::exception_ptr), Tag(...)>
+                //              || ::std::same_as<::nstd::execution::set_value_t(::std::string), Tag(...)>
+                //              || ::std::same_as<int, Tag(A...)>);
                 cpo(::nstd::utility::move(self.d_state.d_receiver), ::nstd::utility::forward<A>(a)...);
             }
         }
 
+#if 0
+        friend auto tag_invoke(::nstd::execution::get_env_t cpo, receiver const& self) noexcept {
+            return cpo(self.d_state.d_receiver);
+        }
+#else
         template <typename CPO, typename... A>
             requires (not ::nstd::hidden_names::let::is_completion_signal<CPO>)
         friend auto tag_invoke(CPO cpo, receiver&& self, A&&... args) noexcept {
@@ -146,6 +158,7 @@ namespace nstd::hidden_names::let {
         friend auto tag_invoke(CPO cpo, receiver const& self, A&&... args) noexcept {
             return cpo(self.d_state.d_receiver, ::nstd::utility::forward<A>(args)...);
         }
+#endif
     };
 
     template <typename                    Tag,
@@ -255,6 +268,20 @@ namespace nstd::hidden_names::let {
         template <::nstd::execution::receiver Receiver>
         friend auto tag_invoke(::nstd::execution::connect_t, sender&& self, Receiver&& receiver)
             -> ::nstd::hidden_names::let::state<Tag, Sender, Receiver, Fun> {
+            std::cout << "get_completion_signatures: ";
+            using compls = decltype(::nstd::execution::get_completion_signatures(::nstd::type_traits::declval<Sender>(), ::nstd::execution::get_env(receiver)));
+            nstd::hidden_names::print_completion_signatures<compls>();
+
+            std::cout << "transform_completions: ";
+            using E = decltype(::nstd::execution::get_env(receiver));
+            using trans = typename transform_completions<E, Fun, ::nstd::hidden_names::filter_completions_t<Tag, compls>>::type;
+            nstd::hidden_names::print_completion_signatures<trans>();
+
+            std::cout << "join_completions: ";
+            using joins = typename ::nstd::hidden_names::let::join_completions<trans, typename rest<Tag, Sender, E>::type >::type;
+            nstd::hidden_names::print_completion_signatures<joins>();
+            std::cout << "======\n";
+
             return ::nstd::hidden_names::let::state<Tag, Sender, Receiver, Fun>(
                 ::nstd::utility::move(self.d_sender),
                 ::nstd::utility::move(self.d_fun),

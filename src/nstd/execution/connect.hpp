@@ -35,6 +35,8 @@
 #include "nstd/functional/tag_invoke.hpp"
 #include "nstd/type_traits/declval.hpp"
 #include "nstd/utility/forward.hpp"
+#include "nstd/hidden_names/print_completion_signatures.hpp"
+#include <iostream>
 
 // ----------------------------------------------------------------------------
 // [exec.connect]
@@ -60,6 +62,8 @@ namespace nstd::execution {
                                                      ::nstd::utility::forward<Sender>(sender),
                                                      ::nstd::utility::forward<Receiver>(receiver))))
             {
+                ::std::cout << "connect signatures";
+                ::nstd::hidden_names::print_completion_signatures<::nstd::execution::completion_signatures_of_t<Sender, decltype(::nstd::execution::get_env(receiver))>>();
                 return ::nstd::tag_invoke(*this, //connect_t
                                          ::nstd::utility::forward<Sender>(sender),
                                          ::nstd::utility::forward<Receiver>(receiver));

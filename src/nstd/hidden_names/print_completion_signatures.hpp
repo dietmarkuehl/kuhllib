@@ -45,7 +45,9 @@ namespace nstd::hidden_names {
     template <> inline std::ostream& print_tag<::nstd::execution::set_error_t>(::std::ostream& out) { return out << "set_error_t"; }
     template <> inline std::ostream& print_tag<::nstd::execution::set_stopped_t>(::std::ostream& out) { return out << "set_stopped_t"; }
 
-    template <typename> struct print_type;
+    template <typename> struct print_type { static ::std::string str() { return "<unknown>"; } };
+
+    template <> struct print_type<bool> { static ::std::string str() { return "int"; } };
     template <> struct print_type<int> { static ::std::string str() { return "int"; } };
     template <> struct print_type<double> { static ::std::string str() { return "double"; } };
     template <> struct print_type<::std::exception_ptr> { static ::std::string str() { return "std::exception_ptr"; } };
@@ -65,7 +67,7 @@ namespace nstd::hidden_names {
     struct signature_printer<Tag(Args...)> {
         static auto print() {
             std::cout << print_tag<Tag> << "(";
-            (std::cout << ... << (print_type<Args>()));
+            (std::cout << ... << (print_type<Args>())) << " ";
             std::cout << ")\n";
         }
     };
@@ -80,6 +82,10 @@ namespace nstd::hidden_names {
         }
     };
     struct env {};
+    template <typename Completions>
+    void print_completion_signatures() {
+        printer<Completions>::print();
+    }
     template <::nstd::execution::sender Sender>
     void print_completion_signatures(Sender&& s) {
         printer<decltype(::nstd::execution::get_completion_signatures(s, env{}))>::print();
