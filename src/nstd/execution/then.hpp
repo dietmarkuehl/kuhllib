@@ -87,11 +87,9 @@ namespace nstd::hidden_names::then {
         }
         template <typename... Args>
         friend auto tag_invoke(Tag, receiver&& self, Args&&... args) noexcept -> void
-#if 1 
             requires requires(Fun fun, Args&&... args) { //-dk:TODO this requires shouldn't be necessary!
                 ::std::invoke(fun, ::nstd::utility::forward<Args>(args)...);
             }
-#endif
         {
             try {
                 if constexpr (::nstd::concepts::same_as<void, decltype(::std::invoke(self.d_fun, ::nstd::utility::forward<Args>(args)...))>) {

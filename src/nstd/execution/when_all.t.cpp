@@ -44,13 +44,17 @@ namespace UT = ::nstd::utility;
 
 namespace test_declarations {
     namespace {
+        struct env {};
+
         template <int... I>
         struct static_just {
             template <EX::receiver R>
             struct state {
                 TT::remove_cvref_t<R> d_receiver;
                 friend auto tag_invoke(EX::start_t, state& self) noexcept -> void {
+                    ::std::cout << "static_just start\n";
                     EX::set_value(UT::move(self.d_receiver), I...);
+                    ::std::cout << "static_just start done\n";
                 }
             };
             friend auto tag_invoke(EX::get_completion_signatures_t, static_just const&, auto&&) noexcept
@@ -95,6 +99,24 @@ static KT::testcase const tests[] = {
             return KT::use(value)
                 && value
                 && ::std::make_tuple(2, 4, 6) == *value
+                ;
+        }),
+    KT::expect_success("when_all with one sender", []{
+            auto sender = EX::when_all(TD::static_just<1>());
+            auto result = TR::sync_wait(::UT::move(sender));
+
+            return KT::use(result)
+                && KT::type<decltype(EX::get_completion_signatures(sender, TD::env()))>
+                    == KT::type<EX::completion_signatures<EX::set_value_t(int)>>
+                ;
+        }),
+    KT::expect_success("when_all with two senders", []{
+            auto sender = EX::when_all(TD::static_just<1, 2>(), TD::static_just<3>());
+            auto result = TR::sync_wait(::UT::move(sender));
+
+            return KT::use(result)
+                && KT::type<decltype(EX::get_completion_signatures(sender, TD::env()))>
+                    == KT::type<EX::completion_signatures<EX::set_value_t(int, int, int)>>
                 ;
         }),
 #if 0
