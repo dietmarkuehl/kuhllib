@@ -87,7 +87,13 @@ namespace nstd::hidden_names::then {
             return self;
         }
         template <typename... Args>
-        friend auto tag_invoke(Tag, receiver&& self, Args&&... args) noexcept -> void {
+        friend auto tag_invoke(Tag, receiver&& self, Args&&... args) noexcept -> void
+#if 1 
+            requires requires(Fun fun, Args&&... args) { //-dk:TODO this requires shouldn't be necessary!
+                ::std::invoke(fun, ::nstd::utility::forward<Args>(args)...);
+            }
+#endif
+        {
             try {
                 if constexpr (::nstd::concepts::same_as<void, decltype(::std::invoke(self.d_fun, ::nstd::utility::forward<Args>(args)...))>) {
                     ::std::invoke(self.d_fun, ::nstd::utility::forward<Args>(args)...);
@@ -168,7 +174,8 @@ namespace nstd::hidden_names::then {
             return ::nstd::execution::get_completion_scheduler<T>(self.d_sender);
         }
         template <::nstd::execution::receiver Receiver>
-        friend auto tag_invoke(::nstd::execution::connect_t, sender&& self, Receiver r) {
+        friend auto tag_invoke(::nstd::execution::connect_t, sender&& self, Receiver&& r)
+        {
             return ::nstd::execution::connect(::nstd::utility::move(self.d_sender),
                                               ::nstd::hidden_names::then::receiver<Tag, Receiver, Fun>{
                                                   ::nstd::utility::forward<Receiver>(r),
@@ -183,18 +190,6 @@ namespace nstd::hidden_names::then {
                                                   self.d_fun
                                               });
         }
-#if 0
-        template <typename Tag>
-        friend auto tag_invoke(::nstd::execution::get_completion_signatures_t, sender const&, Tag&&)
-            -> ::nstd::execution::completion_signatures<::nstd::execution::set_value_t()>
-            { return {}; }
-        template <typename Tag>
-        friend auto tag_invoke(::nstd::execution::get_completion_signatures_t, sender&, Tag&&)
-            -> ::nstd::execution::completion_signatures<::nstd::execution::set_error_t(int)> { return {}; }
-        template <typename Tag>
-        friend auto tag_invoke(::nstd::execution::get_completion_signatures_t, sender&&, Tag&&)
-            -> ::nstd::execution::completion_signatures<::nstd::execution::set_stopped_t()> { return {}; }
-#endif
     };
 
     template <typename Tag>

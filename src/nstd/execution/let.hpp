@@ -48,8 +48,6 @@
 #include <optional>
 #include <tuple>
 #include <variant>
-#include "nstd/hidden_names/print_completion_signatures.hpp" //-dk:TODO remove
-#include <string> //-dk:TODO remove
 
 // ----------------------------------------------------------------------------
 
@@ -122,18 +120,17 @@ namespace nstd::hidden_names::let {
     };
 
     template <typename Tag, ::nstd::execution::receiver FinalReceiver, typename Fun, typename C>
-    struct receiver {
+    struct receiver_impl {
+        struct hidden {
         ::nstd::hidden_names::let::state_base<FinalReceiver, Fun, C>& d_state;
 
         template <typename CPO, typename... A>
             requires (::nstd::hidden_names::let::is_completion_signal<CPO>)
-        friend auto tag_invoke(CPO cpo, receiver&& self, A&&... a) noexcept -> void {
+        friend auto tag_invoke(CPO cpo, hidden&& self, A&&... a) noexcept -> void {
             if constexpr (::std::same_as<Tag, ::nstd::type_traits::remove_cvref_t<CPO>>) {
-                ::std::cout << "building inner state\n";
                 self.d_state.d_inner_state.template emplace<inner_state<FinalReceiver, Fun, Tag(A...)>>(::nstd::utility::move(self.d_state.d_receiver),
                                                                                                         ::nstd::utility::move(self.d_state.d_fun),
                                                                                                         ::nstd::utility::forward<A>(a)...);
-                ::std::cout << "done building inner state\n";
             }
             else {
                 //static_assert(::std::same_as<::nstd::execution::set_error_t(::std::exception_ptr), Tag(...)>
@@ -144,22 +141,26 @@ namespace nstd::hidden_names::let {
         }
 
 #if 0
-        friend auto tag_invoke(::nstd::execution::get_env_t cpo, receiver const& self) noexcept {
+        friend auto tag_invoke(::nstd::execution::get_env_t cpo, hidden const& self) noexcept {
             return cpo(self.d_state.d_receiver);
         }
 #else
         template <typename CPO, typename... A>
             requires (not ::nstd::hidden_names::let::is_completion_signal<CPO>)
-        friend auto tag_invoke(CPO cpo, receiver&& self, A&&... args) noexcept {
+        friend auto tag_invoke(CPO cpo, hidden&& self, A&&... args) noexcept {
             return cpo(::nstd::utility::move(self.d_state.d_receiver), ::nstd::utility::forward<A>(args)...);
         }
         template <typename CPO, typename... A>
             requires (not ::nstd::hidden_names::let::is_completion_signal<CPO>)
-        friend auto tag_invoke(CPO cpo, receiver const& self, A&&... args) noexcept {
+        friend auto tag_invoke(CPO cpo, hidden const& self, A&&... args) noexcept {
             return cpo(self.d_state.d_receiver, ::nstd::utility::forward<A>(args)...);
         }
 #endif
+        };
     };
+
+    template <typename Tag, ::nstd::execution::receiver FinalReceiver, typename Fun, typename C>
+    using receiver = typename receiver_impl<Tag, FinalReceiver, Fun, C>::hidden;
 
     template <typename                    Tag,
               ::nstd::execution::sender   Sender,
@@ -268,20 +269,6 @@ namespace nstd::hidden_names::let {
         template <::nstd::execution::receiver Receiver>
         friend auto tag_invoke(::nstd::execution::connect_t, sender&& self, Receiver&& receiver)
             -> ::nstd::hidden_names::let::state<Tag, Sender, Receiver, Fun> {
-            std::cout << "get_completion_signatures: ";
-            using compls = decltype(::nstd::execution::get_completion_signatures(::nstd::type_traits::declval<Sender>(), ::nstd::execution::get_env(receiver)));
-            nstd::hidden_names::print_completion_signatures<compls>();
-
-            std::cout << "transform_completions: ";
-            using E = decltype(::nstd::execution::get_env(receiver));
-            using trans = typename transform_completions<E, Fun, ::nstd::hidden_names::filter_completions_t<Tag, compls>>::type;
-            nstd::hidden_names::print_completion_signatures<trans>();
-
-            std::cout << "join_completions: ";
-            using joins = typename ::nstd::hidden_names::let::join_completions<trans, typename rest<Tag, Sender, E>::type >::type;
-            nstd::hidden_names::print_completion_signatures<joins>();
-            std::cout << "======\n";
-
             return ::nstd::hidden_names::let::state<Tag, Sender, Receiver, Fun>(
                 ::nstd::utility::move(self.d_sender),
                 ::nstd::utility::move(self.d_fun),
