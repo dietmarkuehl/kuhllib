@@ -129,7 +129,8 @@ namespace nstd::hidden_names::sync_wait {
         }
 
         template <typename Type>
-        struct receiver {
+        struct receiver_impl {
+            struct hidden {
             ::std::mutex*               bottleneck;
             ::std::condition_variable*  condition;
             bool*                       done;
@@ -140,33 +141,36 @@ namespace nstd::hidden_names::sync_wait {
                 condition->notify_one();
             }
 
-            friend auto tag_invoke(::nstd::execution::get_env_t, receiver const& ) noexcept
+            friend auto tag_invoke(::nstd::execution::get_env_t, hidden const& ) noexcept
                 -> ::nstd::hidden_names::sync_wait::env {
                 return {};
             }
-            friend auto tag_invoke(::nstd::execution::set_value_t, receiver&&  self) noexcept {
+            friend auto tag_invoke(::nstd::execution::set_value_t, hidden&&  self) noexcept {
                 (*self.res) = {};
                 self.complete();
             }
             template <typename... Args>
                 requires ::std::is_assignable_v<::std::optional<Type>&, ::std::tuple<Args...>>
-            friend auto tag_invoke(::nstd::execution::set_value_t, receiver&&  self, Args&&... args) noexcept {
+            friend auto tag_invoke(::nstd::execution::set_value_t, hidden&&  self, Args&&... args) noexcept {
                 self.res->emplace(::nstd::utility::forward<Args>(args)...);
                 self.complete();
             }
-            friend auto tag_invoke(::nstd::execution::set_error_t, receiver&& self, ::std::exception_ptr ex) noexcept {
+            friend auto tag_invoke(::nstd::execution::set_error_t, hidden&& self, ::std::exception_ptr ex) noexcept {
                 (*self.ex) = ex;
                 self.complete();
             }
             template <typename E>
-            friend auto tag_invoke(::nstd::execution::set_error_t, receiver&& self, E ex) noexcept {
+            friend auto tag_invoke(::nstd::execution::set_error_t, hidden&& self, E ex) noexcept {
                 *self.ex = ::std::make_exception_ptr(ex);
                 self.complete();
             }
-            friend auto tag_invoke(::nstd::execution::set_stopped_t, receiver&& self) noexcept {
+            friend auto tag_invoke(::nstd::execution::set_stopped_t, hidden&& self) noexcept {
                 self.complete();
             }
         };
+        };
+        template <typename Type>
+        using receiver = typename receiver_impl<Type>::hidden;
 
         template <::nstd::execution::sender Sender>
         auto operator()(Sender&& s) const -> ::nstd::hidden_names::sync_wait::return_type<Sender> {
