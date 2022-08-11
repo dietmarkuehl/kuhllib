@@ -28,6 +28,7 @@
 
 #include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/get_env.hpp"
+#include "nstd/execution/get_stop_token.hpp"
 #include "nstd/execution/just.hpp"
 #include "nstd/execution/receiver.hpp"
 #include "nstd/execution/sender.hpp"
@@ -37,6 +38,7 @@
 #include "nstd/execution/set_error.hpp"
 #include "nstd/execution/set_stopped.hpp"
 #include "nstd/execution/start.hpp"
+#include "nstd/stop_token/in_place_stop_token.hpp"
 #include "nstd/type_traits/declval.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
 #include "nstd/type_traits/type_identity.hpp"
@@ -50,10 +52,12 @@
 // ----------------------------------------------------------------------------
 
 namespace nstd::hidden_names::when_all {
-    template <typename> struct receiver;
-    struct state_base;
-    template <::nstd::execution::sender> struct inner_state_args;
-    template <::nstd::execution::sender> struct inner_state;
+    enum class completion_kind { set_value, set_error, set_stopped };
+    template <::nstd::execution::receiver> struct state_base;
+    template <::nstd::execution::receiver> struct environment;
+    template <::nstd::execution::receiver, typename> struct receiver;
+    template <::nstd::execution::receiver, ::nstd::execution::sender> struct inner_state_args;
+    template <::nstd::execution::receiver, ::nstd::execution::sender> struct inner_state;
     template <::nstd::execution::receiver, ::nstd::execution::sender...> struct state;
     template <::nstd::execution::sender...> struct sender;
 
@@ -87,186 +91,115 @@ namespace nstd::hidden_names::when_all {
 namespace nstd::execution {
     using when_all_t = ::nstd::hidden_names::when_all::cpo;
     inline constexpr ::nstd::execution::when_all_t when_all{};
-
-#if 0
-    inline constexpr struct when_all_t
-    {
-        template <::nstd::execution::receiver Receiver>
-        struct common {
-            ::nstd::type_traits::remove_cvref_t<Receiver> d_receiver;
-            ::std::atomic<::std::size_t>                  d_count;
-            auto complete() -> void {
-                if (--this->d_count == 0u) {
-                    ::nstd::execution::set_value(::nstd::utility::move(this->d_receiver));
-                }
-            }
-        };
-        template <::nstd::execution::receiver Receiver>
-        struct receiver {
-            common<Receiver>* d_common;
-            friend auto tag_invoke(::nstd::execution::get_env_t, receiver const& self) noexcept {
-                return ::nstd::execution::get_env(self.d_common->d_receiver);
-            }
-            friend auto tag_invoke(::nstd::execution::set_value_t, receiver&& self, auto&&...)
-                noexcept -> void {
-                self.d_common->complete();
-            }
-            friend auto tag_invoke(::nstd::execution::set_error_t, receiver&& self, auto&&)
-                noexcept -> void {
-                self.d_common->complete();
-            }
-            friend auto tag_invoke(::nstd::execution::set_stopped_t, receiver&& self)
-                noexcept -> void {
-                self.d_common->complete();
-            }
-        };
-        template <::nstd::execution::sender Sender, ::nstd::execution::receiver Receiver>
-        struct nested_state_builder {
-            Sender            d_sender;
-            common<Receiver>* d_common;
-        };
-        template <::nstd::execution::sender Sender, ::nstd::execution::receiver Receiver>
-        struct nested_state {
-            decltype(::nstd::execution::connect(::nstd::type_traits::declval<Sender>(),
-                                                ::nstd::type_traits::declval<receiver<Receiver>>())) d_state;
-            nested_state(nested_state_builder<Sender, Receiver>&& b)
-                : d_state(::nstd::execution::connect(::nstd::utility::move(b.d_sender),
-                                                     receiver<Receiver>{b.d_common}))
-            {
-            }
-            auto start() noexcept -> void { ::nstd::execution::start(this->d_state); }
-        };
-        template <::nstd::execution::receiver Receiver, ::nstd::execution::sender... Sender>
-        struct state {
-            common<Receiver>                                d_common;
-            ::std::tuple<nested_state<Sender, Receiver>...> d_state;
-
-            template <::nstd::execution::receiver R>
-            state(R&& r, Sender&&... s)
-                : d_common{::nstd::utility::forward<R>(r), sizeof...(Sender)}
-                , d_state(nested_state_builder<Sender, Receiver>{::nstd::utility::move(s), &this->d_common}...)
-            {
-            }
-            state(state&&) = delete;
-            state(state const&) = delete;
-            friend auto tag_invoke(::nstd::execution::start_t, state& s)
-                noexcept -> void {
-                ::std::apply([](auto&... st){ (st.start(), ...); }, s.d_state);
-            }
-        };
-        template <::nstd::execution::sender... Sender>
-        struct sender {
-            using completion_signatures = ::nstd::execution::completion_signatures<
-                    //-dk:TODO fix when_all completion_signals
-                    ::nstd::execution::set_value_t(),
-                    ::nstd::execution::set_stopped_t()
-                >;
-
-            ::std::tuple<::nstd::type_traits::remove_cvref_t<Sender>...> d_sender;
-            template <::nstd::execution::receiver Receiver>
-            friend auto tag_invoke(::nstd::execution::connect_t,
-                                   sender&& s,
-                                   Receiver&& r)
-                noexcept -> state<Receiver, Sender...> {
-                return ::std::apply([&r](auto&&... s){
-                    return state<Receiver, Sender...>(
-                        ::nstd::utility::forward<Receiver>(r),
-                        ::nstd::utility::move(s)...);
-                    }, ::nstd::utility::move(s.d_sender));
-            }
-        };
-        template <::nstd::execution::sender... Sender>
-        auto operator()(Sender&&... s) const {
-            return sender<Sender...>{ { ::nstd::utility::forward<Sender>(s)... } };
-        }
-        auto operator()() const { // deal with the odd case of no senders
-            return ::nstd::execution::just();
-        }
-    } when_all;
-#endif
 }
 
 // ----------------------------------------------------------------------------
 
+template <::nstd::execution::receiver Receiver>
 struct nstd::hidden_names::when_all::state_base {
-    ::std::atomic<::std::size_t> d_count;
+    ::std::atomic<::nstd::hidden_names::when_all::completion_kind> d_kind{::nstd::hidden_names::when_all::completion_kind::set_value};
+    ::std::atomic<::std::size_t>                                   d_count;
+    ::nstd::stop_token_ns::in_place_stop_source                    d_stop_source;
+    ::nstd::type_traits::remove_cvref_t<Receiver>                  d_receiver;
 
-    state_base(::std::size_t count): d_count(count) {}
+    template <::nstd::execution::receiver R>
+    state_base(R&& receiver, ::std::size_t count)
+        : d_count(count)
+        , d_receiver(::nstd::utility::forward<R>(receiver)) {
+    }
     state_base(state_base&&) = delete;
     auto complete() -> void {
-        ::std::cout << "when_all complete\n";
         if (--this->d_count == 0u) {
             this->do_complete();
         }
-        else {
-            ::std::cout << "not completing\n";
-        }
-        ::std::cout << "when_all complete done\n";
     }
-    virtual auto do_complete() -> void {}
+    virtual auto do_complete() -> void = 0;
 };
 
 // ----------------------------------------------------------------------------
 
-template <typename Result>
+template <::nstd::execution::receiver Receiver>
+struct nstd::hidden_names::when_all::environment {
+    ::nstd::hidden_names::when_all::state_base<Receiver>& d_state;
+
+    friend auto tag_invoke(::nstd::execution::get_stop_token_t const&, environment const& self) noexcept
+        -> environment {
+        return self.d_state.stop_state.token();
+    }
+    template <typename CPO, typename... Args>
+    friend auto tag_invoke(CPO const& cpo, environment const& self, Args&&... args) noexcept {
+        return cpo(::nstd::execution::get_env(self.d_state.d_receiver),
+                   ::nstd::utility::forward<Args>(args)...);
+    }
+};
+
+// ----------------------------------------------------------------------------
+
+template <::nstd::execution::receiver Receiver, typename Result>
 struct nstd::hidden_names::when_all::receiver {
-    state_base&              d_state;
+    state_base<Receiver>&    d_state;
     ::std::optional<Result>& d_result;
 
-    friend auto tag_invoke(::nstd::execution::get_env_t, receiver const&) noexcept
-        -> int {
-        return {};
+    friend auto tag_invoke(::nstd::execution::get_env_t, receiver const& self) noexcept
+        -> ::nstd::hidden_names::when_all::environment<Receiver> {
+        return { self.d_state };
     }
 
     template <typename... T>
     friend auto tag_invoke(::nstd::execution::set_value_t, receiver&& self, T&&... args) noexcept
          -> void {
-        ::std::cout << "when_all set_value\n";
         self.d_result.emplace(::nstd::utility::forward<T>(args)...);
         self.d_state.complete();
-        ::std::cout << "when_all set_value done\n";
     }
     template <typename E>
     friend auto tag_invoke(::nstd::execution::set_error_t, receiver&& self, E&&) noexcept
          -> void {
-        //-dk:TODO set error
+        ::nstd::hidden_names::when_all::completion_kind expected{::nstd::hidden_names::when_all::completion_kind::set_value};
+        if (self.d_state.d_kind.compare_exchange_strong(expected, ::nstd::hidden_names::when_all::completion_kind::set_error)) {
+            self.d_state.d_stop_source.stop();
+            ::std::cout << "set_error: initialize the error appropriately\n";
+        }
         self.d_state.complete();
     }
     friend auto tag_invoke(::nstd::execution::set_stopped_t, receiver&& self) noexcept
          -> void {
+        ::nstd::hidden_names::when_all::completion_kind expected{::nstd::hidden_names::when_all::completion_kind::set_value};
+        if (self.d_state.d_kind.compare_exchange_strong(expected, ::nstd::hidden_names::when_all::completion_kind::set_stopped)) {
+            self.d_state.d_stop_source.stop();
+        }
         self.d_state.complete();
     }
 };
 
 // ----------------------------------------------------------------------------
 
-template <::nstd::execution::sender Sender>
+template <::nstd::execution::receiver Receiver, ::nstd::execution::sender Sender>
 struct nstd::hidden_names::when_all::inner_state_args {
-    ::nstd::hidden_names::when_all::state_base& d_outer_state;
-    Sender&                                     d_sender;
+    ::nstd::hidden_names::when_all::state_base<Receiver>& d_outer_state;
+    Sender&                                               d_sender;
 
-    inner_state_args(::nstd::hidden_names::when_all::state_base& outer_state,
-                     Sender&                                     sender)
+    inner_state_args(::nstd::hidden_names::when_all::state_base<Receiver>& outer_state,
+                     Sender&                                               sender)
         : d_outer_state(outer_state)
         , d_sender(sender) {
     }
 };
 
-template <::nstd::execution::sender Sender>
+template <::nstd::execution::receiver Receiver, ::nstd::execution::sender Sender>
 struct nstd::hidden_names::when_all::inner_state {
     using result_t = ::nstd::execution::value_types_of_t<Sender, int, ::nstd::hidden_names::decayed_tuple, ::nstd::type_traits::type_identity_t>;
     using state_t = decltype(::nstd::execution::connect(::nstd::type_traits::declval<Sender>(),
-                                                        ::nstd::type_traits::declval<::nstd::hidden_names::when_all::receiver<result_t>>()));
+                                                        ::nstd::type_traits::declval<::nstd::hidden_names::when_all::receiver<Receiver, result_t>>()));
 
-    ::nstd::hidden_names::when_all::state_base& d_outer_state;
-    ::std::optional<result_t> d_result;
-    state_t                   d_state;
+    ::nstd::hidden_names::when_all::state_base<Receiver>& d_outer_state;
+    ::std::optional<result_t>                             d_result;
+    state_t                                               d_state;
 
-    inner_state(inner_state_args<Sender> const& args)
+    inner_state(inner_state_args<Receiver, Sender> const& args)
         : d_outer_state(args.d_outer_state)
         , d_result()
         , d_state(::nstd::execution::connect(args.d_sender,
-                                             ::nstd::hidden_names::when_all::receiver<result_t>{this->d_outer_state, this->d_result}))
+                                             ::nstd::hidden_names::when_all::receiver<Receiver, result_t>{this->d_outer_state, this->d_result}))
     {
     }
     inner_state(inner_state&&) = delete;
@@ -283,10 +216,9 @@ struct nstd::hidden_names::when_all::inner_state {
 
 template <::nstd::execution::receiver Receiver, ::nstd::execution::sender... Sender>
 struct nstd::hidden_names::when_all::state
-    : ::nstd::hidden_names::when_all::state_base
+    : ::nstd::hidden_names::when_all::state_base<Receiver>
 {
-    using state_t = ::std::tuple<::nstd::hidden_names::when_all::inner_state<Sender>...>;
-    ::nstd::type_traits::remove_cvref_t<Receiver> d_receiver;
+    using state_t = ::std::tuple<::nstd::hidden_names::when_all::inner_state<Receiver, Sender>...>;
     state_t                                       d_state;
 
     friend auto tag_invoke(::nstd::execution::start_t, state& self) noexcept
@@ -298,9 +230,8 @@ struct nstd::hidden_names::when_all::state
 
     template<::nstd::execution::receiver R, typename Tuple>
     state(R&& receiver, Tuple&& sender)
-        : ::nstd::hidden_names::when_all::state_base(sizeof...(Sender))
-        , d_receiver(::nstd::utility::forward<R>(receiver))
-        , d_state(::std::apply([this](auto&&...s){ return ::std::make_tuple(::nstd::hidden_names::when_all::inner_state_args<Sender>(*this, s)...); },
+        : ::nstd::hidden_names::when_all::state_base<Receiver>(::nstd::utility::forward<R>(receiver), sizeof...(Sender))
+        , d_state(::std::apply([this](auto&&...s){ return ::std::make_tuple(::nstd::hidden_names::when_all::inner_state_args<Receiver, Sender>(*this, s)...); },
                                ::nstd::utility::forward<Tuple>(sender))) 
     {
         ::std::cout << "when_all(" << sizeof...(Sender) << ") constructed\n";
