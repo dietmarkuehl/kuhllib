@@ -126,11 +126,20 @@ struct nstd::hidden_names::when_all::environment {
         -> environment {
         return self.d_state.stop_state.token();
     }
+    friend auto tag_invoke(::nstd::execution::get_env_t const&, environment const& self) noexcept {
+        return ::nstd::execution::get_env(self.d_state.d_receiver);
+    }
+#if 0
     template <typename CPO, typename... Args>
+        requires requires(CPO const& cpo, environment const& self, Args... args) {
+            cpo(::nstd::execution::get_env(self.d_state.d_receiver),
+                ::nstd::utility::forward<Args>(args)...);
+        }
     friend auto tag_invoke(CPO const& cpo, environment const& self, Args&&... args) noexcept {
         return cpo(::nstd::execution::get_env(self.d_state.d_receiver),
                    ::nstd::utility::forward<Args>(args)...);
     }
+#endif
 };
 
 // ----------------------------------------------------------------------------
