@@ -52,9 +52,7 @@ namespace test_declarations {
             struct state {
                 TT::remove_cvref_t<R> d_receiver;
                 friend auto tag_invoke(EX::start_t, state& self) noexcept -> void {
-                    ::std::cout << "static_just start\n";
                     EX::set_value(UT::move(self.d_receiver), I...);
-                    ::std::cout << "static_just start done\n";
                 }
             };
             friend auto tag_invoke(EX::get_completion_signatures_t, static_just const&, auto&&) noexcept
@@ -63,6 +61,28 @@ namespace test_declarations {
             }
             template <EX::receiver R>
             friend auto tag_invoke(EX::connect_t, static_just const&, R&& receiver) noexcept
+                -> state<R>
+            {
+                return { UT::forward<R>(receiver) };
+            }
+        };
+
+        template <int I>
+        struct static_just_error {
+            template <EX::receiver R>
+            struct state {
+                TT::remove_cvref_t<R> d_receiver;
+                friend auto tag_invoke(EX::start_t, state& self) noexcept -> void {
+                    EX::set_error(UT::move(self.d_receiver), I);
+                }
+            };
+            friend auto tag_invoke(EX::get_completion_signatures_t, static_just_error const&, auto&&) noexcept
+                // -> EX::completion_signatures<EX::set_value_t(), EX::set_error_t(int)> {
+                -> EX::completion_signatures<EX::set_value_t()> {
+                return {};
+            }
+            template <EX::receiver R>
+            friend auto tag_invoke(EX::connect_t, static_just_error const&, R&& receiver) noexcept
                 -> state<R>
             {
                 return { UT::forward<R>(receiver) };
@@ -119,6 +139,17 @@ static KT::testcase const tests[] = {
                     == KT::type<EX::completion_signatures<EX::set_value_t(int, int, int)>>
                 ;
         }),
+#if 1
+    KT::expect_success("when_all with error", []{
+            auto sender = EX::when_all(TD::static_just<1, 2>(), TD::static_just_error<3>());
+            auto result = TR::sync_wait(::UT::move(sender));
+
+            return KT::use(result)
+                && KT::type<decltype(EX::get_completion_signatures(sender, TD::env()))>
+                    == KT::type<EX::completion_signatures<EX::set_value_t(int, int)>>
+                ;
+        }),
+#endif
 #if 0
     KT::expect_success("todo", []{
             return false;

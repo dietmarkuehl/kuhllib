@@ -53,12 +53,12 @@
 
 namespace nstd::hidden_names::when_all {
     enum class completion_kind { set_value, set_error, set_stopped };
-    template <::nstd::execution::receiver> struct state_base;
-    template <::nstd::execution::receiver> struct environment;
-    template <::nstd::execution::receiver, typename> struct receiver;
-    template <::nstd::execution::receiver, ::nstd::execution::sender> struct inner_state_args;
-    template <::nstd::execution::receiver, ::nstd::execution::sender> struct inner_state;
-    template <::nstd::execution::receiver, ::nstd::execution::sender...> struct state;
+    template <::nstd::execution::receiver, typename> struct state_base;
+    template <::nstd::execution::receiver, typename> struct environment;
+    template <::nstd::execution::receiver, typename, typename> struct receiver;
+    template <::nstd::execution::receiver, typename, ::nstd::execution::sender> struct inner_state_args;
+    template <::nstd::execution::receiver, typename, ::nstd::execution::sender> struct inner_state;
+    template <::nstd::execution::receiver, typename, ::nstd::execution::sender...> struct state;
     template <::nstd::execution::sender...> struct sender;
 
     template <typename> struct set_value_from_tuple_impl;
@@ -95,12 +95,13 @@ namespace nstd::execution {
 
 // ----------------------------------------------------------------------------
 
-template <::nstd::execution::receiver Receiver>
+template <::nstd::execution::receiver Receiver, typename Error>
 struct nstd::hidden_names::when_all::state_base {
     ::std::atomic<::nstd::hidden_names::when_all::completion_kind> d_kind{::nstd::hidden_names::when_all::completion_kind::set_value};
     ::std::atomic<::std::size_t>                                   d_count;
     ::nstd::stop_token_ns::in_place_stop_source                    d_stop_source;
     ::nstd::type_traits::remove_cvref_t<Receiver>                  d_receiver;
+    ::std::optional<Error>                                         d_error;
 
     template <::nstd::execution::receiver R>
     state_base(R&& receiver, ::std::size_t count)
@@ -118,9 +119,9 @@ struct nstd::hidden_names::when_all::state_base {
 
 // ----------------------------------------------------------------------------
 
-template <::nstd::execution::receiver Receiver>
+template <::nstd::execution::receiver Receiver, typename Error>
 struct nstd::hidden_names::when_all::environment {
-    ::nstd::hidden_names::when_all::state_base<Receiver>& d_state;
+    ::nstd::hidden_names::when_all::state_base<Receiver, Error>& d_state;
 
     friend auto tag_invoke(::nstd::execution::get_stop_token_t const&, environment const& self) noexcept
         -> environment {
@@ -144,13 +145,13 @@ struct nstd::hidden_names::when_all::environment {
 
 // ----------------------------------------------------------------------------
 
-template <::nstd::execution::receiver Receiver, typename Result>
+template <::nstd::execution::receiver Receiver, typename Error, typename Result>
 struct nstd::hidden_names::when_all::receiver {
-    state_base<Receiver>&    d_state;
+    state_base<Receiver, Error>&    d_state;
     ::std::optional<Result>& d_result;
 
     friend auto tag_invoke(::nstd::execution::get_env_t, receiver const& self) noexcept
-        -> ::nstd::hidden_names::when_all::environment<Receiver> {
+        -> ::nstd::hidden_names::when_all::environment<Receiver, Error> {
         return { self.d_state };
     }
 
@@ -161,12 +162,13 @@ struct nstd::hidden_names::when_all::receiver {
         self.d_state.complete();
     }
     template <typename E>
-    friend auto tag_invoke(::nstd::execution::set_error_t, receiver&& self, E&&) noexcept
+    friend auto tag_invoke(::nstd::execution::set_error_t, receiver&& self, E&& error) noexcept
          -> void {
         ::nstd::hidden_names::when_all::completion_kind expected{::nstd::hidden_names::when_all::completion_kind::set_value};
         if (self.d_state.d_kind.compare_exchange_strong(expected, ::nstd::hidden_names::when_all::completion_kind::set_error)) {
             self.d_state.d_stop_source.stop();
             ::std::cout << "set_error: initialize the error appropriately\n";
+            self.d_state.d_error.emplace(::nstd::utility::forward<E>(error));
         }
         self.d_state.complete();
     }
@@ -182,33 +184,33 @@ struct nstd::hidden_names::when_all::receiver {
 
 // ----------------------------------------------------------------------------
 
-template <::nstd::execution::receiver Receiver, ::nstd::execution::sender Sender>
+template <::nstd::execution::receiver Receiver, typename Error, ::nstd::execution::sender Sender>
 struct nstd::hidden_names::when_all::inner_state_args {
-    ::nstd::hidden_names::when_all::state_base<Receiver>& d_outer_state;
+    ::nstd::hidden_names::when_all::state_base<Receiver, Error>& d_outer_state;
     Sender&                                               d_sender;
 
-    inner_state_args(::nstd::hidden_names::when_all::state_base<Receiver>& outer_state,
+    inner_state_args(::nstd::hidden_names::when_all::state_base<Receiver, Error>& outer_state,
                      Sender&                                               sender)
         : d_outer_state(outer_state)
         , d_sender(sender) {
     }
 };
 
-template <::nstd::execution::receiver Receiver, ::nstd::execution::sender Sender>
+template <::nstd::execution::receiver Receiver, typename Error, ::nstd::execution::sender Sender>
 struct nstd::hidden_names::when_all::inner_state {
     using result_t = ::nstd::execution::value_types_of_t<Sender, int, ::nstd::hidden_names::decayed_tuple, ::nstd::type_traits::type_identity_t>;
     using state_t = decltype(::nstd::execution::connect(::nstd::type_traits::declval<Sender>(),
-                                                        ::nstd::type_traits::declval<::nstd::hidden_names::when_all::receiver<Receiver, result_t>>()));
+                                                        ::nstd::type_traits::declval<::nstd::hidden_names::when_all::receiver<Receiver, Error, result_t>>()));
 
-    ::nstd::hidden_names::when_all::state_base<Receiver>& d_outer_state;
+    ::nstd::hidden_names::when_all::state_base<Receiver, Error>& d_outer_state;
     ::std::optional<result_t>                             d_result;
     state_t                                               d_state;
 
-    inner_state(inner_state_args<Receiver, Sender> const& args)
+    inner_state(inner_state_args<Receiver, Error, Sender> const& args)
         : d_outer_state(args.d_outer_state)
         , d_result()
         , d_state(::nstd::execution::connect(args.d_sender,
-                                             ::nstd::hidden_names::when_all::receiver<Receiver, result_t>{this->d_outer_state, this->d_result}))
+                                             ::nstd::hidden_names::when_all::receiver<Receiver, Error, result_t>{this->d_outer_state, this->d_result}))
     {
     }
     inner_state(inner_state&&) = delete;
@@ -223,11 +225,11 @@ struct nstd::hidden_names::when_all::inner_state {
 
 // ----------------------------------------------------------------------------
 
-template <::nstd::execution::receiver Receiver, ::nstd::execution::sender... Sender>
+template <::nstd::execution::receiver Receiver, typename Error, ::nstd::execution::sender... Sender>
 struct nstd::hidden_names::when_all::state
-    : ::nstd::hidden_names::when_all::state_base<Receiver>
+    : ::nstd::hidden_names::when_all::state_base<Receiver, Error>
 {
-    using state_t = ::std::tuple<::nstd::hidden_names::when_all::inner_state<Receiver, Sender>...>;
+    using state_t = ::std::tuple<::nstd::hidden_names::when_all::inner_state<Receiver, Error, Sender>...>;
     state_t                                       d_state;
 
     friend auto tag_invoke(::nstd::execution::start_t, state& self) noexcept
@@ -239,8 +241,8 @@ struct nstd::hidden_names::when_all::state
 
     template<::nstd::execution::receiver R, typename Tuple>
     state(R&& receiver, Tuple&& sender)
-        : ::nstd::hidden_names::when_all::state_base<Receiver>(::nstd::utility::forward<R>(receiver), sizeof...(Sender))
-        , d_state(::std::apply([this](auto&&...s){ return ::std::make_tuple(::nstd::hidden_names::when_all::inner_state_args<Receiver, Sender>(*this, s)...); },
+        : ::nstd::hidden_names::when_all::state_base<Receiver, Error>(::nstd::utility::forward<R>(receiver), sizeof...(Sender))
+        , d_state(::std::apply([this](auto&&...s){ return ::std::make_tuple(::nstd::hidden_names::when_all::inner_state_args<Receiver, Error, Sender>(*this, s)...); },
                                ::nstd::utility::forward<Tuple>(sender))) 
     {
         ::std::cout << "when_all(" << sizeof...(Sender) << ") constructed\n";
@@ -259,6 +261,7 @@ struct nstd::hidden_names::when_all::state
 template <::nstd::execution::sender... Sender>
 struct nstd::hidden_names::when_all::sender
 {
+    using error_t = ::std::variant<int>; //-dk:TODO
     ::std::tuple<Sender...> d_sender;
 
     template <typename Env>
@@ -280,8 +283,8 @@ struct nstd::hidden_names::when_all::sender
     }
     template <::nstd::execution::receiver Receiver>
     friend auto tag_invoke(::nstd::execution::connect_t, sender&& self, Receiver&& receiver)
-        -> ::nstd::hidden_names::when_all::state<Receiver, Sender...> {
-            return ::nstd::hidden_names::when_all::state<Receiver, Sender...>(
+        -> ::nstd::hidden_names::when_all::state<Receiver, error_t, Sender...> {
+            return ::nstd::hidden_names::when_all::state<Receiver, error_t, Sender...>(
                 ::nstd::utility::forward<Receiver>(receiver),
                 ::nstd::utility::move(self.d_sender)
             );
