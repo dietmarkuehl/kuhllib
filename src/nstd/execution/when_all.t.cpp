@@ -67,7 +67,11 @@ namespace test_declarations {
             }
         };
 
-        template <int I>
+        struct error {
+            int i;
+        };
+
+        template <typename T, T I>
         struct static_just_error {
             template <EX::receiver R>
             struct state {
@@ -77,8 +81,7 @@ namespace test_declarations {
                 }
             };
             friend auto tag_invoke(EX::get_completion_signatures_t, static_just_error const&, auto&&) noexcept
-                // -> EX::completion_signatures<EX::set_value_t(), EX::set_error_t(int)> {
-                -> EX::completion_signatures<EX::set_value_t()> {
+                -> EX::completion_signatures<EX::set_value_t(), EX::set_error_t(T)> {
                 return {};
             }
             template <EX::receiver R>
@@ -139,17 +142,21 @@ static KT::testcase const tests[] = {
                     == KT::type<EX::completion_signatures<EX::set_value_t(int, int, int)>>
                 ;
         }),
-#if 1
     KT::expect_success("when_all with error", []{
-            auto sender = EX::when_all(TD::static_just<1, 2>(), TD::static_just_error<3>());
-            auto result = TR::sync_wait(::UT::move(sender));
+            auto sender = EX::when_all(TD::static_just<1, 2>(), TD::static_just_error<int, 3>(), TD::static_just_error<TD::error, TD::error{1}>());
+            bool result = false;
+            try {
+                TR::sync_wait(::UT::move(sender));
+            }
+            catch (int const&) {
+                result = true;
+            }
 
             return KT::use(result)
                 && KT::type<decltype(EX::get_completion_signatures(sender, TD::env()))>
                     == KT::type<EX::completion_signatures<EX::set_value_t(int, int)>>
                 ;
         }),
-#endif
 #if 0
     KT::expect_success("todo", []{
             return false;
