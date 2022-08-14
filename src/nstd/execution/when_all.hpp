@@ -33,11 +33,14 @@
 #include "nstd/execution/receiver.hpp"
 #include "nstd/execution/sender.hpp"
 #include "nstd/execution/connect.hpp"
+#include "nstd/execution/error_types_of_t.hpp"
 #include "nstd/execution/value_types_of_t.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/set_error.hpp"
 #include "nstd/execution/set_stopped.hpp"
 #include "nstd/execution/start.hpp"
+#include "nstd/hidden_names/merge_completion_signatures.hpp"
+#include "nstd/hidden_names/variant_or_empty.hpp"
 #include "nstd/stop_token/in_place_stop_token.hpp"
 #include "nstd/type_traits/declval.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
@@ -47,7 +50,6 @@
 #include <exception>
 #include <optional>
 #include <tuple>
-#include <iostream> //-dk:TODO remove
 
 // ----------------------------------------------------------------------------
 
@@ -84,6 +86,21 @@ namespace nstd::hidden_names::when_all {
             return ::nstd::tag_invoke(*this, ::nstd::utility::forward<Sender>(sender)...);
         }
     };
+
+    template <typename> struct transform;
+    template <typename Arg>
+    struct transform<::nstd::execution::set_error_t(Arg)> {
+        using type = Arg;
+    };
+    template <typename, template <typename...> class>
+    struct transform_list;
+    template <typename... Signature, template <typename...> class Variant>
+    struct transform_list<::nstd::execution::completion_signatures<Signature...>, Variant> {
+        using type = Variant<typename transform<Signature>::type...>;
+    };
+    template <typename... T>
+    using variant_t = ::nstd::execution::completion_signatures<::nstd::execution::set_error_t(T)...>;
+
 }
 
 // ----------------------------------------------------------------------------
@@ -97,15 +114,25 @@ namespace nstd::execution {
 
 template <::nstd::execution::receiver Receiver, typename Error>
 struct nstd::hidden_names::when_all::state_base {
+    using stop_token_t = decltype(::nstd::execution::get_stop_token(::nstd::type_traits::declval<Receiver const&>()));
+    struct on_stop {
+        ::nstd::stop_token_ns::in_place_stop_source& d_stop_source;
+        auto operator()() {
+            this->d_stop_source.stop();
+        }
+    };
+
     ::std::atomic<::nstd::hidden_names::when_all::completion_kind> d_kind{::nstd::hidden_names::when_all::completion_kind::set_value};
     ::std::atomic<::std::size_t>                                   d_count;
     ::nstd::stop_token_ns::in_place_stop_source                    d_stop_source;
+    typename stop_token_t::template callback_type<on_stop>         d_stop_callback;
     ::nstd::type_traits::remove_cvref_t<Receiver>                  d_receiver;
     ::std::optional<Error>                                         d_error;
 
     template <::nstd::execution::receiver R>
     state_base(R&& receiver, ::std::size_t count)
         : d_count(count)
+        , d_stop_callback(::nstd::execution::get_stop_token(receiver), on_stop{this->d_stop_source})
         , d_receiver(::nstd::utility::forward<R>(receiver)) {
     }
     state_base(state_base&&) = delete;
@@ -167,7 +194,6 @@ struct nstd::hidden_names::when_all::receiver {
         ::nstd::hidden_names::when_all::completion_kind expected{::nstd::hidden_names::when_all::completion_kind::set_value};
         if (self.d_state.d_kind.compare_exchange_strong(expected, ::nstd::hidden_names::when_all::completion_kind::set_error)) {
             self.d_state.d_stop_source.stop();
-            ::std::cout << "set_error: initialize the error appropriately\n";
             self.d_state.d_error.emplace(::nstd::utility::forward<E>(error));
         }
         self.d_state.complete();
@@ -216,9 +242,7 @@ struct nstd::hidden_names::when_all::inner_state {
     inner_state(inner_state&&) = delete;
 
     auto start() noexcept -> void {
-        ::std::cout << ::std::unitbuf << "inner start\n";
         ::nstd::execution::start(this->d_state);
-        ::std::cout << "inner start done\n";
     }
     auto result() -> result_t { return *this->d_result; }
 };
@@ -234,9 +258,7 @@ struct nstd::hidden_names::when_all::state
 
     friend auto tag_invoke(::nstd::execution::start_t, state& self) noexcept
         -> void {
-        ::std::cout << "when_all start()\n" << std::flush;
         ::std::apply([](auto&... inner){ (inner.start(), ...); }, self.d_state);
-        ::std::cout << "when_all start() done\n" << std::flush;
     }
 
     template<::nstd::execution::receiver R, typename Tuple>
@@ -245,14 +267,24 @@ struct nstd::hidden_names::when_all::state
         , d_state(::std::apply([this](auto&&...s){ return ::std::make_tuple(::nstd::hidden_names::when_all::inner_state_args<Receiver, Error, Sender>(*this, s)...); },
                                ::nstd::utility::forward<Tuple>(sender))) 
     {
-        ::std::cout << "when_all(" << sizeof...(Sender) << ") constructed\n";
     }
 
     auto do_complete() -> void override {
-        ::std::cout << "when_all::do_complete!\n" << ::std::flush;
-        ::std::apply([this](auto&&... a){ ::nstd::execution::set_value(::nstd::utility::move(this->d_receiver), a...); },
-                     ::std::apply([](auto&&... t){ return ::std::tuple_cat(t.result()...); }, this->d_state)
-                    );
+        switch (this->d_kind) {
+        case ::nstd::hidden_names::when_all::completion_kind::set_value:
+            ::std::apply([this](auto&&... a){ ::nstd::execution::set_value(::nstd::utility::move(this->d_receiver), a...); },
+                         ::std::apply([](auto&&... t){ return ::std::tuple_cat(t.result()...); }, this->d_state)
+                         );
+            break;
+        case ::nstd::hidden_names::when_all::completion_kind::set_error:
+            if constexpr (not ::nstd::type_traits::is_same_v<::nstd::type_traits::remove_cvref_t<decltype(*this->d_error)>, ::nstd::hidden_names::variant_or_empty_impl::empty_variant>) {
+                ::std::visit([this](auto&& error){ ::nstd::execution::set_error(::nstd::utility::move(this->d_receiver), error); }, *this->d_error);
+            }
+            break;
+        case ::nstd::hidden_names::when_all::completion_kind::set_stopped:
+            ::nstd::execution::set_stopped(::nstd::utility::move(this->d_receiver));
+            break;
+        }
     }
 };
 
@@ -261,7 +293,6 @@ struct nstd::hidden_names::when_all::state
 template <::nstd::execution::sender... Sender>
 struct nstd::hidden_names::when_all::sender
 {
-    using error_t = ::std::variant<int>; //-dk:TODO
     ::std::tuple<Sender...> d_sender;
 
     template <typename Env>
@@ -282,8 +313,13 @@ struct nstd::hidden_names::when_all::sender
         return {};
     }
     template <::nstd::execution::receiver Receiver>
-    friend auto tag_invoke(::nstd::execution::connect_t, sender&& self, Receiver&& receiver)
-        -> ::nstd::hidden_names::when_all::state<Receiver, error_t, Sender...> {
+    friend auto tag_invoke(::nstd::execution::connect_t, sender&& self, Receiver&& receiver) {
+            using env_t = decltype(::nstd::execution::get_env(receiver));
+            using error_signatures_t = ::nstd::hidden_names::merge_completion_signatures_t<
+                env_t,
+                ::nstd::execution::error_types_of_t<Sender, env_t, ::nstd::hidden_names::when_all::variant_t>...
+                >;
+            using error_t = typename ::nstd::hidden_names::when_all::transform_list<error_signatures_t, ::nstd::hidden_names::variant_or_empty>::type;
             return ::nstd::hidden_names::when_all::state<Receiver, error_t, Sender...>(
                 ::nstd::utility::forward<Receiver>(receiver),
                 ::nstd::utility::move(self.d_sender)

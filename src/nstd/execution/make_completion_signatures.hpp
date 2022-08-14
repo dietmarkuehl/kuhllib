@@ -35,6 +35,8 @@
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/value_types_of_t.hpp"
 #include "nstd/execution/error_types_of_t.hpp"
+#include "nstd/hidden_names/merge_completion_signatures.hpp"
+#include "nstd/hidden_names/unique_completion_signatures.hpp"
 #include "nstd/type_traits/conditional.hpp"
 #include <concepts>
 
@@ -47,60 +49,16 @@ namespace nstd::execution {
         template <typename E>
         using default_set_error = ::nstd::execution::completion_signatures<::nstd::execution::set_error_t(E)>;
 
-        template <bool, typename, typename... T>
-        struct unique_aux {
-            using type = ::nstd::execution::completion_signatures<T...>;
-        };
-        template <typename S0, typename... T>
-        struct unique_aux<true, S0, T...> {
-            using type = ::nstd::execution::completion_signatures<T..., S0>;
-        };
-
-        template <typename, typename> struct unique;
-        template <typename T>
-        struct unique<T, ::nstd::execution::completion_signatures<>> {
-            using type = T;
-        };
-        template <typename... T, typename S0, typename... S1>
-        struct unique<::nstd::execution::completion_signatures<T...>,
-                       ::nstd::execution::completion_signatures<S0, S1...>> {
-            using type = typename unique<typename unique_aux<(true && ... && not ::std::same_as<S0, T>), S0, T...>::type,
-                                         ::nstd::execution::completion_signatures<S1...>
-                                         >::type; 
-        };
-
-        template <typename E, typename...> struct merge_completion_signatures;
-        template <typename E> struct merge_completion_signatures<E> {
-            using type = ::nstd::execution::completion_signatures<>;
-        };
-        template <typename E, typename T> struct merge_completion_signatures<E, T> {
-            using type = ::nstd::execution::dependent_completion_signatures<E>;
-        };
-        template <typename E, typename... T> struct merge_completion_signatures<E, ::nstd::execution::completion_signatures<T...>> {
-            using type = ::nstd::execution::completion_signatures<T...>;
-        };
-        template <typename E, typename List1, typename List2> struct merge_completion_signatures<E, List1, List2> {
-            using type = ::nstd::execution::dependent_completion_signatures<E>;
-        };
-        template <typename E, typename... T1, typename... T2> struct merge_completion_signatures<E, ::nstd::execution::completion_signatures<T1...>, ::nstd::execution::completion_signatures<T2...>> {
-            using type = typename unique<::nstd::execution::completion_signatures<T1...>, ::nstd::execution::completion_signatures<T2...>>::type;
-        };
-        template <typename E, typename List1, typename List2, typename Head, typename... Tail> struct merge_completion_signatures<E, List1, List2, Head, Tail...> {
-            using type = typename merge_completion_signatures<E, typename merge_completion_signatures<E, List1, List2>::type, Head, Tail...>::type;
-        };
-        template <typename E, typename... T>
-        using merge_completion_signatures_t = typename merge_completion_signatures<E, T...>::type;
-
         template <typename E>
         struct bound_merge_completion_signatures {
             template <typename... T>
-            using alias = merge_completion_signatures_t<E, T...>;
+            using alias = ::nstd::hidden_names::merge_completion_signatures_t<E, T...>;
         };
 
         template <typename Env, template <typename> class SetError>
         struct bound_transform_error_signatures {
             template <typename... E>
-            using alias = merge_completion_signatures_t<Env, SetError<E>...>;
+            using alias = ::nstd::hidden_names::merge_completion_signatures_t<Env, SetError<E>...>;
         };
     }
 
@@ -112,7 +70,7 @@ namespace nstd::execution {
                ::nstd::hidden_names::valid_completion_signatures<Env> SetStopped = ::nstd::execution::completion_signatures<::nstd::execution::set_stopped_t()>
                >
             requires ::nstd::execution::sender<Sender, Env>
-        using make_completion_signatures = ::nstd::execution::hidden_names::merge_completion_signatures_t<
+        using make_completion_signatures = ::nstd::hidden_names::merge_completion_signatures_t<
             Env,
             Add,
             ::nstd::execution::value_types_of_t<Sender, Env, SetValue, ::nstd::execution::hidden_names::bound_merge_completion_signatures<Env>::template alias>,
