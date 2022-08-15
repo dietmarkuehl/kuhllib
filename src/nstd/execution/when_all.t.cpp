@@ -130,7 +130,7 @@ static KT::testcase const tests[] = {
 
             return KT::use(result)
                 && KT::type<decltype(EX::get_completion_signatures(sender, TD::env()))>
-                    == KT::type<EX::completion_signatures<EX::set_value_t(int)>>
+                    == KT::type<EX::completion_signatures<EX::set_value_t(int), EX::set_stopped_t()>>
                 ;
         }),
     KT::expect_success("when_all with two senders", []{
@@ -139,7 +139,7 @@ static KT::testcase const tests[] = {
 
             return KT::use(result)
                 && KT::type<decltype(EX::get_completion_signatures(sender, TD::env()))>
-                    == KT::type<EX::completion_signatures<EX::set_value_t(int, int, int)>>
+                    == KT::type<EX::completion_signatures<EX::set_value_t(int, int, int), EX::set_stopped_t()>>
                 ;
         }),
     KT::expect_success("when_all with error", []{
@@ -154,7 +154,12 @@ static KT::testcase const tests[] = {
 
             return KT::use(result)
                 && KT::type<decltype(EX::get_completion_signatures(sender, TD::env()))>
-                    == KT::type<EX::completion_signatures<EX::set_value_t(int, int)>>
+                    == KT::type<EX::completion_signatures<
+                      EX::set_value_t(int, int),
+                      EX::set_error_t(int),
+                      EX::set_error_t(TD::error),
+                      EX::set_stopped_t()
+                      >>
                 ;
         }),
 #if 0
