@@ -297,20 +297,30 @@ struct nstd::hidden_names::when_all::sender
 
     template <typename Env>
     friend auto tag_invoke(::nstd::execution::get_completion_signatures_t, sender const&, Env&&)
-        -> ::nstd::execution::completion_signatures<
+    {
+        using env_t = ::nstd::type_traits::remove_cvref_t<Env>;
+        using set_value_list = ::nstd::execution::completion_signatures<
             ::nstd::hidden_names::when_all::set_value_from_tuple<
                 decltype(
                     ::std::tuple_cat(
                         ::nstd::type_traits::declval<
-                            ::nstd::execution::value_types_of_t<Sender, Env, ::std::tuple, ::nstd::type_traits::type_identity_t>
+                            ::nstd::execution::value_types_of_t<Sender, env_t, ::std::tuple, ::nstd::type_traits::type_identity_t>
                         >()
                         ...
                     )
                 )
             >
-        >
-    {
-        return {};
+        >;
+        using set_error_list = ::nstd::hidden_names::merge_completion_signatures_t<
+            env_t,
+            ::nstd::execution::error_types_of_t<Sender, env_t, ::nstd::hidden_names::when_all::variant_t>...
+            >;
+        return ::nstd::hidden_names::merge_completion_signatures_t<
+            env_t,
+            set_value_list,
+            set_error_list,
+            ::nstd::execution::completion_signatures<::nstd::execution::set_stopped_t()>
+        >();
     }
     template <::nstd::execution::receiver Receiver>
     friend auto tag_invoke(::nstd::execution::connect_t, sender&& self, Receiver&& receiver) {
