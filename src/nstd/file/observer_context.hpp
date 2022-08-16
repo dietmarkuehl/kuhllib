@@ -28,6 +28,7 @@
 
 #include "nstd/file/context.hpp"
 #include "nstd/container/intrusive_list.hpp"
+#include <algorithm>
 #include <mutex>
 
 // ----------------------------------------------------------------------------

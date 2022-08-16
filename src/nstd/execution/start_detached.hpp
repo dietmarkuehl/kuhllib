@@ -29,6 +29,7 @@
 #include "nstd/concepts/same_as.hpp"
 #include "nstd/execution/connect.hpp"
 #include "nstd/execution/get_completion_scheduler.hpp"
+#include "nstd/execution/get_env.hpp"
 #include "nstd/execution/sender.hpp"
 #include "nstd/execution/receiver.hpp"
 #include "nstd/execution/set_value.hpp"
@@ -117,11 +118,12 @@ struct nstd::hidden_names::start_detached::cpo::holder
 
 struct nstd::execution::start_detached_t::receiver
 {
-    ::std::unique_ptr<holder_base>**  d_backpointer;
-    ::std::unique_ptr<holder_base>    d_state;
+    struct env {};
+    ::std::shared_ptr<holder_base>**  d_backpointer;
+    ::std::shared_ptr<holder_base>    d_state;
 
-    receiver(::std::unique_ptr<holder_base>** backpointer): d_backpointer(backpointer) {} 
-    receiver(receiver&& r)
+    receiver(::std::shared_ptr<holder_base>** backpointer): d_backpointer(backpointer) {} 
+    receiver(receiver const& r)
         : d_backpointer(r.d_backpointer)
         , d_state(::nstd::utility::move(r.d_state))
         {
@@ -130,6 +132,9 @@ struct nstd::execution::start_detached_t::receiver
         }
     } 
 
+    friend auto tag_invoke(::nstd::execution::get_env_t, receiver const&) noexcept -> env {
+        return {};
+    }
     friend auto tag_invoke(::nstd::execution::set_value_t, receiver&& r, auto&&...) noexcept -> void{
         r.d_state.reset();
     }
@@ -151,7 +156,7 @@ auto nstd::hidden_names::start_detached::cpo::operator()(Sender&& sender) const 
 {
     using State = decltype(::nstd::execution::connect(::nstd::utility::forward<Sender>(sender),
                                                       receiver(nullptr)));
-    ::std::unique_ptr<holder_base>* state = nullptr;
+    ::std::shared_ptr<holder_base>* state = nullptr;
     holder<State>* tmp(new holder<State>(::nstd::utility::forward<Sender>(sender),
                                        receiver(&state)));
     state->reset(tmp);

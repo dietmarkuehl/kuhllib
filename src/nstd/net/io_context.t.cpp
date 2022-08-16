@@ -90,17 +90,23 @@ static KT::testcase const tests[] = {
                 && KT::type<void> == KT::type<decltype(ctxt->restart())>
                 ;
         }),
+    KT::expect_success("io_context schedule (static)", []{
+            NN::io_context ctxt{};
+            return EX::scheduler<decltype(ctxt.scheduler())>
+                && EX::sender<decltype(EX::schedule(ctxt.scheduler()))>
+                ;
+        }),
     KT::expect_success("io_context schedule", []{
             bool value = false;
             NN::io_context ctxt{};
             auto sender = EX::schedule(ctxt.scheduler())
-                | EX::then([&value]{ value = true; })
+                | EX::then([&value](auto...){ value = true; })
                 ;
             EX::start_detached(UT::move(sender));
             auto count = ctxt.run_one();
             return KT::use(sender)
                 && count == 1u
-                //&& value
+                && value
                 ;
 
         }),

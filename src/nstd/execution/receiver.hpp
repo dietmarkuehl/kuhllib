@@ -27,6 +27,9 @@
 #define INCLUDED_NSTD_EXECUTION_RECEIVER
 
 #include "nstd/execution/get_env.hpp"
+#include "nstd/execution/set_error.hpp"
+#include "nstd/execution/set_stopped.hpp"
+#include "nstd/execution/set_value.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
 #include <concepts>
 #include <exception>
@@ -59,6 +62,15 @@ struct nstd::execution::hidden_names::test_receiver {
     friend auto tag_invoke(::nstd::execution::get_env_t, test_receiver)
         -> ::nstd::execution::hidden_names::test_env {
         return {};
+    }
+    friend auto tag_invoke(::nstd::execution::set_value_t, test_receiver&&, auto&&...) noexcept
+    -> void {
+    }
+    friend auto tag_invoke(::nstd::execution::set_error_t, test_receiver&&, auto&&...) noexcept
+    -> void {
+    }
+    friend auto tag_invoke(::nstd::execution::set_stopped_t, test_receiver&&, auto&&...) noexcept
+    -> void {
     }
 };
 

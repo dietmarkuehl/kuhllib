@@ -96,6 +96,7 @@ list(APPEND kuhllib_execution_components
     src/nstd/execution/get_env
     src/nstd/execution/get_scheduler
     src/nstd/execution/get_delegatee_scheduler
+    src/nstd/execution/inject_cancel
     src/nstd/execution/is_execution_policy
     src/nstd/execution/just
     src/nstd/execution/let
@@ -121,6 +122,7 @@ list(APPEND kuhllib_execution_components
     src/nstd/execution/set_stopped
     src/nstd/execution/set_value
     src/nstd/execution/start
+    src/nstd/execution/start_detached
     src/nstd/execution/stop_token_of_t
     src/nstd/execution/then
     src/nstd/execution/value_types_of_t
@@ -130,9 +132,7 @@ list(APPEND kuhllib_execution_components
 list(APPEND kuhllib_xexecution_components
     src/nstd/execution
     src/nstd/execution/execution
-    src/nstd/execution/inject_cancel
     src/nstd/execution/run
-    src/nstd/execution/start_detached
     src/nstd/execution/task
     src/nstd/execution/timeout
 )
@@ -165,20 +165,23 @@ list(APPEND kuhllib_xexecutor_components
     src/nstd/executor/system_executor
 )
 
-list(APPEND kuhllib_xfile_components
+list(APPEND kuhllib_file_components
     src/nstd/file/context
     src/nstd/file/descriptor
     src/nstd/file/io_base
     src/nstd/file/mapped_memory
     src/nstd/file/observer_context
-    src/nstd/file/open
     src/nstd/file/open_flags
     src/nstd/file/operation
-    src/nstd/file/read
     src/nstd/file/poll_context
     src/nstd/file/ring
     src/nstd/file/ring_context
     src/nstd/file/test_context
+)
+
+list(APPEND kuhllib_xfile_components
+    src/nstd/file/open
+    src/nstd/file/read
 )
 
 list(APPEND kuhllib_functional_components
@@ -236,25 +239,28 @@ list(APPEND kuhllib_memory_components
     src/nstd/memory/uninitialized_default_construct
 )
 
-list(APPEND kuhllib_xnet_components
-    src/nstd/net/async_accept
-    src/nstd/net/async_connect
-    src/nstd/net/async_io
-    src/nstd/net/async_read_some
-    src/nstd/net/async_send
-    src/nstd/net/async_write_some
+list(APPEND kuhllib_net_components
+    src/nstd/net/io_context
     src/nstd/net/ip/address
     src/nstd/net/ip/address_v4
     src/nstd/net/ip/address_v6
     src/nstd/net/ip/basic_endpoint
     src/nstd/net/ip/tcp
     src/nstd/net/ip/types
-    src/nstd/net/ip/make_address_v4
     src/nstd/net/ip/v4_mapped
+    src/nstd/net/async_io
+)
+
+list(APPEND kuhllib_xnet_components
+    src/nstd/net/async_accept
+    src/nstd/net/async_connect
+    src/nstd/net/async_read_some
+    src/nstd/net/async_send
+    src/nstd/net/async_write_some
+    src/nstd/net/ip/make_address_v4
     src/nstd/net/basic_socket
     src/nstd/net/basic_socket_acceptor
     src/nstd/net/basic_stream_socket
-    src/nstd/net/io_context
     src/nstd/net/netfwd
     src/nstd/net/socket_base
     src/nstd/net/timer

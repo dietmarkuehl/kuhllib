@@ -165,18 +165,12 @@ struct nstd::net::io_context::state
 // ----------------------------------------------------------------------------
 
 struct nstd::net::io_context::sender
-    : ::nstd::execution::piped_sender_base
 {
     using completion_signatures
         = ::nstd::execution::completion_signatures<
-            ::nstd::execution::set_value_t(),
-            ::nstd::execution::set_stopped_t()
+            ::nstd::execution::set_value_t(::std::int32_t, ::std::uint32_t)
+            //, ::nstd::execution::set_stopped_t()
             >;
-    template <template <typename...> class T, template <typename...> class V>
-    using value_types = V<T<>>;
-    template <template <typename...> class V>
-    using error_types = V<::std::exception_ptr>;
-    static constexpr bool sends_done = true;
 
 private:
     ::nstd::net::io_context::scheduler_type d_scheduler;
@@ -212,7 +206,7 @@ inline auto nstd::net::tag_invoke(::nstd::execution::schedule_t, ::nstd::net::io
 
 // ----------------------------------------------------------------------------
 
-static_assert(::nstd::execution::operation_state<::nstd::net::io_context::state<::nstd::execution::test_receiver>>);
+static_assert(::nstd::execution::operation_state<::nstd::net::io_context::state<::nstd::execution::hidden_names::test_receiver>>);
 static_assert(::nstd::execution::sender<::nstd::net::io_context::sender>);
 static_assert(::nstd::execution::scheduler<::nstd::net::io_context::scheduler_type>);
 
