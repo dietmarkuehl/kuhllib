@@ -30,7 +30,6 @@
 #include "nstd/file/open_flags.hpp"
 #include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/connect.hpp"
-#include "nstd/execution/sender_base.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/set_error.hpp"
 #include "nstd/execution/set_stopped.hpp"
@@ -72,7 +71,6 @@ namespace nstd::file {
 
 template <typename Sender>
 struct nstd::file::open_sender
-    : ::nstd::execution::sender_base
 {
     using completion_signatures
         = ::nstd::execution::completion_signatures<

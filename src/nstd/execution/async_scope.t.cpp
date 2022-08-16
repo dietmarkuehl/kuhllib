@@ -25,9 +25,7 @@
 
 #include "nstd/execution/async_scope.hpp"
 #include "nstd/execution/just.hpp"
-// #include "nstd/execution/then.hpp"
 #include "nstd/execution/sender.hpp"
-// #include "nstd/thread/sync_wait.hpp"
 #include "kuhl/test.hpp"
 
 namespace EX = ::nstd::execution;

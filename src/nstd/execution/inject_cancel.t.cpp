@@ -28,7 +28,6 @@
 #include "nstd/execution/start.hpp"
 #include "nstd/execution/get_stop_token.hpp"
 #include "nstd/execution/then.hpp"
-#include "nstd/execution/upon_done.hpp"
 #include "nstd/stop_token/in_place_stop_token.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
 #include "nstd/thread/sync_wait.hpp"
@@ -36,10 +35,11 @@
 #include "nstd/utility/move.hpp"
 #include "kuhl/test.hpp"
 #include <exception>
+#include "nstd/hidden_names/print_completion_signatures.hpp"
 
 namespace test_declarations {}
 namespace EX = ::nstd::execution;
-namespace ST = ::nstd::stop_token;
+namespace ST = ::nstd::stop_token_ns;
 namespace TT = ::nstd::type_traits;
 namespace NT = ::nstd::this_thread;
 namespace UT = ::nstd::utility;
@@ -76,19 +76,13 @@ namespace test_declarations
         {
             using completion_signatures
                 = ::nstd::execution::completion_signatures<
-                    ::nstd::execution::set_stopped_t()
+                    ::nstd::execution::set_value_t()
                     >;
-            template <template <typename...> class T, template <typename...> class V>
-            using value_types = V<T<>>;
-            template <template <typename...> class V>
-            using error_types = V<::std::exception_ptr>;
-            static constexpr bool sends_done{true};
 
             template <EX::receiver Receiver>
             friend auto tag_invoke(EX::connect_t, sender, Receiver&& receiver)
                 -> TD::state<Receiver>
             {
-                (void)sender::sends_done;
                 return { UT::forward<Receiver>(receiver) };
             }
         };
@@ -101,36 +95,38 @@ static KT::testcase const tests[] = {
     KT::expect_failure("breathing", []{
             ST::in_place_stop_source source;
             bool then_called{false};
-            bool upon_done_called{false};
+            bool upon_stopped_called{false};
 
             auto sender
                 = TD::sender()
                 | EX::inject_cancel(source.token())
                 | EX::then([&]{ then_called = true; return true; })
-                | EX::upon_done([&]{ upon_done_called = true; return true; })
+                | EX::upon_stopped([&]{ upon_stopped_called = true; return true; })
                 ;
+            static_assert(EX::sender<decltype(sender)>);
+
             NT::sync_wait(UT::move(sender));
             return KT::use(sender)
                 && then_called
-                && not upon_done_called
+                && not upon_stopped_called
                 ;
         }),
     KT::expect_failure("canceled", []{
             ST::in_place_stop_source source;
             bool then_called{false};
-            bool upon_done_called{false};
+            bool upon_stopped_called{false};
 
             auto sender
                 = TD::sender()
                 | EX::inject_cancel(source.token())
                 | EX::then([&]{ then_called = true; return true; })
-                | EX::upon_done([&]{ upon_done_called = true; return true; })
+                | EX::upon_stopped([&]{ upon_stopped_called = true; return true; })
                 ;
             source.stop();
             NT::sync_wait(UT::move(sender));
             return KT::use(sender)
                 && not then_called
-                && upon_done_called
+                && upon_stopped_called
                 ;
         }),
 };

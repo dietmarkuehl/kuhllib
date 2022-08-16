@@ -65,7 +65,7 @@ namespace test_declarations {
             }
         };
 
-        static_assert(EX::operation_state<TD::state<EX::test_receiver>>);
+        static_assert(EX::operation_state<TD::state<EX::start_detached_t::receiver>>);
 
         struct scheduler {
             struct state {
@@ -74,12 +74,11 @@ namespace test_declarations {
             struct sender {
                 using completion_signatures = EX::completion_signatures<>;
 
-                template <template <typename...> class T, template <typename...> class V>
-                using value_types = V<T<>>;
-                template <template <typename...> class V>
-                using error_types = V<::std::exception_ptr>;
-                static constexpr bool sends_done = false;
-
+                template <typename Tag>
+                friend auto tag_invoke(EX::get_completion_scheduler_t<Tag>, sender const&) noexcept
+                    -> scheduler {
+                    return {};
+                }
                 template <EX::receiver Receiver>
                 friend auto tag_invoke(EX::connect_t, sender&&, Receiver&&)
                     -> state {
@@ -98,12 +97,6 @@ namespace test_declarations {
         struct sender
         {
             using completion_signatures = EX::completion_signatures<>;
-
-            template <template <typename...> class T, template <typename...> class V>
-            using value_types = V<T<>>;
-            template <template <typename...> class V>
-            using error_types = V<::std::exception_ptr>;
-            static constexpr bool sends_done = false;
 
             int*  result;
             int   value;

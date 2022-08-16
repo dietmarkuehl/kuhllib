@@ -121,8 +121,10 @@ namespace nstd::hidden_names::then {
                                          ::nstd::utility::forward<Error>(error));
         }
         friend
-        auto tag_invoke(::nstd::type_traits::conditional_t<not ::std::is_same_v<Tag, ::nstd::execution::set_stopped_t>, int, ::nstd::execution::set_stopped_t>,
-            receiver&& self) noexcept -> void {
+        auto tag_invoke(::nstd::type_traits::conditional_t<::std::is_same_v<Tag, ::nstd::execution::set_stopped_t>,
+                                                           int,
+                                                           ::nstd::execution::set_stopped_t>,
+                        receiver&& self) noexcept -> void {
             ::nstd::execution::set_stopped(::nstd::utility::move(self.d_receiver));
         }
     };
@@ -133,6 +135,12 @@ namespace nstd::hidden_names::then {
         using set_value_completions
             = ::nstd::execution::completion_signatures<
                 ::nstd::hidden_names::compl_sig_t<::nstd::execution::set_value_t, ::std::invoke_result_t<Fun, A...>>
+                >
+            ;
+        template <typename... A>
+        using set_stopped_completions
+            = ::nstd::execution::completion_signatures<
+                ::nstd::hidden_names::compl_sig_t<::nstd::execution::set_value_t, A...>
                 >
             ;
         
@@ -150,14 +158,47 @@ namespace nstd::hidden_names::then {
         friend auto tag_invoke(::nstd::execution::get_completion_signatures_t, S&&, Env&&) noexcept
             requires ::std::is_same_v<sender, ::nstd::type_traits::remove_cvref_t<S>>
         {
-            return ::nstd::execution::make_completion_signatures<
-                ::nstd::type_traits::copy_cvref_t<S, Sender>,
-                Env,
-                ::nstd::type_traits::conditional_t<::nstd::execution::value_types_of_t<Sender, Env, sender::potentially_throwing, sender::any_of>::value,
-                                                   ::nstd::execution::completion_signatures<::nstd::execution::set_error_t(::std::exception_ptr)>,
-                                                   ::nstd::execution::completion_signatures<>>,
-                sender::set_value_completions
-                >{};
+            if constexpr (::std::same_as<Tag, ::nstd::execution::set_value_t>) {
+                return ::nstd::execution::make_completion_signatures<
+                    ::nstd::type_traits::copy_cvref_t<S, Sender>,
+                    Env,
+                    ::nstd::type_traits::conditional_t<
+                        ::nstd::execution::value_types_of_t<Sender, Env, sender::potentially_throwing, sender::any_of>::value,
+                        ::nstd::execution::completion_signatures<::nstd::execution::set_error_t(::std::exception_ptr)>,
+                        ::nstd::execution::completion_signatures<>>,
+                    sender::set_value_completions
+                    >{};
+            }
+            else if constexpr (::std::same_as<Tag, ::nstd::execution::set_error_t>) {
+                return ::nstd::execution::make_completion_signatures<
+                    ::nstd::type_traits::copy_cvref_t<S, Sender>,
+                    Env,
+                    ::nstd::type_traits::conditional_t<
+                        ::nstd::execution::value_types_of_t<Sender, Env, sender::potentially_throwing, sender::any_of>::value,
+                        ::nstd::execution::completion_signatures<::nstd::execution::set_error_t(::std::exception_ptr)>,
+                        ::nstd::execution::completion_signatures<>>,
+                    sender::set_value_completions
+                    >{};
+            }
+            else {
+                return ::nstd::execution::make_completion_signatures<
+                    ::nstd::type_traits::copy_cvref_t<S, Sender>,
+                    Env,
+                    ::nstd::execution::completion_signatures<
+                        ::nstd::hidden_names::compl_sig_t<::nstd::execution::set_value_t, ::std::invoke_result_t<Fun>>
+                    >
+                    , sender::set_stopped_completions
+                    >{};
+#if 0
+                return ::nstd::hidden_names::merge_completion_signatures_t<
+                    Env,
+                    //::nstd::execution::value_types_of_t<Sender, Env>,
+                    //::nstd::execution::error_types_of_t<Sender, Env>,
+                    ::nstd::execution::completion_signatures<
+                        ::nstd::hidden_names::compl_sig_t<::nstd::execution::set_value_t, ::std::invoke_result_t<Fun>>
+                    >>{};
+#endif
+            }
         }
 
         ::nstd::type_traits::remove_cvref_t<Sender> d_sender;

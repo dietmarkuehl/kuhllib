@@ -28,6 +28,7 @@
 
 #include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/connect.hpp"
+#include "nstd/execution/get_env.hpp"
 #include "nstd/execution/get_stop_token.hpp"
 #include "nstd/execution/sender.hpp"
 #include "nstd/execution/set_stopped.hpp"
@@ -46,16 +47,20 @@
 namespace nstd::execution {
     inline constexpr struct inject_cancel_t
     {
-        template <::nstd::stop_token::stoppable_token Token, ::nstd::execution::receiver Receiver>
+        struct env {};
+        template <::nstd::stop_token_ns::stoppable_token Token, ::nstd::execution::receiver Receiver>
         struct receiver
         {
             ::nstd::type_traits::remove_cvref_t<Token>    d_token;
             ::nstd::type_traits::remove_cvref_t<Receiver> d_receiver;
 
+            friend auto tag_invoke(::nstd::execution::get_env_t, receiver const&) noexcept -> env{
+                return {};
+            }
             friend auto tag_invoke(::nstd::execution::get_stop_token_t, receiver const& self) noexcept
                 -> ::nstd::type_traits::remove_cvref_t<Token>
             {
-                static_assert(::nstd::stop_token::stoppable_token<decltype(self.d_token)>);
+                static_assert(::nstd::stop_token_ns::stoppable_token<decltype(self.d_token)>);
                 return self.d_token;
             }
             template <typename Tag, typename... Args>
@@ -64,16 +69,12 @@ namespace nstd::execution {
                 return nstd::tag_invoke(tag, ::nstd::utility::move(self.d_receiver), ::nstd::utility::forward<Args>(args)...);
             }
         };
-        template <::nstd::execution::sender Sender, ::nstd::stop_token::stoppable_token Token>
+        template <::nstd::execution::sender Sender, ::nstd::stop_token_ns::stoppable_token Token>
         struct sender
         {
             using completion_signatures
-                = ::nstd::hidden_names::add_signatures_t<typename Sender::completion_signatures, ::nstd::execution::set_stopped_t()>;
-            template <template <typename...> class T, template <typename...> class V>
-            using value_types = typename Sender::template value_types<T, V>;
-            template < template <typename...> class V>
-            using error_types = typename Sender::template error_types< V>;
-            static constexpr bool sends_done{true};
+                = ::nstd::hidden_names::add_signatures_t<typename Sender::completion_signatures,
+                                                         ::nstd::execution::set_stopped_t()>;
 
             ::nstd::type_traits::remove_cvref_t<Sender> d_sender;
             ::nstd::type_traits::remove_cvref_t<Token>  d_token;
@@ -88,12 +89,12 @@ namespace nstd::execution {
                                                   });
             }
         };
-        template <::nstd::execution::sender Sender, ::nstd::stop_token::stoppable_token Token>
+        template <::nstd::execution::sender Sender, ::nstd::stop_token_ns::stoppable_token Token>
         auto operator()(Sender&& sndr, Token token) const -> sender<Sender, Token>
         {
             return { ::nstd::utility::forward<Sender>(sndr), ::nstd::utility::forward<Token>(token) };
         }
-        template <::nstd::stop_token::stoppable_token Token>
+        template <::nstd::stop_token_ns::stoppable_token Token>
         auto operator()(Token token) const {
             return [this, token](::nstd::execution::sender auto&& sndr) mutable {
                 return (*this)(::nstd::utility::forward<decltype(sndr)>(sndr), token);
@@ -102,8 +103,8 @@ namespace nstd::execution {
     } inject_cancel;
 }
 
-static_assert(::nstd::execution::receiver<::nstd::execution::inject_cancel_t::receiver<::nstd::stop_token::never_stop_token, ::nstd::execution::test_receiver>>);
-static_assert(::nstd::execution::receiver<::nstd::execution::inject_cancel_t::receiver<::nstd::stop_token::in_place_stop_token, ::nstd::execution::test_receiver>>);
+static_assert(::nstd::execution::receiver<::nstd::execution::inject_cancel_t::receiver<::nstd::stop_token_ns::never_stop_token, ::nstd::execution::hidden_names::test_receiver>>);
+static_assert(::nstd::execution::receiver<::nstd::execution::inject_cancel_t::receiver<::nstd::stop_token_ns::in_place_stop_token, ::nstd::execution::hidden_names::test_receiver>>);
 
 // ----------------------------------------------------------------------------
 

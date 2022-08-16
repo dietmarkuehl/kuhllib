@@ -29,7 +29,6 @@
 #include "nstd/execution/schedule.hpp"
 #include "nstd/execution/start_detached.hpp"
 #include "nstd/execution/then.hpp"
-#include "nstd/execution/upon_done.hpp"
 #include "nstd/execution/inject_cancel.hpp"
 #include "nstd/stop_token/in_place_stop_token.hpp"
 #include "nstd/utility/move.hpp"
@@ -125,7 +124,7 @@ static KT::testcase const tests[] = {
                 | NN::async_accept(acceptor)
                 | EX::inject_cancel(source.token())
                 | EX::then([&](auto, TD::stream){ completion_called = true; })
-                | EX::upon_done([&](auto&&...){ cancellation_called = true; })
+                | EX::upon_stopped([&](auto&&...){ cancellation_called = true; })
                 ;
             EX::start_detached(UT::move(accept));
             source.stop();
