@@ -33,6 +33,7 @@
 #include "nstd/stop_token/in_place_stop_token.hpp"
 #include "nstd/utility/move.hpp"
 #include "kuhl/test.hpp"
+#include "nstd/hidden_names/print_completion_signatures.hpp"
 
 namespace test_declarations {}
 namespace EX = ::nstd::execution;
@@ -40,8 +41,9 @@ namespace KT = ::kuhl::test;
 namespace NF = ::nstd::file;
 namespace NI = ::nstd::net::ip;
 namespace NN = ::nstd::net;
-namespace ST = ::nstd::stop_token;
+namespace ST = ::nstd::stop_token_ns;
 namespace UT = ::nstd::utility;
+namespace HN = ::nstd::hidden_names;
 namespace TD = test_declarations;
 
 // ----------------------------------------------------------------------------
@@ -93,6 +95,7 @@ static KT::testcase const tests[] = {
                 | NN::async_accept(acceptor)
                 | EX::then([&](auto, TD::stream){ completion_called = true; })
                 ;
+            HN::print_completion_signatures(accept);
             EX::start_detached(accept);
             auto rc(context.run());
             return true
@@ -121,6 +124,7 @@ static KT::testcase const tests[] = {
             TD::acceptor acceptor;
             auto accept
                 = EX::schedule(context.scheduler())
+                | EX::then([]{})
                 | NN::async_accept(acceptor)
                 | EX::inject_cancel(source.token())
                 | EX::then([&](auto, TD::stream){ completion_called = true; })

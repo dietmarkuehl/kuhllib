@@ -168,7 +168,8 @@ struct nstd::net::io_context::sender
 {
     using completion_signatures
         = ::nstd::execution::completion_signatures<
-            ::nstd::execution::set_value_t(::std::int32_t, ::std::uint32_t)
+            ::nstd::execution::set_value_t()
+            //, ::nstd::execution::set_value_t(::std::int32_t, ::std::uint32_t)
             //, ::nstd::execution::set_stopped_t()
             >;
 

@@ -197,11 +197,14 @@ struct nstd::net::async_wait_t::state
     }
 };
 
+#if 0
+//-dk:TODO
 static_assert(::nstd::execution::operation_state<
                   ::nstd::net::async_wait_t::state<
-                      ::nstd::execution::test_receiver_of<::std::error_code>,
+                      ::nstd::execution::hidden_names::test_receiver_of<::std::error_code>,
                       ::std::chrono::system_clock,
                       ::nstd::net::wait_traits<::std::chrono::system_clock>>>);
+#endif
 
 template <typename Clock, typename Traits>
 struct nstd::net::async_wait_t::sender

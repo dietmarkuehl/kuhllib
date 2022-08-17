@@ -97,6 +97,7 @@ static KT::testcase const tests[] = {
             TD::socket s{IP::tcp::v4()};
             auto connect_sender
                 = EX::schedule(context.scheduler())
+                | EX::then([]{}) //-dk:TODO remove
                 | Net::async_connect(s, IP::basic_endpoint<IP::tcp>(IP::address_v4::any(), 12345))
                 ;
             try {

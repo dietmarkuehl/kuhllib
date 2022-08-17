@@ -75,6 +75,7 @@ static KT::testcase const tests[] = {
 
             EX::run(context,
                     EX::schedule(context.scheduler())
+                  | EX::then([]{}) //-dk:TODO remove
                   | NN::async_connect(client, ep)
                   | NN::async_accept(accept)
                   | EX::then([&server](::std::error_code, NN::basic_stream_socket<NN::ip::tcp>&& stream){
@@ -83,9 +84,11 @@ static KT::testcase const tests[] = {
                   );
 
             auto write = EX::schedule(context.scheduler())
+                       | EX::then([]{}) //-dk:TODO remove
                        | NN::async_write_some(client, NN::buffer(message))
                        ;
             auto read = EX::schedule(context.scheduler())
+                      | EX::then([]{}) //-dk:TODO remove
                       | NN::async_read_some(server, NN::buffer(buffer))
                       | EX::then([](::std::int64_t){})
                       ;
@@ -105,6 +108,7 @@ static KT::testcase const tests[] = {
             NN::io_context                        context;
             auto write
                 = EX::schedule(context.scheduler())
+                | EX::then([]{}) //-dk:TODO remove
                 | NN::async_write(client, NN::buffer(message))
                 ;
             return true

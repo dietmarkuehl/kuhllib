@@ -170,6 +170,8 @@ namespace nstd::hidden_names::then {
                     >{};
             }
             else if constexpr (::std::same_as<Tag, ::nstd::execution::set_error_t>) {
+                return ::nstd::execution::completion_signatures<>();
+#if 0
                 return ::nstd::execution::make_completion_signatures<
                     ::nstd::type_traits::copy_cvref_t<S, Sender>,
                     Env,
@@ -179,6 +181,7 @@ namespace nstd::hidden_names::then {
                         ::nstd::execution::completion_signatures<>>,
                     sender::set_value_completions
                     >{};
+#endif
             }
             else {
                 return ::nstd::execution::make_completion_signatures<

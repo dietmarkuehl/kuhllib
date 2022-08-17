@@ -48,6 +48,7 @@ static KT::testcase const tests[] = {
             NN::io_context                       context;
             NN::basic_stream_socket<NN::ip::tcp> client(NI::tcp::v4());
             auto sender = EX::schedule(context.scheduler())
+                        | EX::then([]{}) //-dk:TODO remove
                         | NN::async_write_some(client, NN::buffer(message))
                         | EX::then([](auto){ })
                         ;

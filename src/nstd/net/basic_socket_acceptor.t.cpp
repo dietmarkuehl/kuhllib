@@ -37,6 +37,7 @@
 #include "nstd/utility/move.hpp"
 #include "nstd/type_traits/is_same.hpp"
 #include "kuhl/test.hpp"
+#include "nstd/hidden_names/print_completion_signatures.hpp"
 
 namespace test_declarations {}
 namespace TD = test_declarations;
@@ -46,6 +47,7 @@ namespace NN = ::nstd::net;
 namespace NI = ::nstd::net::ip;
 namespace UT = ::nstd::utility;
 namespace TT = ::nstd::type_traits;
+namespace HN = ::nstd::hidden_names;
 
 // ----------------------------------------------------------------------------
 
@@ -106,6 +108,22 @@ static KT::testcase const tests[] = {
                 NN::async_accept(EX::schedule(context.scheduler()), server),
                 NN::async_connect(EX::schedule(context.scheduler()), client, ep)
                 ));
+            ::std::cout << "async_accept completions\n";
+            HN::print_completion_signatures(
+                NN::async_accept(EX::schedule(context.scheduler()), server)
+            );
+            ::std::cout << "async_connect completions\n";
+            HN::print_completion_signatures(
+                NN::async_connect(EX::schedule(context.scheduler()), client, ep)
+            );
+            ::std::cout << "when_all completions\n";
+            HN::print_completion_signatures(
+                EX::when_all(
+                    NN::async_accept(EX::schedule(context.scheduler()), server),
+                    NN::async_connect(EX::schedule(context.scheduler()), client, ep)
+                )
+            );
+
             return KT::use(server)
                 && KT::use(client)
                 && EX::sender<decltype(NN::async_accept(EX::schedule(context.scheduler()), server))>

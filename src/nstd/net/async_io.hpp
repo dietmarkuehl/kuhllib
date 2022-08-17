@@ -28,6 +28,7 @@
 
 #include "nstd/execution/connect.hpp"
 #include "nstd/execution/get_completion_scheduler.hpp"
+#include "nstd/execution/get_env.hpp"
 #include "nstd/execution/get_stop_token.hpp"
 #include "nstd/execution/receiver.hpp"
 #include "nstd/execution/scheduler.hpp"
@@ -82,6 +83,9 @@ struct nstd::net::async_io_receiver
 {
     ::nstd::net::async_io_state_base<Scheduler, Receiver, IOOperation>* d_state;
 
+    friend auto tag_invoke(::nstd::execution::get_env_t, async_io_receiver const& self) noexcept {
+        return ::nstd::execution::get_env(self.d_state->d_receiver);
+    }
     friend auto tag_invoke(::nstd::execution::set_value_t, async_io_receiver&& self, auto&&...) noexcept -> void {
         try {
             self.d_state->enqueue();

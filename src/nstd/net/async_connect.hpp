@@ -71,7 +71,8 @@ struct nstd::net::async_connect_t::io_operation
 {
     using completion_signatures
         = ::nstd::execution::completion_signatures<
-            ::nstd::execution::set_value_t(::std::error_code)
+            ::nstd::execution::set_value_t(::std::error_code),
+            ::nstd::execution::set_error_t(::std::exception_ptr)
             >;
     template <template <typename...> class T, template <typename...> class V>
     using value_types = V<T<::std::error_code>>;
