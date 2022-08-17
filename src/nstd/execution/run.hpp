@@ -28,6 +28,7 @@
 
 #include "nstd/execution/sender.hpp"
 #include "nstd/execution/connect.hpp"
+#include "nstd/execution/get_env.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/set_error.hpp"
 #include "nstd/execution/set_stopped.hpp"
@@ -41,7 +42,15 @@ namespace nstd::hidden_names
 {
     struct run_receiver
     {
+        struct env {};
+
         ::std::atomic<bool>* done;
+
+        friend auto tag_invoke(::nstd::execution::get_env_t, run_receiver const&)
+            noexcept -> nstd::hidden_names::run_receiver::env
+        {
+            return {};
+        }
         template <typename... Args>
         friend auto tag_invoke(::nstd::execution::set_value_t, run_receiver&& r, Args&&...)
             noexcept -> void

@@ -244,7 +244,7 @@ struct nstd::hidden_names::when_all::inner_state {
     auto start() noexcept -> void {
         ::nstd::execution::start(this->d_state);
     }
-    auto result() -> result_t { return *this->d_result; }
+    auto result() -> result_t { return ::nstd::utility::move(*this->d_result); }
 };
 
 // ----------------------------------------------------------------------------

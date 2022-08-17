@@ -66,7 +66,7 @@ namespace nstd::execution {
             template <typename Tag, typename... Args>
             friend auto tag_invoke(Tag tag, receiver&& self, Args&&... args) noexcept
             {
-                return nstd::tag_invoke(tag, ::nstd::utility::move(self.d_receiver), ::nstd::utility::forward<Args>(args)...);
+                return tag(::nstd::utility::move(self.d_receiver), ::nstd::utility::forward<Args>(args)...);
             }
         };
         template <::nstd::execution::sender Sender, ::nstd::stop_token_ns::stoppable_token Token>

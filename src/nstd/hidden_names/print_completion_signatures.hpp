@@ -32,10 +32,12 @@
 #include "nstd/execution/set_error.hpp"
 #include "nstd/execution/set_stopped.hpp"
 #include "nstd/execution/set_value.hpp"
+#include "nstd/type_traits/declval.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
 #include <iostream>
 #include <string>
 #include <exception>
+#include <typeinfo>
 
 // ----------------------------------------------------------------------------
 
@@ -45,7 +47,7 @@ namespace nstd::hidden_names {
     template <> inline std::ostream& print_tag<::nstd::execution::set_error_t>(::std::ostream& out) { return out << "set_error_t"; }
     template <> inline std::ostream& print_tag<::nstd::execution::set_stopped_t>(::std::ostream& out) { return out << "set_stopped_t"; }
 
-    template <typename> struct print_type { static ::std::string str() { return "<unknown>"; } };
+    template <typename T> struct print_type { static ::std::string str() { return ::std::string("<unknown:") + typeid(::nstd::type_traits::declval<T>()).name() + ">"; } };
 
     template <> struct print_type<bool> { static ::std::string str() { return "int"; } };
     template <> struct print_type<int> { static ::std::string str() { return "int"; } };

@@ -92,6 +92,7 @@ static KT::testcase const tests[] = {
             };
 
             auto sender = EX::schedule(context.scheduler())
+                | EX::then([]{}) //-dk:TODO remove
                 | NN::async_send(socket, NN::buffer(message))
                 | EX::then([&](::std::int64_t){ completion_called = true; })
                 ;
@@ -133,6 +134,7 @@ static KT::testcase const tests[] = {
             };
 
             auto sender = EX::schedule(context.scheduler())
+                | EX::then([]{}) //-dk:TODO remove
                 | NN::async_send(socket, NN::buffer(message), NN::socket_base::message_peek)
                 | EX::then([&](::std::int64_t){ completion_called = true; })
                 ;

@@ -70,12 +70,6 @@ namespace test_declarations {
         public:
             using completion_signatures = EX::completion_signatures<>;
 
-            template <template <typename...> class T, template <typename...> class V>
-            using value_types = V<T<>>;
-            template <template <typename...> class V>
-            using error_types = V<>;
-            static constexpr bool sends_done = false;
-        
             TD::context* d_context;
 
             template <typename Receiver>

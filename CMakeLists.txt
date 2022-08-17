@@ -109,6 +109,7 @@ list(APPEND kuhllib_execution_components
     src/nstd/execution/receiver_of
     src/nstd/execution/repeat_effect
     src/nstd/execution/repeat_effect_until
+    src/nstd/execution/run
     src/nstd/execution/run_loop
     src/nstd/execution/schedule
     src/nstd/execution/scheduler
@@ -132,7 +133,6 @@ list(APPEND kuhllib_execution_components
 list(APPEND kuhllib_xexecution_components
     src/nstd/execution
     src/nstd/execution/execution
-    src/nstd/execution/run
     src/nstd/execution/task
     src/nstd/execution/timeout
 )
@@ -240,29 +240,29 @@ list(APPEND kuhllib_memory_components
 )
 
 list(APPEND kuhllib_net_components
+    src/nstd/net/async_accept
+    src/nstd/net/async_connect
+    src/nstd/net/async_io
+    src/nstd/net/async_read_some
+    src/nstd/net/async_send
+    src/nstd/net/async_write_some
+    src/nstd/net/basic_socket
+    src/nstd/net/basic_socket_acceptor
+    src/nstd/net/basic_stream_socket
     src/nstd/net/io_context
     src/nstd/net/ip/address
     src/nstd/net/ip/address_v4
     src/nstd/net/ip/address_v6
+    src/nstd/net/ip/make_address_v4
     src/nstd/net/ip/basic_endpoint
     src/nstd/net/ip/tcp
     src/nstd/net/ip/types
     src/nstd/net/ip/v4_mapped
-    src/nstd/net/async_io
+    src/nstd/net/netfwd
+    src/nstd/net/socket_base
 )
 
 list(APPEND kuhllib_xnet_components
-    src/nstd/net/async_accept
-    src/nstd/net/async_connect
-    src/nstd/net/async_read_some
-    src/nstd/net/async_send
-    src/nstd/net/async_write_some
-    src/nstd/net/ip/make_address_v4
-    src/nstd/net/basic_socket
-    src/nstd/net/basic_socket_acceptor
-    src/nstd/net/basic_stream_socket
-    src/nstd/net/netfwd
-    src/nstd/net/socket_base
     src/nstd/net/timer
 )
 

@@ -40,7 +40,7 @@
 #include "nstd/execution/set_error.hpp"
 #include "nstd/execution/set_stopped.hpp"
 #include "nstd/execution/repeat_effect_until.hpp"
-#include "nstd/execution/let_value.hpp"
+#include "nstd/execution/let.hpp"
 #include "nstd/execution/then.hpp"
 #include "nstd/execution/just.hpp"
 #include "nstd/buffer/const_buffer.hpp"
