@@ -26,6 +26,7 @@
 #include "nstd/net/timer.hpp"
 #include "nstd/execution/run.hpp"
 #include "nstd/execution/then.hpp"
+#include "nstd/hidden_names/print_completion_signatures.hpp"
 #include "kuhl/test.hpp"
 #include <chrono>
 #include <iostream>
@@ -35,6 +36,7 @@ namespace TD = ::test_declarations;
 namespace KT = ::kuhl::test;
 namespace NN = ::nstd::net;
 namespace EX = ::nstd::execution;
+namespace HN = ::nstd::hidden_names;
 
 // ----------------------------------------------------------------------------
 
@@ -138,19 +140,21 @@ static KT::testcase const tests[] = {
         }),
     KT::expect_success("async_wait", []{
             try {
-            using namespace std::chrono_literals;
-            using clock = ::std::chrono::system_clock;
-            NN::io_context   context;
-            clock::duration  d(13ms);
-
-            auto before = clock::now();
-            auto count = 100000;
-            NN::system_timer timer(context, d);
-            EX::run(context, NN::async_wait(timer) | EX::then([before, &count](auto&&...){
-                auto dur = clock::now() - before;
-                count = ::std::chrono::duration_cast<::std::chrono::milliseconds>(dur).count();
+                using namespace std::chrono_literals;
+                using clock = ::std::chrono::system_clock;
+                NN::io_context   context;
+                clock::duration  d(13ms);
+            
+                auto before = clock::now();
+                auto count = 0;
+                NN::system_timer timer(context, d);
+                HN::print_completion_signatures(NN::async_wait(timer) | EX::then([](auto&&...){}));
+                EX::run(context, NN::async_wait(timer) | EX::then([before, &count](auto&&...){
+                    auto dur = clock::now() - before;
+                    count = ::std::chrono::duration_cast<::std::chrono::milliseconds>(dur).count();
                 }));
-                return 13 <= count;
+                return KT::use(before)
+                    && 13 <= count;
             }
             catch (std::exception const& ex) {
                 return false;

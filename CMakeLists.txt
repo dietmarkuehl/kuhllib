@@ -257,9 +257,6 @@ list(APPEND kuhllib_net_components
     src/nstd/net/ip/v4_mapped
     src/nstd/net/netfwd
     src/nstd/net/socket_base
-)
-
-list(APPEND kuhllib_xnet_components
     src/nstd/net/timer
 )
 
