@@ -32,7 +32,6 @@
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/set_error.hpp"
 #include "nstd/execution/set_stopped.hpp"
-#include "nstd/execution/sender_base.hpp"
 #include "nstd/file/context.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
 #include "nstd/utility/forward.hpp"
@@ -111,7 +110,6 @@ namespace nstd::file {
 
     template <typename Buffer, typename Context, typename Sender>
     struct read_sender
-        : ::nstd::execution::piped_sender_base
     {
     using completion_signatures
         = ::nstd::execution::completion_signatures<

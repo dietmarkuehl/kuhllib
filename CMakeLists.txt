@@ -171,17 +171,14 @@ list(APPEND kuhllib_file_components
     src/nstd/file/io_base
     src/nstd/file/mapped_memory
     src/nstd/file/observer_context
+    src/nstd/file/open
     src/nstd/file/open_flags
     src/nstd/file/operation
     src/nstd/file/poll_context
+    src/nstd/file/read
     src/nstd/file/ring
     src/nstd/file/ring_context
     src/nstd/file/test_context
-)
-
-list(APPEND kuhllib_xfile_components
-    src/nstd/file/open
-    src/nstd/file/read
 )
 
 list(APPEND kuhllib_functional_components
