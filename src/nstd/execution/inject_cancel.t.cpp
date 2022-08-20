@@ -35,7 +35,6 @@
 #include "nstd/utility/move.hpp"
 #include "kuhl/test.hpp"
 #include <exception>
-#include "nstd/hidden_names/print_completion_signatures.hpp"
 
 namespace test_declarations {}
 namespace EX = ::nstd::execution;

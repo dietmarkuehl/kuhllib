@@ -26,10 +26,8 @@
 #include "nstd/net/timer.hpp"
 #include "nstd/execution/run.hpp"
 #include "nstd/execution/then.hpp"
-#include "nstd/hidden_names/print_completion_signatures.hpp"
 #include "kuhl/test.hpp"
 #include <chrono>
-#include <iostream>
 
 namespace test_declarations {}
 namespace TD = ::test_declarations;
@@ -148,8 +146,7 @@ static KT::testcase const tests[] = {
                 auto before = clock::now();
                 auto count = 0;
                 NN::system_timer timer(context, d);
-                HN::print_completion_signatures(NN::async_wait(timer) | EX::then([](auto&&...){}));
-                EX::run(context, NN::async_wait(timer) | EX::then([before, &count](auto&&...){
+               EX::run(context, NN::async_wait(timer) | EX::then([before, &count](auto&&...){
                     auto dur = clock::now() - before;
                     count = ::std::chrono::duration_cast<::std::chrono::milliseconds>(dur).count();
                 }));

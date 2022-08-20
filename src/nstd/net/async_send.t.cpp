@@ -48,6 +48,10 @@ namespace KT = ::kuhl::test;
 namespace test_declarations {
     namespace {
         struct socket {
+            socket() = default;
+            socket(socket&&) = default;
+            socket(socket const&) = delete;
+            
             auto native_handle() const -> int { return 17; }
             template <typename CBS>
             auto enqueue(NF::operation_send<CBS>& op) {
@@ -92,7 +96,6 @@ static KT::testcase const tests[] = {
             };
 
             auto sender = EX::schedule(context.scheduler())
-                | EX::then([]{}) //-dk:TODO remove
                 | NN::async_send(socket, NN::buffer(message))
                 | EX::then([&](::std::int64_t){ completion_called = true; })
                 ;
@@ -134,7 +137,6 @@ static KT::testcase const tests[] = {
             };
 
             auto sender = EX::schedule(context.scheduler())
-                | EX::then([]{}) //-dk:TODO remove
                 | NN::async_send(socket, NN::buffer(message), NN::socket_base::message_peek)
                 | EX::then([&](::std::int64_t){ completion_called = true; })
                 ;

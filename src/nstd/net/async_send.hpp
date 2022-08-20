@@ -32,6 +32,7 @@
 #include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/get_completion_scheduler.hpp"
 #include "nstd/execution/sender.hpp"
+#include "nstd/execution/sender_adaptor_closure.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/buffer/const_buffer.hpp"
 #include "nstd/utility/move.hpp"
@@ -62,9 +63,9 @@ namespace nstd::net::inline customization_points {
         }
         template <typename Socket, typename CBS>
         auto operator()(Socket& socket, CBS const& cbs, ::nstd::hidden_names::message_flags flags) const {
-            return [&socket, cbs, flags, this](::nstd::execution::sender auto sender){
-                return ::nstd::tag_invoke(*this, socket, cbs, flags, sender);
-                };
+            return ::nstd::execution::sender_adaptor_closure<async_send_t>()(
+                ::std::ref(socket), cbs, flags
+                );
         }
         template <::nstd::execution::sender Sender, typename Socket, typename CBS>
         auto operator()(Sender sender, Socket& socket, CBS const& cbs) const {
@@ -72,9 +73,9 @@ namespace nstd::net::inline customization_points {
         }
         template <typename Socket, typename CBS>
         auto operator()(Socket& socket, CBS const& cbs) const {
-            return [&socket, cbs, this](::nstd::execution::sender auto sender){
-                return ::nstd::tag_invoke(*this, socket, cbs, ::nstd::hidden_names::message_flags(), sender);
-                };
+            return ::nstd::execution::sender_adaptor_closure<async_send_t>()(
+                ::std::ref(socket), cbs, ::nstd::hidden_names::message_flags()
+                );
         }
     } async_send;
 }

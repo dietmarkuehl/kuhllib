@@ -57,61 +57,12 @@ namespace test_declaration {
     }
 }
 
-#if 0
-#include "nstd/type_traits/remove_cvref.hpp"
-namespace XX {
-    template <typename> std::ostream& print_tag(std::ostream&);
-    template <> std::ostream& print_tag<EX::set_value_t>(std::ostream& out) { return out << "set_value_t"; }
-    template <> std::ostream& print_tag<EX::set_error_t>(std::ostream& out) { return out << "set_error_t"; }
-    template <> std::ostream& print_tag<EX::set_stopped_t>(std::ostream& out) { return out << "set_stopped_t"; }
-
-    template <typename> struct print_type;
-    template <> struct print_type<int> { static std::string str() { return "int"; } };
-    template <> struct print_type<double> { static std::string str() { return "double"; } };
-    template <> struct print_type<std::exception_ptr> { static std::string str() { return "std::exception_ptr"; } };
-
-    template <typename T> struct print_type<T&&> { static std::string str() { return print_type<T>::str() + "&&"; } };
-    template <typename T> struct print_type<T&> { static std::string str() { return print_type<T>::str() + "&"; } };
-    template <typename T> struct print_type<T const> { static std::string str() { return print_type<T>::str() + " const"; } };
-
-    template <typename T>
-    std::ostream& operator<< (std::ostream& out, print_type<T> const&) {
-        return out << print_type<T>::str() << ", ";
-    };
-
-    template <typename> struct signature_printer;
-    template <typename Tag, typename... Args>
-    struct signature_printer<Tag(Args...)> {
-        static auto print() {
-            std::cout << print_tag<Tag> << "(";
-            (std::cout << ... << (print_type<Args>()));
-            std::cout << ")\n";
-        }
-    };
-
-    template <typename> struct printer;
-    template <typename... S>
-    struct printer<EX::completion_signatures<S...>> {
-        static auto print() {
-            ((signature_printer<S>::print()), ...);
-        }
-    };
-    struct env {};
-    template <EX::sender Sender>
-    void print_completion_signatures(Sender&& s) {
-        // printer<typename ::nstd::type_traits::remove_cvref_t<Sender>::completion_signatures>::print();
-        printer<decltype(EX::get_completion_signatures(s, env{}))>::print();
-    }
-}
-#endif
-
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
     KT::expect_success("basic operation", []{
             auto sender = TD::cpo(EX::just(17));
 
-            //XX::print_completion_signatures(sender);
             auto value = TT::sync_wait(::nstd::utility::move(sender));
             return value
                 && ::std::get<0>(*value) == 34

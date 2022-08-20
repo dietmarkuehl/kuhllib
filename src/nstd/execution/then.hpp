@@ -236,10 +236,7 @@ namespace nstd::hidden_names::then {
 
     template <typename Tag>
     struct cpo
-        : ::nstd::execution::sender_adaptor_closure<cpo<Tag>>
     {
-        using ::nstd::execution::sender_adaptor_closure<cpo<Tag>>::operator();
-
         template <::nstd::execution::sender Sender, typename Fun>
             requires ::nstd::hidden_names::then::has_custom_scheduler_then<Tag, Sender, Fun>
         auto operator()(Sender&& sender, Fun&& fun) const {
@@ -259,6 +256,12 @@ namespace nstd::hidden_names::then {
 
         template <::nstd::execution::sender Sender, typename Fun>
         auto operator()(Sender&& sender, Fun&& fun) const;
+        template <typename Fun>
+        auto operator()(Fun&& fun) const {
+            return ::nstd::execution::sender_adaptor_closure<::nstd::hidden_names::then::cpo<Tag>>()(
+                ::nstd::utility::forward<Fun>(fun)
+                );
+        }
     };
 }
 
