@@ -31,10 +31,12 @@
 #include "nstd/execution/get_completion_scheduler.hpp"
 #include "nstd/execution/scheduler.hpp"
 #include "nstd/execution/sender.hpp"
+#include "nstd/execution/sender_adaptor_closure.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/file/context.hpp"
 
 #include <system_error>
+#include <functional>
 
 // ----------------------------------------------------------------------------
 
@@ -58,9 +60,8 @@ namespace nstd::net {
         }
         template <typename Acceptor>
         auto operator()(Acceptor& acceptor) const {
-            return [&acceptor, this](::nstd::execution::sender auto sender){
-                return ::nstd::tag_invoke(*this, acceptor, sender);
-                };
+            return ::nstd::execution::sender_adaptor_closure<::nstd::net::async_accept_t>()(
+                ::std::ref(acceptor));
         }
     } async_accept;
 }
