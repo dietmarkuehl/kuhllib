@@ -47,12 +47,7 @@ run: build
 
 clean:
 	$(RM) build/$(NAME)
-	$(RM) mkerr olderr make.depend *~
+	$(RM) mkerr olderr *~
 
 distclean: clean
 	$(RM) -r build
-
-depend make.depend:
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -M $(NAME).cpp > make.depend
-
-include make.depend

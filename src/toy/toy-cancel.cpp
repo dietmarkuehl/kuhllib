@@ -27,6 +27,7 @@
 #   define TOY_NETWORKING_HPP "toy-networking-poll.hpp"
 #endif
 
+#include "toy-sender.hpp"
 #include "toy-stop_token.hpp"
 #include TOY_NETWORKING_HPP
 #include "toy-task.hpp"
@@ -73,9 +74,25 @@ int main() {
     ::listen(server.fd, 1);
 
     context.spawn([](auto& context, auto& server)->toy::task {
+        using namespace std::chrono_literals;
+        for (int i = 0; i != 3; ++i) {
+            std::cout << "awaiting accept\n" << std::flush;
+            std::optional<toy::socket> o = co_await toy::timeout(toy::async_accept(context, server), context, 5s);
+            if (o) {
+                std::cout << "accepted client\n" << std::flush;
+            }
+            else {
+                std::cout << "accept timed out\n" << std::flush;
+            }
+        }
+    }(context, server));
+
+#if 0
+    context.spawn([](auto& context, auto& server)->toy::task {
         co_await toy::when_any(toy::async_accept(context, server),
                                never_sender());
     }(context, server));
+#endif
 
     context.run();
 }

@@ -29,7 +29,9 @@
 #include "toy-starter.hpp"
 #include "toy-utility.hpp"
 
+#include <algorithm>
 #include <chrono>
+#include <optional>
 #include <queue>
 #include <stdexcept>
 #include <string>
@@ -78,7 +80,7 @@ class io_context: public starter {
     using time_point_t = std::chrono::system_clock::time_point;
     using timer_t      = std::pair<time_point_t, io*>;
     struct compare_t { bool operator()(auto&& a, auto&& b) { return a.first > b.first; } };
-    using queue_t      = std::priority_queue<timer_t, std::vector<timer_t>, compare_t>;
+    using queue_t      = std::vector<timer_t>;
     
     std::vector<io*>      ios;
     std::vector<::pollfd> fds;
@@ -92,23 +94,46 @@ public:
         fds.push_back(  pollfd{ .fd = i->fd, .events = i->events });
     }
     void add(time_point_t time, io* op) {
-        times.emplace(time, op);
+        auto it(std::lower_bound(times.begin(), times.end(), std::make_pair(time, op), compare_t()));
+        times.insert(it, std::make_pair(time, op));
+    }
+    void erase(io* i) {
+        auto it = std::find(ios.begin(), ios.end(), i);
+        if (it != ios.end()) {
+            fds.erase(fds.begin() + (it - ios.begin()));
+            ios.erase(it);
+        }
+    }
+    void erase_timer(io* i) {
+        auto it = std::find_if(times.begin(), times.end(), [i](auto&& p){ return p.second == i; });
+        if (it != times.end()) {
+            times.erase(it);
+        }
     }
     void run() {
-        while (!ios.empty() || not times.empty()) { 
+        while (
+            (!ios.empty() || not times.empty())) { 
             auto now{std::chrono::system_clock::now()};
 
-            while (!times.empty() && times.top().first < now) {
-                io* op{times.top().second};
-                times.pop();
+            bool timed{false};
+            while (!times.empty() && times.front().first <= now) {
+                io* op{times.front().second};
+                times.erase(times.begin());
                 op->complete();
+                timed = true;
+            }
+            if (timed) {
+                continue;
             }
             auto time{times.empty()
                      ? -1
-                : std::chrono::duration_cast<std::chrono::milliseconds>(times.top().first - now).count()};
+                : std::chrono::duration_cast<std::chrono::milliseconds>(times.front().first - now).count()};
             if (0 < ::poll(fds.data(), fds.size(), time)) {
                 for (size_t i = fds.size(); i--; )
-                    if (fds[i].events & fds[i].revents) {
+                    // The check for i < fds.size() is added as complete() may
+                    // cause elements to get canceled and be removed from the
+                    // list.
+                    if (i < fds.size() && fds[i].events & fds[i].revents) {
                         fds[i] = fds.back();
                         fds.pop_back();
                         auto c = std::exchange(ios[i], ios.back());
@@ -134,11 +159,29 @@ struct io_op {
 
     template <typename R>
     struct state: io {
-        std::tuple<P...> p;
-        R                r;
+        struct callback {
+            state& s;
+            void operator()() {
+                s.c.erase(&s);
+                s.cb.reset();
+                set_stopped(std::move(s.r));
+            }
+        };
+        using stop_token = decltype(get_stop_token(std::declval<R>()));
+        using stop_callback = typename stop_token::template callback_type<callback>; 
+
+        std::tuple<P...>             p;
+        R                            r;
+        std::optional<stop_callback> cb;
         state(auto& c, int fd, auto p, R r): io(c, fd, F), p(p), r(r) {}
-        friend void start(state& self) { self.c.add(&self); }
-        void complete() override final { O()(*this); }
+        friend void start(state& self) {
+            self.cb.emplace(get_stop_token(self.r), callback{self});
+            self.c.add(&self);
+        }
+        void complete() override final {
+            cb.reset();
+            O()(*this);
+        }
     };
 
     template <typename R>
@@ -225,8 +268,20 @@ struct async_sleep_for {
     template <typename R>
     struct state
         : io {
-        R           receiver;
-        duration_t  duration;
+        struct callback {
+            state& s;
+            void operator()() {
+                s.c.erase_timer(&s);
+                s.cb.reset();
+                set_stopped(s.receiver);
+            }
+        };
+        using stop_token = decltype(get_stop_token(std::declval<R>()));
+        using stop_callback = typename stop_token::template callback_type<callback>; 
+
+        R                            receiver;
+        duration_t                   duration;
+        std::optional<stop_callback> cb;
 
         state(R receiver, io_context& context, duration_t duration)
             : io(context, 0, 0)
@@ -234,10 +289,11 @@ struct async_sleep_for {
             , duration(duration) {
         }
         friend void start(state& self) {
-            self.c.add(std::chrono::system_clock::now() + self.duration,
-                       &self);;
+            self.cb.emplace(get_stop_token(self.receiver), callback{self});
+            self.c.add(std::chrono::system_clock::now() + self.duration, &self);;
         }
         void complete() override {
+            cb.reset();
             set_value(receiver, result_t{});
         }
     };

@@ -26,6 +26,12 @@
 #ifndef INCLUDED_TOY_SENDER
 #define INCLUDED_TOY_SENDER
 
+#if !defined(TOY_NETWORKING_HPP)
+#   define TOY_NETWORKING_HPP "toy-networking-poll.hpp"
+#endif
+
+#include TOY_NETWORKING_HPP
+#include "toy-stop_token.hpp"
 #include "toy-utility.hpp"
 #include <concepts>
 #include <exception>
@@ -103,13 +109,14 @@ struct then_sender
     struct receiver {
         std::remove_cvref_t<R> final_receiver;
         F fun;
-        friend void set_value(receiver&& self, auto&& value) {
-            if constexpr (std::same_as<void, decltype(self.fun(value))>) {
-                self.fun(value);
+        template <typename V>
+        friend void set_value(receiver&& self, V&& value) {
+            if constexpr (std::same_as<void, decltype(self.fun(std::forward<V>(value)))>) {
+                self.fun(std::forward<V>(value));
                 set_value(std::move(self.final_receiver), toy::none{});
             }
             else {
-                set_value(std::move(self.final_receiver), self.fun(value));
+                set_value(std::move(self.final_receiver), self.fun(std::forward<V>(value)));
             }
         }
         friend void set_error(receiver&& self, auto&& ex) {
@@ -283,6 +290,105 @@ struct when_all {
             , self.senders);
     }
 };
+
+// ----------------------------------------------------------------------------
+
+template <typename... S>
+struct when_any {
+    using result_t = std::variant<typename S::result_t...>;
+
+    std::tuple<S...> sender;
+    when_any(S... s)
+        : sender(s...)
+    {}
+
+    template <typename R>
+    struct state
+        : toy::immovable {
+        struct inner_receiver {
+            state* s;
+            friend toy::in_place_stop_source::stop_token get_stop_token(inner_receiver const& self) {
+                return self.s->source.token();
+            }
+            friend void set_value(inner_receiver self, auto v) {
+                if (!self.s->result && !self.s->error) {
+                    self.s->result.emplace(std::move(v));
+                    self.s->source.stop();
+                }
+                self.s->complete();
+            }
+            friend void set_error(inner_receiver self, std::exception_ptr e) {
+                if (!self.s->result && !self.s->error) {
+                    self.s->error = e;
+                    self.s->source.stop();
+                }
+                self.s->complete();
+            }
+            friend void set_stopped(inner_receiver self) {
+                self.s->source.stop();
+                self.s->complete();
+            }
+        };
+        template <typename T>
+        struct inner_state {
+            decltype(connect(std::declval<T>(), std::declval<inner_receiver>())) s;
+            inner_state(auto p)
+                : s(connect(p.first, p.second)) {
+            }
+            friend void start(inner_state& self) {
+                start(self.s);
+            }
+        };
+        
+        R                             receiver;
+        std::optional<result_t>       result;
+        std::exception_ptr            error;
+        toy::in_place_stop_source     source;
+        std::tuple<inner_state<S>...> is;
+        std::size_t                   outstanding{sizeof...(S)};
+
+        state(R receiver, S... s)
+            : receiver(receiver)
+            , is(std::make_pair(s, inner_receiver{this})...) {
+        }
+
+        friend void start(state& self) {
+            std::apply([](auto&... s) { (start(s), ...); },
+                       self.is);
+        }
+
+        void complete() {
+            if (--outstanding == 0u) {
+                if (result)
+                    set_value(std::move(receiver), std::move(*result));
+                else if (error)
+                    set_error(std::move(receiver), error);
+                //else
+                //    set_stopped(std::move(receiver));
+            }
+        }
+    };
+    template <typename R>
+    friend state<R> connect(when_any self, R receiver) {
+        return std::apply([&receiver](auto... s) {
+            return state<R>(receiver, s...);
+        }, self.sender);
+    }
+};
+
+// ----------------------------------------------------------------------------
+
+template <typename S, typename D>
+auto timeout(S sender, toy::io_context& context, D duration) {
+    using result_t = std::optional<typename S::result_t>;
+    struct visitor {
+        result_t operator()(typename S::result_t r) const { return result_t(std::move(r)); }
+        result_t operator()(toy::none) const { return result_t(); }
+    };
+    return toy::then(toy::when_any(sender, toy::async_sleep_for(context, duration)),
+                     [](auto v) { return std::visit(visitor(), std::move(v)); }
+                    );
+}
 
 // ----------------------------------------------------------------------------
 

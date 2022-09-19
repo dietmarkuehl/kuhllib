@@ -26,6 +26,7 @@
 #ifndef INCLUDED_TOY_TASK
 #define INCLUDED_TOY_TASK
 
+#include "toy-stop_token.hpp"
 #include "toy-utility.hpp"
 #include <coroutine>
 #include <exception>
@@ -44,6 +45,7 @@ struct task {
         using type = sender_result_t<S>;
         struct receiver {
             awaiter* a;
+            friend toy::never_stop_token get_stop_token(receiver) { return {}; }
             friend void set_value(receiver self, auto v) {
                 self.a->value.emplace(std::move(v));
                 self.a->handle.resume();
