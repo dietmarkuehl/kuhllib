@@ -1,0 +1,63 @@
+cmake_minimum_required(VERSION 3.12.0)
+project(toy-networking VERSION 1.0.0)
+include(CheckIncludeFile)
+
+set(CMAKE_CXX_STANDARD 20)
+
+if(CMAKE_COMPILER_IS_GNUCXX)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -W -Wall -Werror -Wno-missing-field-initializers -fconcepts-diagnostics-depth=4 -ftemplate-backtrace-limit=0")
+endif()
+if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -W -Wall -Werror -stdlib=libc++")
+endif()
+if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DNOMINMAX")
+endif()
+
+# try to use the POSIX interface
+CHECK_INCLUDE_FILE(unistd.h TOY_HAS_UNISTD)
+if(TOY_HAS_UNISTD)
+    add_executable(toy-sender toy-sender.cpp)
+    add_executable(toy-echo toy-echo.cpp)
+    add_executable(toy-client toy-client.cpp)
+    add_executable(toy-cancel toy-cancel.cpp)
+    add_executable(toy-cppcon-2022 toy-cppcon-2022.cpp)
+ENDIF()
+
+# try to use liburing.h
+CHECK_INCLUDE_FILE(liburing.h TOY_HAS_LIBURING)
+IF(TOY_HAS_LIBURING)
+    add_executable(toy-echo-io_uring toy-echo.cpp)
+    target_compile_definitions(toy-echo-io_uring PRIVATE TOY_NETWORKING_HPP="toy-networking-io_uring.hpp")
+    target_link_libraries(toy-echo-io_uring uring)
+    add_executable(toy-client-io_uring toy-client.cpp)
+    target_compile_definitions(toy-client-io_uring PRIVATE TOY_NETWORKING_HPP="toy-networking-io_uring.hpp")
+    target_link_libraries(toy-client-io_uring uring)
+ENDIF()
+
+# try to use sys/epoll.h
+CHECK_INCLUDE_FILE(sys/epoll.h TOY_HAS_EPOLL)
+IF(TOY_HAS_EPOLL)
+    add_executable(toy-echo-epoll toy-echo.cpp)
+    target_compile_definitions(toy-echo-epoll PRIVATE TOY_NETWORKING_HPP="toy-networking-epoll.hpp")
+    add_executable(toy-client-epoll toy-client.cpp)
+    target_compile_definitions(toy-client-epoll PRIVATE TOY_NETWORKING_HPP="toy-networking-epoll.hpp")
+ENDIF()
+
+# try to use sys/event.h
+CHECK_INCLUDE_FILE(sys/event.h TOY_HAS_KQUEUE)
+IF(TOY_HAS_KQUEUE)
+    add_executable(toy-echo-kqueue toy-echo.cpp)
+    target_compile_definitions(toy-echo-kqueue PRIVATE TOY_NETWORKING_HPP="toy-networking-kqueue.hpp")
+    add_executable(toy-client-kqueue toy-client.cpp)
+    target_compile_definitions(toy-client-kqueue PRIVATE TOY_NETWORKING_HPP="toy-networking-kqueue.hpp")
+ENDIF()
+
+# try to use IOCP
+CHECK_INCLUDE_FILE(winsock2.h TOY_HAS_IOCP)
+IF(TOY_HAS_IOCP)
+    add_executable(toy-echo-iocp toy-echo.cpp)
+    target_compile_definitions(toy-echo-iocp PRIVATE TOY_NETWORKING_HPP="toy-networking-iocp.hpp")
+    #add_executable(toy-client-iocp toy-client.cpp)
+    #target_compile_definitions(toy-client-iocp PRIVATE TOY_NETWORKING_HPP="toy-networking-iocp.hpp")
+ENDIF()
