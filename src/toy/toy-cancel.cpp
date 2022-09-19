@@ -35,6 +35,7 @@
 
 // ----------------------------------------------------------------------------
 
+namespace hidden_never_sender {
 struct never_sender {
     using result_t = int;
 
@@ -62,6 +63,8 @@ struct never_sender {
         return state<R>{ receiver, {} };
     }
 };
+}
+using never_sender = hidden_never_sender::never_sender;
 
 int main() {
     toy::io_context context;

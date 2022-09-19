@@ -39,85 +39,88 @@ namespace toy
 
 // ----------------------------------------------------------------------------
 
-struct task {
-    template <typename S>
-    struct awaiter {
-        using type = sender_result_t<S>;
-        struct receiver {
-            awaiter* a;
-            friend toy::never_stop_token get_stop_token(receiver) { return {}; }
-            friend void set_value(receiver self, auto v) {
-                self.a->value.emplace(std::move(v));
-                self.a->handle.resume();
+namespace hidden_task {
+    struct task {
+        template <typename S>
+        struct awaiter {
+            using type = sender_result_t<S>;
+            struct receiver {
+                awaiter* a;
+                friend toy::never_stop_token get_stop_token(receiver) { return {}; }
+                friend void set_value(receiver self, auto v) {
+                    self.a->value.emplace(std::move(v));
+                    self.a->handle.resume();
+                }
+                friend void set_error(receiver self, auto e) {
+                    self.a->error = e;
+                    self.a->handle.resume();
+                } 
+            };
+
+            using state_t = decltype(connect(std::declval<S>(), std::declval<receiver>()));
+
+            std::coroutine_handle<void> handle;
+            state_t                     state;
+            std::optional<type>         value;
+            std::exception_ptr          error;
+
+            awaiter(S s): state(connect(s, receiver{this})) {}
+            bool await_ready() { return false; }
+            void await_suspend(std::coroutine_handle<void> handle) {
+                this->handle = handle;
+                start(state);
             }
-            friend void set_error(receiver self, auto e) {
-                self.a->error = e;
-                self.a->handle.resume();
-            } 
+            type await_resume() {
+                if (error) std::rethrow_exception(error);
+                return std::move(*value);
+            }
         };
 
-        using state_t = decltype(connect(std::declval<S>(), std::declval<receiver>()));
+        struct none {};
+        using result_t = none;
 
-        std::coroutine_handle<void> handle;
-        state_t                     state;
-        std::optional<type>         value;
-        std::exception_ptr          error;
+        struct state_base: immovable {
+            virtual void complete() = 0;
+        };
+        struct promise_type: immovable {
+            state_base* state = nullptr;
+            task get_return_object() { return { std::coroutine_handle<promise_type>::from_promise(*this) }; }
+            std::suspend_always initial_suspend() { return {}; }
+            std::suspend_never final_suspend() noexcept {
+                if (state) state->complete();
+                return {};
+            }
+            void return_void() {}
+            void unhandled_exception() { std::terminate() ; }
+            template <typename S>
+            awaiter<S> await_transform(S s) { return awaiter<S>(s); }
+        };
 
-        awaiter(S s): state(connect(s, receiver{this})) {}
-        bool await_ready() { return false; }
-        void await_suspend(std::coroutine_handle<void> handle) {
-            this->handle = handle;
-            start(state);
-        }
-        type await_resume() {
-            if (error) std::rethrow_exception(error);
-            return std::move(*value);
-        }
-    };
+        template <typename R>
+        struct state: state_base {
+            std::coroutine_handle<void> handle;
+            R                           receiver;
 
-    struct none {};
-    using result_t = none;
+            state(auto&& handle, R receiver): handle(handle), receiver(receiver) {
+                handle.promise().state = this;
+            }
+            friend void start(state& self) {
+                self.handle.resume();
+            }
+            void complete() override final {
+                set_value(receiver, none{});
+            }
+        };
 
-    struct state_base: immovable {
-        virtual void complete() = 0;
-    };
-    struct promise_type: immovable {
-        state_base* state = nullptr;
-        task get_return_object() { return { std::coroutine_handle<promise_type>::from_promise(*this) }; }
-        std::suspend_always initial_suspend() { return {}; }
-        std::suspend_never final_suspend() noexcept {
-            if (state) state->complete();
-            return {};
-        }
-        void return_void() {}
-        void unhandled_exception() { std::terminate() ; }
-        template <typename S>
-        awaiter<S> await_transform(S s) { return awaiter<S>(s); }
-    };
+        std::coroutine_handle<promise_type> handle;
 
-    template <typename R>
-    struct state: state_base {
-        std::coroutine_handle<void> handle;
-        R                           receiver;
-
-        state(auto&& handle, R receiver): handle(handle), receiver(receiver) {
-            handle.promise().state = this;
-        }
-        friend void start(state& self) {
-            self.handle.resume();
-        }
-        void complete() override final {
-            set_value(receiver, none{});
+        template <typename R>
+        friend state<R> connect(task&& self, R receiver) {
+            return state<R>(std::move(self.handle), receiver);
         }
     };
-
-    std::coroutine_handle<promise_type> handle;
-
-    template <typename R>
-    friend state<R> connect(task&& self, R receiver) {
-        return state<R>(std::move(self.handle), receiver);
-    }
-};
+}
+using task = hidden_task::task;
 
 // ----------------------------------------------------------------------------
 

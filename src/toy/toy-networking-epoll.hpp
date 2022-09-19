@@ -149,43 +149,45 @@ struct socket final
 };
 
 
-template <typename Res, short Flags, typename Op, typename... P>
-struct io_op {
-    using result_t = Res;
+namespace hidden_io_op {
+    template <typename Res, short Flags, typename Op, typename... P>
+    struct io_op {
+        using result_t = Res;
 
-    io_context&      c;
-    socket&          sock;
-    std::tuple<P...> p;
-
-    io_op(auto& c, socket& sock, auto... a): c(c), sock(sock), p(a...) {}
-
-    template <typename Receiver>
-    struct state: io {
-        io_context&      context;
+        io_context&      c;
         socket&          sock;
         std::tuple<P...> p;
-        Receiver         r;
-        Op               op;
-        bool             connected{false};
 
-        state(auto& c, socket& sock, auto p, Receiver r): io(sock.fd), context(c), sock(sock), p(p), r(r) {}
-        state(state&&) = delete;
-        friend void start(state& self) {
-            if (!self.op(self)) {
-                self.sock.add(self.context, &self, Flags);
-                self.context.await();
+        io_op(auto& c, socket& sock, auto... a): c(c), sock(sock), p(a...) {}
+
+        template <typename Receiver>
+        struct state: io {
+            io_context&      context;
+            socket&          sock;
+            std::tuple<P...> p;
+            Receiver         r;
+            Op               op;
+            bool             connected{false};
+
+            state(auto& c, socket& sock, auto p, Receiver r): io(sock.fd), context(c), sock(sock), p(p), r(r) {}
+            state(state&&) = delete;
+            friend void start(state& self) {
+                if (!self.op(self)) {
+                    self.sock.add(self.context, &self, Flags);
+                    self.context.await();
+                }
             }
+            int complete(short int) override final { this->op(*this); return 0; }
+        };
+
+        template <typename R>
+        friend state<R> connect(io_op const& self, R r) {
+            return state<R>(self.c, self.sock, self.p, r);
         }
-        int complete(short int) override final { this->op(*this); return 0; }
     };
+}
 
-    template <typename R>
-    friend state<R> connect(io_op const& self, R r) {
-        return state<R>(self.c, self.sock, self.p, r);
-    }
-};
-
-using async_accept = io_op<socket, EPOLLIN, decltype([](auto& s){
+using async_accept = hidden_io_op::io_op<socket, EPOLLIN, decltype([](auto& s){
     ::sockaddr  addr{};
     ::socklen_t len{sizeof(addr)};
     auto        fd = ::accept(s.fd, &addr, &len);
@@ -202,7 +204,7 @@ using async_accept = io_op<socket, EPOLLIN, decltype([](auto& s){
     return true;
     })>;
 
-using async_connect = io_op<int, EPOLLOUT, decltype([](auto& s){
+using async_connect = hidden_io_op::io_op<int, EPOLLOUT, decltype([](auto& s){
     if (s.connected) {
         int         rc{};
         ::socklen_t len{sizeof rc};
@@ -232,7 +234,7 @@ using async_connect = io_op<int, EPOLLOUT, decltype([](auto& s){
     return true;
     }), ::sockaddr const*, ::socklen_t>;
 
-using async_readsome = io_op<int, EPOLLIN, decltype([](auto& s){
+using async_readsome = hidden_io_op::io_op<int, EPOLLIN, decltype([](auto& s){
     auto n = ::read(s.fd, get<0>(s.p), get<1>(s.p));
     if (0 <= n) {
         set_value(s.r, n);
@@ -246,7 +248,7 @@ using async_readsome = io_op<int, EPOLLIN, decltype([](auto& s){
     return true;
     }), char*, size_t>;
 
-using async_writesome = io_op<int, EPOLLOUT, decltype([](auto& s){
+using async_writesome = hidden_io_op::io_op<int, EPOLLOUT, decltype([](auto& s){
     auto n = ::write(s.fd, get<0>(s.p), get<1>(s.p));
     if (0 <= n) {
         set_value(s.r, n);
@@ -262,15 +264,18 @@ using async_writesome = io_op<int, EPOLLOUT, decltype([](auto& s){
 
 // ----------------------------------------------------------------------------
 
-struct async_sleep_for {
-    using result_t = none;
-    struct state {
-        friend void start(state&) {}
+namespace hidden_async_sleep_for {
+    struct async_sleep_for {
+        using result_t = none;
+        struct state {
+            friend void start(state&) {}
+        };
+        friend state connect(async_sleep_for, auto) {
+            return {};
+        }
     };
-    friend state connect(async_sleep_for, auto) {
-        return {};
-    }
-};
+}
+using async_sleep_for = hidden_async_sleep_for::async_sleep_for;
 
 // ----------------------------------------------------------------------------
 

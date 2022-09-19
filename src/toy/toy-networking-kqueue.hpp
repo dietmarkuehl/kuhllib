@@ -118,32 +118,34 @@ public:
 
 // ----------------------------------------------------------------------------
 
-template <typename Res, short F, typename O, typename... P>
-struct io_op {
-    using result_t = Res;
+namespace hidden_io_op {
+    template <typename Res, short F, typename O, typename... P>
+    struct io_op {
+        using result_t = Res;
 
-    io_context&      c;
-    int              fd;
-    std::tuple<P...> p;
-
-    io_op(auto& c, socket& sock, auto... a): c(c), fd(sock.fd), p(a...) {}
-
-    template <typename R>
-    struct state: io {
+        io_context&      c;
+        int              fd;
         std::tuple<P...> p;
-        R                r;
-        state(auto& c, int fd, auto p, R r): io(c, fd, F), p(p), r(r) {}
-        friend void start(state& self) { self.c.add(&self); }
-        void complete() override final { O()(*this); }
+
+        io_op(auto& c, socket& sock, auto... a): c(c), fd(sock.fd), p(a...) {}
+
+        template <typename R>
+        struct state: io {
+            std::tuple<P...> p;
+            R                r;
+            state(auto& c, int fd, auto p, R r): io(c, fd, F), p(p), r(r) {}
+            friend void start(state& self) { self.c.add(&self); }
+            void complete() override final { O()(*this); }
+        };
+
+        template <typename R>
+        friend state<R> connect(io_op const& self, R r) {
+            return state<R>(self.c, self.fd, self.p, r);
+        }
     };
+}
 
-    template <typename R>
-    friend state<R> connect(io_op const& self, R r) {
-        return state<R>(self.c, self.fd, self.p, r);
-    }
-};
-
-using async_accept = io_op<socket, EVFILT_READ, decltype([](auto& s){
+using async_accept = hidden_io_op::io_op<socket, EVFILT_READ, decltype([](auto& s){
     ::sockaddr  addr{};
     ::socklen_t len{sizeof(addr)};
     auto fd = ::accept(s.fd, &addr, &len);
@@ -151,77 +153,83 @@ using async_accept = io_op<socket, EVFILT_READ, decltype([](auto& s){
     else set_error(s.r, std::make_exception_ptr(std::runtime_error("accept")));
     })>;
 
-using async_readsome = io_op<int, EVFILT_READ, decltype([](auto& s){
+using async_readsome = hidden_io_op::io_op<int, EVFILT_READ, decltype([](auto& s){
     auto n = ::read(s.fd, get<0>(s.p), get<1>(s.p));
     if (0 <= n) set_value(s.r, n);
     else set_error(s.r, std::make_exception_ptr(std::runtime_error("read")));
     }), char*, std::size_t>;
 
-using async_writesome = io_op<int, EVFILT_WRITE, decltype([](auto& s){
+using async_writesome = hidden_io_op::io_op<int, EVFILT_WRITE, decltype([](auto& s){
     auto n = ::write(s.fd, get<0>(s.p), get<1>(s.p));
     if (0 <= n) set_value(s.r, n);
     else set_error(s.r, std::make_exception_ptr(std::runtime_error("write")));
     }), char const*, std::size_t>;
 
-struct async_connect {
-    using result_t = int;
+namespace hidden_async_connect {
+    struct async_connect {
+        using result_t = int;
 
-    io_context&       c;
-    int               fd;
-    ::sockaddr const* addr;
-    ::socklen_t       len;
-
-    async_connect(auto& c, socket& sock, ::sockaddr const* addr, ::socklen_t len): c(c), fd(sock.fd), addr(addr), len(len) {}
-
-    template <typename R>
-    struct state: io {
+        io_context&       c;
+        int               fd;
         ::sockaddr const* addr;
         ::socklen_t       len;
-        R                 r;
-        state(auto& c, int fd, ::sockaddr const* addr, ::socklen_t len, R r): io(c, fd, EVFILT_WRITE), addr(addr), len(len), r(r) {}
-        friend void start(state& self) {
-            switch (::connect(self.fd, self.addr, self.len)? errno: 0) {
-            default:
-                set_error(self.r, std::make_exception_ptr(std::runtime_error(std::string("connect: ") + ::strerror(errno))));
-                break;
-            case 0:
-                set_value(self.r, 0);
-                break;
-            case EAGAIN:
-                self.c.add(&self);
-                break;
-            case EINPROGRESS:
-                self.c.add(&self);
-                break;
+
+        async_connect(auto& c, socket& sock, ::sockaddr const* addr, ::socklen_t len): c(c), fd(sock.fd), addr(addr), len(len) {}
+
+        template <typename R>
+        struct state: io {
+            ::sockaddr const* addr;
+            ::socklen_t       len;
+            R                 r;
+            state(auto& c, int fd, ::sockaddr const* addr, ::socklen_t len, R r): io(c, fd, EVFILT_WRITE), addr(addr), len(len), r(r) {}
+            friend void start(state& self) {
+                switch (::connect(self.fd, self.addr, self.len)? errno: 0) {
+                default:
+                    set_error(self.r, std::make_exception_ptr(std::runtime_error(std::string("connect: ") + ::strerror(errno))));
+                    break;
+                case 0:
+                    set_value(self.r, 0);
+                    break;
+                case EAGAIN:
+                    self.c.add(&self);
+                    break;
+                case EINPROGRESS:
+                    self.c.add(&self);
+                    break;
+                }
             }
-        }
-        void complete() override final {
-            int         rc{};
-            ::socklen_t len{sizeof rc};
-            if (::getsockopt(fd, SOL_SOCKET, SO_ERROR, &rc, &len))
-                set_error(r, std::make_exception_ptr(std::runtime_error(std::string("getsockopt: ") + ::strerror(errno))));
-            else
-                set_value(r, 0);
+            void complete() override final {
+                int         rc{};
+                ::socklen_t len{sizeof rc};
+                if (::getsockopt(fd, SOL_SOCKET, SO_ERROR, &rc, &len))
+                    set_error(r, std::make_exception_ptr(std::runtime_error(std::string("getsockopt: ") + ::strerror(errno))));
+                else
+                    set_value(r, 0);
+            }
+        };
+
+        template <typename R>
+        friend state<R> connect(async_connect const& self, R r) {
+            return state<R>(self.c, self.fd, self.addr, self.len, r);
         }
     };
-
-    template <typename R>
-    friend state<R> connect(async_connect const& self, R r) {
-        return state<R>(self.c, self.fd, self.addr, self.len, r);
-    }
-};
+}
+using async_connect = hidden_async_connect::async_connect;
 
 // ----------------------------------------------------------------------------
 
-struct async_sleep_for {
-    using result_t = none;
-    struct state {
-        friend void start(state&) {}
+namespace hidden_async_sleep_for {
+    struct async_sleep_for {
+        using result_t = none;
+        struct state {
+            friend void start(state&) {}
+        };
+        friend state connect(async_sleep_for, auto) {
+            return {};
+        }
     };
-    friend state connect(async_sleep_for, auto) {
-        return {};
-    }
-};
+}
+using async_sleep_for = hidden_async_sleep_for::async_sleep_for;
 
 // ----------------------------------------------------------------------------
 

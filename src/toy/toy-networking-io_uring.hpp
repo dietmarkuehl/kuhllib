@@ -86,88 +86,93 @@ struct socket {
 
 // ----------------------------------------------------------------------------
 
-template <typename Result, typename Submit, typename... Args>
-struct io_op {
-    using result_t = Result;
+namespace hidden_io_op {
+    template <typename Result, typename Submit, typename... Args>
+    struct io_op {
+        using result_t = Result;
 
-    template <typename Receiver>
-    struct state: io {
-        [[no_unique_address]] Submit const submit;
-        std::remove_cvref_t<Receiver>      receiver;
-        io_context&                        context;
-        int                                fd;
-        std::tuple<Args...>                args;
+        template <typename Receiver>
+        struct state: io {
+            [[no_unique_address]] Submit const submit;
+            std::remove_cvref_t<Receiver>      receiver;
+            io_context&                        context;
+            int                                fd;
+            std::tuple<Args...>                args;
 
-        template <typename R, typename A>
-        state(R&& receiver, io_context& context, int fd, A&& a)
-            : submit()
-            , receiver(std::forward<R>(receiver))
-            , context(context)
-            , fd(fd)
-            , args(std::forward<A>(a)) {
+            template <typename R, typename A>
+            state(R&& receiver, io_context& context, int fd, A&& a)
+                : submit()
+                , receiver(std::forward<R>(receiver))
+                , context(context)
+                , fd(fd)
+                , args(std::forward<A>(a)) {
+            }
+            friend void start(state& self) {
+                ::io_uring_sqe* sqe{ self.context.get_sqe() };
+                self.submit(sqe, self.fd, self.args);
+                sqe->user_data = reinterpret_cast<std::uint64_t>(&self);
+                self.context.submit();
+            }
+            void complete(int fd) override {
+                if (0 <= fd)
+                    set_value(receiver, result_t(fd));
+                else 
+                    set_error(receiver, std::make_exception_ptr(std::runtime_error("accept")));
+            }
+        };
+
+        io_context&         context;
+        int                 fd;
+        std::tuple<Args...> args;
+
+        template <typename... A>
+        io_op(io_context& context, socket& sock, A&&... args)
+            : context(context)
+            , fd(sock.fd)
+            , args(args...) {
         }
-        friend void start(state& self) {
-            ::io_uring_sqe* sqe{ self.context.get_sqe() };
-            self.submit(sqe, self.fd, self.args);
-            sqe->user_data = reinterpret_cast<std::uint64_t>(&self);
-            self.context.submit();
-        }
-        void complete(int fd) override {
-            if (0 <= fd)
-                set_value(receiver, result_t(fd));
-            else 
-                set_error(receiver, std::make_exception_ptr(std::runtime_error("accept")));
+
+        template <typename R>
+        friend state<R> connect(io_op const& self, R&& receiver) {
+            return state<R>(std::forward<R>(receiver), self.context, self.fd, self.args);
         }
     };
-
-    io_context&         context;
-    int                 fd;
-    std::tuple<Args...> args;
-
-    template <typename... A>
-    io_op(io_context& context, socket& sock, A&&... args)
-        : context(context)
-        , fd(sock.fd)
-        , args(args...) {
-    }
-
-    template <typename R>
-    friend state<R> connect(io_op const& self, R&& receiver) {
-        return state<R>(std::forward<R>(receiver), self.context, self.fd, self.args);
-    }
-};
+}
 
 using async_accept_op = decltype([](auto sqe, int fd, auto& state){
     ::io_uring_prep_accept(sqe, fd, reinterpret_cast<sockaddr*>(&std::get<0>(state)), &std::get<1>(state), 0);
 });
-using async_accept = io_op<socket, async_accept_op, ::sockaddr_in, ::socklen_t>;
+using async_accept = hidden_io_op::io_op<socket, async_accept_op, ::sockaddr_in, ::socklen_t>;
 
 using async_connect_op = decltype([](auto sqe, int fd, auto& state){
     ::io_uring_prep_connect(sqe, fd, std::get<0>(state), std::get<1>(state));
 });
-using async_connect = io_op<int, async_connect_op, ::sockaddr const*, ::socklen_t>;
+using async_connect = hidden_io_op::io_op<int, async_connect_op, ::sockaddr const*, ::socklen_t>;
 
 using async_readsome_op = decltype([](auto sqe, int fd, auto& state){
     ::io_uring_prep_read(sqe, fd, std::get<0>(state), std::get<1>(state), 0);
 });
-using async_readsome = io_op<int, async_readsome_op, char*, std::size_t>;
+using async_readsome = hidden_io_op::io_op<int, async_readsome_op, char*, std::size_t>;
 
 using async_writesome_op = decltype([](auto sqe, int fd, auto& state){
     ::io_uring_prep_write(sqe, fd, std::get<0>(state), std::get<1>(state), 0);
 });
-using async_writesome = io_op<int, async_writesome_op, char const*, std::size_t>;
+using async_writesome = hidden_io_op::io_op<int, async_writesome_op, char const*, std::size_t>;
 
 // ----------------------------------------------------------------------------
 
-struct async_sleep_for {
-    using result_t = none;
-    struct state {
-        friend void start(state&) {}
+namespace hidden_async_sleep_for {
+    struct async_sleep_for {
+        using result_t = none;
+        struct state {
+            friend void start(state&) {}
+        };
+        friend state connect(async_sleep_for, auto) {
+            return {};
+        }
     };
-    friend state connect(async_sleep_for, auto) {
-        return {};
-    }
-};
+}
+using async_sleep_for = hidden_async_sleep_for::async_sleep_for;
 
 // ----------------------------------------------------------------------------
 

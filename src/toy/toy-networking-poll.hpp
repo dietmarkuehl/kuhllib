@@ -147,50 +147,52 @@ public:
 
 // ----------------------------------------------------------------------------
 
-template <typename Res, short F, typename O, typename... P>
-struct io_op {
-    using result_t = Res;
+namespace hidden_io_op {
+    template <typename Res, short F, typename O, typename... P>
+    struct io_op {
+        using result_t = Res;
 
-    io_context&      c;
-    int              fd;
-    std::tuple<P...> p;
+        io_context&      c;
+        int              fd;
+        std::tuple<P...> p;
 
-    io_op(auto& c, socket& s, auto... a): c(c), fd(s.fd), p(a...) {}
+        io_op(auto& c, socket& s, auto... a): c(c), fd(s.fd), p(a...) {}
 
-    template <typename R>
-    struct state: io {
-        struct callback {
-            state& s;
-            void operator()() {
-                s.c.erase(&s);
-                s.cb.reset();
-                set_stopped(std::move(s.r));
+        template <typename R>
+        struct state: io {
+            struct callback {
+                state& s;
+                void operator()() {
+                    s.c.erase(&s);
+                    s.cb.reset();
+                    set_stopped(std::move(s.r));
+                }
+            };
+            using stop_token = decltype(get_stop_token(std::declval<R>()));
+            using stop_callback = typename stop_token::template callback_type<callback>; 
+
+            std::tuple<P...>             p;
+            R                            r;
+            std::optional<stop_callback> cb;
+            state(auto& c, int fd, auto p, R r): io(c, fd, F), p(p), r(r) {}
+            friend void start(state& self) {
+                self.cb.emplace(get_stop_token(self.r), callback{self});
+                self.c.add(&self);
+            }
+            void complete() override final {
+                cb.reset();
+                O()(*this);
             }
         };
-        using stop_token = decltype(get_stop_token(std::declval<R>()));
-        using stop_callback = typename stop_token::template callback_type<callback>; 
 
-        std::tuple<P...>             p;
-        R                            r;
-        std::optional<stop_callback> cb;
-        state(auto& c, int fd, auto p, R r): io(c, fd, F), p(p), r(r) {}
-        friend void start(state& self) {
-            self.cb.emplace(get_stop_token(self.r), callback{self});
-            self.c.add(&self);
-        }
-        void complete() override final {
-            cb.reset();
-            O()(*this);
+        template <typename R>
+        friend state<R> connect(io_op const& self, R r) {
+            return state<R>(self.c, self.fd, self.p, r);
         }
     };
+}
 
-    template <typename R>
-    friend state<R> connect(io_op const& self, R r) {
-        return state<R>(self.c, self.fd, self.p, r);
-    }
-};
-
-using async_accept = io_op<socket, POLLIN, decltype([](auto& s){
+using async_accept = hidden_io_op::io_op<socket, POLLIN, decltype([](auto& s){
     ::sockaddr  addr{};
     ::socklen_t len{sizeof(addr)};
     auto        fd{::accept(s.fd, &addr, &len)};
@@ -198,110 +200,116 @@ using async_accept = io_op<socket, POLLIN, decltype([](auto& s){
     else set_error(s.r, std::make_exception_ptr(std::runtime_error("accept")));
     })>;
 
-using async_readsome = io_op<int, POLLIN, decltype([](auto& s){
+using async_readsome = hidden_io_op::io_op<int, POLLIN, decltype([](auto& s){
     auto n = ::read(s.fd, get<0>(s.p), get<1>(s.p));
     if (0 <= n) set_value(s.r, n);
     else set_error(s.r, std::make_exception_ptr(std::runtime_error("read")));
     }), char*, std::size_t>;
 
-using async_writesome = io_op<int, POLLOUT, decltype([](auto& s){
+using async_writesome = hidden_io_op::io_op<int, POLLOUT, decltype([](auto& s){
     auto n = ::write(s.fd, get<0>(s.p), get<1>(s.p));
     if (0 <= n) set_value(s.r, n);
     else set_error(s.r, std::make_exception_ptr(std::runtime_error("write")));
     }), char const*, std::size_t>;
 
-struct async_connect {
-    using result_t = int;
+namespace hidden_async_connect {
+    struct async_connect {
+        using result_t = int;
 
-    io_context&        c;
-    int                fd;
-    ::sockaddr const*  addr;
-    ::socklen_t        len;
-
-    async_connect(auto& c, socket& s, auto addr, auto len): c(c), fd(s.fd), addr(addr), len(len) {}
-
-    template <typename R>
-    struct state: io {
+        io_context&        c;
+        int                fd;
         ::sockaddr const*  addr;
         ::socklen_t        len;
-        R                  r;
-        state(auto& c, int fd, auto addr, auto len, R r): io(c, fd, POLLOUT), addr(addr), len(len), r(r) {}
-        friend void start(state& self) {
-            if (0 <= ::connect(self.fd, self.addr, self.len))
-                set_value(self.r, 0);
-            else if (errno == EAGAIN || errno == EINPROGRESS) {
-                self.c.add(&self);
+
+        async_connect(auto& c, socket& s, auto addr, auto len): c(c), fd(s.fd), addr(addr), len(len) {}
+
+        template <typename R>
+        struct state: io {
+            ::sockaddr const*  addr;
+            ::socklen_t        len;
+            R                  r;
+            state(auto& c, int fd, auto addr, auto len, R r): io(c, fd, POLLOUT), addr(addr), len(len), r(r) {}
+            friend void start(state& self) {
+                if (0 <= ::connect(self.fd, self.addr, self.len))
+                    set_value(self.r, 0);
+                else if (errno == EAGAIN || errno == EINPROGRESS) {
+                    self.c.add(&self);
+                }
+                else
+                    set_error(self.r, std::make_exception_ptr(std::runtime_error(std::string("connect: ") + ::strerror(errno))));
             }
-            else
-                set_error(self.r, std::make_exception_ptr(std::runtime_error(std::string("connect: ") + ::strerror(errno))));
-        }
-        void complete() override final {
-            int         rc{};
-            ::socklen_t len{sizeof rc};
-            if (::getsockopt(fd, SOL_SOCKET, SO_ERROR, &rc, &len)) {
-                set_error(r, std::make_exception_ptr(std::runtime_error(std::string("getsockopt: ") + ::strerror(errno))));
+            void complete() override final {
+                int         rc{};
+                ::socklen_t len{sizeof rc};
+                if (::getsockopt(fd, SOL_SOCKET, SO_ERROR, &rc, &len)) {
+                    set_error(r, std::make_exception_ptr(std::runtime_error(std::string("getsockopt: ") + ::strerror(errno))));
+                }
+                else if (rc) {
+                    set_error(r, std::make_exception_ptr(std::runtime_error(std::string("connect: ") + ::strerror(rc))));
+                }
+                else {
+                    set_value(r, rc);
+                }
             }
-            else if (rc) {
-                set_error(r, std::make_exception_ptr(std::runtime_error(std::string("connect: ") + ::strerror(rc))));
-            }
-            else {
-                set_value(r, rc);
-            }
+        };
+
+        template <typename R>
+        friend state<R> connect(async_connect const& self, R r) {
+            return state<R>(self.c, self.fd, self.addr, self.len, r);
         }
     };
-
-    template <typename R>
-    friend state<R> connect(async_connect const& self, R r) {
-        return state<R>(self.c, self.fd, self.addr, self.len, r);
-    }
-};
+}
+using async_connect = hidden_async_connect::async_connect;
 
 // ----------------------------------------------------------------------------
 
-struct async_sleep_for {
-    using result_t = toy::none;
-    using duration_t = std::chrono::milliseconds;
+namespace hidden_async_sleep_for {
+    struct async_sleep_for {
+        using result_t = toy::none;
+        using duration_t = std::chrono::milliseconds;
 
-    io_context& context;
-    duration_t  duration;
+        io_context& context;
+        duration_t  duration;
 
-    template <typename R>
-    struct state
-        : io {
-        struct callback {
-            state& s;
-            void operator()() {
-                s.c.erase_timer(&s);
-                s.cb.reset();
-                set_stopped(s.receiver);
+        template <typename R>
+        struct state
+            : io {
+            struct callback {
+                state& s;
+                void operator()() {
+                    s.c.erase_timer(&s);
+                    s.cb.reset();
+                    set_stopped(s.receiver);
+                }
+            };
+            using stop_token = decltype(get_stop_token(std::declval<R>()));
+            using stop_callback = typename stop_token::template callback_type<callback>; 
+
+            R                            receiver;
+            duration_t                   duration;
+            std::optional<stop_callback> cb;
+
+            state(R receiver, io_context& context, duration_t duration)
+                : io(context, 0, 0)
+                , receiver(receiver)
+                , duration(duration) {
+            }
+            friend void start(state& self) {
+                self.cb.emplace(get_stop_token(self.receiver), callback{self});
+                self.c.add(std::chrono::system_clock::now() + self.duration, &self);;
+            }
+            void complete() override {
+                cb.reset();
+                set_value(receiver, result_t{});
             }
         };
-        using stop_token = decltype(get_stop_token(std::declval<R>()));
-        using stop_callback = typename stop_token::template callback_type<callback>; 
-
-        R                            receiver;
-        duration_t                   duration;
-        std::optional<stop_callback> cb;
-
-        state(R receiver, io_context& context, duration_t duration)
-            : io(context, 0, 0)
-            , receiver(receiver)
-            , duration(duration) {
-        }
-        friend void start(state& self) {
-            self.cb.emplace(get_stop_token(self.receiver), callback{self});
-            self.c.add(std::chrono::system_clock::now() + self.duration, &self);;
-        }
-        void complete() override {
-            cb.reset();
-            set_value(receiver, result_t{});
+        template <typename R>
+        friend state<R> connect(async_sleep_for self, R receiver) {
+            return state<R>(receiver, self.context, self.duration);
         }
     };
-    template <typename R>
-    friend state<R> connect(async_sleep_for self, R receiver) {
-        return state<R>(receiver, self.context, self.duration);
-    }
-};
+}
+using async_sleep_for = hidden_async_sleep_for::async_sleep_for;
 
 // ----------------------------------------------------------------------------
 
