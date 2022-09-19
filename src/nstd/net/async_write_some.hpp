@@ -27,6 +27,7 @@
 #define INCLUDED_NSTD_NET_ASYNC_WRITE_SOME
 
 #include "nstd/net/async_io_.hpp"
+#include "nstd/net/async_io.hpp"
 #include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/get_completion_scheduler.hpp"
 #include "nstd/execution/sender.hpp"
@@ -83,6 +84,8 @@ struct nstd::net::async_write_some_t::io_operation
         typename Socket::native_handle_type  d_fd;
         CBS                                  d_buffer;
     };
+    using socket_type = Socket;
+    using parameter_type = parameters;
 
     parameters d_parameters;
     ::msghdr   d_msg{};

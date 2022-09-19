@@ -27,6 +27,7 @@
 #define INCLUDED_NSTD_NET_ASYNC_SEND
 
 #include "nstd/net/async_io.hpp"
+#include "nstd/net/async_io_.hpp"
 #include "nstd/file/operation.hpp"
 #include "nstd/hidden_names/message_flags.hpp"
 #include "nstd/execution/completion_signatures.hpp"
@@ -97,6 +98,11 @@ struct nstd::net::customization_points::async_send_t::io_operation
     using socket_type    = Socket;
     using operation_type = ::nstd::file::operation_send<CBS>;
     using parameter_type = ::std::tuple<CBS, ::nstd::hidden_names::message_flags>;
+    struct parameters {
+        typename Socket::native_handle_type d_fd;
+        CBS                                 d_buffer;
+        ::nstd::hidden_names::message_flags d_flags;
+    };
 
     socket_type& d_socket;
 
