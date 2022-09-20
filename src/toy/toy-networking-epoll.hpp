@@ -30,13 +30,16 @@
 
 #include "toy-starter.hpp"
 #include "toy-utility.hpp"
+
 #include <algorithm>
+#include <cassert>
+#include <chrono>
 #include <stdexcept>
 #include <string>
 #include <tuple>
 #include <type_traits>
 #include <utility>
-#include <cassert>
+
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
@@ -55,6 +58,9 @@ namespace toy {
 // ----------------------------------------------------------------------------
 
 class io_context;
+struct io_scheduler {
+    io_context* context;
+};
 
 struct io {
     int         fd;
@@ -64,7 +70,8 @@ struct io {
     virtual int complete(short int events) = 0;
 };
 
-class io_context: public starter {
+class io_context
+    : public starter<toy::io_scheduler> {
     static constexpr std::size_t size{4};
 
     int          poll;
@@ -72,8 +79,13 @@ class io_context: public starter {
 
 public:
     static constexpr bool has_timer = false; //-dk:TODO remove - used while adding timers to contexts
+
+    using scheduler = toy::io_scheduler;
+    scheduler get_scheduler() { return { this }; }
+
     io_context()
-        : poll(::epoll_create(size)) {
+        : starter(get_scheduler())
+        , poll(::epoll_create(size)) {
         if (poll < 0) {
             throw std::runtime_error("can't create epoll");
         }
@@ -154,11 +166,10 @@ namespace hidden_io_op {
     struct io_op {
         using result_t = Res;
 
-        io_context&      c;
         socket&          sock;
         std::tuple<P...> p;
 
-        io_op(auto& c, socket& sock, auto... a): c(c), sock(sock), p(a...) {}
+        io_op(socket& sock, auto... a): sock(sock), p(a...) {}
 
         template <typename Receiver>
         struct state: io {
@@ -169,7 +180,7 @@ namespace hidden_io_op {
             Op               op;
             bool             connected{false};
 
-            state(auto& c, socket& sock, auto p, Receiver r): io(sock.fd), context(c), sock(sock), p(p), r(r) {}
+            state(socket& sock, auto p, Receiver r): io(sock.fd), context(*get_scheduler(r).context), sock(sock), p(p), r(r) {}
             state(state&&) = delete;
             friend void start(state& self) {
                 if (!self.op(self)) {
@@ -182,7 +193,7 @@ namespace hidden_io_op {
 
         template <typename R>
         friend state<R> connect(io_op const& self, R r) {
-            return state<R>(self.c, self.sock, self.p, r);
+            return state<R>(self.sock, self.p, r);
         }
     };
 }
@@ -267,6 +278,8 @@ using async_write_some = hidden_io_op::io_op<int, EPOLLOUT, decltype([](auto& s)
 namespace hidden_async_sleep_for {
     struct async_sleep_for {
         using result_t = none;
+
+        std::chrono::milliseconds duration;
         struct state {
             friend void start(state&) {}
         };
