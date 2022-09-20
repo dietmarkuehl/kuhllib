@@ -29,6 +29,7 @@
 #include "toy-starter.hpp"
 #include "toy-utility.hpp"
 
+#include <chrono>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -49,16 +50,27 @@ struct io: immovable {
     virtual void complete(int) = 0;
 };
 
+struct io_context;
+struct io_scheduler {
+    io_context* context;
+};
+
 struct io_context
-    : starter
+    : starter<io_scheduler>
 {
+    using scheduler = toy::io_scheduler;
+    scheduler get_scheduler() { return { this }; }
+
     static constexpr bool has_timer = false; //-dk:TODO remove - used while adding timers to contexts
     static constexpr std::size_t entries{256};
 
     ::io_uring  ring;
     std::size_t outstanding{};
 
-    io_context()  { ::io_uring_queue_init(entries, &ring, 0); }
+    io_context()
+        : starter(get_scheduler()) {
+        ::io_uring_queue_init(entries, &ring, 0);
+    }
     ~io_context() { ::io_uring_queue_exit(&ring); }
 
     io_uring_sqe* get_sqe() { return ::io_uring_get_sqe(&ring); }
@@ -100,10 +112,10 @@ namespace hidden_io_op {
             std::tuple<Args...>                args;
 
             template <typename R, typename A>
-            state(R&& receiver, io_context& context, int fd, A&& a)
+            state(R&& receiver, int fd, A&& a)
                 : submit()
                 , receiver(std::forward<R>(receiver))
-                , context(context)
+                , context(*get_scheduler(receiver).context)
                 , fd(fd)
                 , args(std::forward<A>(a)) {
             }
@@ -121,20 +133,18 @@ namespace hidden_io_op {
             }
         };
 
-        io_context&         context;
         int                 fd;
         std::tuple<Args...> args;
 
         template <typename... A>
-        io_op(io_context& context, socket& sock, A&&... args)
-            : context(context)
-            , fd(sock.fd)
+        io_op(socket& sock, A&&... args)
+            : fd(sock.fd)
             , args(args...) {
         }
 
         template <typename R>
         friend state<R> connect(io_op const& self, R&& receiver) {
-            return state<R>(std::forward<R>(receiver), self.context, self.fd, self.args);
+            return state<R>(std::forward<R>(receiver), self.fd, self.args);
         }
     };
 }
@@ -164,6 +174,8 @@ using async_write_some = hidden_io_op::io_op<int, async_write_some_op, char cons
 namespace hidden_async_sleep_for {
     struct async_sleep_for {
         using result_t = none;
+
+	std::chrono::milliseconds duration;
         struct state {
             friend void start(state&) {}
         };
