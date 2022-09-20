@@ -56,12 +56,12 @@ int main() {
             "\r\n"
         };
         int const size = ::strlen(request);
-        if (co_await toy::async_writesome(context, client, request, size) < 0) {
+        if (co_await toy::async_write_some(context, client, request, size) < 0) {
             std::cout << "ERROR: failed to write request: " << ::strerror(errno) << "\n";
             co_return;
         }
         char buffer[65536];
-        int result = co_await toy::async_readsome(context, client, buffer, sizeof buffer);
+        int result = co_await toy::async_read_some(context, client, buffer, sizeof buffer);
         if (result < 0) {
             std::cout << "ERROR: failed to read response: " << ::strerror(errno) << "\n";
             co_return;

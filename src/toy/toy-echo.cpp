@@ -74,9 +74,9 @@ int main()
 
             io.spawn([](auto& io, auto socket)->toy::task {
                 char   buf[4];
-                while (std::size_t n = co_await toy::async_readsome{io, socket, buf, sizeof buf}) {
+                while (std::size_t n = co_await toy::async_read_some{io, socket, buf, sizeof buf}) {
                     for (std::size_t o{}, w(1); o != n && w; o += w) {
-                        w = co_await toy::async_writesome(io, socket, buf + o, n - o);
+                        w = co_await toy::async_write_some(io, socket, buf + o, n - o);
                     }
                 }
             }(io, std::move(c)));

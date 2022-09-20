@@ -200,13 +200,13 @@ using async_accept = hidden_io_op::io_op<socket, POLLIN, decltype([](auto& s){
     else set_error(s.r, std::make_exception_ptr(std::runtime_error("accept")));
     })>;
 
-using async_readsome = hidden_io_op::io_op<int, POLLIN, decltype([](auto& s){
+using async_read_some = hidden_io_op::io_op<int, POLLIN, decltype([](auto& s){
     auto n = ::read(s.fd, get<0>(s.p), get<1>(s.p));
     if (0 <= n) set_value(s.r, n);
     else set_error(s.r, std::make_exception_ptr(std::runtime_error("read")));
     }), char*, std::size_t>;
 
-using async_writesome = hidden_io_op::io_op<int, POLLOUT, decltype([](auto& s){
+using async_write_some = hidden_io_op::io_op<int, POLLOUT, decltype([](auto& s){
     auto n = ::write(s.fd, get<0>(s.p), get<1>(s.p));
     if (0 <= n) set_value(s.r, n);
     else set_error(s.r, std::make_exception_ptr(std::runtime_error("write")));

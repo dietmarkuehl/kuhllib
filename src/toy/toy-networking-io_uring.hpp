@@ -149,15 +149,15 @@ using async_connect_op = decltype([](auto sqe, int fd, auto& state){
 });
 using async_connect = hidden_io_op::io_op<int, async_connect_op, ::sockaddr const*, ::socklen_t>;
 
-using async_readsome_op = decltype([](auto sqe, int fd, auto& state){
+using async_read_some_op = decltype([](auto sqe, int fd, auto& state){
     ::io_uring_prep_read(sqe, fd, std::get<0>(state), std::get<1>(state), 0);
 });
-using async_readsome = hidden_io_op::io_op<int, async_readsome_op, char*, std::size_t>;
+using async_read_some = hidden_io_op::io_op<int, async_read_some_op, char*, std::size_t>;
 
-using async_writesome_op = decltype([](auto sqe, int fd, auto& state){
+using async_write_some_op = decltype([](auto sqe, int fd, auto& state){
     ::io_uring_prep_write(sqe, fd, std::get<0>(state), std::get<1>(state), 0);
 });
-using async_writesome = hidden_io_op::io_op<int, async_writesome_op, char const*, std::size_t>;
+using async_write_some = hidden_io_op::io_op<int, async_write_some_op, char const*, std::size_t>;
 
 // ----------------------------------------------------------------------------
 

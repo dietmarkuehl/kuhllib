@@ -234,7 +234,7 @@ using async_connect = hidden_io_op::io_op<int, EPOLLOUT, decltype([](auto& s){
     return true;
     }), ::sockaddr const*, ::socklen_t>;
 
-using async_readsome = hidden_io_op::io_op<int, EPOLLIN, decltype([](auto& s){
+using async_read_some = hidden_io_op::io_op<int, EPOLLIN, decltype([](auto& s){
     auto n = ::read(s.fd, get<0>(s.p), get<1>(s.p));
     if (0 <= n) {
         set_value(s.r, n);
@@ -248,7 +248,7 @@ using async_readsome = hidden_io_op::io_op<int, EPOLLIN, decltype([](auto& s){
     return true;
     }), char*, size_t>;
 
-using async_writesome = hidden_io_op::io_op<int, EPOLLOUT, decltype([](auto& s){
+using async_write_some = hidden_io_op::io_op<int, EPOLLOUT, decltype([](auto& s){
     auto n = ::write(s.fd, get<0>(s.p), get<1>(s.p));
     if (0 <= n) {
         set_value(s.r, n);
