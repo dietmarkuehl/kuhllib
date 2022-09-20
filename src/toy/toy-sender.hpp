@@ -172,6 +172,10 @@ namespace hidden_let_value {
             R&                                 rec;
             std::optional<toy::connector<IS>>& inner_state;
             std::remove_cvref_t<F>             fun;
+
+            friend decltype(get_scheduler(std::declval<R&>())) get_scheduler(receiver const& self) {
+                return get_scheduler(self.rec);
+            }
             template <typename V>
             friend void set_value(receiver&& self, V&& value) {
                 self.inner_state.emplace(self.fun(std::forward<V>(value)), std::move(self.rec));
@@ -232,12 +236,16 @@ namespace hidden_when_all {
     struct when_all {
         using result_t = std::tuple<toy::sender_result_t<S>...>;
 
+        template <typename FR>
         struct state_base {
+            std::remove_cvref_t<FR> final_receiver;
             std::tuple<std::optional<toy::sender_result_t<S>>...> result;
             std::exception_ptr     error;
             std::size_t            outstanding{sizeof...(S)};
 
-            state_base()
+            template <typename R>
+            state_base(R&& final_receiver)
+                : final_receiver(std::forward<R>(final_receiver))
             {
             }
             virtual void complete() = 0;
@@ -248,10 +256,14 @@ namespace hidden_when_all {
             }
         };
 
-        template <typename R>
+        template <typename FR, typename R>
         struct receiver {
-            state_base&       result;
+            state_base<FR>&   result;
             std::optional<R>& value;
+
+            friend decltype(std::declval<state_base<FR>&>().get_scheduler()) get_scheduler(receiver const& self) {
+                self.result.get_scheduler();
+            }
             template <typename T>
             friend void set_value(receiver&& self, T&& value) {
                 self.value.emplace(std::forward<T>(value));
@@ -266,23 +278,22 @@ namespace hidden_when_all {
 
         template <typename R>
         struct state
-            : state_base {
+            : state_base<R> {
             template <typename X>
             using when_all_state_t = decltype(connect(std::declval<X>(),
-                                            std::declval<receiver<sender_result_t<X>>>()));
-            std::remove_cvref_t<R> final_receiver;
+                                            std::declval<receiver<R, sender_result_t<X>>>()));
             std::tuple<toy::connector<when_all_state_t<S>>...> inner_state;
 
             template <std::size_t... I>
             state(R&& r, std::index_sequence<I...>, auto&&... s)
-                : final_receiver(std::forward<R>(r))
+                : state_base<R>(std::forward<R>(r))
                 , inner_state(std::make_pair(std::move(s),
-                                            receiver<sender_result_t<S>>{*this, std::get<I>(this->result)}) ...)
+                                            receiver<R, sender_result_t<S>>{*this, std::get<I>(this->result)}) ...)
             {
             }
             void complete() override {
                 if (this->error)
-                    set_error(std::move(final_receiver), std::move(this->error));
+                    set_error(std::move(this->final_receiver), std::move(this->error));
                 else
                     std::apply(
                         [this](auto&&... r){ set_value(std::move(this->final_receiver), result_t(std::move(*r)...)); },
