@@ -34,24 +34,41 @@ namespace toy
 
 // ----------------------------------------------------------------------------
 
-class starter: immovable
+template <typename Scheduler>
+class starter
+    : immovable
 {
-    struct job_base: immovable { virtual ~job_base() = default; };
+    struct job_base
+        : immovable {
+        Scheduler sched;
+        job_base(Scheduler sched) : sched(sched) {}
+        virtual ~job_base() = default;
+    };
 
     struct receiver {
         job_base* job;
+        friend Scheduler get_scheduler(receiver const& self) { return self.job->sched; }
         friend void set_value(receiver& self, auto) { delete self.job; }
         friend void set_error(receiver& self, auto) { delete self.job; }
     };
 
     template <typename S>
-    struct job: job_base {
-        decltype(connect(std::declval<S>(), receiver{nullptr})) state;
-        job(S&& s): state(connect(std::move(s), receiver{this})) { start(state); }
+    struct job
+        : job_base {
+        decltype(connect(std::declval<S>(), std::declval<receiver>())) state;
+        job(Scheduler sched, S&& s)
+            : job_base(sched)
+            , state(connect(std::move(s), receiver{this}))
+        {
+            start(state);
+        }
     };
 
+    Scheduler sched;
+
 public:
-    void spawn(auto s) { new job<decltype(s)>(std::move(s)); }
+    starter(Scheduler sched): sched(sched) {}
+    void spawn(auto s) { new job<decltype(s)>(sched, std::move(s)); }
 };
 
 // ----------------------------------------------------------------------------

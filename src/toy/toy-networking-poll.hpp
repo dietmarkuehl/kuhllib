@@ -68,7 +68,12 @@ struct socket
 };
 
 class io_context;
-struct io: immovable {
+struct io_scheduler {
+    io_context* context;
+};
+
+struct io
+    : immovable {
     io_context& c;
     int         fd;
     short int   events;
@@ -76,7 +81,14 @@ struct io: immovable {
     io(io_context& c, int fd, short int events): c(c), fd(fd), events(events)  {}
 };
 
-class io_context: public starter {
+class io_context
+    : public starter<toy::io_scheduler>
+{
+public:
+    using scheduler = toy::io_scheduler;
+    scheduler get_scheduler() { return { this }; }
+
+private:
     using time_point_t = std::chrono::system_clock::time_point;
     using timer_t      = std::pair<time_point_t, io*>;
     struct compare_t { bool operator()(auto&& a, auto&& b) { return a.first > b.first; } };
@@ -89,6 +101,9 @@ class io_context: public starter {
 public:
     static constexpr bool has_timer = true; //-dk:TODO remove - used while adding timers to contexts
 
+    io_context()
+        : starter(get_scheduler()) {
+    }
     void add(io* i) {
         ios.push_back(i);
         fds.push_back(  pollfd{ .fd = i->fd, .events = i->events });
@@ -152,11 +167,10 @@ namespace hidden_io_op {
     struct io_op {
         using result_t = Res;
 
-        io_context&      c;
         int              fd;
         std::tuple<P...> p;
 
-        io_op(auto& c, socket& s, auto... a): c(c), fd(s.fd), p(a...) {}
+        io_op(socket& s, auto... a): fd(s.fd), p(a...) {}
 
         template <typename R>
         struct state: io {
@@ -174,7 +188,7 @@ namespace hidden_io_op {
             std::tuple<P...>             p;
             R                            r;
             std::optional<stop_callback> cb;
-            state(auto& c, int fd, auto p, R r): io(c, fd, F), p(p), r(r) {}
+            state(int fd, auto p, R r): io(*get_scheduler(r).context, fd, F), p(p), r(r) {}
             friend void start(state& self) {
                 self.cb.emplace(get_stop_token(self.r), callback{self});
                 self.c.add(&self);
@@ -187,7 +201,7 @@ namespace hidden_io_op {
 
         template <typename R>
         friend state<R> connect(io_op const& self, R r) {
-            return state<R>(self.c, self.fd, self.p, r);
+            return state<R>(self.fd, self.p, r);
         }
     };
 }
@@ -216,19 +230,18 @@ namespace hidden_async_connect {
     struct async_connect {
         using result_t = int;
 
-        io_context&        c;
         int                fd;
         ::sockaddr const*  addr;
         ::socklen_t        len;
 
-        async_connect(auto& c, socket& s, auto addr, auto len): c(c), fd(s.fd), addr(addr), len(len) {}
+        async_connect(socket& s, auto addr, auto len): fd(s.fd), addr(addr), len(len) {}
 
         template <typename R>
         struct state: io {
             ::sockaddr const*  addr;
             ::socklen_t        len;
             R                  r;
-            state(auto& c, int fd, auto addr, auto len, R r): io(c, fd, POLLOUT), addr(addr), len(len), r(r) {}
+            state(int fd, auto addr, auto len, R r): io(*get_scheduler(r).context, fd, POLLOUT), addr(addr), len(len), r(r) {}
             friend void start(state& self) {
                 if (0 <= ::connect(self.fd, self.addr, self.len))
                     set_value(self.r, 0);
@@ -255,7 +268,7 @@ namespace hidden_async_connect {
 
         template <typename R>
         friend state<R> connect(async_connect const& self, R r) {
-            return state<R>(self.c, self.fd, self.addr, self.len, r);
+            return state<R>(self.fd, self.addr, self.len, r);
         }
     };
 }
@@ -268,7 +281,6 @@ namespace hidden_async_sleep_for {
         using result_t = toy::none;
         using duration_t = std::chrono::milliseconds;
 
-        io_context& context;
         duration_t  duration;
 
         template <typename R>
@@ -289,8 +301,8 @@ namespace hidden_async_sleep_for {
             duration_t                   duration;
             std::optional<stop_callback> cb;
 
-            state(R receiver, io_context& context, duration_t duration)
-                : io(context, 0, 0)
+            state(R receiver, duration_t duration)
+                : io(*get_scheduler(receiver).context, 0, 0)
                 , receiver(receiver)
                 , duration(duration) {
             }
@@ -305,7 +317,7 @@ namespace hidden_async_sleep_for {
         };
         template <typename R>
         friend state<R> connect(async_sleep_for self, R receiver) {
-            return state<R>(receiver, self.context, self.duration);
+            return state<R>(receiver, self.duration);
         }
     };
 }

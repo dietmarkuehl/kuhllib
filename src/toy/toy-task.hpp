@@ -40,7 +40,9 @@ namespace toy
 // ----------------------------------------------------------------------------
 
 namespace hidden_task {
-    struct task {
+    template <typename Scheduler>
+    struct task
+    {
         template <typename S>
         struct awaiter {
             using type = sender_result_t<S>;
@@ -55,16 +57,20 @@ namespace hidden_task {
                     self.a->error = e;
                     self.a->handle.resume();
                 } 
+                friend Scheduler get_scheduler(receiver const& self) {
+                    return self.a->sched;
+                }
             };
 
             using state_t = decltype(connect(std::declval<S>(), std::declval<receiver>()));
 
+            Scheduler                   sched{ nullptr };
             std::coroutine_handle<void> handle;
             state_t                     state;
             std::optional<type>         value;
             std::exception_ptr          error;
 
-            awaiter(S s): state(connect(s, receiver{this})) {}
+            awaiter(Scheduler sched, S s): sched(sched), state(connect(s, receiver{this})) {}
             bool await_ready() { return false; }
             void await_suspend(std::coroutine_handle<void> handle) {
                 this->handle = handle;
@@ -81,9 +87,13 @@ namespace hidden_task {
 
         struct state_base: immovable {
             virtual void complete() = 0;
+            Scheduler sched;
+            state_base(Scheduler sched): sched(sched) {}
         };
-        struct promise_type: immovable {
+        struct promise_type
+            : immovable {
             state_base* state = nullptr;
+
             task get_return_object() { return { std::coroutine_handle<promise_type>::from_promise(*this) }; }
             std::suspend_always initial_suspend() { return {}; }
             std::suspend_never final_suspend() noexcept {
@@ -93,7 +103,7 @@ namespace hidden_task {
             void return_void() {}
             void unhandled_exception() { std::terminate() ; }
             template <typename S>
-            awaiter<S> await_transform(S s) { return awaiter<S>(s); }
+            awaiter<S> await_transform(S s) { return awaiter<S>(state->sched, s); }
         };
 
         template <typename R>
@@ -101,7 +111,10 @@ namespace hidden_task {
             std::coroutine_handle<void> handle;
             R                           receiver;
 
-            state(auto&& handle, R receiver): handle(handle), receiver(receiver) {
+            state(auto&& handle, R receiver)
+                : state_base(get_scheduler(receiver))
+                , handle(handle)
+                , receiver(receiver){
                 handle.promise().state = this;
             }
             friend void start(state& self) {
@@ -120,7 +133,9 @@ namespace hidden_task {
         }
     };
 }
-using task = hidden_task::task;
+
+template <typename Scheduler>
+using task = hidden_task::task<Scheduler>;
 
 // ----------------------------------------------------------------------------
 

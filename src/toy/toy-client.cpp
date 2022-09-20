@@ -37,7 +37,7 @@
 int main() {
     toy::io_context context;
     
-    context.spawn([](toy::io_context& context)->toy::task {
+    context.spawn([]()->toy::task<toy::io_context::scheduler> {
         toy::socket client{ ::socket(PF_INET, SOCK_STREAM, 0) };
 
         ::sockaddr_in addr{
@@ -46,7 +46,7 @@ int main() {
             .sin_addr = { .s_addr = htonl(0x53f33a19) }
             };
 
-        if (co_await toy::async_connect(context, client, reinterpret_cast<::sockaddr const*>(&addr), sizeof addr) < 0) {
+        if (co_await toy::async_connect(client, reinterpret_cast<::sockaddr const*>(&addr), sizeof addr) < 0) {
             std::cout << "ERROR: failed to connect: " << ::strerror(errno) << "\n";
             co_return;
         }
@@ -56,18 +56,18 @@ int main() {
             "\r\n"
         };
         int const size = ::strlen(request);
-        if (co_await toy::async_write_some(context, client, request, size) < 0) {
+        if (co_await toy::async_write_some(client, request, size) < 0) {
             std::cout << "ERROR: failed to write request: " << ::strerror(errno) << "\n";
             co_return;
         }
         char buffer[65536];
-        int result = co_await toy::async_read_some(context, client, buffer, sizeof buffer);
+        int result = co_await toy::async_read_some(client, buffer, sizeof buffer);
         if (result < 0) {
             std::cout << "ERROR: failed to read response: " << ::strerror(errno) << "\n";
             co_return;
         }
         std::cout.write(buffer, result);
-    }(context));
+    }());
 
     context.run();
 }

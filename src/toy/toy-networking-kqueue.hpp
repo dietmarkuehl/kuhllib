@@ -29,6 +29,7 @@
 #include "toy-networking-common.hpp"
 #include "toy-starter.hpp"
 #include "toy-utility.hpp"
+#include <chrono>
 #include <stdexcept>
 #include <string>
 #include <tuple>
@@ -68,7 +69,12 @@ struct socket
 };
 
 class io_context;
-struct io: immovable {
+struct io_scheduler {
+    io_context* context;
+};
+
+struct io
+    : immovable {
     io_context& c;
     int         fd;
     short int   events;
@@ -76,7 +82,13 @@ struct io: immovable {
     io(io_context& c, int fd, short int events): c(c), fd(fd), events(events)  {}
 };
 
-class io_context: public starter {
+class io_context
+    : public starter<io_scheduler> {
+public:
+    using scheduler = toy::io_scheduler;
+    scheduler get_scheduler() { return { this }; }
+
+private:
     using kevent_t = struct ::kevent;
     static constexpr std::size_t size{4};
 
@@ -89,7 +101,8 @@ class io_context: public starter {
 public:
     static constexpr bool has_timer = false; //-dk:TODO remove - used while adding timers to contexts
     io_context()
-        : queue(::kqueue()) {
+        : starter(get_scheduler())
+        , queue(::kqueue()) {
         if (queue < 0) {
             throw std::runtime_error("can't create kqueue");
         }
@@ -124,24 +137,23 @@ namespace hidden_io_op {
     struct io_op {
         using result_t = Res;
 
-        io_context&      c;
         int              fd;
         std::tuple<P...> p;
 
-        io_op(auto& c, socket& sock, auto... a): c(c), fd(sock.fd), p(a...) {}
+        io_op(socket& sock, auto... a): fd(sock.fd), p(a...) {}
 
         template <typename R>
         struct state: io {
             std::tuple<P...> p;
             R                r;
-            state(auto& c, int fd, auto p, R r): io(c, fd, F), p(p), r(r) {}
+            state(int fd, auto p, R r): io(*get_scheduler(r).context, fd, F), p(p), r(r) {}
             friend void start(state& self) { self.c.add(&self); }
             void complete() override final { O()(*this); }
         };
 
         template <typename R>
         friend state<R> connect(io_op const& self, R r) {
-            return state<R>(self.c, self.fd, self.p, r);
+            return state<R>(self.fd, self.p, r);
         }
     };
 }
@@ -170,19 +182,18 @@ namespace hidden_async_connect {
     struct async_connect {
         using result_t = int;
 
-        io_context&       c;
         int               fd;
         ::sockaddr const* addr;
         ::socklen_t       len;
 
-        async_connect(auto& c, socket& sock, ::sockaddr const* addr, ::socklen_t len): c(c), fd(sock.fd), addr(addr), len(len) {}
+        async_connect(socket& sock, ::sockaddr const* addr, ::socklen_t len): fd(sock.fd), addr(addr), len(len) {}
 
         template <typename R>
         struct state: io {
             ::sockaddr const* addr;
             ::socklen_t       len;
             R                 r;
-            state(auto& c, int fd, ::sockaddr const* addr, ::socklen_t len, R r): io(c, fd, EVFILT_WRITE), addr(addr), len(len), r(r) {}
+            state(int fd, ::sockaddr const* addr, ::socklen_t len, R r): io(*get_scheduler(r).context, fd, EVFILT_WRITE), addr(addr), len(len), r(r) {}
             friend void start(state& self) {
                 switch (::connect(self.fd, self.addr, self.len)? errno: 0) {
                 default:
@@ -211,7 +222,7 @@ namespace hidden_async_connect {
 
         template <typename R>
         friend state<R> connect(async_connect const& self, R r) {
-            return state<R>(self.c, self.fd, self.addr, self.len, r);
+            return state<R>(self.fd, self.addr, self.len, r);
         }
     };
 }
@@ -222,6 +233,8 @@ using async_connect = hidden_async_connect::async_connect;
 namespace hidden_async_sleep_for {
     struct async_sleep_for {
         using result_t = none;
+        std::chrono::milliseconds duration;
+
         struct state {
             friend void start(state&) {}
         };

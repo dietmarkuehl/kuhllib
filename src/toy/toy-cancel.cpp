@@ -76,11 +76,11 @@ int main() {
     ::bind(server.fd, (::sockaddr*)&addr, sizeof(addr));
     ::listen(server.fd, 1);
 
-    context.spawn([](auto& context, auto& server)->toy::task {
+    context.spawn([](auto& server)->toy::task<toy::io_context::scheduler> {
         using namespace std::chrono_literals;
         for (int i = 0; i != 3; ++i) {
             std::cout << "awaiting accept\n" << std::flush;
-            std::optional<toy::socket> o = co_await toy::timeout(toy::async_accept(context, server), context, 5s);
+            std::optional<toy::socket> o = co_await toy::timeout(toy::async_accept(server), 5s);
             if (o) {
                 std::cout << "accepted client\n" << std::flush;
             }
@@ -88,14 +88,7 @@ int main() {
                 std::cout << "accept timed out\n" << std::flush;
             }
         }
-    }(context, server));
-
-#if 0
-    context.spawn([](auto& context, auto& server)->toy::task {
-        co_await toy::when_any(toy::async_accept(context, server),
-                               never_sender());
-    }(context, server));
-#endif
+    }(server));
 
     context.run();
 }

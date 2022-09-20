@@ -60,7 +60,10 @@ using toy::chain::sender_base;
 
 template <typename R>
 struct sync_wait_receiver {
+    struct inline_scheduler {}; //-dk:TODO
+
     R& result;
+    friend inline_scheduler get_scheduler(sync_wait_receiver const&) { return {}; }
     friend void set_value(sync_wait_receiver const& self, auto&& value){ self.result.emplace(value); }
     friend void set_error(sync_wait_receiver const&, std::exception_ptr ex){ std::rethrow_exception(ex); }
     friend void set_stopped(sync_wait_receiver const&){}
@@ -116,6 +119,9 @@ namespace hidden_then {
         struct receiver {
             std::remove_cvref_t<R> final_receiver;
             F fun;
+            friend decltype(get_scheduler(std::declval<std::remove_cvref_t<R> const&>())) get_scheduler(receiver const& self) {
+                return get_scheduler(self.final_receiver);
+            }
             template <typename V>
             friend void set_value(receiver&& self, V&& value) {
                 if constexpr (std::same_as<void, decltype(self.fun(std::forward<V>(value)))>) {
@@ -329,6 +335,9 @@ namespace hidden_when_any {
                 friend toy::in_place_stop_source::stop_token get_stop_token(inner_receiver const& self) {
                     return self.s->source.token();
                 }
+                friend decltype(get_scheduler(std::declval<R>())) get_scheduler(inner_receiver const& self) {
+                    return get_scheduler(self.s->receiver);
+                } 
                 friend void set_value(inner_receiver self, auto v) {
                     if (!self.s->result && !self.s->error) {
                         self.s->result.emplace(std::move(v));
@@ -404,13 +413,13 @@ hidden_when_any::when_any<S...> when_any(S&&... sender) {
 // ----------------------------------------------------------------------------
 
 template <typename S, typename D>
-auto timeout(S sender, toy::io_context& context, D duration) {
+auto timeout(S sender, D duration) {
     using result_t = std::optional<typename S::result_t>;
     struct visitor {
         result_t operator()(typename S::result_t r) const { return result_t(std::move(r)); }
         result_t operator()(toy::none) const { return result_t(); }
     };
-    return toy::then(toy::when_any(sender, toy::async_sleep_for{context, duration}),
+    return toy::then(toy::when_any(sender, toy::async_sleep_for{duration}),
                      [](auto v) { return std::visit(visitor(), std::move(v)); }
                     );
 }
@@ -431,6 +440,10 @@ namespace hidden_repeat_effect_until {
             void on_value();
             void on_error(std::exception_ptr);
 
+            friend decltype(get_scheduler(std::declval<std::remove_cvref_t<R>>()))
+                get_scheduler(receiver const& self) {
+                    return self.state_.final_receiver;
+            }
             friend void set_value(receiver&& self, toy::none) { self.on_value(); }
             friend void set_error(receiver&& self, std::exception_ptr error) { self.on_error(error); }
         };

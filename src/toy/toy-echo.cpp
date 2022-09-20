@@ -50,36 +50,36 @@ int main()
     toy::io_context  io;
 
     if constexpr (io.has_timer) {
-        io.spawn([](auto& io)->toy::task {
+        io.spawn([]()->toy::task<toy::io_context::scheduler> {
             while (true) {
                 using namespace std::chrono_literals;
-                co_await toy::async_sleep_for{io, 1s};
+                co_await toy::async_sleep_for{1s};
                 std::cout << "waited 1s\n" << std::flush;
             }
             
-        }(io));
-        io.spawn([](auto& io)->toy::task {
+        }());
+        io.spawn([]()->toy::task<toy::io_context::scheduler> {
             while (true) {
                 using namespace std::chrono_literals;
-                co_await toy::async_sleep_for{io, 3s};
+                co_await toy::async_sleep_for{3s};
                 std::cout << "waited 3s\n" << std::flush;
             }
             
-        }(io));
+        }());
     }
 
-    io.spawn([](auto& io, auto& server)->toy::task {
+    io.spawn([](auto& io, auto& server)->toy::task<toy::io_context::scheduler> {
         for (int i{}; i != 2; ++i) {
-            auto c = co_await toy::async_accept(io, server);
+            auto c = co_await toy::async_accept(server);
 
-            io.spawn([](auto& io, auto socket)->toy::task {
+            io.spawn([](auto socket)->toy::task<toy::io_context::scheduler> {
                 char   buf[4];
-                while (std::size_t n = co_await toy::async_read_some{io, socket, buf, sizeof buf}) {
+                while (std::size_t n = co_await toy::async_read_some{socket, buf, sizeof buf}) {
                     for (std::size_t o{}, w(1); o != n && w; o += w) {
-                        w = co_await toy::async_write_some(io, socket, buf + o, n - o);
+                        w = co_await toy::async_write_some(socket, buf + o, n - o);
                     }
                 }
-            }(io, std::move(c)));
+            }(std::move(c)));
         }
     }(io, server));
 
