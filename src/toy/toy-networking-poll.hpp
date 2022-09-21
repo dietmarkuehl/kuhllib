@@ -26,6 +26,7 @@
 #ifndef INCLUDED_TOY_NETWORKING_POLL
 #define INCLUDED_TOY_NETWORKING_POLL
 
+#include "toy-networking-common.hpp"
 #include "toy-starter.hpp"
 #include "toy-utility.hpp"
 
@@ -34,6 +35,7 @@
 #include <optional>
 #include <queue>
 #include <stdexcept>
+#include <system_error>
 #include <string>
 #include <tuple>
 #include <type_traits>
@@ -273,6 +275,140 @@ namespace hidden_async_connect {
     };
 }
 using async_connect = hidden_async_connect::async_connect;
+
+// ----------------------------------------------------------------------------
+
+namespace hidden::send {
+    template <typename MBS>
+    struct sender {
+        using result_t = std::size_t;
+
+        toy::socket&       socket;
+        toy::message_flags flags;
+        MBS                buffer;
+
+        template <typename R>
+        struct state
+            : toy::io
+        {
+            R                  receiver;
+            int                fd;
+            toy::message_flags flags;
+            MBS                buffer;
+            state(R                  receiver,
+                  int                fd,
+                  toy::message_flags flags,
+                  MBS                buffer)
+                : io(*get_scheduler(receiver).context, fd, POLLOUT)
+                , receiver(receiver)
+                , flags(flags)
+                , buffer(buffer) {
+            }
+
+            friend void start(state& self) {
+                self.c.add(&self);
+            }
+            void complete() override final {
+                msghdr msg{
+                    .msg_name = nullptr,
+                    .msg_namelen = 0,
+                    .msg_iov = buffer.data(),
+                    .msg_iovlen = int(buffer.size()),
+                    .msg_control = nullptr,
+                    .msg_controllen = 0,
+                    .msg_flags = 0
+                };
+                ::ssize_t n = ::sendmsg(fd, &msg, int(flags));
+                if (n < 0)
+                    set_error(std::move(receiver), std::make_exception_ptr(std::system_error(errno, std::system_category())));
+                else   
+                    set_value(std::move(receiver), std::size_t(n));
+            }
+        };
+        template <typename R>
+        friend state<R> connect(sender const& self, R receiver) {
+            return state<R>(receiver, self.socket.fd, self.flags, self.buffer);
+        }
+    };
+}
+
+template <typename MBS>
+hidden::send::sender<MBS> async_send(toy::socket& s, toy::message_flags f, const MBS& b) {
+    return hidden::send::sender<MBS>{s, f, b};
+
+}
+
+template <typename MBS>
+hidden::send::sender<MBS> async_send(toy::socket& s, const MBS& b) {
+    return async_send(s, toy::message_flags{}, b);
+}
+
+// ----------------------------------------------------------------------------
+
+namespace hidden::receive {
+    template <typename MBS>
+    struct sender {
+        using result_t = std::size_t;
+
+        toy::socket&       socket;
+        toy::message_flags flags;
+        MBS                buffer;
+
+        template <typename R>
+        struct state
+            : toy::io
+        {
+            R                  receiver;
+            int                fd;
+            toy::message_flags flags;
+            MBS                buffer;
+            state(R                  receiver,
+                  int                fd,
+                  toy::message_flags flags,
+                  MBS                buffer)
+                : io(*get_scheduler(receiver).context, fd, POLLIN)
+                , receiver(receiver)
+                , flags(flags)
+                , buffer(buffer) {
+            }
+
+            friend void start(state& self) {
+                self.c.add(&self);
+            }
+            void complete() override final {
+                msghdr msg{
+                    .msg_name = nullptr,
+                    .msg_namelen = 0,
+                    .msg_iov = buffer.data(),
+                    .msg_iovlen = int(buffer.size()),
+                    .msg_control = nullptr,
+                    .msg_controllen = 0,
+                    .msg_flags = 0
+                };
+                ::ssize_t n = ::recvmsg(fd, &msg, int(flags));
+                if (n < 0)
+                    set_error(std::move(receiver), std::make_exception_ptr(std::system_error(errno, std::system_category())));
+                else   
+                    set_value(std::move(receiver), std::size_t(n));
+            }
+        };
+        template <typename R>
+        friend state<R> connect(sender const& self, R receiver) {
+            return state<R>(receiver, self.socket.fd, self.flags, self.buffer);
+        }
+    };
+}
+
+template <typename MBS>
+hidden::receive::sender<MBS> async_receive(toy::socket& s, toy::message_flags f, const MBS& b) {
+    return hidden::receive::sender<MBS>{s, f, b};
+
+}
+
+template <typename MBS>
+hidden::receive::sender<MBS> async_receive(toy::socket& s, const MBS& b) {
+    return async_receive(s, toy::message_flags{}, b);
+}
 
 // ----------------------------------------------------------------------------
 

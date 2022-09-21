@@ -21,6 +21,7 @@ if(TOY_HAS_UNISTD)
     add_executable(toy-echo toy-echo.cpp)
     add_executable(toy-client toy-client.cpp)
     add_executable(toy-cancel toy-cancel.cpp)
+    add_executable(toy-ops toy-ops.cpp)
     add_executable(toy-cppcon-2022 toy-cppcon-2022.cpp)
 ENDIF()
 
