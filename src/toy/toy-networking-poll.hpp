@@ -313,7 +313,7 @@ namespace hidden::send {
                     .msg_name = nullptr,
                     .msg_namelen = 0,
                     .msg_iov = buffer.data(),
-                    .msg_iovlen = int(buffer.size()),
+                    .msg_iovlen = decltype(std::declval<msghdr>().msg_iovlen)(buffer.size()),
                     .msg_control = nullptr,
                     .msg_controllen = 0,
                     .msg_flags = 0
@@ -380,7 +380,7 @@ namespace hidden::receive {
                     .msg_name = nullptr,
                     .msg_namelen = 0,
                     .msg_iov = buffer.data(),
-                    .msg_iovlen = int(buffer.size()),
+                    .msg_iovlen = decltype(std::declval<msghdr>().msg_iovlen)(buffer.size()),
                     .msg_control = nullptr,
                     .msg_controllen = 0,
                     .msg_flags = 0
