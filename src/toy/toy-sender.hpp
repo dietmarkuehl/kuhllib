@@ -135,6 +135,9 @@ namespace hidden_then {
             friend void set_error(receiver&& self, auto&& ex) {
                 set_error(std::move(self.final_receiver), ex);
             }
+            friend void set_stopped(receiver&& self) {
+                set_stopped(std::move(self.final_receiver));
+            }
         };
 
         std::remove_cvref_t<S> sender;
@@ -183,6 +186,9 @@ namespace hidden_let_value {
             }
             friend void set_error(receiver&& self, std::exception_ptr ex) {
                 set_error(std::move(self.rec), ex);
+            }
+            friend void set_stopped(receiver&& self) {
+                set_stopped(std::move(self.rec));
             }
         };
 
@@ -272,6 +278,9 @@ namespace hidden_when_all {
             friend void set_error(receiver&& self, std::exception_ptr error) {
                 if (!self.result.error)
                     self.result.error = error;
+                self.result.done();
+            }
+            friend void set_stopped(receiver&& self) {
                 self.result.done();
             }
         };
@@ -402,8 +411,8 @@ namespace hidden_when_any {
                         set_value(std::move(receiver), std::move(*result));
                     else if (error)
                         set_error(std::move(receiver), error);
-                    //else
-                    //    set_stopped(std::move(receiver));
+                    else
+                        set_stopped(std::move(receiver));
                 }
             }
         };
@@ -457,6 +466,9 @@ namespace hidden_repeat_effect_until {
             }
             friend void set_value(receiver&& self, toy::none) { self.on_value(); }
             friend void set_error(receiver&& self, std::exception_ptr error) { self.on_error(error); }
+            friend void set_stopped(receiver&& self) {
+                set_stopped(std::move(self.state_.final_receiver));
+            }
         };
 
         struct track {

@@ -57,6 +57,9 @@ namespace hidden_task {
                     self.a->error = e;
                     self.a->handle.resume();
                 } 
+                friend void set_stopped(receiver&&) {
+                    //-dk:TODO get rid of the handle?
+                }
                 friend Scheduler get_scheduler(receiver const& self) {
                     return self.a->sched;
                 }
