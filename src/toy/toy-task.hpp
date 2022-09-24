@@ -73,7 +73,7 @@ namespace hidden_task {
             std::optional<type>         value;
             std::exception_ptr          error;
 
-            awaiter(Scheduler sched, S s): sched(sched), state(connect(s, receiver{this})) {}
+            awaiter(Scheduler sched, S s): sched(sched), state(connect(std::move(s), receiver{this})) {}
             bool await_ready() { return false; }
             void await_suspend(std::coroutine_handle<void> handle) {
                 this->handle = handle;

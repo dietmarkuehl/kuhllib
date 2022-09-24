@@ -162,20 +162,20 @@ using async_accept = hidden_io_op::io_op<socket, EVFILT_READ, decltype([](auto& 
     ::sockaddr  addr{};
     ::socklen_t len{sizeof(addr)};
     auto fd = ::accept(s.fd, &addr, &len);
-    if (0 <= fd) set_value(s.r, fd);
-    else set_error(s.r, std::make_exception_ptr(std::runtime_error("accept")));
+    if (0 <= fd) set_value(std::move(s.r), fd);
+    else set_error(std::move(s.r), std::make_exception_ptr(std::runtime_error("accept")));
     })>;
 
 using async_read_some = hidden_io_op::io_op<int, EVFILT_READ, decltype([](auto& s){
     auto n = ::read(s.fd, get<0>(s.p), get<1>(s.p));
-    if (0 <= n) set_value(s.r, n);
-    else set_error(s.r, std::make_exception_ptr(std::runtime_error("read")));
+    if (0 <= n) set_value(std::move(s.r), n);
+    else set_error(std::move(s.r), std::make_exception_ptr(std::runtime_error("read")));
     }), char*, std::size_t>;
 
 using async_write_some = hidden_io_op::io_op<int, EVFILT_WRITE, decltype([](auto& s){
     auto n = ::write(s.fd, get<0>(s.p), get<1>(s.p));
-    if (0 <= n) set_value(s.r, n);
-    else set_error(s.r, std::make_exception_ptr(std::runtime_error("write")));
+    if (0 <= n) set_value(std::move(s.r), n);
+    else set_error(std::move(s.r), std::make_exception_ptr(std::runtime_error("write")));
     }), char const*, std::size_t>;
 
 namespace hidden_async_connect {

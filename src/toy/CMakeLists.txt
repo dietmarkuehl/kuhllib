@@ -46,7 +46,7 @@ IF(TOY_HAS_EPOLL)
 ENDIF()
 
 # try to use sys/event.h
-CHECK_INCLUDE_FILE(sys/event.h TOY_HAS_KQUEUE)
+CHECK_INCLUDE_FILE(sys/xevent.h TOY_HAS_KQUEUE)
 IF(TOY_HAS_KQUEUE)
     add_executable(toy-echo-kqueue toy-echo.cpp)
     target_compile_definitions(toy-echo-kqueue PRIVATE TOY_NETWORKING_HPP="toy-networking-kqueue.hpp")

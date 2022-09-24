@@ -29,8 +29,11 @@
 
 #include "toy-task.hpp"
 #include TOY_NETWORKING_HPP
+#include "toy-sender.hpp"
 #include <chrono>
 #include <iostream>
+#include <cstring>
+#include <cstdlib>
 #include <arpa/inet.h>
 
 // ----------------------------------------------------------------------------
@@ -39,34 +42,14 @@ int main()
 {
     toy::socket server{ ::socket(PF_INET, SOCK_STREAM, 0) };
 
-    ::sockaddr_in addr{
-        .sin_family = AF_INET,
-        .sin_port = htons(12345),
-        .sin_addr = { .s_addr = INADDR_ANY }
-        };
-    ::bind(server.fd, (::sockaddr*)&addr, sizeof(addr));
-    ::listen(server.fd, 1);
+    toy::address addr(AF_INET, htons(12345), INADDR_ANY);
+    if (::bind(server.fd, &addr.as_addr(), addr.size()) < 0
+        || ::listen(server.fd, 1) < 0) {
+        std::cout << "can't bind socket: " << std::strerror(errno) << "\n";
+        return EXIT_FAILURE;
+    };
 
     toy::io_context  io;
-
-    if constexpr (io.has_timer) {
-        io.spawn([]()->toy::task<toy::io_context::scheduler> {
-            while (true) {
-                using namespace std::chrono_literals;
-                co_await toy::async_sleep_for{1s};
-                std::cout << "waited 1s\n" << std::flush;
-            }
-            
-        }());
-        io.spawn([]()->toy::task<toy::io_context::scheduler> {
-            while (true) {
-                using namespace std::chrono_literals;
-                co_await toy::async_sleep_for{3s};
-                std::cout << "waited 3s\n" << std::flush;
-            }
-            
-        }());
-    }
 
     io.spawn([](auto& io, auto& server)->toy::task<toy::io_context::scheduler> {
         for (int i{}; i != 2; ++i) {
@@ -75,9 +58,7 @@ int main()
             io.spawn([](auto socket)->toy::task<toy::io_context::scheduler> {
                 char   buf[4];
                 while (std::size_t n = co_await toy::async_read_some(socket, buf, sizeof buf)) {
-                    for (std::size_t o{}, w(1); o != n && w; o += w) {
-                        w = co_await toy::async_write_some(socket, buf + o, n - o);
-                    }
+                    co_await toy::async_write(socket, buf, n);
                 }
             }(std::move(c)));
         }

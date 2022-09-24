@@ -41,6 +41,7 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
+#include <iostream> //-dk:TODO remove
 
 #include <stddef.h>
 #include <string.h>
@@ -72,6 +73,9 @@ struct socket
 class io_context;
 struct io_scheduler {
     io_context* context;
+    friend std::ostream& operator<< (std::ostream& out, io_scheduler const& s) {
+        return out << s.context;
+    }
 };
 
 struct io

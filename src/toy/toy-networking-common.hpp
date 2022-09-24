@@ -26,10 +26,41 @@
 #ifndef INCLUDED_TOY_NETWORKING_COMMON
 #define INCLUDED_TOY_NETWORKING_COMMON
 
+#include <cstddef>
+#include <sys/socket.h>
+#include <netinet/in.h>
+
 // ----------------------------------------------------------------------------
 
 namespace toy {
     enum class message_flags {
+    };
+}
+
+// ----------------------------------------------------------------------------
+
+namespace toy {
+    struct address {
+        address(sa_family_t family, in_port_t port, uint32_t addr) {
+            len = sizeof(::sockaddr_in);
+            as_addr_in().sin_family      = family;
+            as_addr_in().sin_port        = port;
+            as_addr_in().sin_addr.s_addr = addr;
+        }
+        ::socklen_t        len{};
+        ::sockaddr_storage addr{};
+
+        ::socklen_t  size() const { return len; }
+        ::socklen_t& mutable_size() {
+            return len = sizeof(::sockaddr_storage);
+        }
+        ::sockaddr const&     as_addr()     const { return reinterpret_cast<::sockaddr const&>(addr); }
+        ::sockaddr_in const&  as_addr_in()  const { return reinterpret_cast<::sockaddr_in const&>(addr); }
+        ::sockaddr_in6 const& as_addr_in6() const { return reinterpret_cast<::sockaddr_in6 const&>(addr); }
+
+        ::sockaddr&     as_addr()     { return reinterpret_cast<::sockaddr&>(addr); }
+        ::sockaddr_in&  as_addr_in()  { return reinterpret_cast<::sockaddr_in&>(addr); }
+        ::sockaddr_in6& as_addr_in6() { return reinterpret_cast<::sockaddr_in6&>(addr); }
     };
 }
 
