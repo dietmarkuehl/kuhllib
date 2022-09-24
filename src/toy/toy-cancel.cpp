@@ -23,13 +23,9 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#if !defined(TOY_NETWORKING_HPP)
-#   define TOY_NETWORKING_HPP "toy-networking-poll.hpp"
-#endif
-
 #include "toy-sender.hpp"
 #include "toy-stop_token.hpp"
-#include TOY_NETWORKING_HPP
+#include "toy-networking.hpp"
 #include "toy-task.hpp"
 #include <iostream>
 

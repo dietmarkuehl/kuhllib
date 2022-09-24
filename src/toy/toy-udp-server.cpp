@@ -1,4 +1,4 @@
-// toy-client.cpp                                                     -*-C++-*-
+// toy-udp-server.cpp                                                 -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2022 Dietmar Kuehl http://www.dietmar-kuehl.de
 //
@@ -23,47 +23,33 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "toy-buffer.hpp"
 #include "toy-networking.hpp"
 #include "toy-task.hpp"
-#include <iostream>
-#include <string.h>
+#include <utility>
+#include <cerrno>
+#include <cstring>
 
 // ----------------------------------------------------------------------------
 
 int main() {
     toy::io_context context;
-    
-    context.spawn([]()->toy::task<toy::io_context::scheduler> {
-        toy::socket client{ ::socket(PF_INET, SOCK_STREAM, 0) };
 
-        ::sockaddr_in addr{
-            .sin_family = AF_INET,
-            .sin_port = htons(80),
-            .sin_addr = { .s_addr = htonl(0x53f33a19) }
-            };
+    toy::socket server{ ::socket(PF_INET, SOCK_DGRAM, 0) };
+    toy::address addr(AF_INET, htons(12345), INADDR_ANY);
+    if (::bind(server.fd, &addr.as_addr(), addr.size()) < 0) {
+        std::cout << "can't bind socket: " << std::strerror(errno) << "\n";
+        return EXIT_FAILURE;
+    };
 
-        if (co_await toy::async_connect(client, reinterpret_cast<::sockaddr const*>(&addr), sizeof addr) < 0) {
-            std::cout << "ERROR: failed to connect: " << ::strerror(errno) << "\n";
-            co_return;
+    context.spawn([](toy::socket server)->toy::task<toy::io_context::scheduler> {
+        while (true) {
+            char         buffer[16];
+            toy::address addr;
+            std::size_t n = co_await toy::async_receive_from(server, toy::buffer(buffer), addr);
+            co_await toy::async_send_to(server, toy::buffer(buffer, n), addr);
         }
-        char const request[] = {
-            "GET /index.html HTTP/1.0\r\n"
-            "Host: dietmar-kuehl.de\r\n"
-            "\r\n"
-        };
-        int const size = ::strlen(request);
-        if (co_await toy::async_write_some(client, request, size) < 0) {
-            std::cout << "ERROR: failed to write request: " << ::strerror(errno) << "\n";
-            co_return;
-        }
-        char buffer[65536];
-        int result = co_await toy::async_read_some(client, buffer, sizeof buffer);
-        if (result < 0) {
-            std::cout << "ERROR: failed to read response: " << ::strerror(errno) << "\n";
-            co_return;
-        }
-        std::cout.write(buffer, result);
-    }());
+    }(std::move(server)));
 
     context.run();
 }

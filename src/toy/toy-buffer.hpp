@@ -56,6 +56,15 @@ namespace toy {
             }...
         };
     }
+    template <toy::byte_type B>
+    std::array<::iovec, 1> buffer(B* b, std::size_t n) {
+        return std::array<::iovec, 1>{
+            ::iovec{
+                .iov_base = const_cast<char*>(reinterpret_cast<char const*>(b)),
+                .iov_len  = n
+            }
+        };
+    }
 }
 
 // ----------------------------------------------------------------------------

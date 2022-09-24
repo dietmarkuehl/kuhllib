@@ -41,6 +41,10 @@ namespace toy {
 
 namespace toy {
     struct address {
+        address()
+            : len(sizeof(::sockaddr_storage))
+            , addr{} {
+        }
         address(sa_family_t family, in_port_t port, uint32_t addr) {
             len = sizeof(::sockaddr_in);
             as_addr_in().sin_family      = family;
@@ -50,10 +54,10 @@ namespace toy {
         ::socklen_t        len{};
         ::sockaddr_storage addr{};
 
-        ::socklen_t  size() const { return len; }
-        ::socklen_t& mutable_size() {
-            return len = sizeof(::sockaddr_storage);
-        }
+        ::socklen_t size() const { return len; }
+        ::socklen_t capacity() const { return sizeof(::sockaddr_storage); }
+        void        resize(std::size_t s) { len = s; }
+
         ::sockaddr const&     as_addr()     const { return reinterpret_cast<::sockaddr const&>(addr); }
         ::sockaddr_in const&  as_addr_in()  const { return reinterpret_cast<::sockaddr_in const&>(addr); }
         ::sockaddr_in6 const& as_addr_in6() const { return reinterpret_cast<::sockaddr_in6 const&>(addr); }

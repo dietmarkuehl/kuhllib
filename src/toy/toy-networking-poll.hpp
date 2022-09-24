@@ -280,6 +280,33 @@ namespace hidden::io_operation {
     };
 
     template <typename MBS>
+    struct receive_from_op {
+        using result_t = std::size_t;
+        static constexpr int event = POLLIN;
+        static constexpr char const* name = "receive_from";
+
+        MBS                buffer;
+        toy::address&      addr;
+        toy::message_flags flags;
+        ::ssize_t operator()(auto& state) {
+            msghdr msg{
+                .msg_name = &addr.as_addr(),
+                .msg_namelen = addr.capacity(),
+                .msg_iov = buffer.data(),
+                .msg_iovlen = decltype(std::declval<msghdr>().msg_iovlen)(buffer.size()),
+                .msg_control = nullptr,
+                .msg_controllen = 0,
+                .msg_flags = 0
+            };
+            ::ssize_t rc{recvmsg(state.fd, &msg, int(flags))};
+            if (0 <= rc) {
+                addr.resize(msg.msg_namelen);
+            }
+            return rc;
+        }
+    };
+
+    template <typename MBS>
     struct send_op {
         using result_t = std::size_t;
         static constexpr int event = POLLOUT;
@@ -291,6 +318,29 @@ namespace hidden::io_operation {
             msghdr msg{
                 .msg_name = nullptr,
                 .msg_namelen = 0,
+                .msg_iov = buffer.data(),
+                .msg_iovlen = decltype(std::declval<msghdr>().msg_iovlen)(buffer.size()),
+                .msg_control = nullptr,
+                .msg_controllen = 0,
+                .msg_flags = 0
+            };
+            return sendmsg(state.fd, &msg, int(flags));
+        }
+    };
+
+    template <typename MBS>
+    struct send_to_op {
+        using result_t = std::size_t;
+        static constexpr int event = POLLOUT;
+        static constexpr char const* name = "send_to";
+
+        MBS                buffer;
+        toy::address       address;
+        toy::message_flags flags;
+        ::ssize_t operator()(auto& state) {
+            msghdr msg{
+                .msg_name = &address.as_addr(),
+                .msg_namelen = address.size(),
                 .msg_iov = buffer.data(),
                 .msg_iovlen = decltype(std::declval<msghdr>().msg_iovlen)(buffer.size()),
                 .msg_control = nullptr,
@@ -384,6 +434,17 @@ async_receive(toy::socket& s, const MBS& b) {
 }
 
 template <typename MBS>
+hidden::io_operation::sender<hidden::io_operation::receive_from_op<MBS>>
+async_receive_from(toy::socket& s, const MBS& b, toy::address& addr, toy::message_flags f) {
+    return {s, {b, addr, f}};
+}
+template <typename MBS>
+hidden::io_operation::sender<hidden::io_operation::receive_from_op<MBS>>
+async_receive_from(toy::socket& s, const MBS& b, toy::address& addr) {
+    return {s, {b, addr, toy::message_flags{}}};
+}
+
+template <typename MBS>
 hidden::io_operation::sender<hidden::io_operation::send_op<MBS>>
 async_send(toy::socket& s, toy::message_flags f, const MBS& b) {
     return {s, {f, b}};
@@ -392,6 +453,17 @@ template <typename MBS>
 hidden::io_operation::sender<hidden::io_operation::send_op<MBS>>
 async_send(toy::socket& s, const MBS& b) {
     return {s, {toy::message_flags{}, b}};
+}
+
+template <typename MBS>
+hidden::io_operation::sender<hidden::io_operation::send_to_op<MBS>>
+async_send_to(toy::socket& s, const MBS& b, toy::address addr, toy::message_flags f) {
+    return {s, {b, addr, f}};
+}
+template <typename MBS>
+hidden::io_operation::sender<hidden::io_operation::send_to_op<MBS>>
+async_send_to(toy::socket& s, const MBS& b, toy::address addr) {
+    return {s, {b, addr, toy::message_flags{}}};
 }
 
 // ----------------------------------------------------------------------------

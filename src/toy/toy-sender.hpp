@@ -26,11 +26,7 @@
 #ifndef INCLUDED_TOY_SENDER
 #define INCLUDED_TOY_SENDER
 
-#if !defined(TOY_NETWORKING_HPP)
-#   define TOY_NETWORKING_HPP "toy-networking-poll.hpp"
-#endif
-
-#include TOY_NETWORKING_HPP
+#include "toy-networking.hpp"
 #include "toy-stop_token.hpp"
 #include "toy-utility.hpp"
 #include <concepts>
