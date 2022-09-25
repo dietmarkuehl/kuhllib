@@ -23,7 +23,6 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "toy-buffer.hpp"
 #include "toy-networking.hpp"
 #include "toy-task.hpp"
 #include <utility>

@@ -182,28 +182,34 @@ namespace hidden_async_connect {
         struct state: io {
             ::sockaddr const*  addr;
             ::socklen_t        len;
-            R                  r;
-            state(int fd, auto addr, auto len, R r): io(*get_scheduler(r).context, fd, POLLOUT), addr(addr), len(len), r(r) {}
+            R                  receiver;
+            hidden::io_operation::stop_callback<state, R> cb;
+
+            state(int fd, auto addr, auto len, R r)
+                : io(*get_scheduler(r).context, fd, POLLOUT), addr(addr), len(len), receiver(r) {
+            }
             friend void start(state& self) {
                 if (0 <= ::connect(self.fd, self.addr, self.len))
-                    set_value(self.r, 0);
+                    set_value(self.receiver, 0);
                 else if (errno == EAGAIN || errno == EINPROGRESS) {
+                    self.cb.engage(self);
                     self.c.add(&self);
                 }
                 else
-                    set_error(self.r, std::make_exception_ptr(std::runtime_error(std::string("connect: ") + ::strerror(errno))));
+                    set_error(self.receiver, std::make_exception_ptr(std::runtime_error(std::string("connect: ") + ::strerror(errno))));
             }
             void complete() override final {
+                cb.disengage();
                 int         rc{};
                 ::socklen_t len{sizeof rc};
                 if (::getsockopt(fd, SOL_SOCKET, SO_ERROR, &rc, &len)) {
-                    set_error(r, std::make_exception_ptr(std::runtime_error(std::string("getsockopt: ") + ::strerror(errno))));
+                    set_error(receiver, std::make_exception_ptr(std::runtime_error(std::string("getsockopt: ") + ::strerror(errno))));
                 }
                 else if (rc) {
-                    set_error(r, std::make_exception_ptr(std::runtime_error(std::string("connect: ") + ::strerror(rc))));
+                    set_error(receiver, std::make_exception_ptr(std::runtime_error(std::string("connect: ") + ::strerror(rc))));
                 }
                 else {
-                    set_value(r, rc);
+                    set_value(receiver, rc);
                 }
             }
         };
@@ -219,138 +225,6 @@ using async_connect = hidden_async_connect::async_connect;
 // ----------------------------------------------------------------------------
 
 namespace hidden::io_operation {
-    struct accept_op {
-        using result_t = toy::socket;
-        static constexpr int event = POLLIN;
-        static constexpr char const* name = "accept";
-
-        int operator()(auto& state) {
-            ::sockaddr  addr{};
-            ::socklen_t len{sizeof(addr)};
-            return ::accept(state.fd, &addr, &len);
-        }
-    };
-
-    struct read_some_op {
-        using result_t = int;
-        static constexpr int event = POLLIN;
-        static constexpr char const* name = "read_some";
-
-        char*       buffer;
-        std::size_t len;
-
-        int operator()(auto& state) {
-            return ::read(state.fd, buffer, len);
-        }
-    };
-
-    struct write_some_op {
-        using result_t = int;
-        static constexpr int event = POLLOUT;
-        static constexpr char const* name = "write_some";
-
-        char const* buffer;
-        std::size_t len;
-
-        int operator()(auto& state) {
-            return ::write(state.fd, buffer, len);
-        }
-    };
-
-    template <typename MBS>
-    struct receive_op {
-        using result_t = std::size_t;
-        static constexpr int event = POLLIN;
-        static constexpr char const* name = "receive";
-
-        toy::message_flags flags;
-        MBS                buffer;
-        ::ssize_t operator()(auto& state) {
-            msghdr msg{
-                .msg_name = nullptr,
-                .msg_namelen = 0,
-                .msg_iov = buffer.data(),
-                .msg_iovlen = decltype(std::declval<msghdr>().msg_iovlen)(buffer.size()),
-                .msg_control = nullptr,
-                .msg_controllen = 0,
-                .msg_flags = 0
-            };
-            return recvmsg(state.fd, &msg, int(flags));
-        }
-    };
-
-    template <typename MBS>
-    struct receive_from_op {
-        using result_t = std::size_t;
-        static constexpr int event = POLLIN;
-        static constexpr char const* name = "receive_from";
-
-        MBS                buffer;
-        toy::address&      addr;
-        toy::message_flags flags;
-        ::ssize_t operator()(auto& state) {
-            msghdr msg{
-                .msg_name = &addr.as_addr(),
-                .msg_namelen = addr.capacity(),
-                .msg_iov = buffer.data(),
-                .msg_iovlen = decltype(std::declval<msghdr>().msg_iovlen)(buffer.size()),
-                .msg_control = nullptr,
-                .msg_controllen = 0,
-                .msg_flags = 0
-            };
-            ::ssize_t rc{recvmsg(state.fd, &msg, int(flags))};
-            if (0 <= rc) {
-                addr.resize(msg.msg_namelen);
-            }
-            return rc;
-        }
-    };
-
-    template <typename MBS>
-    struct send_op {
-        using result_t = std::size_t;
-        static constexpr int event = POLLOUT;
-        static constexpr char const* name = "send";
-
-        toy::message_flags flags;
-        MBS                buffer;
-        ::ssize_t operator()(auto& state) {
-            msghdr msg{
-                .msg_name = nullptr,
-                .msg_namelen = 0,
-                .msg_iov = buffer.data(),
-                .msg_iovlen = decltype(std::declval<msghdr>().msg_iovlen)(buffer.size()),
-                .msg_control = nullptr,
-                .msg_controllen = 0,
-                .msg_flags = 0
-            };
-            return sendmsg(state.fd, &msg, int(flags));
-        }
-    };
-
-    template <typename MBS>
-    struct send_to_op {
-        using result_t = std::size_t;
-        static constexpr int event = POLLOUT;
-        static constexpr char const* name = "send_to";
-
-        MBS                buffer;
-        toy::address       address;
-        toy::message_flags flags;
-        ::ssize_t operator()(auto& state) {
-            msghdr msg{
-                .msg_name = &address.as_addr(),
-                .msg_namelen = address.size(),
-                .msg_iov = buffer.data(),
-                .msg_iovlen = decltype(std::declval<msghdr>().msg_iovlen)(buffer.size()),
-                .msg_control = nullptr,
-                .msg_controllen = 0,
-                .msg_flags = 0
-            };
-            return sendmsg(state.fd, &msg, int(flags));
-        }
-    };
-
     template <typename Operation>
     struct sender {
         using result_t = typename Operation::result_t;
@@ -362,36 +236,25 @@ namespace hidden::io_operation {
         struct state
             : toy::io
         {
-            struct callback {
-                state& s;
-                void operator()() {
-                    s.c.erase(&s);
-                    s.cb.reset();
-                    set_stopped(std::move(s.receiver));
-                }
-            };
-            using stop_token = decltype(get_stop_token(std::declval<R>()));
-            using stop_callback = typename stop_token::template callback_type<callback>; 
-
             R                            receiver;
             Operation                    op;
-            std::optional<stop_callback> cb;
+            stop_callback<state, R> cb;
 
             state(R         receiver,
                   int       fd,
                   Operation op)
-                : io(*get_scheduler(receiver).context, fd, Operation::event)
+                : io(*get_scheduler(receiver).context, fd, Operation::event == event_kind::read? POLLIN: POLLOUT)
                 , receiver(receiver)
                 , op(op)
                 , cb() {
             }
 
             friend void start(state& self) {
-                self.cb.emplace(get_stop_token(self.receiver), callback{self});
+                self.cb.engage(self);
                 self.c.add(&self);
             }
             void complete() override final {
-                cb.reset();
+                cb.disengage();
                 auto res{op(*this)};
                 if (0 <= res)
                     set_value(std::move(receiver), typename Operation::result_t(res));
@@ -478,20 +341,9 @@ namespace hidden_async_sleep_for {
         template <typename R>
         struct state
             : io {
-            struct callback {
-                state& s;
-                void operator()() {
-                    s.c.erase_timer(&s);
-                    s.cb.reset();
-                    set_stopped(s.receiver);
-                }
-            };
-            using stop_token = decltype(get_stop_token(std::declval<R>()));
-            using stop_callback = typename stop_token::template callback_type<callback>; 
-
             R                            receiver;
             duration_t                   duration;
-            std::optional<stop_callback> cb;
+            hidden::io_operation::stop_callback<state, R, true> cb;
 
             state(R receiver, duration_t duration)
                 : io(*get_scheduler(receiver).context, 0, 0)
@@ -499,11 +351,11 @@ namespace hidden_async_sleep_for {
                 , duration(duration) {
             }
             friend void start(state& self) {
-                self.cb.emplace(get_stop_token(self.receiver), callback{self});
+                self.cb.engage(self);
                 self.c.add(std::chrono::system_clock::now() + self.duration, &self);;
             }
             void complete() override {
-                cb.reset();
+                cb.disengage();
                 set_value(receiver, result_t{});
             }
         };

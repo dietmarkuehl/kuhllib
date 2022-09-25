@@ -30,8 +30,11 @@
 #include "toy-starter.hpp"
 #include "toy-utility.hpp"
 #include <chrono>
+#include <iostream> //-dk:TODO remove
+#include <optional>
 #include <stdexcept>
 #include <string>
+#include <system_error>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -110,12 +113,21 @@ public:
     ~io_context() {
         ::close(queue);
     }
-    void add(io* i) {
+    void flush_changes() {
         if (changes == size) {
             ::kevent(queue, change, changes, result, 0, nullptr);
             changes = 0u;
         }
+
+    }
+    void add(io* i) {
+        flush_changes();
         change[changes++] = kevent_t{::uintptr_t(i->fd), ::int16_t(i->events), EV_ADD | EV_ONESHOT| EV_EOF, ::uint32_t(), ::intptr_t(), i};
+        ++outstanding;
+    }
+    void erase(io* i) {
+        flush_changes();
+        change[changes++] = kevent_t{::uintptr_t(i->fd), ::int16_t(i->events), EV_DELETE, ::uint32_t(), ::intptr_t(), i};
         ++outstanding;
     }
     void run() {
@@ -132,51 +144,115 @@ public:
 
 // ----------------------------------------------------------------------------
 
-namespace hidden_io_op {
-    template <typename Res, short F, typename O, typename... P>
-    struct io_op {
-        using result_t = Res;
+namespace hidden::io_operation {
+    template <typename Operation>
+    struct sender {
+        using result_t = typename Operation::result_t;
 
-        int              fd;
-        std::tuple<P...> p;
-
-        io_op(socket& sock, auto... a): fd(sock.fd), p(a...) {}
+        toy::socket&  socket;
+        Operation     op;
 
         template <typename R>
-        struct state: io {
-            std::tuple<P...> p;
-            R                r;
-            state(int fd, auto p, R r): io(*get_scheduler(r).context, fd, F), p(p), r(r) {}
-            friend void start(state& self) { self.c.add(&self); }
-            void complete() override final { O()(*this); }
+        struct state
+            : toy::io
+        {
+            R                       receiver;
+            Operation               op;
+            stop_callback<state, R> cb;
+
+            state(R         receiver,
+                  int       fd,
+                  Operation op)
+                : io(*get_scheduler(receiver).context, fd, Operation::event == event_kind::read? EVFILT_READ: EVFILT_WRITE)
+                , receiver(receiver)
+                , op(op)
+                , cb() {
+            }
+
+            friend void start(state& self) {
+                self.cb.engage(self);
+                self.c.add(&self);
+            }
+            void complete() override final {
+                cb.disengage();
+                auto res{op(*this)};
+                if (0 <= res)
+                    set_value(std::move(receiver), typename Operation::result_t(res));
+                else if (errno == EAGAIN) {
+                    std::cout << "restart op=" << Operation::name << "\n";
+                    start(*this);
+                }
+                else {
+                    std::cout << "error: op=" << Operation::name << " res=" << res << " errno=" << errno << "\n";
+                    set_error(std::move(receiver), std::make_exception_ptr(std::system_error(errno, std::system_category())));
+                }  
+            }
         };
-
         template <typename R>
-        friend state<R> connect(io_op const& self, R r) {
-            return state<R>(self.fd, self.p, r);
+        friend state<R> connect(sender const& self, R receiver) {
+            return state<R>(receiver, self.socket.fd, self.op);
         }
     };
 }
 
-using async_accept = hidden_io_op::io_op<socket, EVFILT_READ, decltype([](auto& s){
-    ::sockaddr  addr{};
-    ::socklen_t len{sizeof(addr)};
-    auto fd = ::accept(s.fd, &addr, &len);
-    if (0 <= fd) set_value(std::move(s.r), fd);
-    else set_error(std::move(s.r), std::make_exception_ptr(std::runtime_error("accept")));
-    })>;
+hidden::io_operation::sender<hidden::io_operation::accept_op>
+async_accept(toy::socket& s) {
+    return {s, {}};
+}
 
-using async_read_some = hidden_io_op::io_op<int, EVFILT_READ, decltype([](auto& s){
-    auto n = ::read(s.fd, get<0>(s.p), get<1>(s.p));
-    if (0 <= n) set_value(std::move(s.r), n);
-    else set_error(std::move(s.r), std::make_exception_ptr(std::runtime_error("read")));
-    }), char*, std::size_t>;
+hidden::io_operation::sender<hidden::io_operation::read_some_op>
+async_read_some(toy::socket& s, char* buffer, std::size_t len) {
+    return {s, {buffer, len}};
+}
 
-using async_write_some = hidden_io_op::io_op<int, EVFILT_WRITE, decltype([](auto& s){
-    auto n = ::write(s.fd, get<0>(s.p), get<1>(s.p));
-    if (0 <= n) set_value(std::move(s.r), n);
-    else set_error(std::move(s.r), std::make_exception_ptr(std::runtime_error("write")));
-    }), char const*, std::size_t>;
+hidden::io_operation::sender<hidden::io_operation::write_some_op>
+async_write_some(toy::socket& s, char const* buffer, std::size_t len) {
+    return {s, {buffer, len}};
+}
+
+template <typename MBS>
+hidden::io_operation::sender<hidden::io_operation::receive_op<MBS>>
+async_receive(toy::socket& s, toy::message_flags f, const MBS& b) {
+    return {s, {f, b}};
+}
+template <typename MBS>
+hidden::io_operation::sender<hidden::io_operation::receive_op<MBS>>
+async_receive(toy::socket& s, const MBS& b) {
+    return {s, {toy::message_flags{}, b}};
+}
+
+template <typename MBS>
+hidden::io_operation::sender<hidden::io_operation::receive_from_op<MBS>>
+async_receive_from(toy::socket& s, const MBS& b, toy::address& addr, toy::message_flags f) {
+    return {s, {b, addr, f}};
+}
+template <typename MBS>
+hidden::io_operation::sender<hidden::io_operation::receive_from_op<MBS>>
+async_receive_from(toy::socket& s, const MBS& b, toy::address& addr) {
+    return {s, {b, addr, toy::message_flags{}}};
+}
+
+template <typename MBS>
+hidden::io_operation::sender<hidden::io_operation::send_op<MBS>>
+async_send(toy::socket& s, toy::message_flags f, const MBS& b) {
+    return {s, {f, b}};
+}
+template <typename MBS>
+hidden::io_operation::sender<hidden::io_operation::send_op<MBS>>
+async_send(toy::socket& s, const MBS& b) {
+    return {s, {toy::message_flags{}, b}};
+}
+
+template <typename MBS>
+hidden::io_operation::sender<hidden::io_operation::send_to_op<MBS>>
+async_send_to(toy::socket& s, const MBS& b, toy::address addr, toy::message_flags f) {
+    return {s, {b, addr, f}};
+}
+template <typename MBS>
+hidden::io_operation::sender<hidden::io_operation::send_to_op<MBS>>
+async_send_to(toy::socket& s, const MBS& b, toy::address addr) {
+    return {s, {b, addr, toy::message_flags{}}};
+}
 
 namespace hidden_async_connect {
     struct async_connect {
@@ -189,34 +265,38 @@ namespace hidden_async_connect {
         async_connect(socket& sock, ::sockaddr const* addr, ::socklen_t len): fd(sock.fd), addr(addr), len(len) {}
 
         template <typename R>
-        struct state: io {
-            ::sockaddr const* addr;
-            ::socklen_t       len;
-            R                 r;
-            state(int fd, ::sockaddr const* addr, ::socklen_t len, R r): io(*get_scheduler(r).context, fd, EVFILT_WRITE), addr(addr), len(len), r(r) {}
+        struct state
+            : io {
+            ::sockaddr const*       addr;
+            ::socklen_t             len;
+            R                       receiver;
+            hidden::io_operation::stop_callback<state, R> cb;
+            state(int fd, ::sockaddr const* addr, ::socklen_t len, R r)
+                : io(*get_scheduler(r).context, fd, EVFILT_WRITE), addr(addr), len(len), receiver(r) {
+            }
             friend void start(state& self) {
                 switch (::connect(self.fd, self.addr, self.len)? errno: 0) {
                 default:
-                    set_error(self.r, std::make_exception_ptr(std::runtime_error(std::string("connect: ") + ::strerror(errno))));
+                    set_error(self.receiver, std::make_exception_ptr(std::runtime_error(std::string("connect: ") + ::strerror(errno))));
                     break;
                 case 0:
-                    set_value(self.r, 0);
+                    set_value(self.receiver, 0);
                     break;
                 case EAGAIN:
-                    self.c.add(&self);
-                    break;
                 case EINPROGRESS:
+                    self.cb.engage(self);
                     self.c.add(&self);
                     break;
                 }
             }
             void complete() override final {
+                cb.disengage();
                 int         rc{};
                 ::socklen_t len{sizeof rc};
                 if (::getsockopt(fd, SOL_SOCKET, SO_ERROR, &rc, &len))
-                    set_error(r, std::make_exception_ptr(std::runtime_error(std::string("getsockopt: ") + ::strerror(errno))));
+                    set_error(receiver, std::make_exception_ptr(std::runtime_error(std::string("getsockopt: ") + ::strerror(errno))));
                 else
-                    set_value(r, 0);
+                    set_value(receiver, 0);
             }
         };
 

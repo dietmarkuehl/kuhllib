@@ -14,16 +14,23 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DNOMINMAX")
 endif()
 
+list(APPEND TOY_DEMOS
+    toy-cancel
+    toy-client
+    toy-echo
+    toy-sender
+    toy-udp-client
+    toy-udp-server
+)
+
 # try to use the POSIX interface
 CHECK_INCLUDE_FILE(unistd.h TOY_HAS_UNISTD)
 if(TOY_HAS_UNISTD)
-    add_executable(toy-sender toy-sender.cpp)
-    add_executable(toy-echo toy-echo.cpp)
-    add_executable(toy-client toy-client.cpp)
-    add_executable(toy-cancel toy-cancel.cpp)
-    add_executable(toy-udp-client toy-udp-client.cpp)
-    add_executable(toy-udp-server toy-udp-server.cpp)
-    add_executable(toy-cppcon-2022 toy-cppcon-2022.cpp)
+    foreach(demo ${TOY_DEMOS})
+        add_executable(${demo}-${CMAKE_CXX_COMPILER_ID}-poll ${demo}.cpp)
+    endforeach()
+
+    add_executable(toy-cppcon-2022-${CMAKE_CXX_COMPILER_ID} toy-cppcon-2022.cpp)
 ENDIF()
 
 # try to use liburing.h
@@ -47,12 +54,13 @@ IF(TOY_HAS_EPOLL)
 ENDIF()
 
 # try to use sys/event.h
-CHECK_INCLUDE_FILE(sys/xevent.h TOY_HAS_KQUEUE)
+CHECK_INCLUDE_FILE(sys/event.h TOY_HAS_KQUEUE)
 IF(TOY_HAS_KQUEUE)
-    add_executable(toy-echo-kqueue toy-echo.cpp)
-    target_compile_definitions(toy-echo-kqueue PRIVATE TOY_NETWORKING_HPP="toy-networking-kqueue.hpp")
-    add_executable(toy-client-kqueue toy-client.cpp)
-    target_compile_definitions(toy-client-kqueue PRIVATE TOY_NETWORKING_HPP="toy-networking-kqueue.hpp")
+    foreach(demo ${TOY_DEMOS})
+        set(demo_executable ${demo}-${CMAKE_CXX_COMPILER_ID}-kqueue)
+        add_executable(${demo_executable} ${demo}.cpp)
+        target_compile_definitions(${demo_executable} PRIVATE TOY_NETWORKING_HPP="toy-networking-kqueue.hpp")
+    endforeach()
 ENDIF()
 
 # try to use IOCP
