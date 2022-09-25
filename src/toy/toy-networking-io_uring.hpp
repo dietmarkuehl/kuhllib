@@ -26,6 +26,7 @@
 #ifndef INCLUDED_TOY_NETWORKING_IO_URING
 #define INCLUDED_TOY_NETWORKING_IO_URING
 
+#include "toy-networking-common.hpp"
 #include "toy-starter.hpp"
 #include "toy-utility.hpp"
 

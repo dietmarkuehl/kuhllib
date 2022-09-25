@@ -227,8 +227,8 @@ namespace hidden::io_operation {
         struct state
             : toy::io
         {
-            R                            receiver;
-            Operation                    op;
+            R                       receiver;
+            Operation               op;
             stop_callback<state, R> cb;
 
             state(R         receiver,

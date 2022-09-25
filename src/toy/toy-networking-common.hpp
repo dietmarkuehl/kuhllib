@@ -139,6 +139,27 @@ namespace hidden::io_operation {
     };
 
     enum class event_kind { read, write };
+
+    struct connect_op {
+        using result_t = int;
+        static constexpr event_kind event = event_kind::write;
+        static constexpr char const* name = "connect";
+
+        //toy::address address;
+        sockaddr const*  addr;
+        socklen_t        len;
+
+        int start(auto& state) {
+            return ::connect(state.fd, addr, len);
+            //return ::connect(state.fd, state.address.as_addr(), state.address.len());
+        }
+        int operator()(auto& state) {
+            int         rc{};
+            ::socklen_t len{sizeof rc};
+            return (::getsockopt(state.fd, SOL_SOCKET, SO_ERROR, &rc, &len) || rc)? -1: rc;
+        }
+    };
+
     struct accept_op {
         using result_t = toy::socket;
         static constexpr event_kind event = event_kind::read;
@@ -147,7 +168,6 @@ namespace hidden::io_operation {
         int operator()(auto& state) {
             ::sockaddr  addr{};
             ::socklen_t len{sizeof(addr)};
-            std::cout << "state.fd=" << state.fd << "\n";
             return ::accept(state.fd, &addr, &len);
         }
     };

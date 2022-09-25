@@ -34,7 +34,7 @@ if(TOY_HAS_UNISTD)
 ENDIF()
 
 # try to use liburing.h
-CHECK_INCLUDE_FILE(liburing.h TOY_HAS_LIBURING)
+CHECK_INCLUDE_FILE(xliburing.h TOY_HAS_LIBURING)
 IF(TOY_HAS_LIBURING)
     add_executable(toy-echo-io_uring toy-echo.cpp)
     target_compile_definitions(toy-echo-io_uring PRIVATE TOY_NETWORKING_HPP="toy-networking-io_uring.hpp")
@@ -47,10 +47,11 @@ ENDIF()
 # try to use sys/epoll.h
 CHECK_INCLUDE_FILE(sys/epoll.h TOY_HAS_EPOLL)
 IF(TOY_HAS_EPOLL)
-    add_executable(toy-echo-epoll toy-echo.cpp)
-    target_compile_definitions(toy-echo-epoll PRIVATE TOY_NETWORKING_HPP="toy-networking-epoll.hpp")
-    add_executable(toy-client-epoll toy-client.cpp)
-    target_compile_definitions(toy-client-epoll PRIVATE TOY_NETWORKING_HPP="toy-networking-epoll.hpp")
+    foreach(demo ${TOY_DEMOS})
+        set(demo_executable ${demo}-${CMAKE_CXX_COMPILER_ID}-epoll)
+        add_executable(${demo_executable} ${demo}.cpp)
+        target_compile_definitions(${demo_executable} PRIVATE TOY_NETWORKING_HPP="toy-networking-epoll.hpp")
+    endforeach()
 ENDIF()
 
 # try to use sys/event.h

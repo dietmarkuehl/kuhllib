@@ -46,6 +46,7 @@ int main() {
             std::cout << "ERROR: failed to connect: " << ::strerror(errno) << "\n";
             co_return;
         }
+        std::cout << "connected\n";
         char const request[] = {
             "GET /index.html HTTP/1.0\r\n"
             "Host: dietmar-kuehl.de\r\n"
@@ -56,12 +57,14 @@ int main() {
             std::cout << "ERROR: failed to write request: " << ::strerror(errno) << "\n";
             co_return;
         }
+        std::cout << "wrote request\n";
         char buffer[65536];
         int result = co_await toy::async_read_some(client, buffer, sizeof buffer);
         if (result < 0) {
             std::cout << "ERROR: failed to read response: " << ::strerror(errno) << "\n";
             co_return;
         }
+        std::cout << "received result\n";
         std::cout.write(buffer, result);
     }());
 

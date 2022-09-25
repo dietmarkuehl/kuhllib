@@ -82,7 +82,7 @@ int main() {
             using namespace std::chrono_literals;
             for (int i = 0; i != 3; ++i) {
                 std::cout << "awaiting accept\n" << std::flush;
-                std::optional<toy::socket> o = co_await toy::timeout(toy::async_accept(server), 5s);
+                std::optional<toy::socket> o = co_await toy::timeout(toy::async_accept(server), 2s);
                 if (o) {
                     std::cout << "accepted client\n" << std::flush;
                 }
