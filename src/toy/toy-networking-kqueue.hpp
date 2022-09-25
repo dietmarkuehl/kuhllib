@@ -82,7 +82,8 @@ struct io
     int         fd;
     short int   events;
     virtual void complete() = 0;
-    io(io_context& c, int fd, short int events): c(c), fd(fd), events(events)  {}
+    io(io_context& c, int fd, short int events): c(c), fd(fd), events(events)  {
+    }
 };
 
 class io_context
@@ -92,14 +93,16 @@ public:
     scheduler get_scheduler() { return { this }; }
 
 private:
+    using time_point_t = std::chrono::system_clock::time_point;
     using kevent_t = struct ::kevent;
     static constexpr std::size_t size{4};
 
-    int          queue;
-    std::size_t  outstanding{};
-    std::size_t  changes{};
-    kevent_t     change[size];
-    kevent_t     result[size];
+    int                   queue;
+    std::size_t           outstanding{};
+    std::size_t           changes{};
+    kevent_t              change[size];
+    kevent_t              result[size];
+    toy::timer_queue<io*> times;
 
 public:
     static constexpr bool has_timer = false; //-dk:TODO remove - used while adding timers to contexts
@@ -125,14 +128,40 @@ public:
         change[changes++] = kevent_t{::uintptr_t(i->fd), ::int16_t(i->events), EV_ADD | EV_ONESHOT| EV_EOF, ::uint32_t(), ::intptr_t(), i};
         ++outstanding;
     }
+    void add(time_point_t time, io* op) {
+        times.push(time, op);
+    }
     void erase(io* i) {
         flush_changes();
         change[changes++] = kevent_t{::uintptr_t(i->fd), ::int16_t(i->events), EV_DELETE, ::uint32_t(), ::intptr_t(), i};
-        ++outstanding;
+        --outstanding;
+    }
+    void erase_timer(io* i) {
+        times.erase(i);
     }
     void run() {
-        while (0 < outstanding) {
-            int n = ::kevent(queue, change, changes, result, size, nullptr);
+        while (0 < outstanding || !times.empty()) {
+            auto now{std::chrono::system_clock::now()};
+
+            bool timed{false};
+            while (!times.empty() && times.top().first <= now) {
+                io* op{times.top().second};
+                times.pop();
+                op->complete();
+                timed = true;
+            }
+            if (timed) {
+                continue;
+            }
+
+            timespec timeout;
+            if (!times.empty()) {
+                auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(times.top().first - now).count();
+                timeout.tv_sec  = milliseconds / 1000;
+                timeout.tv_nsec = 1000000 * (milliseconds % 1000);
+            }
+
+            int n = ::kevent(queue, change, changes, result, 1, times.empty()? nullptr: &timeout);
             changes = 0u;
             while (0 < n) {
                 static_cast<io*>(result[--n].udata)->complete();
@@ -310,20 +339,39 @@ using async_connect = hidden_async_connect::async_connect;
 
 // ----------------------------------------------------------------------------
 
-namespace hidden_async_sleep_for {
-    struct async_sleep_for {
+namespace hidden::async_sleep_for {
+    struct sender {
+        using duration_t = std::chrono::milliseconds;
         using result_t = none;
         std::chrono::milliseconds duration;
 
-        struct state {
-            friend void start(state&) {}
+        template <typename R>
+        struct state
+            : io {
+            R                         receiver;
+            std::chrono::milliseconds duration;
+            hidden::io_operation::stop_callback<state, R, true> cb;
+            state(R receiver, duration_t duration)
+                : io(*get_scheduler(receiver).context, 0, 0)
+                , receiver(receiver)
+                , duration(duration) {
+            }
+            friend void start(state& self) {
+                self.cb.engage(self);
+                self.c.add(std::chrono::system_clock::now() + self.duration, &self);
+            }
+            void complete() override {
+                cb.disengage();
+                set_value(receiver, result_t{});
+            }
         };
-        friend state connect(async_sleep_for, auto) {
-            return {};
+        template <typename R>
+        friend state<R> connect(sender self, R receiver) {
+            return { receiver, self.duration };
         }
     };
 }
-using async_sleep_for = hidden_async_sleep_for::async_sleep_for;
+using async_sleep_for = hidden::async_sleep_for::sender;
 
 // ----------------------------------------------------------------------------
 

@@ -28,6 +28,7 @@
 
 #include <array>
 #include <concepts>
+#include <iostream> //-dk:TODO remove
 #include <optional>
 #include <cstddef>
 #include <sys/socket.h>
@@ -146,6 +147,7 @@ namespace hidden::io_operation {
         int operator()(auto& state) {
             ::sockaddr  addr{};
             ::socklen_t len{sizeof(addr)};
+            std::cout << "state.fd=" << state.fd << "\n";
             return ::accept(state.fd, &addr, &len);
         }
     };

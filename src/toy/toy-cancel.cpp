@@ -28,6 +28,8 @@
 #include "toy-networking.hpp"
 #include "toy-task.hpp"
 #include <iostream>
+#include <cerrno>
+#include <cstring>
 
 // ----------------------------------------------------------------------------
 
@@ -69,20 +71,28 @@ int main() {
         .sin_port = htons(12345),
         .sin_addr = { .s_addr = INADDR_ANY }
         };
-    ::bind(server.fd, (::sockaddr*)&addr, sizeof(addr));
-    ::listen(server.fd, 1);
+    if (::bind(server.fd, (::sockaddr*)&addr, sizeof(addr)) < 0
+        || ::listen(server.fd, 1) < 0) {
+        std::cout << "can't bind socket: " << std::strerror(errno) << "\n";
+        return EXIT_FAILURE;
+    }
 
     context.spawn([](auto& server)->toy::task<toy::io_context::scheduler> {
-        using namespace std::chrono_literals;
-        for (int i = 0; i != 3; ++i) {
-            std::cout << "awaiting accept\n" << std::flush;
-            std::optional<toy::socket> o = co_await toy::timeout(toy::async_accept(server), 5s);
-            if (o) {
-                std::cout << "accepted client\n" << std::flush;
+        try {
+            using namespace std::chrono_literals;
+            for (int i = 0; i != 3; ++i) {
+                std::cout << "awaiting accept\n" << std::flush;
+                std::optional<toy::socket> o = co_await toy::timeout(toy::async_accept(server), 5s);
+                if (o) {
+                    std::cout << "accepted client\n" << std::flush;
+                }
+                else {
+                    std::cout << "accept timed out\n" << std::flush;
+                }
             }
-            else {
-                std::cout << "accept timed out\n" << std::flush;
-            }
+        }
+        catch (std::exception const& ex) {
+            std::cout << "ERROR: " << ex.what() << "\n";
         }
     }(server));
 

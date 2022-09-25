@@ -448,13 +448,13 @@ hidden_when_any::when_any<S...> when_any(S&&... sender) {
 // ----------------------------------------------------------------------------
 
 template <typename S, typename D>
-auto timeout(S sender, D duration) {
+auto timeout(S&& sender, D duration) {
     using result_t = std::optional<typename S::result_t>;
     struct visitor {
         result_t operator()(typename S::result_t r) const { return result_t(std::move(r)); }
         result_t operator()(toy::none) const { return result_t(); }
     };
-    return toy::then(toy::when_any(sender, toy::async_sleep_for{duration}),
+    return toy::then(toy::when_any(std::forward<S>(sender), toy::async_sleep_for{duration}),
                      [](auto v) { return std::visit(visitor(), std::move(v)); }
                     );
 }

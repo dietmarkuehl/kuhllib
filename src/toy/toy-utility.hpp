@@ -26,6 +26,8 @@
 #ifndef INCLUDED_TOY_UTILITY
 #define INCLUDED_TOY_UTILITY
 
+#include <algorithm>
+#include <chrono>
 #include <tuple>
 #include <utility>
 #include <type_traits>
@@ -57,6 +59,35 @@ struct connector {
         : state(connect(std::forward<S>(sender), std::forward<R>(receiver))) {
     }
     friend void start(connector& self) { start(self.state); }
+};
+
+// ----------------------------------------------------------------------------
+
+template <typename V>
+class timer_queue
+{
+private:
+    using time_point_t = std::chrono::system_clock::time_point;
+    using timer_t      = std::pair<time_point_t, V>;
+    struct compare_t { bool operator()(auto&& a, auto&& b) { return a.first > b.first; } };
+    using queue_t      = std::vector<timer_t>;
+
+    queue_t times;
+
+public:
+    bool empty() const { return times.empty(); }
+    void push(time_point_t time, V op) {
+        auto it(std::lower_bound(times.begin(), times.end(), std::make_pair(time, op), compare_t()));
+        times.insert(it, std::make_pair(time, op));
+    }
+    void pop() { times.erase(times.begin()); }
+    timer_t const& top() { return times.front(); }
+    void erase(V i) {
+        auto it = std::find_if(times.begin(), times.end(), [i](auto&& p){ return p.second == i; });
+        if (it != times.end()) {
+            times.erase(it);
+        }
+    }
 };
 
 // ----------------------------------------------------------------------------

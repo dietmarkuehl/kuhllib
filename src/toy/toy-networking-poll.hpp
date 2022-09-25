@@ -96,13 +96,9 @@ public:
 
 private:
     using time_point_t = std::chrono::system_clock::time_point;
-    using timer_t      = std::pair<time_point_t, io*>;
-    struct compare_t { bool operator()(auto&& a, auto&& b) { return a.first > b.first; } };
-    using queue_t      = std::vector<timer_t>;
-    
     std::vector<io*>      ios;
     std::vector<::pollfd> fds;
-    queue_t               times;
+    toy::timer_queue<io*> times;
 
 public:
     static constexpr bool has_timer = true; //-dk:TODO remove - used while adding timers to contexts
@@ -115,8 +111,7 @@ public:
         fds.push_back(  pollfd{ .fd = i->fd, .events = i->events });
     }
     void add(time_point_t time, io* op) {
-        auto it(std::lower_bound(times.begin(), times.end(), std::make_pair(time, op), compare_t()));
-        times.insert(it, std::make_pair(time, op));
+        times.push(time, op);
     }
     void erase(io* i) {
         auto it = std::find(ios.begin(), ios.end(), i);
@@ -126,20 +121,16 @@ public:
         }
     }
     void erase_timer(io* i) {
-        auto it = std::find_if(times.begin(), times.end(), [i](auto&& p){ return p.second == i; });
-        if (it != times.end()) {
-            times.erase(it);
-        }
+        times.erase(i);
     }
     void run() {
-        while (
-            (!ios.empty() || not times.empty())) { 
+        while ( (!ios.empty() || not times.empty())) { 
             auto now{std::chrono::system_clock::now()};
 
             bool timed{false};
-            while (!times.empty() && times.front().first <= now) {
-                io* op{times.front().second};
-                times.erase(times.begin());
+            while (!times.empty() && times.top().first <= now) {
+                io* op{times.top().second};
+                times.pop();
                 op->complete();
                 timed = true;
             }
@@ -148,7 +139,7 @@ public:
             }
             auto time{times.empty()
                      ? -1
-                : std::chrono::duration_cast<std::chrono::milliseconds>(times.front().first - now).count()};
+                : std::chrono::duration_cast<std::chrono::milliseconds>(times.top().first - now).count()};
             if (0 < ::poll(fds.data(), fds.size(), time)) {
                 for (size_t i = fds.size(); i--; )
                     // The check for i < fds.size() is added as complete() may
