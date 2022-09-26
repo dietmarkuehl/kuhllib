@@ -128,9 +128,10 @@ namespace hidden_io_op {
             }
             void complete(int fd) override {
                 if (0 <= fd)
-                    set_value(receiver, result_t(fd));
-                else 
-                    set_error(receiver, std::make_exception_ptr(std::runtime_error("accept")));
+                    set_value(std::move(receiver), result_t(fd));
+                else  {
+                    set_error(std::move(receiver), std::make_exception_ptr(std::system_error(-fd, std::system_category())));
+                }
             }
         };
 
@@ -169,6 +170,80 @@ using async_write_some_op = decltype([](auto sqe, int fd, auto& state){
     ::io_uring_prep_write(sqe, fd, std::get<0>(state), std::get<1>(state), 0);
 });
 using async_write_some = hidden_io_op::io_op<int, async_write_some_op, char const*, std::size_t>;
+
+using async_receive_op = decltype([](auto sqe, int fd, auto& state){
+    std::get<1>(state).msg_iov = const_cast<iovec*>(std::get<0>(state).data());
+    std::get<1>(state).msg_iovlen = decltype(std::declval<msghdr>().msg_iovlen)(std::get<0>(state).size());
+    ::io_uring_prep_recvmsg(sqe, fd, &std::get<1>(state), int(std::get<2>(state)));
+});
+template <typename MBS>
+using async_receive_t = hidden_io_op::io_op<int, async_receive_op, MBS, msghdr, toy::message_flags>;
+template <typename MBS>
+async_receive_t<MBS> async_receive(toy::socket& s, toy::message_flags f, const MBS& b) {
+    return {s, b, msghdr{}, f};
+}
+template <typename MBS>
+async_receive_t<MBS> async_receive(toy::socket& s, const MBS& b) {
+    return async_receive(s, toy::message_flags{}, b);
+}
+
+struct async_receive_from_op
+{
+    void operator()(auto sqe, int fd, auto& state) const {
+        std::get<2>(state).msg_name = &std::get<1>(state)->as_addr();
+        std::get<2>(state).msg_namelen = std::get<1>(state)->size();
+        std::get<2>(state).msg_iov = const_cast<iovec*>(std::get<0>(state).data());
+        std::get<2>(state).msg_iovlen = decltype(std::declval<msghdr>().msg_iovlen)(std::get<0>(state).size());
+        ::io_uring_prep_recvmsg(sqe, fd, &std::get<2>(state), int(std::get<3>(state)));
+    }
+    void finalize(auto& state) {
+        std::get<1>(state)->resize(std::get<0>(state).msg_namelen);
+    }
+};
+template <typename MBS>
+using async_receive_from_t = hidden_io_op::io_op<int, async_receive_from_op, MBS, toy::address*, msghdr, toy::message_flags>;
+template <typename MBS>
+async_receive_from_t<MBS> async_receive_from(toy::socket& s, toy::message_flags f, const MBS& b, toy::address& addr) {
+    return {s, b, &addr, msghdr{}, f};
+}
+template <typename MBS>
+async_receive_from_t<MBS> async_receive_from(toy::socket& s, const MBS& b, toy::address& addr) {
+    return async_receive_from(s, toy::message_flags{}, b, addr);
+}
+
+using async_send_op = decltype([](auto sqe, int fd, auto& state){
+    std::get<1>(state).msg_iov = const_cast<iovec*>(std::get<0>(state).data());
+    std::get<1>(state).msg_iovlen = decltype(std::declval<msghdr>().msg_iovlen)(std::get<0>(state).size());
+    ::io_uring_prep_sendmsg(sqe, fd, &std::get<1>(state), int(std::get<2>(state)));
+});
+template <typename MBS>
+using async_send_t = hidden_io_op::io_op<int, async_send_op, MBS, msghdr, toy::message_flags>;
+template <typename MBS>
+async_send_t<MBS> async_send(toy::socket& s, toy::message_flags f, const MBS& b) {
+    return {s, b, msghdr{}, f};
+}
+template <typename MBS>
+async_send_t<MBS> async_send(toy::socket& s, const MBS& b) {
+    return async_send(s, toy::message_flags{}, b);
+}
+
+using async_send_to_op = decltype([](auto sqe, int fd, auto& state){
+    std::get<2>(state).msg_name = &std::get<1>(state).as_addr();
+    std::get<2>(state).msg_namelen = std::get<1>(state).size();
+    std::get<2>(state).msg_iov = const_cast<iovec*>(std::get<0>(state).data());
+    std::get<2>(state).msg_iovlen = decltype(std::declval<msghdr>().msg_iovlen)(std::get<0>(state).size());
+    ::io_uring_prep_sendmsg(sqe, fd, &std::get<2>(state), int(std::get<3>(state)));
+});
+template <typename MBS>
+using async_send_to_t = hidden_io_op::io_op<int, async_send_to_op, MBS, toy::address, msghdr, toy::message_flags>;
+template <typename MBS>
+async_send_to_t<MBS> async_send_to(toy::socket& s, const MBS& b, toy::address addr, toy::message_flags f) {
+    return {s, b, addr, msghdr{}, f};
+}
+template <typename MBS>
+async_send_to_t<MBS> async_send_to(toy::socket& s, const MBS& b, toy::address addr) {
+    return async_send_to(s, b, addr, toy::message_flags{});
+}
 
 // ----------------------------------------------------------------------------
 

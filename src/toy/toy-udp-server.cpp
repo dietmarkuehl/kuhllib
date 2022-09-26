@@ -42,10 +42,11 @@ int main() {
     };
 
     context.spawn([](toy::socket server)->toy::task<toy::io_context::scheduler> {
+        char         buffer[16];
+        toy::address addr;
         while (true) {
-            char         buffer[16];
-            toy::address addr;
             std::size_t n = co_await toy::async_receive_from(server, toy::buffer(buffer), addr);
+            std::cout << "received\n" << std::flush;
             co_await toy::async_send_to(server, toy::buffer(buffer, n), addr);
         }
     }(std::move(server)));

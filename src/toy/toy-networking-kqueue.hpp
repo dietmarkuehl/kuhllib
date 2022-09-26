@@ -30,7 +30,6 @@
 #include "toy-starter.hpp"
 #include "toy-utility.hpp"
 #include <chrono>
-#include <iostream> //-dk:TODO remove
 #include <optional>
 #include <stdexcept>
 #include <string>
@@ -208,11 +207,9 @@ namespace hidden::io_operation {
                 if (0 <= res)
                     set_value(std::move(receiver), typename Operation::result_t(res));
                 else if (errno == EAGAIN) {
-                    std::cout << "restart op=" << Operation::name << "\n";
                     start(*this);
                 }
                 else {
-                    std::cout << "error: op=" << Operation::name << " res=" << res << " errno=" << errno << "\n";
                     set_error(std::move(receiver), std::make_exception_ptr(std::system_error(errno, std::system_category())));
                 }  
             }

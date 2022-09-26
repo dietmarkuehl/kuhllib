@@ -39,7 +39,7 @@ default: build
 
 build: 
 	@mkdir -p build
-	cd build; cmake ..
+	cd build; cmake .. -G"Unix Makefiles"
 	cd build; $(MAKE)
 
 run: build

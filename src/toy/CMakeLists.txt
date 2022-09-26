@@ -14,8 +14,9 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DNOMINMAX")
 endif()
 
+
+    #toy-cancel
 list(APPEND TOY_DEMOS
-    toy-cancel
     toy-client
     toy-echo
     toy-sender
@@ -34,14 +35,14 @@ if(TOY_HAS_UNISTD)
 ENDIF()
 
 # try to use liburing.h
-CHECK_INCLUDE_FILE(xliburing.h TOY_HAS_LIBURING)
+CHECK_INCLUDE_FILE(liburing.h TOY_HAS_LIBURING)
 IF(TOY_HAS_LIBURING)
-    add_executable(toy-echo-io_uring toy-echo.cpp)
-    target_compile_definitions(toy-echo-io_uring PRIVATE TOY_NETWORKING_HPP="toy-networking-io_uring.hpp")
-    target_link_libraries(toy-echo-io_uring uring)
-    add_executable(toy-client-io_uring toy-client.cpp)
-    target_compile_definitions(toy-client-io_uring PRIVATE TOY_NETWORKING_HPP="toy-networking-io_uring.hpp")
-    target_link_libraries(toy-client-io_uring uring)
+    foreach(demo ${TOY_DEMOS})
+        set(demo_executable ${demo}-${CMAKE_CXX_COMPILER_ID}-io_uring)
+        add_executable(${demo_executable} ${demo}.cpp)
+        target_compile_definitions(${demo_executable} PRIVATE TOY_NETWORKING_HPP="toy-networking-io_uring.hpp")
+        target_link_libraries(${demo_executable} uring)
+    endforeach()
 ENDIF()
 
 # try to use sys/epoll.h

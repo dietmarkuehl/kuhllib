@@ -52,8 +52,11 @@ int main()
 
             io.spawn([](auto socket)->toy::task<toy::io_context::scheduler> {
                 char   buf[4];
-                while (std::size_t n = co_await toy::async_read_some(socket, buf, sizeof buf)) {
-                    co_await toy::async_write(socket, buf, n);
+                // while (std::size_t n = co_await toy::async_read_some(socket, buf, sizeof buf)) {
+                //    co_await toy::async_write(socket, buf, n);
+                //}
+                while (std::size_t n = co_await toy::async_receive(socket, toy::buffer(buf))) {
+                    co_await toy::async_send(socket, toy::buffer(buf, n));
                 }
             }(std::move(c)));
         }
