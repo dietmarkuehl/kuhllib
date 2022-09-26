@@ -127,8 +127,12 @@ namespace hidden_io_op {
                 self.context.submit();
             }
             void complete(int fd) override {
-                if (0 <= fd)
+                if (0 <= fd) {
+                    if constexpr (requires(Submit const& op, state& s) { op.finalize(s); }) {
+                        submit.finalize(args);
+                    }
                     set_value(std::move(receiver), result_t(fd));
+                }
                 else  {
                     set_error(std::move(receiver), std::make_exception_ptr(std::system_error(-fd, std::system_category())));
                 }
@@ -196,8 +200,8 @@ struct async_receive_from_op
         std::get<2>(state).msg_iovlen = decltype(std::declval<msghdr>().msg_iovlen)(std::get<0>(state).size());
         ::io_uring_prep_recvmsg(sqe, fd, &std::get<2>(state), int(std::get<3>(state)));
     }
-    void finalize(auto& state) {
-        std::get<1>(state)->resize(std::get<0>(state).msg_namelen);
+    void finalize(auto& state) const {
+        std::get<1>(state)->resize(std::get<2>(state).msg_namelen);
     }
 };
 template <typename MBS>

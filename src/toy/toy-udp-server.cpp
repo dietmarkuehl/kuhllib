@@ -46,7 +46,6 @@ int main() {
         toy::address addr;
         while (true) {
             std::size_t n = co_await toy::async_receive_from(server, toy::buffer(buffer), addr);
-            std::cout << "received\n" << std::flush;
             co_await toy::async_send_to(server, toy::buffer(buffer, n), addr);
         }
     }(std::move(server)));
