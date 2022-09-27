@@ -396,7 +396,7 @@ namespace hidden_when_any {
             struct inner_state {
                 decltype(connect(std::declval<T>(), std::declval<inner_receiver>())) s;
                 inner_state(auto p)
-                    : s(connect(p.first, p.second)) {
+                    : s(connect(std::move(p.first), std::move(p.second))) {
                 }
                 friend void start(inner_state& self) {
                     start(self.s);

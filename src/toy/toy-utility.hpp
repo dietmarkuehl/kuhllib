@@ -38,7 +38,10 @@ namespace toy
 
 // ----------------------------------------------------------------------------
 
-struct none {};
+struct none {
+    none() = default;
+    none(auto&&) {}
+};
 
 struct immovable {
     immovable() = default;

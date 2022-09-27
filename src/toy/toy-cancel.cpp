@@ -65,6 +65,7 @@ struct never_sender {
 using never_sender = hidden_never_sender::never_sender;
 
 int main() {
+    std::cout << std::unitbuf;
     toy::io_context context;
     toy::socket     server{ ::socket(PF_INET, SOCK_STREAM, 0) };
     ::sockaddr_in addr{ .sin_family = AF_INET,
@@ -82,7 +83,7 @@ int main() {
             using namespace std::chrono_literals;
             for (int i = 0; i != 3; ++i) {
                 std::cout << "awaiting accept\n" << std::flush;
-                std::optional<toy::socket> o = co_await toy::timeout(toy::async_accept(server), 2s);
+                std::optional<toy::socket> o = co_await toy::timeout(toy::async_accept(server), 3s);
                 if (o) {
                     std::cout << "accepted client\n" << std::flush;
                 }

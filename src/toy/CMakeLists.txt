@@ -15,8 +15,8 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
 endif()
 
 
-    #toy-cancel
 list(APPEND TOY_DEMOS
+    toy-cancel
     toy-client
     toy-echo
     toy-sender

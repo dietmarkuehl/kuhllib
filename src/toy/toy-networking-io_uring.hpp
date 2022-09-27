@@ -48,7 +48,7 @@ namespace toy
 
 struct io: immovable {
     virtual ~io() = default;
-    virtual void complete(int) = 0;
+    virtual std::size_t complete(int) = 0;
 };
 
 struct io_context;
@@ -75,16 +75,17 @@ struct io_context
     ~io_context() { ::io_uring_queue_exit(&ring); }
 
     io_uring_sqe* get_sqe() { return ::io_uring_get_sqe(&ring); }
-    void          submit() { ::io_uring_submit(&ring); ++outstanding; }
+    void          submit() {
+        ::io_uring_submit(&ring); ++outstanding;
+    }
 
     void run() {
         while (outstanding) {
             ::io_uring_cqe* cqe;
             if (::io_uring_wait_cqe(&ring, &cqe))
                 throw std::runtime_error("io_uring_wait_cqe");
-            reinterpret_cast<io*>(cqe->user_data)->complete(cqe->res);
+            outstanding -= reinterpret_cast<io*>(cqe->user_data)->complete(cqe->res);
             ::io_uring_cqe_seen(&ring, cqe);
-            --outstanding;
         }
     }
 };
@@ -100,6 +101,14 @@ struct socket {
 // ----------------------------------------------------------------------------
 
 namespace hidden_io_op {
+    struct cancel_state: io {
+        io*  completion{nullptr};
+        int  res{};
+        std::size_t complete(int) override final {
+            return 1u + std::exchange(completion, nullptr)->complete(0);
+        }
+    };
+
     template <typename Result, typename Submit, typename... Args>
     struct io_op {
         using result_t = Result;
@@ -111,6 +120,20 @@ namespace hidden_io_op {
             io_context&                        context;
             int                                fd;
             std::tuple<Args...>                args;
+            cancel_state                       cancel;
+            struct callback {
+                state& s;
+                void operator()() {
+                    s.cancel.completion = &s;
+                    auto& context = *get_scheduler(s.receiver).context;
+                    ::io_uring_sqe* sqe{ context.get_sqe() };
+                    io_uring_prep_cancel(sqe, &s, unsigned());
+                    sqe->user_data = reinterpret_cast<std::uint64_t>(&s.cancel);
+                    context.submit();
+                }
+            };
+            using stop_token = decltype(get_stop_token(std::declval<Receiver>()));
+            std::optional<typename stop_token::template callback_type<callback>> cb;
 
             template <typename R, typename A>
             state(R&& receiver, int fd, A&& a)
@@ -121,21 +144,28 @@ namespace hidden_io_op {
                 , args(std::forward<A>(a)) {
             }
             friend void start(state& self) {
+                self.cb.emplace(get_stop_token(self.receiver), callback{self});
                 ::io_uring_sqe* sqe{ self.context.get_sqe() };
                 self.submit(sqe, self.fd, self.args);
                 sqe->user_data = reinterpret_cast<std::uint64_t>(&self);
                 self.context.submit();
             }
-            void complete(int fd) override {
-                if (0 <= fd) {
+            std::size_t complete(int res) override {
+                cb.reset();
+                if (cancel.completion) {
+                    cancel.res = res;
+                    return 0u;
+                }
+                else if (0 <= res) {
                     if constexpr (requires(Submit const& op, state& s) { op.finalize(s); }) {
                         submit.finalize(args);
                     }
-                    set_value(std::move(receiver), result_t(fd));
+                    set_value(std::move(receiver), result_t(res));
                 }
                 else  {
-                    set_error(std::move(receiver), std::make_exception_ptr(std::system_error(-fd, std::system_category())));
+                    set_error(std::move(receiver), std::make_exception_ptr(std::system_error(-res, std::system_category())));
                 }
+                return true;
             }
         };
 
@@ -255,12 +285,55 @@ namespace hidden_async_sleep_for {
     struct async_sleep_for {
         using result_t = none;
 
-	std::chrono::milliseconds duration;
-        struct state {
-            friend void start(state&) {}
+	    std::chrono::milliseconds duration;
+        template <typename Receiver>
+        struct state
+            : io {
+            Receiver                   receiver;
+	        std::chrono::milliseconds  duration;
+            __kernel_timespec          spec;
+            hidden_io_op::cancel_state cancel;
+            struct callback {
+                state& s;
+                void operator()() {
+                    s.cancel.completion = &s;
+                    auto& context = *get_scheduler(s.receiver).context;
+                    ::io_uring_sqe* sqe{ context.get_sqe() };
+                    io_uring_prep_timeout_remove(sqe, reinterpret_cast<std::uint64_t>(&s), unsigned());
+                    sqe->user_data = reinterpret_cast<std::uint64_t>(&s.cancel);
+                    context.submit();
+                }
+            };
+            using stop_token = decltype(get_stop_token(std::declval<Receiver>()));
+            std::optional<typename stop_token::template callback_type<callback>> cb;
+
+            template <typename R>
+            state(R&& receiver, std::chrono::milliseconds duration)
+                : receiver(receiver)
+                , duration(duration) {
+            }
+            friend void start(state& self) {
+                self.cb.emplace(get_stop_token(self.receiver), callback{self});
+                auto& context = *get_scheduler(self.receiver).context;
+                ::io_uring_sqe* sqe{ context.get_sqe() };
+                self.spec.tv_sec = self.duration.count() / 1000;
+                self.spec.tv_nsec = (self.duration.count() % 1000) * 1000000;
+                io_uring_prep_timeout(sqe, &self.spec, ~unsigned(), unsigned());
+                sqe->user_data = reinterpret_cast<std::uint64_t>(&self);
+                context.submit();
+            }
+            std::size_t complete(int) override {
+                cb.reset();
+                if (!cancel.completion) {
+                    set_value(std::move(receiver), none{});
+                    return 1u;
+                }
+                return 0u;
+            }
         };
-        friend state connect(async_sleep_for, auto) {
-            return {};
+        template <typename R>
+        friend state<R> connect(async_sleep_for self, R receiver) {
+            return state<R>(receiver, self.duration);
         }
     };
 }
