@@ -170,7 +170,7 @@ inline auto nstd::net::execution_context::key() -> ::std::size_t
 template<typename Service>
 inline auto nstd::net::use_service(::nstd::net::execution_context& ctxt)
     -> typename Service::key_type&
-    requires service<Service>
+    requires nstd::net::service<Service>
 {
     return ctxt.use_service<Service>();
 }
