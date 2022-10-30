@@ -174,6 +174,7 @@ list(APPEND kuhllib_file_components
     src/nstd/file/open_flags
     src/nstd/file/operation
     src/nstd/file/poll_context
+    src/nstd/file/read
     src/nstd/file/ring
     src/nstd/file/ring_context
     src/nstd/file/test_context

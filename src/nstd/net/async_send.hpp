@@ -27,11 +27,13 @@
 #define INCLUDED_NSTD_NET_ASYNC_SEND
 
 #include "nstd/net/async_io.hpp"
+#include "nstd/net/async_io_.hpp"
 #include "nstd/file/operation.hpp"
 #include "nstd/hidden_names/message_flags.hpp"
 #include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/get_completion_scheduler.hpp"
 #include "nstd/execution/sender.hpp"
+#include "nstd/execution/sender_adaptor_closure.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/buffer/const_buffer.hpp"
 #include "nstd/utility/move.hpp"
@@ -62,9 +64,9 @@ namespace nstd::net::inline customization_points {
         }
         template <typename Socket, typename CBS>
         auto operator()(Socket& socket, CBS const& cbs, ::nstd::hidden_names::message_flags flags) const {
-            return [&socket, cbs, flags, this](::nstd::execution::sender auto sender){
-                return ::nstd::tag_invoke(*this, socket, cbs, flags, sender);
-                };
+            return ::nstd::execution::sender_adaptor_closure<async_send_t>()(
+                ::std::ref(socket), cbs, flags
+                );
         }
         template <::nstd::execution::sender Sender, typename Socket, typename CBS>
         auto operator()(Sender sender, Socket& socket, CBS const& cbs) const {
@@ -72,9 +74,9 @@ namespace nstd::net::inline customization_points {
         }
         template <typename Socket, typename CBS>
         auto operator()(Socket& socket, CBS const& cbs) const {
-            return [&socket, cbs, this](::nstd::execution::sender auto sender){
-                return ::nstd::tag_invoke(*this, socket, cbs, ::nstd::hidden_names::message_flags(), sender);
-                };
+            return ::nstd::execution::sender_adaptor_closure<async_send_t>()(
+                ::std::ref(socket), cbs, ::nstd::hidden_names::message_flags()
+                );
         }
     } async_send;
 }
@@ -96,6 +98,11 @@ struct nstd::net::customization_points::async_send_t::io_operation
     using socket_type    = Socket;
     using operation_type = ::nstd::file::operation_send<CBS>;
     using parameter_type = ::std::tuple<CBS, ::nstd::hidden_names::message_flags>;
+    struct parameters {
+        typename Socket::native_handle_type d_fd;
+        CBS                                 d_buffer;
+        ::nstd::hidden_names::message_flags d_flags;
+    };
 
     socket_type& d_socket;
 

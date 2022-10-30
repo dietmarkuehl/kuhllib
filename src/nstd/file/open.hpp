@@ -30,6 +30,7 @@
 #include "nstd/file/open_flags.hpp"
 #include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/connect.hpp"
+#include "nstd/execution/get_env.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/set_error.hpp"
 #include "nstd/execution/set_stopped.hpp"
@@ -58,8 +59,8 @@ namespace nstd::file {
     auto open(Context& context, ::nstd::file::open_flags flags) {
         return [ctxt=&context, flags](auto&& sender){
             return ::nstd::file::open_sender<decltype(sender)>{
-                    {}, std::forward<decltype(sender)>(sender), ctxt->hidden_context(), flags
-                };
+                std::forward<decltype(sender)>(sender), ctxt->hidden_context(), flags
+            };
         };
     }
     auto open_in(auto& context) { return ::nstd::file::open(context, ::nstd::file::open_flags::in); }
@@ -119,6 +120,9 @@ struct nstd::file::open_sender
             }
         }
 
+        friend auto tag_invoke(::nstd::execution::get_env_t, receiver const& self) noexcept {
+            return ::nstd::execution::get_env(self.d_receiver);
+        }
         friend auto tag_invoke(::nstd::execution::set_value_t, receiver&& r, ::std::string_view name) noexcept -> void {
             r.d_name = name;
             r.d_context->open_at(AT_FDCWD, r.d_name.c_str(), ::nstd::file::to_system(r.d_flags), &r);

@@ -48,6 +48,10 @@ namespace KT = ::kuhl::test;
 namespace test_declarations {
     namespace {
         struct socket {
+            socket() = default;
+            socket(socket&&) = default;
+            socket(socket const&) = delete;
+            
             auto native_handle() const -> int { return 17; }
             template <typename CBS>
             auto enqueue(NF::operation_send<CBS>& op) {

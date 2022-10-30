@@ -30,9 +30,11 @@
 #include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/get_completion_scheduler.hpp"
 #include "nstd/execution/sender.hpp"
+#include "nstd/execution/sender_adaptor_closure.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/utility/move.hpp"
 
+#include <functional>
 #include <system_error>
 
 // ----------------------------------------------------------------------------
@@ -57,9 +59,8 @@ namespace nstd::net {
         }
         template <typename Socket>
         auto operator()(Socket& socket, typename Socket::endpoint_type const& endpoint) const {
-            return [&socket, endpoint, this](::nstd::execution::sender auto sender){
-                return ::nstd::tag_invoke(*this, socket, endpoint, sender);
-                };
+            return ::nstd::execution::sender_adaptor_closure<::nstd::net::async_connect_t>()(
+                ::std::ref(socket), endpoint);
         }
     } async_connect;
 }

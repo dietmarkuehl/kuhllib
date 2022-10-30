@@ -32,6 +32,7 @@
 #include "nstd/execution/inject_cancel.hpp"
 #include "nstd/stop_token/in_place_stop_token.hpp"
 #include "nstd/utility/move.hpp"
+#include <tuple>
 #include "kuhl/test.hpp"
 #include "nstd/hidden_names/print_completion_signatures.hpp"
 

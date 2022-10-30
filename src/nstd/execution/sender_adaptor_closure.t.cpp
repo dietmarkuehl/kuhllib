@@ -57,7 +57,6 @@ namespace test_declaration {
     }
 }
 
-#if 0
 #include "nstd/type_traits/remove_cvref.hpp"
 namespace XX {
     template <typename> std::ostream& print_tag(std::ostream&);
@@ -111,7 +110,6 @@ static KT::testcase const tests[] = {
     KT::expect_success("basic operation", []{
             auto sender = TD::cpo(EX::just(17));
 
-            //XX::print_completion_signatures(sender);
             auto value = TT::sync_wait(::nstd::utility::move(sender));
             return value
                 && ::std::get<0>(*value) == 34

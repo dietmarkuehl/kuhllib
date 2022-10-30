@@ -193,9 +193,8 @@ template <typename P, typename CBS>
 auto nstd::net::async_write_t::operator()(::nstd::net::basic_stream_socket<P>& socket,
                                           CBS const& buffer) const
 {
-    return [this, &socket, buffer](::nstd::execution::sender auto&& sender) {
-        return this->operator()(sender, socket, buffer);
-    };
+    return ::nstd::execution::sender_adaptor_closure<::nstd::net::async_write_t>()(
+        ::std::ref(socket), buffer);
 }
 
 // ----------------------------------------------------------------------------

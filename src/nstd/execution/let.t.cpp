@@ -39,7 +39,6 @@
 #include "nstd/utility/move.hpp"
 #include <concepts>
 #include "kuhl/test.hpp"
-#include "nstd/hidden_names/print_completion_signatures.hpp"
 
 namespace test_declarations {}
 namespace TD = test_declarations;

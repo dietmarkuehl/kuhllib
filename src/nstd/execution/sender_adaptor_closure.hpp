@@ -35,10 +35,26 @@
 
 namespace nstd::hidden_names::sender_adaptor_closure_ns
 {
+    template <typename T>
+    struct decay_or_ref {
+        using type = ::nstd::type_traits::decay_t<T>;
+    };
+    template <typename T>
+    struct decay_or_ref<::std::reference_wrapper<T>>
+    {
+        using type = T&;
+    };
+    template <typename T>
+    using decay_or_ref_t = typename ::nstd::hidden_names::sender_adaptor_closure_ns::decay_or_ref<T>::type;
+        
     template <typename C, typename... T>
     struct adaptor
     {
-        ::std::tuple<::nstd::type_traits::decay_t<T>...> args;
+        ::std::tuple<::nstd::hidden_names::sender_adaptor_closure_ns::decay_or_ref_t<T>...> args;
+        template <typename... A>
+        adaptor(A&& ... a)
+            : args(::nstd::utility::forward<A>(a)...) {
+        }
         template <::nstd::execution::sender Sender>
         auto operator()(Sender&& sender) {
             return ::std::apply([&sender](auto&&... a){ return C()(::nstd::utility::forward<Sender>(sender), a...); }, this->args);
@@ -49,7 +65,9 @@ namespace nstd::hidden_names::sender_adaptor_closure_ns
     struct sender_adaptor_closure {
         template <typename... A>
         auto operator()(A&&... a) const {
-            return ::nstd::hidden_names::sender_adaptor_closure_ns::adaptor<C, A...>{{::nstd::utility::forward<A>(a)...}};
+            return ::nstd::hidden_names::sender_adaptor_closure_ns::adaptor<C, A...>(
+                ::nstd::utility::forward<A>(a)...
+            );
         }
     };
 

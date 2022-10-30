@@ -50,7 +50,8 @@ struct nstd::file::operation
     : ::nstd::file::io_base
 {
 protected:
-    virtual auto do_submit() -> void = 0;
+    auto do_result(::std::int32_t, ::std::uint32_t) -> void override {}
+    virtual auto do_submit() -> void {};
 
 public:
     auto submit() -> void { this->do_submit(); }
@@ -61,10 +62,6 @@ public:
 struct nstd::file::operation_send_base
     : ::nstd::file::operation
 {
-private:
-    auto do_result(::std::int32_t, ::std::uint32_t) -> void override {}
-    auto do_submit() -> void override {}
-
 public:
     nstd::container::intrusive_list_node<::nstd::file::operation_send_base> link;
 };

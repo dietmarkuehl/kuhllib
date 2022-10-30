@@ -29,7 +29,7 @@
 #include "nstd/net/netfwd.hpp"
 #include "nstd/net/io_context.hpp"
 #include "nstd/execution/completion_signatures.hpp"
-#include "nstd/execution/receiver_of.hpp"
+#include "nstd/execution/receiver.hpp"
 #include "nstd/execution/start.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/connect.hpp"
@@ -53,7 +53,7 @@ namespace nstd::net {
     using high_resolution_timer = ::nstd::net::basic_waitable_timer<::std::chrono::high_resolution_clock>;
 
     inline constexpr struct async_wait_t {
-        template <::nstd::execution::receiver_of<::std::error_code>, typename, typename> struct state;
+        template <::nstd::execution::receiver, typename, typename> struct state;
         template <typename, typename> struct sender;
         template <typename Clock, typename Traits>
         friend auto tag_invoke(async_wait_t, ::nstd::net::basic_waitable_timer<Clock, Traits> const& timer)
@@ -165,7 +165,7 @@ auto nstd::net::basic_waitable_timer<Clock, Traits>::expiry() const
 
 // ----------------------------------------------------------------------------
 
-template <::nstd::execution::receiver_of<::std::error_code> Receiver, typename Clock, typename Traits>
+template <::nstd::execution::receiver Receiver, typename Clock, typename Traits>
 struct nstd::net::async_wait_t::state
     : public ::nstd::file::context::io_base
 {
@@ -174,7 +174,7 @@ struct nstd::net::async_wait_t::state
     typename Clock::time_point                    d_time_point;
     ::nstd::file::context::time_spec              d_time;
 
-    template <::nstd::execution::receiver_of<::std::error_code> R>
+    template <::nstd::execution::receiver R>
     state(R&& receiver, ::nstd::file::context* context, typename Clock::time_point time_point)
         : d_receiver(::nstd::utility::forward<R>(receiver))
         , d_context(context)
@@ -223,7 +223,7 @@ struct nstd::net::async_wait_t::sender
     ::nstd::file::context*                                                d_context;
     typename ::nstd::net::basic_waitable_timer<Clock, Traits>::time_point d_timepoint;
 
-    template <::nstd::execution::receiver_of<::std::error_code> Receiver>
+    template <::nstd::execution::receiver Receiver>
     friend auto tag_invoke(::nstd::execution::connect_t, sender const& sndr, Receiver&& receiver)
         noexcept -> ::nstd::net::async_wait_t::state<Receiver, Clock, Traits> {
             return  ::nstd::net::async_wait_t::state<Receiver, Clock, Traits>(
