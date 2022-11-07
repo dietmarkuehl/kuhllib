@@ -34,7 +34,6 @@
 #include "nstd/utility/move.hpp"
 #include <tuple>
 #include "kuhl/test.hpp"
-#include "nstd/hidden_names/print_completion_signatures.hpp"
 
 namespace test_declarations {}
 namespace EX = ::nstd::execution;
@@ -96,7 +95,6 @@ static KT::testcase const tests[] = {
                 | NN::async_accept(acceptor)
                 | EX::then([&](auto, TD::stream){ completion_called = true; })
                 ;
-            HN::print_completion_signatures(accept);
             EX::start_detached(accept);
             auto rc(context.run());
             return true

@@ -102,6 +102,7 @@ list(APPEND kuhllib_execution_components
     src/nstd/execution/let
     src/nstd/execution/make_completion_signatures
     src/nstd/execution/no_env
+    src/nstd/execution/on
     src/nstd/execution/operation_state
     src/nstd/execution/parallel_policy
     src/nstd/execution/parallel_unsequenced_policy
