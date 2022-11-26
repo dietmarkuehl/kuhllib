@@ -108,6 +108,8 @@ static KT::testcase const tests[] = {
                 NN::async_accept(EX::schedule(context.scheduler()), server),
                 NN::async_connect(EX::schedule(context.scheduler()), client, ep)
                 ));
+#if 0
+    //-dk:TODO remove debug output
             ::std::cout << "async_accept completions\n";
             HN::print_completion_signatures(
                 NN::async_accept(EX::schedule(context.scheduler()), server)
@@ -123,6 +125,7 @@ static KT::testcase const tests[] = {
                     NN::async_connect(EX::schedule(context.scheduler()), client, ep)
                 )
             );
+#endif
 
             return KT::use(server)
                 && KT::use(client)

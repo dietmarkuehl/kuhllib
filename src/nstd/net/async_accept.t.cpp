@@ -95,7 +95,7 @@ static KT::testcase const tests[] = {
                 | NN::async_accept(acceptor)
                 | EX::then([&](auto, TD::stream){ completion_called = true; })
                 ;
-            HN::print_completion_signatures(accept);
+            //-dk:TODO remove HN::print_completion_signatures(accept);
             EX::start_detached(accept);
             auto rc(context.run());
             return true
