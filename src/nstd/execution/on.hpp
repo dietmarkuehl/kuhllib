@@ -96,6 +96,9 @@ namespace nstd::execution {
             friend auto tag_invoke(::nstd::execution::get_scheduler_t, replace_env const& self) noexcept {
                 return *self.scheduler;
             }
+            friend auto tag_invoke(::nstd::execution::get_env_t, replace_env const& self) noexcept {
+                return self;
+            }
         };
 
         template <::nstd::execution::scheduler Scheduler, ::nstd::execution::receiver Receiver>

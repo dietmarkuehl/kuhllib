@@ -106,7 +106,7 @@ static KT::testcase const tests[] = {
         auto sender = EX::on(TD::scheduler{}, TD::sender<0>{});
         return KT::type<TD::sender<0>> == KT::type<decltype(sender)>;
     }),
-#if 0
+#if 1
     KT::expect_success("on(TD::scheduler, TD::sender<1>) is not customized", []{
         auto sender = EX::on(TD::scheduler{}, TD::sender<1>{});
         TT::sync_wait(sender);
