@@ -27,9 +27,11 @@
 #define INCLUDED_NSTD_NET_ASYNC_WRITE_SOME
 
 #include "nstd/net/async_io_.hpp"
+#include "nstd/net/async_io.hpp"
 #include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/get_completion_scheduler.hpp"
 #include "nstd/execution/sender.hpp"
+#include "nstd/execution/sender_adaptor_closure.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/buffer/const_buffer.hpp"
 #include "nstd/utility/move.hpp"
@@ -58,9 +60,8 @@ namespace nstd::net {
         }
         template <typename Socket, typename CBS>
         auto operator()(Socket& socket, CBS const& cbs) const {
-            return [&socket, cbs, this](::nstd::execution::sender auto sender){
-                return ::nstd::tag_invoke(*this, socket, cbs, sender);
-                };
+            return ::nstd::execution::sender_adaptor_closure<::nstd::net::async_write_some_t>()(
+                ::std::ref(socket), cbs);
         }
     } async_write_some;
 }
@@ -83,6 +84,8 @@ struct nstd::net::async_write_some_t::io_operation
         typename Socket::native_handle_type  d_fd;
         CBS                                  d_buffer;
     };
+    using socket_type = Socket;
+    using parameter_type = parameters;
 
     parameters d_parameters;
     ::msghdr   d_msg{};

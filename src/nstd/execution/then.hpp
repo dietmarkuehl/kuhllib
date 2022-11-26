@@ -30,6 +30,7 @@
 #include "nstd/execution/connect.hpp"
 #include "nstd/execution/get_env.hpp"
 #include "nstd/execution/get_completion_scheduler.hpp"
+#include "nstd/execution/get_completion_signatures.hpp"
 #include "nstd/execution/make_completion_signatures.hpp"
 #include "nstd/execution/receiver.hpp"
 #include "nstd/execution/sender.hpp"

@@ -24,18 +24,20 @@
 // ----------------------------------------------------------------------------
 
 #include "nstd/execution/on.hpp"
-#include "nstd/execution/connect.hpp"
-#include "nstd/execution/start.hpp"
+#include "nstd/execution/completion_signatures.hpp"
+#include "nstd/execution/get_completion_scheduler.hpp"
 #include "nstd/execution/schedule.hpp"
+#include "nstd/execution/sender.hpp"
 #include "nstd/execution/set_value.hpp"
-#include "nstd/execution/operation_state.hpp"
-#include "nstd/type_traits/conditional.hpp"
+#include "nstd/thread/sync_wait.hpp"
+#include "nstd/type_traits/remove_cvref.hpp"
 #include "nstd/utility/move.hpp"
 #include "kuhl/test.hpp"
 
 namespace test_declaration {}
 namespace EX = ::nstd::execution;
-namespace TT = ::nstd::type_traits;
+namespace TY = ::nstd::type_traits;
+namespace TT = ::nstd::this_thread;
 namespace UT = ::nstd::utility;
 namespace TD = ::test_declaration;
 namespace KT = ::kuhl::test;
@@ -44,45 +46,46 @@ namespace KT = ::kuhl::test;
 
 namespace test_declaration {
     namespace {
+        struct type {};
+
+        template <EX::receiver Receiver>
         struct state {
-            friend auto tag_invoke(EX::start_t, state&) noexcept -> void {
+            TY::remove_cvref_t<Receiver> receiver;
+            friend auto tag_invoke(EX::start_t, state& self) noexcept {
+                EX::set_value(UT::move(self.receiver));
             }
         };
-        struct scheduler;
-        template <bool B>
+
+        template <int>
         struct sender {
-            static constexpr bool value = B;
             using completion_signatures = EX::completion_signatures<EX::set_value_t()>;
-            friend auto tag_invoke(EX::connect_t, sender, auto) {
-                return state{};
+
+            template <EX::receiver Receiver>
+            friend auto tag_invoke(EX::connect_t, sender, Receiver&& receiver) {
+                return TD::state<Receiver>{ UT::forward<Receiver>(receiver) };
+            }
+        };
+
+        struct scheduler_sender {
+            using completion_signatures = EX::completion_signatures<EX::set_value_t()>;
+
+            template <EX::receiver Receiver>
+            friend auto tag_invoke(EX::connect_t, scheduler_sender, Receiver&& receiver) {
+                return TD::state<Receiver>{ UT::forward<Receiver>(receiver) };
             }
         };
         struct scheduler {
             auto operator== (scheduler const&) const -> bool = default;
             friend auto tag_invoke(EX::schedule_t, scheduler) noexcept {
-                return TD::sender<true>{};
+                return TD::scheduler_sender{};
+            }
+
+            friend auto tag_invoke(EX::on_t, scheduler, TD::sender<0> sender) {
+                return sender;
             }
         };
-        template <bool B>
-        auto tag_invoke(EX::get_completion_scheduler_t<EX::set_value_t>, TD::sender<B>) {
+        auto tag_invoke(EX::get_completion_scheduler_t<EX::set_value_t>, TD::scheduler_sender) noexcept {
             return TD::scheduler{};
-        }
-
-        template <EX::sender S>
-        struct on_sender {
-            using completion_signatures = TT::conditional_t<S::value, typename S::completion_signatures, int>;
-
-            struct state {
-                friend auto tag_invoke(EX::start_t, state&) noexcept -> void {}
-            };
-
-            S sender;
-            friend auto tag_invoke(EX::connect_t, on_sender, auto) {
-                return state{};
-            }
-        };
-        auto tag_invoke(EX::on_t, TD::scheduler , auto s) {
-            return TD::on_sender(UT::move(s));
         }
     }
 }
@@ -90,43 +93,28 @@ namespace test_declaration {
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
-    KT::expect_success("TD::state is an operation_state", []{
-            return EX::operation_state<TD::state>;
-        }),
-    KT::expect_success("TD::sender<bool> is a sender", []{
-            return EX::sender<TD::sender<true>>
-                && EX::sender<TD::sender<false>>;
-        }),
+    KT::expect_success("TD::sender<...> is a sender", []{
+        TT::sync_wait(TD::sender<0>{});
+        return EX::sender<TD::sender<0>>;
+    }),
     KT::expect_success("TD::scheduler is a scheduler", []{
-            return EX::scheduler<TD::scheduler>;
-        }),
-    KT::expect_success("TD::on_sender<TD::sender<true> is a sender", []{
-            return EX::sender<TD::on_sender<TD::sender<true>>>
-                && TD::sender<true>::value
-                ;
-        }),
-    KT::expect_success("TD::on_sender<TD::sender<false> is not a sender", []{
-            return not EX::sender<TD::on_sender<TD::sender<false>>>
-                && not TD::sender<false>::value
-                ;
-        }),
-    KT::expect_success("EX::on is of type EX::on_t", []{
-            return KT::type<EX::on_t const> == KT::type<decltype(EX::on)>;
-        }),
-    KT::expect_success("customized on is used if a sender is returned", []{
-            auto s = EX::on(TD::scheduler{}, TD::sender<true>{});
-
-            return EX::sender<decltype(s)>
-                && KT::type<decltype(s)> == KT::type<TD::on_sender<TD::sender<true>>>
-                ;
-        }),
-    KT::expect_success("customized on is not used if no sender is returned", []{
-            auto s = EX::on(TD::scheduler{}, TD::sender<false>{});
-
-            return EX::sender<decltype(s)>
-                && not std::same_as<decltype(s), TD::on_sender<TD::sender<false>>>
-                ;
-        }),
+        EX::get_completion_scheduler<EX::set_value_t>(TD::scheduler_sender{});
+        TT::sync_wait(EX::schedule(TD::scheduler{}));
+        return EX::scheduler<TD::scheduler>;
+    }),
+    KT::expect_success("on(TD::scheduler, TD::sender<0>) is customized", []{
+        auto sender = EX::on(TD::scheduler{}, TD::sender<0>{});
+        return KT::type<TD::sender<0>> == KT::type<decltype(sender)>;
+    }),
+#if 0
+    KT::expect_success("on(TD::scheduler, TD::sender<1>) is not customized", []{
+        auto sender = EX::on(TD::scheduler{}, TD::sender<1>{});
+        TT::sync_wait(sender);
+        return EX::sender<decltype(sender)>
+            && not std::same_as<TD::sender<1>, decltype(sender)>
+            ;
+    }),
+#endif
 };
 
 static KT::add_tests suite("nstd/execution/on", ::tests);
