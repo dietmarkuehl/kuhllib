@@ -66,7 +66,8 @@ public:
     constexpr auto operator== (basic_endpoint const&) const noexcept -> bool = default;
     constexpr auto operator<=>(basic_endpoint const&) const noexcept = default;
 
-    auto get_address(::sockaddr_storage*) const -> ::socklen_t; // implementation specific
+    auto get_address(::sockaddr_storage*) const -> ::socklen_t;       // implementation specific
+    auto set_address(::sockaddr_storage const*, ::socklen_t) -> void; // implementation specific
 };
 
 // ----------------------------------------------------------------------------

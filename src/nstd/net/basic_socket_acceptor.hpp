@@ -27,7 +27,7 @@
 #define INCLUDED_NSTD_NET_BASIC_SOCKET_ACCEPTOR
 
 #include "nstd/net/netfwd.hpp"
-#include "nstd/net/async_accept.hpp"
+//#include "nstd/net/async_accept.hpp"
 #include "nstd/net/ip/tcp.hpp"
 #include "nstd/net/socket_base.hpp"
 #include "nstd/net/basic_stream_socket.hpp"

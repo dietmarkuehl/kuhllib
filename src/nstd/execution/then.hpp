@@ -83,8 +83,8 @@ namespace nstd::hidden_names::then {
         ::nstd::type_traits::remove_cvref_t<Receiver> d_receiver;
         ::nstd::type_traits::remove_cvref_t<Fun>      d_fun;
 
-        friend auto tag_invoke(::nstd::execution::get_env_t, receiver const& self) -> receiver {
-            return self;
+        friend auto tag_invoke(::nstd::execution::get_env_t, receiver const& self) noexcept {
+            return ::nstd::execution::get_env(self.d_receiver);
         }
         template <typename... Args>
         friend auto tag_invoke(Tag, receiver&& self, Args&&... args) noexcept -> void
