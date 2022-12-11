@@ -139,7 +139,6 @@ static KT::testcase const tests[] = {
                 && endpoint.addr.sin_addr.s_addr == htonl(0x01020304);
                 ;
         }),
-#if 0
     KT::expect_success("cancelation", []{
             NF::test_context test_context;
             NN::io_context   context(&test_context);
@@ -149,7 +148,7 @@ static KT::testcase const tests[] = {
             };
             test_context.on_cancel = [&test_context](NF::context::io_base* to_cancel, NF::context::io_base* cont){
                 test_context.make_ready(0, 0, cont);
-                test_context.make_ready(0, 0, to_cancel);
+                test_context.make_ready(-1, 0, to_cancel);
             };
 
             ST::in_place_stop_source source;
@@ -157,13 +156,12 @@ static KT::testcase const tests[] = {
             bool cancellation_called{false};
             TD::acceptor acceptor;
             auto accept
-                = EX::schedule(context.scheduler())
-                | EX::then([]{})
-                | NN::async_accept(acceptor)
-                | EX::inject_cancel(source.token())
-                | EX::then([&](auto, TD::stream){ completion_called = true; })
-                | EX::upon_stopped([&](auto&&...){ cancellation_called = true; })
-                ;
+                = EX::on(context.scheduler(),
+                      NN::async_accept(acceptor)
+                    | EX::inject_cancel(source.token())
+                    | EX::then([&](TD::stream, TD::endpoint){ completion_called = true; })
+                    | EX::upon_stopped([&](auto&&...){ cancellation_called = true; })
+                );
             EX::start_detached(UT::move(accept));
             source.stop();
             auto rc(context.run());
@@ -175,7 +173,6 @@ static KT::testcase const tests[] = {
                 && cancellation_called
                 ;
         }),
-#endif
 };
 
 static KT::add_tests suite("async_accept", ::tests);

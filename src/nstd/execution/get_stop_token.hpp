@@ -37,18 +37,16 @@
 
 namespace nstd::execution::inline customization_points {
     inline constexpr struct get_stop_token_t {
-        template <::nstd::execution::receiver Receiver>
-            requires requires(Receiver const& receiver) {
-                        { ::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::execution::get_stop_token_t>(), ::nstd::utility::as_const(receiver)) } noexcept
-                            -> nstd::stop_token_ns::stoppable_token;
-                    }
-        constexpr auto operator()(Receiver const& receiver) const
-            noexcept(noexcept(::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::execution::get_stop_token_t>(), ::nstd::utility::as_const(receiver))))
-        {
-            return ::nstd::tag_invoke(*this, ::nstd::utility::as_const(receiver));
+        template <typename Env>
+            requires requires(Env&& env) {
+                { ::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::execution::get_stop_token_t>(), ::nstd::utility::as_const(env)) } noexcept
+                    -> nstd::stop_token_ns::stoppable_token;
+            }
+        constexpr auto operator()(Env&& env) const noexcept {
+            return ::nstd::tag_invoke(*this, ::nstd::utility::as_const(env));
         }
-        template <::nstd::execution::receiver Receiver>
-        constexpr auto operator()(Receiver const& ) const noexcept
+        template <typename Env>
+        constexpr auto operator()(Env const&) const noexcept
         {
             return ::nstd::stop_token_ns::never_stop_token();
         }

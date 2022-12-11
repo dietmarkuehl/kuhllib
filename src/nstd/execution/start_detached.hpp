@@ -30,12 +30,14 @@
 #include "nstd/execution/connect.hpp"
 #include "nstd/execution/get_completion_scheduler.hpp"
 #include "nstd/execution/get_env.hpp"
+#include "nstd/execution/get_stop_token.hpp"
 #include "nstd/execution/sender.hpp"
 #include "nstd/execution/receiver.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/set_error.hpp"
 #include "nstd/execution/set_stopped.hpp"
 #include "nstd/execution/start.hpp"
+#include "nstd/stop_token/never_stop_token.hpp"
 #include "nstd/utility/forward.hpp"
 #include "nstd/utility/move.hpp"
 #include "nstd/type_traits/declval.hpp"
@@ -118,7 +120,8 @@ struct nstd::hidden_names::start_detached::cpo::holder
 
 struct nstd::execution::start_detached_t::receiver
 {
-    struct env {};
+    struct env {
+    };
     ::std::shared_ptr<holder_base>**  d_backpointer;
     ::std::shared_ptr<holder_base>    d_state;
 

@@ -40,34 +40,61 @@
 
 #include <system_error>
 #include <functional>
-#include <iostream> //-dk:TODO remove
+#include <optional>
 
 // ----------------------------------------------------------------------------
 
 namespace nstd::net::hidden_names {
     template <typename Operation, ::nstd::execution::receiver Receiver>
     struct async_io_state
-        : ::nstd::file::context::io_base {
+        : ::nstd::file::context::io_base
+    {
+        using env_t = decltype(::nstd::execution::get_env(::nstd::type_traits::declval<::nstd::type_traits::remove_cvref_t<Receiver> const>()));
+        using scheduler_t  = decltype(::nstd::execution::get_scheduler(::nstd::type_traits::declval<env_t>()));
+        using stop_token_t = decltype(::nstd::execution::get_stop_token(::nstd::type_traits::declval<env_t>()));
+
+        struct cancel
+            : ::nstd::file::context::io_base {
+            scheduler_t                     d_scheduler;
+            async_io_state* d_state;
+            cancel(scheduler_t scheduler, async_io_state* state)
+                : ::nstd::file::context::io_base()
+                , d_scheduler(scheduler)
+                , d_state(state) {
+            }  
+            auto operator()() noexcept -> void {
+                this->d_scheduler.cancel(this->d_state, this);
+            }
+            virtual auto do_result(::std::int32_t, ::std::uint32_t) -> void override {
+                this->d_state->d_cancelled = true;
+            }
+        };
+        using callback_t = typename stop_token_t::template callback_type<cancel>;
+
         ::nstd::type_traits::remove_cvref_t<Receiver> d_receiver;
         Operation                                     d_operation;
         typename Operation::state                     d_state;
+        ::std::atomic<bool>                           d_cancelled{false};
+        ::std::optional<callback_t>                   d_callback;
 
         template <typename O, ::nstd::execution::receiver R>
         async_io_state(O&& o, R&& r)
             : d_receiver(::nstd::utility::forward<R>(r))
             , d_operation(::nstd::utility::forward<O>(o))
-            , d_state{} {
+            , d_state{}
+            , d_callback{} {
         }
         friend void tag_invoke(::nstd::execution::start_t, async_io_state& self) noexcept {
-            ::std::cout << "async I/O start\n";
-            // register cancellation
             auto env = nstd::execution::get_env(self.d_receiver);
             auto scheduler = ::nstd::execution::get_scheduler(env);
+            self.d_callback.emplace(::nstd::execution::get_stop_token(env), cancel(scheduler, &self));
             self.d_operation.start(scheduler, self.d_state, &self);
         }
 
         auto do_result(int32_t rc, uint32_t flags) -> void override {
-            this->d_operation.complete(rc, flags, this->d_state, this->d_receiver);
+            bool cancelled(this->d_cancelled);
+            this->d_callback.reset();
+            this->d_operation.complete(rc, flags, cancelled, this->d_state, this->d_receiver);
         }
     };
 
@@ -112,12 +139,17 @@ namespace nstd::net::hidden_names::async_accept {
         };
         auto start(::nstd::net::io_context::scheduler_type scheduler, state& s, ::nstd::file::context::io_base* cont) -> void{
             scheduler.accept(this->d_handle, reinterpret_cast<sockaddr*>(&s.d_addr), &s.d_len, 0, cont);
-            ::std::cout << "async_accept start\n";
         }
         template <::nstd::execution::receiver Receiver>
-        auto complete(int32_t rc, uint32_t, state& s, Receiver& receiver) -> void {
-            ::std::cout << "async_accept complete\n";
-            if (rc < 0) {
+        auto complete(int32_t rc, uint32_t, bool cancelled, state& s, Receiver& receiver) -> void {
+            if (cancelled) {
+                if (0 <= rc) {
+                    // release the file descriptor if the accept was successful but cancelled
+                    typename Acceptor::socket_type(this->d_protocol, rc);
+                }
+                ::nstd::execution::set_stopped(::nstd::utility::move(receiver));
+            }
+            else if (rc < 0) {
                 ::nstd::execution::set_error(::nstd::utility::move(receiver), -rc);
             }
             else {

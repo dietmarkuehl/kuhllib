@@ -47,15 +47,27 @@
 namespace nstd::execution {
     inline constexpr struct inject_cancel_t
     {
-        struct env {};
+        template <::nstd::stop_token_ns::stoppable_token Token, typename Env>
+        struct env {
+            ::nstd::type_traits::remove_cvref_t<Token> d_token;
+            ::nstd::type_traits::remove_cvref_t<Env>   d_env;
+            friend auto tag_invoke(::nstd::execution::get_stop_token_t, env const& self) noexcept -> Token {
+                return self.d_token;
+            }
+            friend auto tag_invoke(auto tag, env const& self) noexcept {
+                return tag(self.d_env);
+            }
+        };
+
         template <::nstd::stop_token_ns::stoppable_token Token, ::nstd::execution::receiver Receiver>
         struct receiver
         {
             ::nstd::type_traits::remove_cvref_t<Token>    d_token;
             ::nstd::type_traits::remove_cvref_t<Receiver> d_receiver;
 
-            friend auto tag_invoke(::nstd::execution::get_env_t, receiver const&) noexcept -> env{
-                return {};
+            friend auto tag_invoke(::nstd::execution::get_env_t, receiver const& self) noexcept {
+                using env_t = decltype(::nstd::execution::get_env(self.d_receiver));
+                return ::nstd::execution::inject_cancel_t::env<Token, env_t>{ self.d_token, ::nstd::execution::get_env(self.d_receiver) };
             }
             friend auto tag_invoke(::nstd::execution::get_stop_token_t, receiver const& self) noexcept
                 -> ::nstd::type_traits::remove_cvref_t<Token>
