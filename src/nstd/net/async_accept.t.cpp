@@ -26,8 +26,10 @@
 #include "nstd/net/async_accept.hpp"
 #include "nstd/net/io_context.hpp"
 #include "nstd/file/test_context.hpp"
+#include "nstd/execution/connect.hpp"
 #include "nstd/execution/on.hpp"
 #include "nstd/execution/start_detached.hpp"
+#include "nstd/execution/start.hpp"
 #include "nstd/execution/then.hpp"
 #include "nstd/execution/inject_cancel.hpp"
 #include "nstd/stop_token/in_place_stop_token.hpp"
@@ -88,6 +90,13 @@ namespace test_declarations
             auto protocol() const -> socket_type::protocol_type { return {}; }
             auto native_handle() const -> native_handle_type { return {}; }
         };
+
+        struct receiver {
+            friend auto tag_invoke(EX::get_env_t, receiver const&) noexcept -> int { return {}; }
+            friend auto tag_invoke(EX::set_value_t, receiver&&, auto&&...) noexcept -> void {}
+            friend auto tag_invoke(EX::set_error_t, receiver&&, auto&&) noexcept -> void {}
+            friend auto tag_invoke(EX::set_stopped_t, receiver&&) noexcept -> void {}
+        };
     }
 }
 
@@ -114,7 +123,7 @@ static KT::testcase const tests[] = {
                 test_context.make_ready(5, 0, cont);
             };
 
-            bool         completion_called(false);
+            bool         value_called(false);
             int          handle{};
             TD::endpoint endpoint;
             TD::acceptor acceptor;
@@ -124,7 +133,7 @@ static KT::testcase const tests[] = {
                     | EX::then([&](TD::stream stream, TD::endpoint ep){
                         handle   = stream.handle;
                         endpoint = ep;
-                        completion_called = true;
+                        value_called = true;
                     })
                 )
                 ;
@@ -132,7 +141,7 @@ static KT::testcase const tests[] = {
             EX::start_detached(accept);
             auto rc(context.run());
             return rc == 2
-                && completion_called
+                && value_called
                 && handle == 5
                 && endpoint.addr.sin_family == AF_INET
                 && endpoint.addr.sin_port   == htons(17)
@@ -152,25 +161,31 @@ static KT::testcase const tests[] = {
             };
 
             ST::in_place_stop_source source;
-            bool completion_called{false};
-            bool cancellation_called{false};
+            bool value_called{false};
+            bool error_called{false};
+            bool stopped_called{false};
             TD::acceptor acceptor;
             auto accept
                 = EX::on(context.scheduler(),
                       NN::async_accept(acceptor)
                     | EX::inject_cancel(source.token())
-                    | EX::then([&](TD::stream, TD::endpoint){ completion_called = true; })
-                    | EX::upon_stopped([&](auto&&...){ cancellation_called = true; })
+                    | EX::then([&](TD::stream, TD::endpoint){ value_called = true; })
+                    //| EX::upon_error([&](auto&&...){ error_called = true; })
+                    //| EX::upon_error([&](::std::exception_ptr){ error_called = true; })
+                    //-dk:TODO: | EX::upon_error([&](::std::eror_code){ error_called = true; })
+                    | EX::upon_stopped([&](){ stopped_called = true; })
                 );
-            EX::start_detached(UT::move(accept));
+
+            static_assert(EX::receiver<TD::receiver>);
+            auto state(EX::connect(UT::move(accept), TD::receiver()));
+            EX::start(state);
+            int rc = context.run_one();
             source.stop();
-            auto rc(context.run());
-            return true
-                && KT::use(acceptor)
-                && KT::use(accept)
-                && rc == 3
-                && not completion_called
-                && cancellation_called
+            rc += context.run();
+            return rc == 3
+                && not value_called
+                && not error_called
+                && stopped_called
                 ;
         }),
 };
