@@ -27,6 +27,7 @@
 #include "nstd/net/socket_base.hpp"
 #include "nstd/buffer/const_buffer.hpp"
 #include "nstd/execution/run.hpp"
+#include "nstd/execution/on.hpp"
 #include "nstd/execution/scheduler.hpp"
 #include "nstd/execution/then.hpp"
 #include "nstd/file/operation.hpp"
@@ -48,11 +49,12 @@ namespace KT = ::kuhl::test;
 namespace test_declarations {
     namespace {
         struct socket {
+            using native_handle_type = int;
             socket() = default;
             socket(socket&&) = default;
             socket(socket const&) = delete;
             
-            auto native_handle() const -> int { return 17; }
+            auto native_handle() const -> native_handle_type { return 17; }
             template <typename CBS>
             auto enqueue(NF::operation_send<CBS>& op) {
                 op.submit();
@@ -92,23 +94,70 @@ static KT::testcase const tests[] = {
                     && msg->msg_controllen == 0
                     && msg->msg_flags == 0
                     ;
-                test.make_ready(-1, 0, cont);
+                test.make_ready(sizeof(message), 0, cont);
             };
 
-            auto sender = EX::schedule(context.scheduler())
-                | EX::then([]{}) //-dk:TODO remove
-                | NN::async_send(socket, NN::buffer(message))
+            auto sender = EX::on(context.scheduler(),
+                  NN::async_send(socket, NN::buffer(message))
                 | EX::then([&](::std::int64_t){ completion_called = true; })
-                ;
+            );
 
             EX::run(context, UT::move(sender));
+            ::std::cout << "sendmsg=" << sendmsg_called << " completion=" << completion_called << "\n";
 
-            return KT::use(sender)
-                && KT::use(socket)
-                && sendmsg_called
+            return sendmsg_called
                 && completion_called
                 ;
         }),
+#if 0
+    //-dk:TODO test buffer sequences
+    KT::expect_success("multiple buffers, no flags", []{
+            bool             sendmsg_called{false};
+            bool             completion_called{false};
+            NF::test_context test;
+            NN::io_context   context(test);
+            TD::socket       socket;
+            char             msg1[] = "hello, ";
+            char             msg2[] = "world";
+
+            test.on_sendmsg = [&](int fd, ::msghdr const* msg, int flags, ::nstd::file::context::io_base* cont){
+                sendmsg_called
+                    =  fd == socket.native_handle()
+                    && flags == int()
+                    && msg
+                    && msg->msg_name == nullptr
+                    && msg->msg_namelen == 0
+                    && msg->msg_iov != nullptr
+                    && msg->msg_iovlen == 2
+                    && msg->msg_iov[0].iov_base != nullptr
+                    && msg->msg_iov[0].iov_len == sizeof(msg1)
+                    && msg->msg_iov[1].iov_base != nullptr
+                    && msg->msg_iov[1].iov_len == sizeof(msg2)
+                    && ::std::string_view(msg1)
+                       == ::std::string_view(static_cast<char const*>(msg->msg_iov[0].iov_base), msg->msg_iov[0].iov_len - 1)
+                    && ::std::string_view(msg2)
+                       == ::std::string_view(static_cast<char const*>(msg->msg_iov[1].iov_base), msg->msg_iov[1].iov_len - 1)
+                    && msg->msg_control == nullptr
+                    && msg->msg_controllen == 0
+                    && msg->msg_flags == 0
+                    ;
+                test.make_ready(sizeof(msg1) + sizeof(msg2), 0, cont);
+            };
+
+            NN::const_buffer buffers[] = { NN::buffer(msg1), NN::buffer(msg2) };
+            auto sender = EX::on(context.scheduler(),
+                  NN::async_send(socket, buffers)
+                | EX::then([&](::std::int64_t){ completion_called = true; })
+            );
+
+            EX::run(context, UT::move(sender));
+            ::std::cout << "sendmsg=" << sendmsg_called << " completion=" << completion_called << "\n";
+
+            return sendmsg_called
+                && completion_called
+                ;
+        }),
+#endif
     KT::expect_success("one buffer, flags", []{
             bool             sendmsg_called{false};
             bool             completion_called{false};
@@ -134,20 +183,17 @@ static KT::testcase const tests[] = {
                     && msg->msg_controllen == 0
                     && msg->msg_flags == 0
                     ;
-                test.make_ready(-1, 0, cont);
+                test.make_ready(sizeof(message), 0, cont);
             };
 
-            auto sender = EX::schedule(context.scheduler())
-                | EX::then([]{}) //-dk:TODO remove
-                | NN::async_send(socket, NN::buffer(message), NN::socket_base::message_peek)
+            auto sender = EX::on(context.scheduler(),
+                  NN::async_send(socket, NN::buffer(message), NN::socket_base::message_peek)
                 | EX::then([&](::std::int64_t){ completion_called = true; })
-                ;
+            );
 
             EX::run(context, UT::move(sender));
 
-            return KT::use(sender)
-                && KT::use(socket)
-                && sendmsg_called
+            return sendmsg_called
                 && completion_called
                 ;
         }),

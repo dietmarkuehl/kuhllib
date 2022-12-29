@@ -172,8 +172,9 @@ static KT::testcase const tests[] = {
                     | EX::then([&](TD::stream, TD::endpoint){ value_called = true; })
                     //| EX::upon_error([&](auto&&...){ error_called = true; })
                     //| EX::upon_error([&](::std::exception_ptr){ error_called = true; })
-                    //-dk:TODO: | EX::upon_error([&](::std::eror_code){ error_called = true; })
+                    //-dk:TODO | EX::upon_error([&](::std::error_code){ error_called = true; })
                     | EX::upon_stopped([&](){ stopped_called = true; })
+                    | EX::upon_error([&](auto){ error_called = true; })
                 );
 
             static_assert(EX::receiver<TD::receiver>);
