@@ -5,3 +5,5 @@ is certainly not complete and mainly serves as a reminder.
 
 - test cases for async_connect
 - async_send only works with a contiguous buffer sequence
+- async_read_som only works with a contiguous buffer sequence
+- test cases for async_read_some
