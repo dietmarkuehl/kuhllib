@@ -1,4 +1,4 @@
-// src/nstd/buffer.hpp                                                -*-C++-*-
+// nstd/buffer/sequence.t.cpp                                         -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2022 Dietmar Kuehl http://www.dietmar-kuehl.de
 //
@@ -23,16 +23,49 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_SRC_NSTD_BUFFER
-#define INCLUDED_SRC_NSTD_BUFFER
-
-// ----------------------------------------------------------------------------
-
-#include "nstd/buffer/const_buffer.hpp"
-#include "nstd/buffer/make_buffer.hpp"
-#include "nstd/buffer/mutable_buffer.hpp"
 #include "nstd/buffer/sequence.hpp"
+#include "nstd/buffer/const_buffer.hpp"
+#include "kuhl/test.hpp"
+#include <array>
+#include <vector>
+
+namespace test_declaration {}
+namespace NN = ::nstd::net;
+namespace TD = ::test_declaration;
+namespace KT = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
 
-#endif
+namespace test_declaration {
+    namespace {
+    }
+}
+
+// ----------------------------------------------------------------------------
+
+static KT::testcase const tests[] = {
+    KT::expect_success("array", []{
+            char data[] = "hello";
+            ::std::array<NN::const_buffer, 3> bs{ NN::buffer(data), NN::buffer(data), NN::buffer(data) };
+            auto const& cbs(bs);
+
+            return NN::buffer_sequence_begin(bs)  == bs.begin()
+                && NN::buffer_sequence_end(bs)    == bs.end()
+                && NN::buffer_sequence_begin(cbs) == cbs.begin()
+                && NN::buffer_sequence_end(cbs)   == cbs.end()
+                ;
+        }),
+    KT::expect_success("vector", []{
+            char data[] = "hello";
+            ::std::vector<NN::const_buffer> bs{ NN::buffer(data), NN::buffer(data), NN::buffer(data) };
+            auto const& cbs(bs);
+
+            return NN::buffer_sequence_begin(bs)  == bs.begin()
+                && NN::buffer_sequence_end(bs)    == bs.end()
+                && NN::buffer_sequence_begin(cbs) == cbs.begin()
+                && NN::buffer_sequence_end(cbs)   == cbs.end()
+                ;
+        }),
+};
+
+static KT::add_tests suite("nstd/buffer/sequence", ::tests);

@@ -1,4 +1,4 @@
-// src/nstd/buffer.hpp                                                -*-C++-*-
+// nstd/buffer/sequence.cpp                                           -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2022 Dietmar Kuehl http://www.dietmar-kuehl.de
 //
@@ -23,16 +23,10 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_SRC_NSTD_BUFFER
-#define INCLUDED_SRC_NSTD_BUFFER
+#include <nstd/buffer/sequence.hpp>
 
 // ----------------------------------------------------------------------------
 
-#include "nstd/buffer/const_buffer.hpp"
-#include "nstd/buffer/make_buffer.hpp"
-#include "nstd/buffer/mutable_buffer.hpp"
-#include "nstd/buffer/sequence.hpp"
-
-// ----------------------------------------------------------------------------
-
-#endif
+namespace nstd::buffer {
+    int sequence_dummy{};
+}

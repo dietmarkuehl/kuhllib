@@ -26,6 +26,7 @@
 #include "nstd/net/async_send.hpp"
 #include "nstd/net/socket_base.hpp"
 #include "nstd/buffer/const_buffer.hpp"
+#include "nstd/buffer/sequence.hpp"
 #include "nstd/execution/run.hpp"
 #include "nstd/execution/on.hpp"
 #include "nstd/execution/scheduler.hpp"
@@ -35,6 +36,7 @@
 #include "nstd/net/io_context.hpp"
 #include "nstd/utility/move.hpp"
 #include "kuhl/test.hpp"
+#include <array>
 
 namespace test_declarations {}
 namespace TD = ::test_declarations;
@@ -144,7 +146,7 @@ static KT::testcase const tests[] = {
                 test.make_ready(sizeof(msg1) + sizeof(msg2), 0, cont);
             };
 
-            NN::const_buffer buffers[] = { NN::buffer(msg1), NN::buffer(msg2) };
+            ::std::array<NN::const_buffer, 2> buffers{ NN::buffer(msg1), NN::buffer(msg2) };
             auto sender = EX::on(context.scheduler(),
                   NN::async_send(socket, buffers)
                 | EX::then([&](::std::int64_t){ completion_called = true; })

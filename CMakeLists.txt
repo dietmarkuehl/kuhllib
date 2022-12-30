@@ -58,6 +58,7 @@ list(APPEND kuhllib_buffer_components
     src/nstd/buffer/const_buffer
     src/nstd/buffer/make_buffer
     src/nstd/buffer/mutable_buffer
+    src/nstd/buffer/sequence
 )
 
 list(APPEND kuhllib_concepts_components

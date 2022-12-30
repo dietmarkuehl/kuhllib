@@ -1,4 +1,4 @@
-// src/nstd/buffer.hpp                                                -*-C++-*-
+// nstd/buffer/sequence.hpp                                           -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2022 Dietmar Kuehl http://www.dietmar-kuehl.de
 //
@@ -23,15 +23,17 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_SRC_NSTD_BUFFER
-#define INCLUDED_SRC_NSTD_BUFFER
+#ifndef INCLUDED_NSTD_BUFFER_SEQUENCE
+#define INCLUDED_NSTD_BUFFER_SEQUENCE
 
 // ----------------------------------------------------------------------------
 
-#include "nstd/buffer/const_buffer.hpp"
-#include "nstd/buffer/make_buffer.hpp"
-#include "nstd/buffer/mutable_buffer.hpp"
-#include "nstd/buffer/sequence.hpp"
+namespace nstd::net {
+    template <typename Cont>
+    auto buffer_sequence_begin(Cont& cont) noexcept ->decltype(cont.begin()) { return cont.begin(); }
+    template <typename Cont>
+    auto buffer_sequence_end(Cont& cont) noexcept ->decltype(cont.end()) { return cont.end(); }
+}
 
 // ----------------------------------------------------------------------------
 
