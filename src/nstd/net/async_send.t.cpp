@@ -111,8 +111,6 @@ static KT::testcase const tests[] = {
                 && completion_called
                 ;
         }),
-#if 0
-    //-dk:TODO test buffer sequences
     KT::expect_success("multiple buffers, no flags", []{
             bool             sendmsg_called{false};
             bool             completion_called{false};
@@ -159,7 +157,6 @@ static KT::testcase const tests[] = {
                 && completion_called
                 ;
         }),
-#endif
     KT::expect_success("one buffer, flags", []{
             bool             sendmsg_called{false};
             bool             completion_called{false};
