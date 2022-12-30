@@ -27,6 +27,7 @@
 #include <nstd/buffer/const_buffer.hpp>
 #include <nstd/execution/schedule.hpp>
 #include <nstd/execution/run.hpp>
+#include <nstd/execution/on.hpp>
 #include <nstd/execution/then.hpp>
 #include <nstd/net/io_context.hpp>
 #include <nstd/net/basic_stream_socket.hpp>
@@ -47,11 +48,10 @@ static KT::testcase const tests[] = {
             char const message[] = { 'h', 'e', 'l', 'l', 'o', '\n' };
             NN::io_context                       context;
             NN::basic_stream_socket<NN::ip::tcp> client(NI::tcp::v4());
-            auto sender = EX::schedule(context.scheduler())
-                        | EX::then([]{}) //-dk:TODO remove
-                        | NN::async_write_some(client, NN::buffer(message))
-                        | EX::then([](auto){ })
-                        ;
+            auto sender = EX::on(context.scheduler(),
+                      NN::async_write_some(client, NN::buffer(message))
+                    | EX::then([](auto){ })
+            );
             EX::run(context, sender);
             return KT::use(client)
                 && KT::use(sender)

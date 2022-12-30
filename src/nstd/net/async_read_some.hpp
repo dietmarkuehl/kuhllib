@@ -60,7 +60,7 @@ struct nstd::net::hidden_names::async_read_some::operation {
         this->d_msg.msg_iov = const_cast<::iovec*>(iov);
         this->d_msg.msg_iovlen = ::std::distance(::nstd::net::buffer_sequence_begin(this->d_buffer), 
                                                  ::nstd::net::buffer_sequence_end(this->d_buffer)); 
-        scheduler.recvmsg(this->d_parameters.d_fd, &this->d_msg, int(), cont);
+        scheduler.recvmsg(this->d_handle, &this->d_msg, int(), cont);
     }
     template <::nstd::execution::receiver Receiver>
     auto complete(int32_t rc, uint32_t, bool cancelled, state&, Receiver& receiver) -> void {
@@ -71,7 +71,7 @@ struct nstd::net::hidden_names::async_read_some::operation {
             ::nstd::execution::set_error(::nstd::utility::move(receiver), ::std::error_code(-rc, std::system_category()));
         }
         else {
-            ::nstd::execution::set_value(::nstd::utility::move(receiver, rc));
+            ::nstd::execution::set_value(::nstd::utility::move(receiver), rc);
         }
     }
 };

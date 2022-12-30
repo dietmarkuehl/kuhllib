@@ -26,12 +26,10 @@
 #ifndef INCLUDED_NSTD_NET_ASYNC_WRITE_SOME
 #define INCLUDED_NSTD_NET_ASYNC_WRITE_SOME
 
-#include "nstd/net/async_io_.hpp"
 #include "nstd/net/async_io.hpp"
+#include "nstd/net/io_context.hpp"
 #include "nstd/execution/completion_signatures.hpp"
-#include "nstd/execution/get_completion_scheduler.hpp"
 #include "nstd/execution/sender.hpp"
-#include "nstd/execution/sender_adaptor_closure.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/buffer/const_buffer.hpp"
 #include "nstd/utility/move.hpp"
@@ -40,74 +38,64 @@
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::net {
-    inline constexpr struct async_write_some_t {
-        template <typename Socket, typename CBS> struct io_operation;
-
-        template <typename Socket, typename CBS, ::nstd::execution::sender Sender>
-        friend auto tag_invoke(async_write_some_t, Socket& socket, CBS const& cbs, Sender sndr) {
-            auto scheduler{::nstd::execution::get_completion_scheduler<::nstd::execution::set_value_t>(sndr)};
-            return nstd::net::async_io_sender_<decltype(scheduler), Sender, io_operation<Socket, CBS>>{
-                scheduler,
-                ::nstd::utility::move(sndr),
-                socket.native_handle(),
-                cbs
-                };
-        }
-        template <::nstd::execution::sender Sender, typename Socket, typename CBS>
-        auto operator()(Sender sender, Socket& socket, CBS const& cbs) const {
-            return ::nstd::tag_invoke(*this, socket, cbs, sender);
-        }
-        template <typename Socket, typename CBS>
-        auto operator()(Socket& socket, CBS const& cbs) const {
-            return ::nstd::execution::sender_adaptor_closure<::nstd::net::async_write_some_t>()(
-                ::std::ref(socket), cbs);
-        }
-    } async_write_some;
+namespace nstd::net::hidden_names::async_write_some {
+    template <typename Socket, typename CBS> struct operation;
+    struct cpo;
 }
 
 // ----------------------------------------------------------------------------
 
 template <typename Socket, typename CBS>
-struct nstd::net::async_write_some_t::io_operation
-{
-    using completion_signatures
-        = ::nstd::execution::completion_signatures<
-            ::nstd::execution::set_value_t(int)
-            >;
-    template <template <typename...> class T, template <typename...> class V>
-    using value_types = V<T<int>>;
-    template <template <typename...> class V>
-    using error_types = V<::std::exception_ptr>;
+struct nstd::net::hidden_names::async_write_some::operation {
+    using completion_signature = ::nstd::execution::set_value_t(int);
 
-    struct parameters {
-        typename Socket::native_handle_type  d_fd;
-        CBS                                  d_buffer;
+    typename Socket::native_handle_type  d_handle;
+    CBS                                  d_buffer;
+    ::msghdr                             d_msg{};
+    struct state {
     };
-    using socket_type = Socket;
-    using parameter_type = parameters;
-
-    parameters d_parameters;
-    ::msghdr   d_msg{};
-
-    io_operation(::nstd::net::async_write_some_t::io_operation<Socket, CBS>::parameters const& parameters)
-        : d_parameters(parameters)
-    {
-    }
-
-    template <::nstd::execution::scheduler Scheduler>
-    auto submit(Scheduler&& scheduler, ::nstd::file::context::io_base* cont) -> void {
-        iovec const* iov = reinterpret_cast<::iovec const*>(&*::nstd::net::buffer_sequence_begin(this->d_parameters.d_buffer));
+    auto start(::nstd::net::io_context::scheduler_type scheduler, state&, ::nstd::file::context::io_base* cont) -> void{
+        iovec const* iov = reinterpret_cast<::iovec const*>(&*::nstd::net::buffer_sequence_begin(this->d_buffer));
         this->d_msg.msg_iov = const_cast<::iovec*>(iov);
-        this->d_msg.msg_iovlen = 1u;
-        scheduler.sendmsg(this->d_parameters.d_fd, &this->d_msg, int(), cont);
+        this->d_msg.msg_iovlen = ::std::distance(::nstd::net::buffer_sequence_begin(this->d_buffer), 
+                                                 ::nstd::net::buffer_sequence_end(this->d_buffer)); 
+        scheduler.sendmsg(this->d_handle, &this->d_msg, int(), cont);
     }
-
-    template <typename Receiver>
-    auto complete(::std::int32_t rc, std::uint32_t, Receiver& receiver) {
-        ::nstd::execution::set_value(::nstd::utility::move(receiver), rc);
+    template <::nstd::execution::receiver Receiver>
+    auto complete(int32_t rc, uint32_t, bool cancelled, state&, Receiver& receiver) -> void {
+        if (cancelled) {
+            ::nstd::execution::set_stopped(::nstd::utility::move(receiver));
+        }
+        else if (rc < 0) {
+            ::nstd::execution::set_error(::nstd::utility::move(receiver), ::std::error_code(-rc, std::system_category()));
+        }
+        else {
+            ::nstd::execution::set_value(::nstd::utility::move(receiver), rc);
+        }
     }
 };
+
+// ----------------------------------------------------------------------------
+
+struct nstd::net::hidden_names::async_write_some::cpo {
+    template <typename Socket, typename CBS>
+    friend auto tag_invoke(cpo, Socket& socket, CBS const& buffer) {
+        return nstd::net::hidden_names::async_io_sender<::nstd::net::hidden_names::async_write_some::operation<Socket, CBS>>(
+            socket.native_handle(), buffer
+            );
+    }
+    template <typename Socket, typename CBS>
+    auto operator()(Socket& socket, CBS const& buffer) const {
+        return ::nstd::tag_invoke(*this, socket, buffer);
+    }
+};
+
+// ----------------------------------------------------------------------------
+
+namespace nstd::net {
+    using async_write_some_t = ::nstd::net::hidden_names::async_write_some::cpo;
+    inline constexpr async_write_some_t async_write_some;
+}
 
 // ----------------------------------------------------------------------------
 
