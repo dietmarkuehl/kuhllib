@@ -26,89 +26,73 @@
 #ifndef INCLUDED_NSTD_NET_ASYNC_CONNECT
 #define INCLUDED_NSTD_NET_ASYNC_CONNECT
 
-#include "nstd/net/async_io_.hpp"
+#include "nstd/net/async_io.hpp"
+#include "nstd/net/io_context.hpp"
 #include "nstd/execution/completion_signatures.hpp"
-#include "nstd/execution/get_completion_scheduler.hpp"
 #include "nstd/execution/sender.hpp"
-#include "nstd/execution/sender_adaptor_closure.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/utility/move.hpp"
 
-#include <functional>
 #include <system_error>
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::net {
-    inline constexpr struct async_connect_t {
-        template <typename Socket> struct io_operation;
-
-        template <typename Socket, ::nstd::execution::sender Sender>
-        friend auto tag_invoke(async_connect_t, Socket& socket, typename Socket::endpoint_type const& endpoint, Sender sndr) {
-            auto scheduler{::nstd::execution::get_completion_scheduler<::nstd::execution::set_value_t>(sndr)};
-            return nstd::net::async_io_sender_<decltype(scheduler), Sender, io_operation<Socket>>{
-                scheduler,
-                ::nstd::utility::move(sndr),
-                socket.native_handle(),
-                endpoint
-                };
-        }
-        template <::nstd::execution::sender Sender, typename Socket>
-        auto operator()(Sender sender, Socket& socket, typename Socket::endpoint_type const& endpoint) const {
-            return ::nstd::tag_invoke(*this, socket, endpoint, sender);
-        }
-        template <typename Socket>
-        auto operator()(Socket& socket, typename Socket::endpoint_type const& endpoint) const {
-            return ::nstd::execution::sender_adaptor_closure<::nstd::net::async_connect_t>()(
-                ::std::ref(socket), endpoint);
-        }
-    } async_connect;
+namespace nstd::net::hidden_names::async_connect {
+    template <typename Socket> struct operation;
+    struct cpo;
 }
 
 // ----------------------------------------------------------------------------
 
 template <typename Socket>
-struct nstd::net::async_connect_t::io_operation
-{
-    using completion_signatures
-        = ::nstd::execution::completion_signatures<
-            ::nstd::execution::set_value_t(::std::error_code),
-            ::nstd::execution::set_error_t(::std::exception_ptr)
-            >;
-    template <template <typename...> class T, template <typename...> class V>
-    using value_types = V<T<::std::error_code>>;
-    template <template <typename...> class V>
-    using error_types = V<::std::exception_ptr>;
+struct nstd::net::hidden_names::async_connect::operation {
+    using completion_signature
+        = ::nstd::execution::set_value_t();
 
-    struct parameters {
-        typename Socket::native_handle_type  d_fd;
-        typename Socket::endpoint_type       d_endpoint;
+    typename Socket::native_handle_type      d_handle;
+    typename Socket::endpoint_type           d_endpoint;
+    ::sockaddr_storage                       d_address{};
+    struct state {
     };
-
-    parameters                                    d_parameters;
-    ::sockaddr_storage                            d_address;
-    ::socklen_t                                   d_length;
-
-    io_operation(::nstd::net::async_connect_t::io_operation<Socket>::parameters const& parameters)
-        : d_parameters(parameters)
-        , d_address{}
-        , d_length{}
-    {
+    auto start(::nstd::net::io_context::scheduler_type scheduler, state&, ::nstd::file::context::io_base* cont) -> void{
+        ::socklen_t length = this->d_endpoint.get_address(&this->d_address);
+        scheduler.connect(this->d_handle, reinterpret_cast<::sockaddr*>(&this->d_address), length, cont);
     }
-
-    template <::nstd::execution::scheduler Scheduler>
-    auto submit(Scheduler&& scheduler, ::nstd::file::context::io_base* cont) -> void {
-        this->d_length = this->d_parameters.d_endpoint.get_address(&this->d_address);
-        scheduler.connect(this->d_parameters.d_fd, reinterpret_cast<::sockaddr*>(&this->d_address), this->d_length, cont);
-    }
-    template <typename Receiver>
-    auto complete(::std::int32_t rc, std::uint32_t, Receiver& receiver) {
-        ::nstd::execution::set_value(::nstd::utility::move(receiver),
-                                     rc < 0
-                                     ? ::std::error_code(-rc, ::std::system_category())
-                                     : ::std::error_code());
+    template <::nstd::execution::receiver Receiver>
+    auto complete(int32_t rc, uint32_t, bool cancelled, state&, Receiver& receiver) -> void {
+        if (cancelled) {
+            ::nstd::execution::set_stopped(::nstd::utility::move(receiver));
+        }
+        else if (rc < 0) {
+            ::nstd::execution::set_error(::nstd::utility::move(receiver), ::std::error_code(-rc, std::system_category()));
+        }
+        else {
+            ::nstd::execution::set_value(::nstd::utility::move(receiver));
+        }
     }
 };
+
+// ----------------------------------------------------------------------------
+
+struct nstd::net::hidden_names::async_connect::cpo {
+    template <typename Socket>
+    friend auto tag_invoke(cpo, Socket& socket, typename Socket::endpoint_type const& endpoint) {
+        return nstd::net::hidden_names::async_io_sender<::nstd::net::hidden_names::async_connect::operation<Socket>>(
+            socket.native_handle(), endpoint
+            );
+    }
+    template <typename Socket>
+    auto operator()(Socket& socket, typename Socket::endpoint_type const& endpoint) const {
+        return ::nstd::tag_invoke(*this, socket, endpoint);
+    }
+};
+
+// ----------------------------------------------------------------------------
+
+namespace nstd::net {
+    using async_connect_t = ::nstd::net::hidden_names::async_connect::cpo;
+    inline constexpr async_connect_t async_connect;
+}
 
 // ----------------------------------------------------------------------------
 

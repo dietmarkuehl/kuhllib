@@ -36,4 +36,4 @@ static KT::testcase const tests[] = {
         }),
 };
 
-static KT::add_tests suite("async_connect", ::tests);
+static KT::add_tests suite("net::async_connect", ::tests);

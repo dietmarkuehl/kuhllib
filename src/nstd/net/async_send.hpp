@@ -27,13 +27,10 @@
 #define INCLUDED_NSTD_NET_ASYNC_SEND
 
 #include "nstd/net/async_io.hpp"
-#include "nstd/net/async_io_.hpp"
 #include "nstd/file/operation.hpp"
 #include "nstd/hidden_names/message_flags.hpp"
 #include "nstd/execution/completion_signatures.hpp"
-#include "nstd/execution/get_completion_scheduler.hpp"
 #include "nstd/execution/sender.hpp"
-#include "nstd/execution/sender_adaptor_closure.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/buffer/const_buffer.hpp"
 #include "nstd/buffer/sequence.hpp"
@@ -58,7 +55,7 @@ struct nstd::net::hidden_names::async_send::operation {
         = ::nstd::execution::set_value_t(int);
 
     typename Socket::native_handle_type      d_handle;
-    ::nstd::type_traits::remove_cvref_t<CBS> d_buffers;
+    ::nstd::type_traits::remove_cvref_t<CBS> d_buffers; //-dk:TODO add allocator support?
     ::nstd::hidden_names::message_flags      d_flags;
     ::msghdr                                 d_msgheader{};
     struct state {
