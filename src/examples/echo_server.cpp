@@ -141,13 +141,13 @@ namespace
         (void)context;
         return 
             EX::repeat_effect_until(
-                EX::on(context.scheduler(),
+                //EX::on(context.scheduler(),
 #if 1
                       EX::just(17)
 #else
                       NN::async_read_some(owner.d_socket, NN::buffer(owner.d_buffer))
 #endif
-                )
+                //)
                 // | EX::let_value([](int){ return EX::just(); })
                 | EX::then([](int){})
 #if 0

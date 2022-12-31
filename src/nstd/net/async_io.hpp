@@ -43,10 +43,11 @@
 #include "nstd/utility/forward.hpp"
 #include "nstd/utility/move.hpp"
 
-#include <system_error>
+#include <atomic>
 #include <functional>
-#include <optional>
 #include <mutex>
+#include <optional>
+#include <system_error>
 
 // ----------------------------------------------------------------------------
 
