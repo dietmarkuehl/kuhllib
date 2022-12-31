@@ -105,7 +105,6 @@ static KT::testcase const tests[] = {
             );
 
             EX::run(context, UT::move(sender));
-            ::std::cout << "sendmsg=" << sendmsg_called << " completion=" << completion_called << "\n";
 
             return sendmsg_called
                 && completion_called
@@ -151,7 +150,6 @@ static KT::testcase const tests[] = {
             );
 
             EX::run(context, UT::move(sender));
-            ::std::cout << "sendmsg=" << sendmsg_called << " completion=" << completion_called << "\n";
 
             return sendmsg_called
                 && completion_called

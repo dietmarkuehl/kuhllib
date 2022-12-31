@@ -27,6 +27,8 @@
 #include "nstd/execution/connect.hpp"
 #include "nstd/execution/get_completion_scheduler.hpp"
 #include "nstd/execution/just.hpp"
+#include "nstd/execution/on.hpp"
+#include "nstd/execution/repeat_effect_until.hpp"
 #include "nstd/execution/then.hpp"
 #include "nstd/execution/sender.hpp"
 #include "nstd/execution/scheduler.hpp"
@@ -39,6 +41,9 @@
 #include "nstd/utility/move.hpp"
 #include <concepts>
 #include "kuhl/test.hpp"
+
+#include "nstd/hidden_names/print_completion_signatures.hpp"
+namespace HN = ::nstd::hidden_names;
 
 namespace test_declarations {}
 namespace TD = test_declarations;
@@ -245,18 +250,32 @@ static KT::testcase const tests[] = {
                 && ::std::get<0>(*value) == "stopped"
                 ;
         }),
+    KT::expect_success("let_value can be copied", []{
+            auto sender = EX::on(TD::scheduler<int, int>(), EX::just() | EX::let_value([]{ return EX::just(); }));
+            auto copy(sender);
+            return true
+                && KT::use(sender)
+                && KT::use(copy)
+                ;
+        }),
 #if 0
     KT::expect_success("repeat send one value", []{
             auto sender =
                 EX::repeat_effect_until(
-                      EX::let_value(EX::just(::std::string("hello, "), ::std::string("world")),
-                                    [](auto&&... a){ return EX::just((a + ...)); })
-                    | EX::then([](auto&&...){ })
+                      // EX::let_value(EX::just(::std::string("hello, "), ::std::string("world")),
+                      EX::just(17, 25)
+                    | EX::let_value(
+                                    //[](auto&&... a){ return EX::just((a + ...)); })
+                                    [](auto&&... ){ return EX::just(); })
+                    //| EX::then([](auto&&...){ })
                     , []{ return true; }
                 )
                 ;
-            TT::sync_wait(UT::move(sender));
+            auto state(EX::connect(sender, TD::receiver()));
+            // TTh::sync_wait(UT::move(sender));
+
             return KT::use(sender)
+                && KT::use(state)
                 ;
         }),
 #endif

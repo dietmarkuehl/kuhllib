@@ -73,7 +73,7 @@ namespace nstd::hidden_names {
         [[no_unique_address]] ::std::tuple<A...> d_value;
 
         template <typename... Args>
-        just_sender(Args&&... args): d_value(::nstd::utility::forward<Args>(args)...) {}
+        just_sender(Args&&... args): d_value{::nstd::utility::forward<Args>(args)...} {}
         just_sender(just_sender&) = default;
         just_sender(just_sender&&) = default;
         just_sender(just_sender const&) = default;

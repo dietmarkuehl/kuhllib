@@ -277,8 +277,8 @@ namespace nstd::hidden_names::let {
         }
         template <::nstd::execution::receiver Receiver>
         friend auto tag_invoke(::nstd::execution::connect_t, sender const& self, Receiver&& receiver)
-            -> ::nstd::hidden_names::let::state<Tag, Sender const&, Fun, Receiver> {
-            return ::nstd::hidden_names::let::state<Tag, Sender const&, Fun, Receiver>(
+            -> ::nstd::hidden_names::let::state<Tag, Sender, Fun, Receiver> {
+            return ::nstd::hidden_names::let::state<Tag, Sender, Fun, Receiver>(
                 self.d_sender,
                 self.d_fun,
                 ::nstd::utility::forward<Receiver>(receiver)

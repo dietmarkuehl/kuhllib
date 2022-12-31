@@ -207,6 +207,7 @@ list(APPEND kuhllib_hidden_components
     src/nstd/hidden_names/filter_completions
     src/nstd/hidden_names/is_instance_of
     src/nstd/hidden_names/merge_completion_signatures
+    src/nstd/hidden_names/message_flags
     src/nstd/hidden_names/movable_value
     src/nstd/hidden_names/print_completion_signatures
     src/nstd/hidden_names/sender_base
@@ -223,7 +224,6 @@ list(APPEND kuhllib_xhidden_components
     src/nstd/hidden_names/constexpr_expression
     src/nstd/hidden_names/derives_from_sender_base
     src/nstd/hidden_names/has_sender_types
-    src/nstd/hidden_names/message_flags
     src/nstd/hidden_names/no_completion_signatures
     src/nstd/hidden_names/type_list
 )
@@ -247,6 +247,7 @@ list(APPEND kuhllib_net_components
     src/nstd/net/async_io
     src/nstd/net/async_read_some
     src/nstd/net/async_send
+    src/nstd/net/async_write
     src/nstd/net/async_write_some
     src/nstd/net/basic_socket
     src/nstd/net/basic_socket_acceptor
@@ -400,17 +401,16 @@ add_test(NAME kuhllib_test COMMAND $<TARGET_FILE:kuhllib_test>)
 
 list(APPEND kuhllib_disabled_examples
     audio
+    chat_server
+    coroutine_echo_server
+    cs2
+    es
+    simple_echo_server
 )
 list(APPEND kuhllib_examples
-    es
-    cs2
-    coroutine_echo_server
-    simple_echo_server
-    chat_server
     echo_server
-    audio
 )
-#foreach(example ${kuhllib_examples})
-#    add_executable(${example} src/examples/${example}.cpp)
-#    target_link_libraries(${example} PUBLIC kuhllib pthread)
-#endforeach()
+foreach(example ${kuhllib_examples})
+    add_executable(${example} src/examples/${example}.cpp)
+    target_link_libraries(${example} PUBLIC kuhllib pthread)
+endforeach()

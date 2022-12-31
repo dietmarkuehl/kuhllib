@@ -55,14 +55,6 @@
 
 namespace nstd::net {
     template <typename> class basic_stream_socket;
-
-    inline constexpr struct async_write_t {
-        template <::nstd::execution::sender Sender, typename P, typename CBS>
-        auto operator()(Sender&&, basic_stream_socket<P>&, CBS const&) const;
-
-        template <typename P, typename CBS>
-        auto operator()(basic_stream_socket<P>& socket, CBS const& buffer) const;
-    } async_write;
 }
 
 // ----------------------------------------------------------------------------
@@ -164,37 +156,6 @@ auto nstd::net::basic_stream_socket<Protocol>::complete(::nstd::file::operation_
     if (front && !this->d_send_queue.empty()) {
         this->d_send_queue.front().submit();
     }
-}
-
-// ----------------------------------------------------------------------------
-
-template <::nstd::execution::sender Sender, typename P, typename CBS>
-auto nstd::net::async_write_t::operator()(Sender&& sender,
-                                          basic_stream_socket<P>& socket,
-                                          CBS const& cbs) const
-{
-    auto scheduler = ::nstd::execution::get_completion_scheduler<::nstd::execution::set_value_t>(sender);
-    return ::nstd::execution::let_value(::nstd::utility::forward<Sender>(sender),
-        [scheduler, &socket, buffer = cbs]() mutable {
-            return ::nstd::execution::repeat_effect_until(
-                ::nstd::execution::let_value(::nstd::execution::just(),
-                    [scheduler, &socket, &buffer]{
-                        return ::nstd::net::async_write_some(::nstd::execution::schedule(scheduler), socket, buffer)
-                            |  ::nstd::execution::then([&buffer](::std::size_t n){
-                                buffer += n;
-                            });
-                    }),
-                [&buffer]{ return buffer.size() == 0; }
-            );
-        });
-}
-
-template <typename P, typename CBS>
-auto nstd::net::async_write_t::operator()(::nstd::net::basic_stream_socket<P>& socket,
-                                          CBS const& buffer) const
-{
-    return ::nstd::execution::sender_adaptor_closure<::nstd::net::async_write_t>()(
-        ::std::ref(socket), buffer);
 }
 
 // ----------------------------------------------------------------------------

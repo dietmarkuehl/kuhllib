@@ -101,7 +101,7 @@ namespace nstd::hidden_names::repeat_effect_until
         using receiver_type = ::nstd::hidden_names::repeat_effect_until::receiver<Sender, Predicate, Receiver>;
         static_assert(::nstd::execution::receiver<receiver_type>);
         using internal_state
-            = decltype(::nstd::execution::connect(::nstd::type_traits::declval<sender_type>(),
+            = decltype(::nstd::execution::connect(::nstd::type_traits::declval<sender_type&>(),
                                                   ::nstd::type_traits::declval<receiver_type>()));
 
         bool d_engaged = false;
@@ -124,7 +124,7 @@ namespace nstd::hidden_names::repeat_effect_until
             }
         }
 
-        friend auto tag_invoke(::nstd::execution::start_t, state& s) noexcept {
+        friend auto tag_invoke(::nstd::execution::start_t, state& s) noexcept -> void {
             new(&s.d_internal_state.d_state)
                 internal_state(::nstd::execution::connect(s.d_sender,
                                                           receiver_type{&s}));
@@ -138,8 +138,8 @@ namespace nstd::hidden_names::repeat_effect_until
             else {
                 this->d_internal_state.d_state.~internal_state();
                 new(&this->d_internal_state.d_state)
-                    internal_state(::nstd::execution::connect(this->d_sender,
-                                                              receiver_type{this}));
+                    internal_state{::nstd::execution::connect(this->d_sender,
+                                                              receiver_type{this})};
                 ::nstd::execution::start(this->d_internal_state.d_state);
             }
         }

@@ -30,6 +30,7 @@
 #include "nstd/net/ip/address.hpp"
 #include "nstd/net/ip/tcp.hpp"
 #include "nstd/net/ip/types.hpp"
+#include <ostream>
 
 // ----------------------------------------------------------------------------
 
@@ -65,6 +66,15 @@ public:
 
     constexpr auto operator== (basic_endpoint const&) const noexcept -> bool = default;
     constexpr auto operator<=>(basic_endpoint const&) const noexcept = default;
+
+    template <typename CT, typename Traits>
+    auto print(std::basic_ostream<CT, Traits>& out) const -> std::basic_ostream<CT, Traits>&;
+    
+    template <typename CT, typename Traits>
+    friend auto operator<< (std::basic_ostream<CT, Traits>& out, basic_endpoint const& ep)
+        -> std::basic_ostream<CT, Traits>& {
+        return ep.print(out);
+    }
 
     auto get_address(::sockaddr_storage*) const -> ::socklen_t;       // implementation specific
     auto set_address(::sockaddr_storage const*, ::socklen_t) -> void; // implementation specific
@@ -117,10 +127,40 @@ constexpr auto nstd::net::ip::basic_endpoint<InternetProtocol>::port() const noe
 // ----------------------------------------------------------------------------
 
 template <typename InternetProtocol>
+template <typename CT, typename Traits>
+auto nstd::net::ip::basic_endpoint<InternetProtocol>::print(std::basic_ostream<CT, Traits>& out) const
+    -> std::basic_ostream<CT, Traits>&
+{
+    return out << this->address() << ':' << this->port();
+
+}
+
+// ----------------------------------------------------------------------------
+
+template <typename InternetProtocol>
 auto nstd::net::ip::basic_endpoint<InternetProtocol>::get_address(::sockaddr_storage* storage) const
     -> ::socklen_t
 {
     return this->d_address.get_address(storage, this->d_port);
+}
+
+template <typename InternetProtocol>
+auto nstd::net::ip::basic_endpoint<InternetProtocol>::set_address(::sockaddr_storage const* storage,
+                                                                  ::socklen_t length)
+    -> void
+{
+    if (sizeof(::sockaddr_in) == length) {
+        ::sockaddr_in const* addr(reinterpret_cast<::sockaddr_in const*>(storage));
+        this->d_port = ntohs(addr->sin_port);
+        this->d_address = ::nstd::net::ip::address_v4(addr->sin_addr.s_addr);
+    }
+    else if (sizeof(::sockaddr_in6) == length) {
+        ::sockaddr_in6 const* addr(reinterpret_cast<::sockaddr_in6 const*>(storage));
+        this->d_port = ntohs(addr->sin6_port);
+        //-dk:TODO
+    }
+    (void)storage;
+    (void)length;
 }
 
 // ----------------------------------------------------------------------------

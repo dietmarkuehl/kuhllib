@@ -24,8 +24,14 @@
 // ----------------------------------------------------------------------------
 
 #include "nstd/net/async_read_some.hpp"
+#include "nstd/net/basic_stream_socket.hpp"
+#include "nstd/net/ip/tcp.hpp"
+#include "nstd/execution/get_completion_signatures.hpp"
+#include "nstd/hidden_names/print_completion_signatures.hpp"
 #include "kuhl/test.hpp"
 
+namespace EX = ::nstd::execution;
+namespace HN = ::nstd::hidden_names;
 namespace NN = ::nstd::net;
 namespace KT = ::kuhl::test;
 
@@ -33,7 +39,11 @@ namespace KT = ::kuhl::test;
 
 static KT::testcase const tests[] = {
     KT::expect_success("breathing", []{
-           return true;
+            NN::basic_stream_socket<NN::ip::tcp> socket(NN::ip::tcp::v4());
+            char buffer[10];
+            auto const sender = NN::async_read_some(socket, NN::buffer(buffer));
+            //HN::print_completion_signatures(sender);
+            return KT::use(sender);
         }),
 };
 
