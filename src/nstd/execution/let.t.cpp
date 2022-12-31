@@ -258,27 +258,20 @@ static KT::testcase const tests[] = {
                 && KT::use(copy)
                 ;
         }),
-#if 0
     KT::expect_success("repeat send one value", []{
             auto sender =
                 EX::repeat_effect_until(
-                      // EX::let_value(EX::just(::std::string("hello, "), ::std::string("world")),
-                      EX::just(17, 25)
+                      EX::just(::std::string("hello, "), ::std::string("world"))
                     | EX::let_value(
-                                    //[](auto&&... a){ return EX::just((a + ...)); })
-                                    [](auto&&... ){ return EX::just(); })
-                    //| EX::then([](auto&&...){ })
+                                    [](auto&&... a){ return EX::just((a + ...)); })
                     , []{ return true; }
                 )
                 ;
-            auto state(EX::connect(sender, TD::receiver()));
-            // TTh::sync_wait(UT::move(sender));
+            TTh::sync_wait(UT::move(sender));
 
             return KT::use(sender)
-                && KT::use(state)
                 ;
         }),
-#endif
     KT::expect_success("dummy", []{
         return true;
         })

@@ -100,9 +100,23 @@ namespace nstd::hidden_names::repeat_effect_until
         using sender_type   = typename state_base::sender_type;
         using receiver_type = ::nstd::hidden_names::repeat_effect_until::receiver<Sender, Predicate, Receiver>;
         static_assert(::nstd::execution::receiver<receiver_type>);
-        using internal_state
-            = decltype(::nstd::execution::connect(::nstd::type_traits::declval<sender_type&>(),
-                                                  ::nstd::type_traits::declval<receiver_type>()));
+        struct internal_state {
+            using state_type = decltype(::nstd::execution::connect(::nstd::type_traits::declval<Sender>(),
+                                                                   ::nstd::type_traits::declval<receiver_type>()));
+            state_type d_state;
+            template <typename S>
+            internal_state(S&& sender, receiver_type&& receiver)
+                : d_state(::nstd::execution::connect(Sender(::nstd::utility::forward<S>(sender)), ::nstd::utility::move(receiver)))
+            {
+                (void)sender;
+                (void)receiver;
+            }
+
+            friend auto tag_invoke(::nstd::execution::start_t, internal_state& self) noexcept -> void {
+                (void)self;
+                ::nstd::execution::start(self.d_state);
+            }
+        };
 
         bool d_engaged = false;
         union holder {
@@ -111,9 +125,9 @@ namespace nstd::hidden_names::repeat_effect_until
             internal_state d_state;
         } d_internal_state;
 
-        template <typename P, typename R>
-        state(Sender&& sndr, P&& predicate, R&& receiver)
-            : state_base(::nstd::utility::move(sndr),
+        template <typename S, typename P, typename R>
+        state(S&& sndr, P&& predicate, R&& receiver)
+            : state_base(::nstd::utility::forward<S>(sndr),
                          ::nstd::utility::forward<P>(predicate),
                          ::nstd::utility::forward<R>(receiver))
         {
@@ -125,9 +139,7 @@ namespace nstd::hidden_names::repeat_effect_until
         }
 
         friend auto tag_invoke(::nstd::execution::start_t, state& s) noexcept -> void {
-            new(&s.d_internal_state.d_state)
-                internal_state(::nstd::execution::connect(s.d_sender,
-                                                          receiver_type{&s}));
+            new(&s.d_internal_state.d_state) internal_state(s.d_sender, receiver_type{&s});
             s.d_engaged = true;
             ::nstd::execution::start(s.d_internal_state.d_state);
         }
@@ -137,9 +149,7 @@ namespace nstd::hidden_names::repeat_effect_until
             }
             else {
                 this->d_internal_state.d_state.~internal_state();
-                new(&this->d_internal_state.d_state)
-                    internal_state{::nstd::execution::connect(this->d_sender,
-                                                              receiver_type{this})};
+                new(&this->d_internal_state.d_state) internal_state(this->d_sender, receiver_type{this});
                 ::nstd::execution::start(this->d_internal_state.d_state);
             }
         }
@@ -163,9 +173,17 @@ namespace nstd::hidden_names::repeat_effect_until
 
         template <typename Receiver>
         friend auto tag_invoke(::nstd::execution::connect_t, sender&& sndr, Receiver&& receiver) noexcept {
-            return ::nstd::hidden_names::repeat_effect_until::state<Sender, Predicate, Receiver>(::nstd::utility::move(sndr.d_sender),
-                         ::nstd::utility::move(sndr.d_predicate),
-                         ::nstd::utility::forward<Receiver>(receiver));
+            return ::nstd::hidden_names::repeat_effect_until::state<Sender, Predicate, Receiver>(
+                        ::nstd::utility::move(sndr.d_sender),
+                        ::nstd::utility::move(sndr.d_predicate),
+                        ::nstd::utility::forward<Receiver>(receiver));
+        }
+        template <typename Receiver>
+        friend auto tag_invoke(::nstd::execution::connect_t, sender const& sndr, Receiver&& receiver) noexcept {
+            return ::nstd::hidden_names::repeat_effect_until::state<Sender const&, Predicate, Receiver>(
+                        sndr.d_sender,
+                        sndr.d_predicate,
+                        ::nstd::utility::forward<Receiver>(receiver));
         }
     };
 
