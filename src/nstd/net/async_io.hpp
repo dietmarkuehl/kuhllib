@@ -113,6 +113,7 @@ namespace nstd::net::hidden_names {
 
     template <typename Operation>
     struct async_io_sender
+        : ::nstd::execution::sender_tag
     {
         using completion_signatures
             = ::nstd::execution::completion_signatures<

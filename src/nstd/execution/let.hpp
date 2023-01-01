@@ -110,13 +110,31 @@ namespace nstd::hidden_names::let {
         }
     };
 
+    template <typename> struct state_base_emplace;
+    template <typename C, typename... Args>
+    struct state_base_emplace<C(Args...)> {
+        template <typename V, typename R, typename F, typename... A>
+        void emplace(V& var, R&& r, F&& f, A... a) {
+            var.template emplace<inner_state<R, F, C(Args...)>>(::nstd::utility::move(r),
+                                                                ::nstd::utility::move(f),
+                                                                ::nstd::utility::forward<A>(a)...);
+        }
+    };
     template <::nstd::execution::receiver, typename, typename>
     struct state_base;
     template <::nstd::execution::receiver FinalReceiver, typename Fun, typename... C>
-    struct state_base<FinalReceiver, Fun, ::nstd::execution::completion_signatures<C...>> {
+    struct state_base<FinalReceiver, Fun, ::nstd::execution::completion_signatures<C...>>
+        : state_base_emplace<C>...
+    {
         ::nstd::type_traits::remove_cvref_t<FinalReceiver> d_receiver;
-        ::nstd::type_traits::remove_cvref_t<Fun>      d_fun;
+        ::nstd::type_traits::remove_cvref_t<Fun>           d_fun;
         ::std::variant<::nstd::hidden_names::let::none, ::nstd::hidden_names::let::inner_state<FinalReceiver, Fun, C>...> d_inner_state;
+        template <typename R, typename F>
+        state_base(R&& r, F&& f)
+            : d_receiver(::nstd::utility::forward<R>(r))
+            , d_fun(::nstd::utility::forward<F>(f))
+            , d_inner_state(::nstd::hidden_names::let::none()) {
+        }
     };
 
     template <typename Tag, ::nstd::execution::receiver FinalReceiver, typename Fun, typename C>
@@ -128,9 +146,10 @@ namespace nstd::hidden_names::let {
             requires (::nstd::hidden_names::let::is_completion_signal<CPO>)
         friend auto tag_invoke(CPO cpo, hidden&& self, A&&... a) noexcept -> void {
             if constexpr (::std::same_as<Tag, ::nstd::type_traits::remove_cvref_t<CPO>>) {
-                self.d_state.d_inner_state.template emplace<inner_state<FinalReceiver, Fun, Tag(A...)>>(::nstd::utility::move(self.d_state.d_receiver),
-                                                                                                        ::nstd::utility::move(self.d_state.d_fun),
-                                                                                                        ::nstd::utility::forward<A>(a)...);
+                self.d_state.emplace(self.d_state.d_inner_state,
+                                     ::nstd::utility::move(self.d_state.d_receiver),
+                                     ::nstd::utility::move(self.d_state.d_fun),
+                                     ::nstd::utility::forward<A>(a)...);
             }
             else {
                 //static_assert(::std::same_as<::nstd::execution::set_error_t(::std::exception_ptr), Tag(...)>
@@ -181,7 +200,7 @@ namespace nstd::hidden_names::let {
 
         template <typename F, ::nstd::execution::receiver R>
         state(Sender&& sender, F&& fun, R&& receiver)
-            : base_t { ::nstd::utility::forward<R>(receiver), ::nstd::utility::forward<F>(fun), ::nstd::hidden_names::let::none{} }
+            : base_t(::nstd::utility::forward<R>(receiver), ::nstd::utility::forward<F>(fun))
             , d_state(::nstd::execution::connect(::nstd::utility::forward<Sender>(sender),
                                                  receiver_t{ *this }))
         {

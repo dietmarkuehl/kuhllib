@@ -137,38 +137,21 @@ namespace
         client& owner,
         NN::io_context&  context) 
     {
-        HN::print_completion_signatures(NN::async_read_some(owner.d_socket, NN::buffer(owner.d_buffer)));
-        (void)context;
         return 
             EX::repeat_effect_until(
-                //EX::on(context.scheduler(),
-#if 1
-                      EX::just(17)
-#else
-                      NN::async_read_some(owner.d_socket, NN::buffer(owner.d_buffer))
-#endif
-                //)
-                // | EX::let_value([](int){ return EX::just(); })
-                | EX::then([](int){})
-#if 0
+                EX::on(context.scheduler(), NN::async_read_some(owner.d_socket, NN::buffer(owner.d_buffer)))
                     | compose(
-                        // [&context, &owner](::std::size_t n){
-                        [&context, &owner](int n){
-                            ::std::cout << "read='" << ::std::string_view(owner.d_buffer, n) << "'\n";
+                        [&context, &owner](::std::size_t n){
+                            ::std::cout << "read(" << n << ")='" << std::string_view(owner.d_buffer, n) << "'\n";
                             owner.d_done = n == 0;
                             return EX::on(context.scheduler(),
-#if 1
-                                          //NN::async_write_some(owner.d_socket, NN::buffer(owner.d_buffer, n))
-                                          EX::just(17)
-#else
                                           NN::async_write(owner.d_socket, NN::buffer(owner.d_buffer, n))
-#endif
                             );
                         })
-#endif
                 ,
                 [&owner]{ return owner.d_done; }
-            );
+            )
+            ;
     }
     auto run_client(starter&         outstanding,
                     NN::io_context&  context,
@@ -196,9 +179,6 @@ namespace
                     | EX::then([&outstanding, &context](stream_socket client, auto&& endpoint){
                         ::std::cout << "accepted connection from " << endpoint << "\n";
                         run_client(outstanding, context, ::std::move(client));
-                        (void)client;
-                        (void)outstanding;
-                        (void)context;
                     })
                 )
             );

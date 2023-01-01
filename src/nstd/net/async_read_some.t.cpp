@@ -25,14 +25,24 @@
 
 #include "nstd/net/async_read_some.hpp"
 #include "nstd/net/basic_stream_socket.hpp"
+#include "nstd/net/io_context.hpp"
 #include "nstd/net/ip/tcp.hpp"
 #include "nstd/execution/get_completion_signatures.hpp"
+#include "nstd/execution/on.hpp"
+#include "nstd/execution/just.hpp"
+#include "nstd/execution/let.hpp"
+#include "nstd/execution/sender.hpp"
+#include "nstd/thread/sync_wait.hpp"
 #include "nstd/hidden_names/print_completion_signatures.hpp"
+#include "nstd/utility/move.hpp"
 #include "kuhl/test.hpp"
 
 namespace EX = ::nstd::execution;
 namespace HN = ::nstd::hidden_names;
 namespace NN = ::nstd::net;
+namespace TT = ::nstd::type_traits;
+namespace TH = ::nstd::this_thread;
+namespace UT = ::nstd::utility;
 namespace KT = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
@@ -41,9 +51,46 @@ static KT::testcase const tests[] = {
     KT::expect_success("breathing", []{
             NN::basic_stream_socket<NN::ip::tcp> socket(NN::ip::tcp::v4());
             char buffer[10];
-            auto const sender = NN::async_read_some(socket, NN::buffer(buffer));
-            //HN::print_completion_signatures(sender);
-            return KT::use(sender);
+            auto sender = NN::async_read_some(socket, NN::buffer(buffer));
+            HN::print_completion_signatures(sender);
+            std::cout << "is completion signatures: " << std::boolalpha << HN::is_completion_signatures<TT::remove_cvref_t<decltype(sender)>::completion_signatures> << "\n";
+            return KT::use(sender)
+                && HN::is_completion_signatures<decltype(sender)::completion_signatures>
+                ;
+        }),
+    KT::expect_success("using async_read with let", []{
+            NN::io_context context;
+            NN::basic_stream_socket<NN::ip::tcp> socket(NN::ip::tcp::v4());
+            char buffer[10];
+            auto sender
+                = EX::let_value(
+                    EX::on(context.scheduler(), NN::async_read_some(socket, NN::buffer(buffer))),
+                    // [](::std::size_t){ return EX::just(); }
+                    [](auto&&...){ return EX::just(); }
+                );
+            using completion_signatures = decltype(EX::get_completion_signatures(sender));
+            HN::print_completion_signatures(sender);
+            std::cout << "is completion signatures: " << std::boolalpha << HN::is_completion_signatures<completion_signatures> << "\n";
+            //TH::sync_wait(UT::move(sender));
+            return KT::use(sender)
+                && HN::is_completion_signatures<completion_signatures>
+                ;
+        }),
+    KT::expect_success("using async_read with let and pipe", []{
+            NN::io_context context;
+            NN::basic_stream_socket<NN::ip::tcp> socket(NN::ip::tcp::v4());
+            char buffer[10];
+            auto sender
+                = EX::on(context.scheduler(), NN::async_read_some(socket, NN::buffer(buffer)))
+                | EX::let_value([](::std::size_t){ return EX::just(); })
+                ;
+            using completion_signatures = decltype(EX::get_completion_signatures(sender));
+            HN::print_completion_signatures(sender);
+            std::cout << "is completion signatures: " << std::boolalpha << HN::is_completion_signatures<completion_signatures> << "\n";
+            //TH::sync_wait(UT::move(sender));
+            return KT::use(sender)
+                && HN::is_completion_signatures<completion_signatures>
+                ;
         }),
 };
 
