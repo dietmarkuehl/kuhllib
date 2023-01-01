@@ -109,6 +109,7 @@ namespace nstd::net {
 }
 
 class nstd::net::io_context::scheduler_type
+    : public ::nstd::execution::sender_tag
 {
 private:
     friend class ::nstd::net::io_context;

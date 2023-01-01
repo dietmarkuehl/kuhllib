@@ -23,7 +23,6 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/net/io_context.hpp"
 #include "nstd/file/observer_context.hpp"
 #include "nstd/file/ring_context.hpp"
 #include "nstd/net.hpp"
@@ -60,6 +59,7 @@ namespace {
         template <typename Receiver>
         struct receiver {
             state_base<Receiver>* d_state;
+            friend auto tag_invoke(EX::get_env_t, receiver const& self) noexcept { return EX::get_env(self.d_state->d_receiver); }
             friend auto tag_invoke(EX::set_value_t, receiver&& self, auto&&...) noexcept {
                 if (0u == --self.d_state->d_count) {
                     if (self.d_state->d_result) {
@@ -178,17 +178,20 @@ namespace {
             }
         }
         auto distribute(auto scheduler, ::std::vector<char> buffer) {
-                EX::start_detached(
-                  EX::schedule(scheduler)
-                | EX::let_value([this, scheduler, buffer]{
+            (void)scheduler;
+            (void)buffer;
+            static_assert(EX::sender<decltype(EX::schedule(scheduler))>);
+            EX::start_detached(
+                EX::let_value(EX::schedule(scheduler), [this, scheduler, buffer]{
                     return when_each(this->d_clients, [this, scheduler, &buffer](auto it){
                         ++(it->users);
-                        return EX::schedule(scheduler)
-                            |  NN::async_write(it->first, NN::buffer(buffer))
-                            |  EX::then([this, it](auto&&...){ this->remove_client(it); });
-                            ;
+                        return EX::on(scheduler,
+                                NN::async_write(it->first, NN::buffer(buffer))
+                             |  EX::then([this, it](auto&&...){ this->remove_client(it); })
+                        );
                     });
-                }));
+                })
+            );
         }
     public:
         clients() = default;
@@ -203,9 +206,9 @@ namespace {
                         &done = this->d_clients.back().second,
                         buffer = ::std::vector<char>(1024),
                         scheduler]() mutable {
-                            return EX::schedule(scheduler)
-                                |  NN::async_read_some(cl, NN::buffer(buffer))
-                                |  EX::then([this, &buffer, &done, scheduler](::std::size_t n){
+                            return EX::on(scheduler,
+                                  NN::async_read_some(cl, NN::buffer(buffer))
+                                | EX::then([this, &buffer, &done, scheduler](::std::size_t n){
                                     if (n != 0u) {
                                         buffer.resize(n);
                                         this->distribute(scheduler, ::std::move(buffer));
@@ -213,8 +216,8 @@ namespace {
                                     else {
                                         done = true;
                                     }
-                                })
-                                ;
+                                  })
+                            );
                         }
                     )
                     , [&done = this->d_clients.back().second]{ return done; }
@@ -232,12 +235,13 @@ namespace {
 namespace {
     auto run_server(clients& cs, NN::io_context::scheduler_type scheduler, socket_acceptor& server) {
         return EX::repeat_effect(
-                  EX::schedule(scheduler)
-                | NN::async_accept(server)
-                | EX::then([&cs, scheduler](::std::error_code, stream_socket client) {
-                    ::std::cout << "accepted a new client\n";
-                    cs.add_client(::std::move(client), scheduler);
-                  })
+                  EX::on(scheduler,
+                    NN::async_accept(server)
+                  | EX::then([&cs, scheduler](stream_socket client, auto&& endpoint) {
+                       ::std::cout << "accepted a new client: " << endpoint << "\n";
+                        cs.add_client(::std::move(client), scheduler);
+                    })
+                  )
                );
     }
 }

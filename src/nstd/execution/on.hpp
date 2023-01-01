@@ -83,7 +83,7 @@ namespace nstd::execution {
 
         template <::nstd::execution::scheduler Scheduler, typename Env>
         struct replace_env {
-            Scheduler* scheduler;
+            nstd::type_traits::remove_cvref_t<Scheduler>* scheduler;
             Env        env;
 
             template <typename Tag, typename... Args>

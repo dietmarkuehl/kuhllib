@@ -44,7 +44,9 @@ namespace nstd::execution {
         && ::std::move_constructible<::nstd::type_traits::remove_cvref_t<Sender>>
         ;
     
-    struct sender_tag {};
+    struct sender_tag {
+        constexpr auto operator== (sender_tag const&) const noexcept -> bool = default;
+    };
 
     template <::nstd::execution::sender Sender, typename Fun>
     auto operator|(Sender&& sender, Fun&& fun)

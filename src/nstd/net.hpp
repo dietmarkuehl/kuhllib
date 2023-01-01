@@ -30,11 +30,17 @@
 // NetworkingTS [convenience.hdr.synop]
 
 // #include "nstd/executor.hpp"
-// #include "nstd/io_context.hpp"
+#include "nstd/net/io_context.hpp"
 // #include "nstd/timer.hpp"
 #include "nstd/buffer.hpp"
 #include "nstd/socket.hpp"
 #include "nstd/internet.hpp"
+#include "nstd/net/async_accept.hpp"
+#include "nstd/net/async_connect.hpp"
+#include "nstd/net/async_read_some.hpp"
+#include "nstd/net/async_send.hpp"
+#include "nstd/net/async_write.hpp"
+#include "nstd/net/async_write_some.hpp"
 
 // ----------------------------------------------------------------------------
 

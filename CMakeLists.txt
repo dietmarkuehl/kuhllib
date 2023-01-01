@@ -401,7 +401,6 @@ add_test(NAME kuhllib_test COMMAND $<TARGET_FILE:kuhllib_test>)
 
 list(APPEND kuhllib_disabled_examples
     audio
-    chat_server
     coroutine_echo_server
     cs2
     es
@@ -409,6 +408,7 @@ list(APPEND kuhllib_disabled_examples
 )
 list(APPEND kuhllib_examples
     echo_server
+    chat_server
 )
 foreach(example ${kuhllib_examples})
     add_executable(${example} src/examples/${example}.cpp)
