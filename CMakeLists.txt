@@ -404,11 +404,11 @@ list(APPEND kuhllib_disabled_examples
     coroutine_echo_server
     cs2
     es
-    simple_echo_server
 )
 list(APPEND kuhllib_examples
-    echo_server
     chat_server
+    echo_server
+    simple_echo_server
 )
 foreach(example ${kuhllib_examples})
     add_executable(${example} src/examples/${example}.cpp)

@@ -24,13 +24,7 @@
 // ----------------------------------------------------------------------------
 
 #include "nstd/execution.hpp"
-#include "nstd/execution/upon_done.hpp"
-#include "nstd/net/io_context.hpp"
-#include "nstd/net/async_read_some.hpp"
-#include "nstd/net/basic_socket_acceptor.hpp"
-#include "nstd/net/basic_stream_socket.hpp"
-#include "nstd/net/ip/basic_endpoint.hpp"
-#include "nstd/net/ip/tcp.hpp"
+#include "nstd/net.hpp"
 
 #include <iostream>
 #include <coroutine>
@@ -64,6 +58,7 @@ inline constexpr struct debug_t {
         std::remove_cvref_t<Receiver> upstream;
         std::string                   message;
 
+        friend auto tag_invoke(EX::get_env_t, receiver const& self) noexcept { return EX::get_env(self.upstream); }
         template <typename Tag, typename... T>
         friend auto tag_invoke(Tag tag, receiver&& self, T&&... args) noexcept -> void {
             std::cout << self.message << ": " << debug_name<Tag>::value << "\n";
@@ -72,13 +67,7 @@ inline constexpr struct debug_t {
     };
     template <EX::sender Sender>
     struct sender {
-        template <template <typename...> class T, template <typename...> class V>
-        using value_types = typename Sender::template value_types<T, V>;
-        template <template <typename...> class V>
-        using error_types = typename Sender::template error_types<V>;
-        static constexpr bool sends_done = Sender::sends_done;
-
-        using completion_signatures = typename Sender::completion_signatures;
+        using completion_signatures = typename std::remove_cvref_t<Sender>::completion_signatures;
 
         std::remove_cvref_t<Sender> upstream;
         std::string                 message;
@@ -176,12 +165,6 @@ struct ring_buffer
 
     template <typename Type, template <typename> class State>
     struct sender {
-        template <template <typename...> class T, template <typename...> class V>
-        using value_types = V<T<Type>>;
-        template <template <typename...> class V>
-        using error_types = V<>;
-        static constexpr bool sends_done = true;
-
         using completion_signatures = EX::completion_signatures<
             EX::set_value_t(Type),
             EX::set_stopped_t()
@@ -197,8 +180,7 @@ struct ring_buffer
 
     template <typename Type, template <typename> class State, int Side, typename Fun>
     auto make_sender(Fun fun) {
-        return sender<Type, State>{this}
-            |  EX::let_value(fun)
+        return EX::let_value(sender<Type, State>{this}, fun)
             |  EX::then([self = this](int size){
                 self->position[Side] += size;
                 if (self->completion[Side == producer? consumer: producer]) {
@@ -257,15 +239,16 @@ auto make_reader(NN::io_context& context, client& c)
 {
     return EX::repeat_effect(
         c.produce([&](NN::mutable_buffer buffer){
-            return EX::schedule(context.scheduler())
-                 | c.async_read_some(buffer)
+            return EX::on(context.scheduler(),
+                   c.async_read_some(buffer)
                  | EX::then([&c](int n) {
                        if (n <= 0) {
                            c.stop();
                            return 0;
                        }
                        return n;
-                   });
+                   })
+            );
 		})
     );
 }
@@ -274,15 +257,16 @@ auto make_writer(NN::io_context& context, client& c)
 {
     return EX::repeat_effect(
         c.consume([&](NN::const_buffer buffer){
-            return EX::schedule(context.scheduler())
-                 | c.async_write_some(buffer)
+            return EX::on(context.scheduler(),
+                   c.async_write_some(buffer)
                  | EX::then([&c](int n) {
                        if (n <= 0) {
                            c.stop();
                            return 0;
                        }
                        return n;
-                   });
+                   })
+            );
 		})
     );
 }
@@ -325,7 +309,13 @@ struct task {
 
         template <EX::sender Sender>
         struct awaitable {
-            using result_type = typename Sender::template value_types<std::tuple, std::type_identity_t>;
+            //using result_type = typename Sender::template value_types<std::tuple, std::type_identity_t>;
+            using result_type = EX::value_types_of_t<
+                Sender,
+                ::nstd::hidden_names::exec_envs::no_env,
+                ::nstd::hidden_names::decayed_tuple,
+                ::std::type_identity_t
+                >;
 
             //awaitable(awaitable&&) = delete;
             //awaitable(awaitable const&) = delete;
@@ -333,6 +323,7 @@ struct task {
                 std::optional<result_type>*  result;
                 std::coroutine_handle<void>* handle;
 
+                friend auto tag_invoke(EX::get_env_t, receiver const&) noexcept { return 0; }
                 template <typename... Args>
                 friend void tag_invoke(EX::set_value_t, receiver&& self, Args&&... args) noexcept {
                     *self.result = std::make_tuple(std::forward<Args>(args)...);
@@ -415,15 +406,9 @@ struct task {
         }
     };
 
-    template <template <typename...> class T, template <typename...> class V>
-    using value_types = V<T<>>;
-    template <template <typename...> class V>
-    using error_types = V<int>;
-    static constexpr bool sends_done = true;
-
     using completion_signatures = EX::completion_signatures<
     EX::set_value_t(),
-    EX::set_error_t(),
+    EX::set_error_t(int),
     EX::set_stopped_t()
     >;
 
