@@ -92,6 +92,27 @@ namespace test_declarations {
             }
         };
 
+        template <typename T>
+        struct static_just_error_default {
+            template <EX::receiver R>
+            struct state {
+                TT::remove_cvref_t<R> d_receiver;
+                friend auto tag_invoke(EX::start_t, state& self) noexcept -> void {
+                    EX::set_error(UT::move(self.d_receiver), T());
+                }
+            };
+            friend auto tag_invoke(EX::get_completion_signatures_t, static_just_error_default const&, auto&&) noexcept
+                -> EX::completion_signatures<EX::set_value_t(), EX::set_error_t(T)> {
+                return {};
+            }
+            template <EX::receiver R>
+            friend auto tag_invoke(EX::connect_t, static_just_error_default const&, R&& receiver) noexcept
+                -> state<R>
+            {
+                return { UT::forward<R>(receiver) };
+            }
+        };
+
         auto tag_invoke(EX::when_all_t, TD::static_just<1>, TD::static_just<2, 3>) {
             return TD::static_just<2, 4, 6>();
         }
@@ -162,10 +183,19 @@ static KT::testcase const tests[] = {
                       >>
                 ;
         }),
-#if 0
-    KT::expect_success("todo", []{
-            return false;
+    KT::expect_success("when_all with different errors", []{
+            auto sender = EX::when_all(
+                EX::just(1, 2, 3),
+                EX::just(0, true),
+                TD::static_just_error_default<::std::exception_ptr>(),
+                TD::static_just_error_default<::std::error_code>()
+                );
+                TR::sync_wait(UT::move(sender));
+            return KT::use(sender)
+                && true
+                ;
         }),
+#if 0
     KT::expect_success("when_all without any sender", []{
             auto sender = EX::when_all();
             using Sender = decltype(sender);
@@ -214,9 +244,6 @@ static KT::testcase const tests[] = {
                 ;
         }),
 #endif
-    KT::expect_success("dummy", []{
-            return true;
-        }),
 };
 
 static KT::add_tests suite("when_all", ::tests);

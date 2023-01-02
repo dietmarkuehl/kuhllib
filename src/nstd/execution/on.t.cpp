@@ -33,11 +33,14 @@
 #include "nstd/type_traits/remove_cvref.hpp"
 #include "nstd/utility/move.hpp"
 #include "kuhl/test.hpp"
+#include <exception>
+#include <system_error>
 
 namespace test_declaration {}
 namespace EX = ::nstd::execution;
 namespace TY = ::nstd::type_traits;
-namespace TT = ::nstd::this_thread;
+namespace TR = ::nstd::this_thread;
+namespace TT = ::nstd::type_traits;
 namespace UT = ::nstd::utility;
 namespace TD = ::test_declaration;
 namespace KT = ::kuhl::test;
@@ -46,6 +49,10 @@ namespace KT = ::kuhl::test;
 
 namespace test_declaration {
     namespace {
+        template <typename... T>
+        using variant_t = ::nstd::execution::completion_signatures<::nstd::execution::set_error_t(T)...>;
+
+        struct env {};
         struct type {};
 
         template <EX::receiver Receiver>
@@ -87,6 +94,27 @@ namespace test_declaration {
         auto tag_invoke(EX::get_completion_scheduler_t<EX::set_value_t>, TD::scheduler_sender) noexcept {
             return TD::scheduler{};
         }
+
+        template <typename... E>
+        struct error_sender {
+            using completion_signatures = EX::completion_signatures<
+                EX::set_value_t(),
+                EX::set_error_t(E)...
+                >;
+            
+            template <EX::receiver R>
+            struct state {
+                TY::remove_cvref_t<R> receiver;
+                friend auto tag_invoke(EX::start_t, state& self) noexcept -> void {
+                    EX::set_value(UT::move(self.receiver));
+                }
+            };
+
+            template <EX::receiver R>
+            friend auto tag_invoke(EX::connect_t, error_sender const&, R&& r) {
+                return state<R>{ UT::forward<R>(r) };
+            }
+        };
     }
 }
 
@@ -94,27 +122,35 @@ namespace test_declaration {
 
 static KT::testcase const tests[] = {
     KT::expect_success("TD::sender<...> is a sender", []{
-        TT::sync_wait(TD::sender<0>{});
+        TR::sync_wait(TD::sender<0>{});
         return EX::sender<TD::sender<0>>;
     }),
     KT::expect_success("TD::scheduler is a scheduler", []{
         EX::get_completion_scheduler<EX::set_value_t>(TD::scheduler_sender{});
-        TT::sync_wait(EX::schedule(TD::scheduler{}));
+        TR::sync_wait(EX::schedule(TD::scheduler{}));
         return EX::scheduler<TD::scheduler>;
     }),
     KT::expect_success("on(TD::scheduler, TD::sender<0>) is customized", []{
         auto sender = EX::on(TD::scheduler{}, TD::sender<0>{});
         return KT::type<TD::sender<0>> == KT::type<decltype(sender)>;
     }),
-#if 1
     KT::expect_success("on(TD::scheduler, TD::sender<1>) is not customized", []{
         auto sender = EX::on(TD::scheduler{}, TD::sender<1>{});
-        TT::sync_wait(sender);
+        TR::sync_wait(sender);
         return EX::sender<decltype(sender)>
             && not std::same_as<TD::sender<1>, decltype(sender)>
             ;
     }),
-#endif
+    KT::expect_success("on(TD::scheduler, upstream) propagates upstream errors", []{
+        auto sender = EX::on(TD::scheduler{}, TD::error_sender<::std::exception_ptr, ::std::error_code>());
+        return EX::sender<decltype(sender)>
+            && ::std::same_as<EX::error_types_of_t<decltype(sender), TD::env, TD::variant_t>,
+                              EX::completion_signatures<
+                                  EX::set_error_t(::std::exception_ptr),
+                                  EX::set_error_t(::std::error_code)
+                              >>
+            ;
+    }),
 };
 
 static KT::add_tests suite("nstd/execution/on", ::tests);

@@ -53,6 +53,7 @@ namespace nstd::hidden_names {
     template <> struct print_type<int> { static ::std::string str() { return "int"; } };
     template <> struct print_type<double> { static ::std::string str() { return "double"; } };
     template <> struct print_type<::std::exception_ptr> { static ::std::string str() { return "std::exception_ptr"; } };
+    template <> struct print_type<::std::error_code> { static ::std::string str() { return "std::error_code"; } };
     template <> struct print_type<::std::string> { static ::std::string str() { return "std::string"; } };
 
     template <typename T> struct print_type<T&&> { static ::std::string str() { return print_type<T>::str() + "&&"; } };
@@ -68,7 +69,7 @@ namespace nstd::hidden_names {
     template <typename Tag, typename... Args>
     struct signature_printer<Tag(Args...)> {
         static auto print() {
-            std::cout << print_tag<Tag> << "(";
+            std::cout << "    " << print_tag<Tag> << "(";
             (std::cout << ... << (print_type<Args>())) << " ";
             std::cout << ")\n";
         }

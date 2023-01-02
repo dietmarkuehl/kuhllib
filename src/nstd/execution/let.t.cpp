@@ -25,6 +25,7 @@
 
 #include "nstd/execution/let.hpp"
 #include "nstd/execution/connect.hpp"
+#include "nstd/execution/error_types_of_t.hpp"
 #include "nstd/execution/get_completion_scheduler.hpp"
 #include "nstd/execution/just.hpp"
 #include "nstd/execution/on.hpp"
@@ -35,6 +36,7 @@
 #include "nstd/execution/schedule.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/start.hpp"
+#include "nstd/hidden_names/print_completion_signatures.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
 #include "nstd/thread/sync_wait.hpp"
 #include "nstd/utility/forward.hpp"
@@ -42,13 +44,13 @@
 #include <concepts>
 #include "kuhl/test.hpp"
 
-#include "nstd/hidden_names/print_completion_signatures.hpp"
 namespace HN = ::nstd::hidden_names;
 
 namespace test_declarations {}
 namespace TD = test_declarations;
 namespace KT = ::kuhl::test;
 namespace EX = ::nstd::execution;
+namespace HN = ::nstd::hidden_names;
 namespace TT = ::nstd::type_traits;
 namespace TTh = ::nstd::this_thread;
 namespace UT = ::nstd::utility;
@@ -57,6 +59,9 @@ namespace UT = ::nstd::utility;
 
 namespace test_declarations {
     namespace {
+        template <typename... T>
+        using variant_t = ::nstd::execution::completion_signatures<::nstd::execution::set_error_t(T)...>;
+
         template <int Value>
         struct static_just {
             using completion_signatures = EX::completion_signatures<EX::set_value_t(int)>;
@@ -111,6 +116,29 @@ namespace test_declarations {
             friend void tag_invoke(EX::set_stopped_t, receiver) noexcept {}
         };
         static_assert(EX::receiver<TD::receiver>);
+
+        template <typename... E>
+        struct error_sender {
+            using completion_signatures = EX::completion_signatures<
+                EX::set_value_t(),
+                EX::set_error_t(E)...
+                >;
+            
+            template <EX::receiver R>
+            struct state {
+                TT::remove_cvref_t<R> receiver;
+                friend auto tag_invoke(EX::start_t, state& self) noexcept -> void {
+                    EX::set_value(UT::move(self.receiver));
+                }
+            };
+
+            template <EX::receiver R>
+            friend auto tag_invoke(EX::connect_t, error_sender const&, R&& r) {
+                return state<R>{ UT::forward<R>(r) };
+            }
+        };
+
+        template <int> struct error {};
     }
 }
 
@@ -272,8 +300,18 @@ static KT::testcase const tests[] = {
             return KT::use(sender)
                 ;
         }),
-    KT::expect_success("dummy", []{
-        return true;
+    KT::expect_success("let_value(upstream, fun) propagates upstreams errors", []{
+        auto sender = EX::let_value(
+            TD::error_sender<TD::error<0>>(),
+            []{ return TD::error_sender<TD::error<1>>(); });
+        // HN::print_completion_signatures(sender);
+        return EX::sender<decltype(sender)>
+            && ::std::same_as<EX::error_types_of_t<decltype(sender), TD::env, TD::variant_t>,
+                              EX::completion_signatures<
+                                  EX::set_error_t(TD::error<1>),
+                                  EX::set_error_t(TD::error<0>)
+                              >>
+            ;
         })
 };
 

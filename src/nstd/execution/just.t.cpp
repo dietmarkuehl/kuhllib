@@ -176,7 +176,9 @@ static KT::testcase const tests[] = {
         }),
     KT::expect_success("just(true, 0)::completion_signatures is C<set_value_t(bool, int)>", []{
             return KT::type<decltype(EX::just(true, 0))::completion_signatures>
-                == KT::type<EX::completion_signatures<EX::set_value_t(bool, int)>>
+                == KT::type<EX::completion_signatures<
+                    EX::set_value_t(bool, int),
+                    EX::set_error_t(::std::exception_ptr)>>
 		;
         }),
     KT::expect_success("just const j; connect(j, receiver) works", []{

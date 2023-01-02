@@ -403,11 +403,11 @@ list(APPEND kuhllib_disabled_examples
     audio
     coroutine_echo_server
     cs2
-    es
 )
 list(APPEND kuhllib_examples
     chat_server
     echo_server
+    es
     simple_echo_server
 )
 foreach(example ${kuhllib_examples})

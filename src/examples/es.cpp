@@ -275,9 +275,12 @@ void run_client(NN::io_context& context, stream_socket&& stream) {
     EX::start_detached(
         EX::just()
         | EX::let_value([&, c = client(std::move(stream))]() mutable {
+            (void)c;
+            (void)context;
 	    return EX::when_all(
-	            make_reader(context, c),
-		        make_writer(context, c)
+	            //make_reader(context, c),
+		        //make_writer(context, c),
+                EX::just()
 		    );
         })
     );

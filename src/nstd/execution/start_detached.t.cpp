@@ -114,12 +114,6 @@ namespace test_declarations {
         {
             using completion_signatures = EX::completion_signatures<>;
 
-            template <template <typename...> class T, template <typename...> class V>
-            using value_types = V<T<>>;
-            template <template <typename...> class V>
-            using error_types = V<::std::exception_ptr>;
-            static constexpr bool sends_done = false;
-
             int*  result;
             int   value;
             bool* destroyed;

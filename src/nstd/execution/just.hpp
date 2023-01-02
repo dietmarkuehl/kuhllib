@@ -50,7 +50,10 @@ namespace nstd::hidden_names {
         : ::nstd::execution::sender_tag
     {
         using completion_signatures
-            = ::nstd::execution::completion_signatures<Signal(A...)>;
+            = ::nstd::execution::completion_signatures<
+                Signal(A...),
+                ::nstd::execution::set_error_t(::std::exception_ptr)
+                >;
 
         template <::nstd::execution::receiver Receiver>
         struct operation_state {

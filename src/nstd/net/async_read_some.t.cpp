@@ -52,8 +52,8 @@ static KT::testcase const tests[] = {
             NN::basic_stream_socket<NN::ip::tcp> socket(NN::ip::tcp::v4());
             char buffer[10];
             auto sender = NN::async_read_some(socket, NN::buffer(buffer));
-            HN::print_completion_signatures(sender);
-            std::cout << "is completion signatures: " << std::boolalpha << HN::is_completion_signatures<TT::remove_cvref_t<decltype(sender)>::completion_signatures> << "\n";
+            //HN::print_completion_signatures(sender);
+            //std::cout << "is completion signatures: " << std::boolalpha << HN::is_completion_signatures<TT::remove_cvref_t<decltype(sender)>::completion_signatures> << "\n";
             return KT::use(sender)
                 && HN::is_completion_signatures<decltype(sender)::completion_signatures>
                 ;
@@ -69,8 +69,6 @@ static KT::testcase const tests[] = {
                     [](auto&&...){ return EX::just(); }
                 );
             using completion_signatures = decltype(EX::get_completion_signatures(sender));
-            HN::print_completion_signatures(sender);
-            std::cout << "is completion signatures: " << std::boolalpha << HN::is_completion_signatures<completion_signatures> << "\n";
             //TH::sync_wait(UT::move(sender));
             return KT::use(sender)
                 && HN::is_completion_signatures<completion_signatures>
@@ -85,8 +83,6 @@ static KT::testcase const tests[] = {
                 | EX::let_value([](::std::size_t){ return EX::just(); })
                 ;
             using completion_signatures = decltype(EX::get_completion_signatures(sender));
-            HN::print_completion_signatures(sender);
-            std::cout << "is completion signatures: " << std::boolalpha << HN::is_completion_signatures<completion_signatures> << "\n";
             //TH::sync_wait(UT::move(sender));
             return KT::use(sender)
                 && HN::is_completion_signatures<completion_signatures>

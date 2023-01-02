@@ -31,6 +31,8 @@
 #include "nstd/execution/just.hpp"
 #include "nstd/functional/tag_invoke.hpp"
 #include "nstd/utility/move.hpp"
+#include "nstd/utility/forward.hpp"
+#include "nstd/type_traits/remove_cvref.hpp"
 #include <optional>
 #include "kuhl/test.hpp"
 
@@ -39,12 +41,16 @@ namespace TD = ::test_declarations;
 namespace EX = ::nstd::execution;
 namespace NF = ::nstd;
 namespace UT = ::nstd::utility;
+namespace TT = ::nstd::type_traits;
 namespace KT = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
 
 namespace test_declarations {
     namespace {
+        template <typename... T>
+        using variant_t = ::nstd::execution::completion_signatures<::nstd::execution::set_error_t(T)...>;
+
         template <int> struct type {};
         struct env {};
 
@@ -147,6 +153,27 @@ namespace test_declarations {
             friend auto tag_invoke(EX::get_completion_signatures_t, type_sender&&, E)
                 -> RvalueSigs {
                 return {};
+            }
+        };
+
+        template <typename... E>
+        struct error_sender {
+            using completion_signatures = EX::completion_signatures<
+                EX::set_value_t(),
+                EX::set_error_t(E)...
+                >;
+            
+            template <EX::receiver R>
+            struct state {
+                TT::remove_cvref_t<R> receiver;
+                friend auto tag_invoke(EX::start_t, state& self) noexcept -> void {
+                    EX::set_value(UT::move(self.receiver));
+                }
+            };
+
+            template <EX::receiver R>
+            friend auto tag_invoke(EX::connect_t, error_sender const&, R&& r) {
+                return state<R>{ UT::forward<R>(r) };
             }
         };
     }
@@ -320,6 +347,35 @@ static KT::testcase const tests[] = {
             && result == TD::result::error
             ;
     }),
+    KT::expect_success("normal then with non-throwing fun has no errors", []{
+        auto sender = TD::error_sender<>() | EX::then([]() noexcept {});
+        return EX::sender<decltype(sender)>
+            && ::std::same_as<EX::error_types_of_t<decltype(sender), TD::env, TD::variant_t>,
+                              EX::completion_signatures<>>
+            ;
+    }),
+    KT::expect_success("then propagates upstream errors", []{
+        auto sender = TD::error_sender<::std::exception_ptr, ::std::error_code>()
+                    | EX::then([]() noexcept {});
+        return EX::sender<decltype(sender)>
+            && ::std::same_as<EX::error_types_of_t<decltype(sender), TD::env, TD::variant_t>,
+                              EX::completion_signatures<
+                                  EX::set_error_t(::std::exception_ptr),
+                                  EX::set_error_t(::std::error_code)
+                              >>
+            ;
+    }),
+#if 0
+    KT::expect_success("normal then with throwing fun may set_error exception_ptr", []{
+        auto sender = TD::error_sender<>() | EX::then([]() noexcept(false) {});
+            static_assert(::std::same_as<EX::error_types_of_t<decltype(sender), TD::env, TD::variant_t>,
+                              EX::completion_signatures<EX::set_error_t(::std::exception_ptr)>>);
+        return EX::sender<decltype(sender)>
+            && ::std::same_as<EX::error_types_of_t<decltype(sender), TD::env, TD::variant_t>,
+                              EX::completion_signatures<EX::set_error_t(::std::exception_ptr)>>
+            ;
+    }),
+#endif
 #if 0
     //-dk:TODO fix this test
     KT::expect_success("then() const type", []{

@@ -34,7 +34,7 @@
 
 namespace nstd::hidden_names
 {
-        template <typename E, typename...> struct merge_completion_signatures;
+        template <typename...> struct merge_completion_signatures;
         template <typename E> struct merge_completion_signatures<E> {
             using type = ::nstd::execution::completion_signatures<>;
         };

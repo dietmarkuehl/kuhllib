@@ -126,11 +126,6 @@ namespace {
             using completion_signatures = EX::completion_signatures<
                     EX::set_value_t()
                 >;
-            template <template <typename...> class V, template <typename...> class T>
-            using value_types = V<T<>>;
-            template <template <typename...> class V>
-            using error_types = V<::std::exception_ptr>;
-            static constexpr bool sends_done = true;
 
             Range d_range;
             Fun   d_fun;

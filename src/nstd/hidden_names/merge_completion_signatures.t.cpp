@@ -26,7 +26,11 @@
 #include "nstd/hidden_names/merge_completion_signatures.hpp"
 #include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/set_value.hpp"
+#include "nstd/hidden_names/print_completion_signatures.hpp"
 #include "kuhl/test.hpp"
+
+#include <system_error>
+#include <concepts>
 
 namespace test_declaration {}
 namespace TD = ::test_declaration;
@@ -57,6 +61,30 @@ static KT::testcase const tests[] = {
             return KT::type<list> == KT::type<HN::merge_completion_signatures_t<TD::env, list, list>>
                 ;
         }),
+    KT::expect_success("merge lists ", []{
+            using list = ::nstd::hidden_names::merge_completion_signatures_t<
+                ::nstd::hidden_names::exec_envs::no_env,
+                EX::completion_signatures<
+                    EX::set_value_t(),
+                    EX::set_error_t(::std::exception_ptr),
+                    EX::set_stopped_t()
+                >,
+                EX::completion_signatures<
+                    EX::set_error_t(::std::exception_ptr),
+                    EX::set_error_t(::std::error_code)
+                >
+            >;
+            return ::std::same_as<
+                    list,
+                    EX::completion_signatures<
+                        EX::set_value_t(),
+                        EX::set_error_t(::std::exception_ptr),
+                        EX::set_stopped_t(),
+                        EX::set_error_t(::std::error_code)
+                    >
+                >;
+        }),
+
 };
 
 static KT::add_tests suite("nstd/hidden_names/merge_completion_signatures", ::tests);

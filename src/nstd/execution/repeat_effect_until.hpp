@@ -27,10 +27,12 @@
 #define INCLUDED_NSTD_EXECUTION_REPEAT_EFFECT_UNTIL
 
 #include "nstd/execution/completion_signatures.hpp"
+#include "nstd/execution/error_types_of_t.hpp"
 #include "nstd/execution/get_env.hpp"
 #include "nstd/execution/sender.hpp"
 #include "nstd/execution/connect.hpp"
 #include "nstd/execution/start.hpp"
+#include "nstd/hidden_names/merge_completion_signatures.hpp"
 #include "nstd/utility/move.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
 #include "nstd/type_traits/declval.hpp"
@@ -42,6 +44,10 @@
 
 namespace nstd::hidden_names::repeat_effect_until
 {
+    template <typename... T>
+    using variant_t = ::nstd::execution::completion_signatures<::nstd::execution::set_error_t(T)...>;
+    struct env {};
+
     template <::nstd::execution::sender Sender, typename Predicate, typename Receiver>
     struct state_base
     {
@@ -162,10 +168,19 @@ namespace nstd::hidden_names::repeat_effect_until
 
     template <::nstd::execution::sender Sender, typename Predicate>
     struct sender {
-        using completion_signatures = ::nstd::execution::completion_signatures<
-                ::nstd::execution::set_value_t(),
-                ::nstd::execution::set_error_t(::std::exception_ptr),
-                ::nstd::execution::set_stopped_t()
+        using completion_signatures =
+            ::nstd::hidden_names::merge_completion_signatures_t<
+                ::nstd::hidden_names::exec_envs::no_env,
+                ::nstd::execution::completion_signatures<
+                    ::nstd::execution::set_value_t(),
+                    ::nstd::execution::set_error_t(::std::exception_ptr),
+                    ::nstd::execution::set_stopped_t()
+                >,
+                ::nstd::execution::error_types_of_t<
+                    Sender,
+                    ::nstd::hidden_names::repeat_effect_until::env,
+                    ::nstd::hidden_names::repeat_effect_until::variant_t
+                >
             >;
 
         ::nstd::type_traits::remove_cvref_t<Sender> d_sender;

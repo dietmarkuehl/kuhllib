@@ -100,7 +100,6 @@ namespace nstd::hidden_names::when_all {
     };
     template <typename... T>
     using variant_t = ::nstd::execution::completion_signatures<::nstd::execution::set_error_t(T)...>;
-
 }
 
 // ----------------------------------------------------------------------------
@@ -151,8 +150,8 @@ struct nstd::hidden_names::when_all::environment {
     ::nstd::hidden_names::when_all::state_base<Receiver, Error>& d_state;
 
     friend auto tag_invoke(::nstd::execution::get_stop_token_t const&, environment const& self) noexcept
-        -> environment {
-        return self.d_state.stop_state.token();
+        -> ::nstd::stop_token_ns::in_place_stop_token {
+        return self.d_state.d_stop_source.token();
     }
     friend auto tag_invoke(::nstd::execution::get_env_t const&, environment const& self) noexcept {
         return ::nstd::execution::get_env(self.d_state.d_receiver);
@@ -174,8 +173,8 @@ struct nstd::hidden_names::when_all::environment {
 
 template <::nstd::execution::receiver Receiver, typename Error, typename Result>
 struct nstd::hidden_names::when_all::receiver {
-    state_base<Receiver, Error>&    d_state;
-    ::std::optional<Result>& d_result;
+    state_base<Receiver, Error>&  d_state;
+    ::std::optional<Result>&      d_result;
 
     friend auto tag_invoke(::nstd::execution::get_env_t, receiver const& self) noexcept
         -> ::nstd::hidden_names::when_all::environment<Receiver, Error> {
@@ -194,6 +193,8 @@ struct nstd::hidden_names::when_all::receiver {
         ::nstd::hidden_names::when_all::completion_kind expected{::nstd::hidden_names::when_all::completion_kind::set_value};
         if (self.d_state.d_kind.compare_exchange_strong(expected, ::nstd::hidden_names::when_all::completion_kind::set_error)) {
             self.d_state.d_stop_source.stop();
+            (void)error; //-dk:TODO remove
+            static_assert(::std::is_constructible_v<Error, E>); //-dk:TODO remove
             self.d_state.d_error.emplace(::nstd::utility::forward<E>(error));
         }
         self.d_state.complete();
@@ -304,7 +305,10 @@ struct nstd::hidden_names::when_all::sender
                 decltype(
                     ::std::tuple_cat(
                         ::nstd::type_traits::declval<
-                            ::nstd::execution::value_types_of_t<Sender, env_t, ::std::tuple, ::nstd::type_traits::type_identity_t>
+                            ::nstd::execution::value_types_of_t<Sender,
+                                                               env_t,
+                                                               ::std::tuple,
+                                                               ::nstd::type_traits::type_identity_t>
                         >()
                         ...
                     )
@@ -313,7 +317,9 @@ struct nstd::hidden_names::when_all::sender
         >;
         using set_error_list = ::nstd::hidden_names::merge_completion_signatures_t<
             env_t,
-            ::nstd::execution::error_types_of_t<Sender, env_t, ::nstd::hidden_names::when_all::variant_t>...
+            ::nstd::execution::error_types_of_t<Sender,
+                                                env_t,
+                                                ::nstd::hidden_names::when_all::variant_t>...
             >;
         return ::nstd::hidden_names::merge_completion_signatures_t<
             env_t,

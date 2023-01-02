@@ -119,6 +119,7 @@ namespace nstd::net::hidden_names {
             = ::nstd::execution::completion_signatures<
                 typename Operation::completion_signature,
                 ::nstd::execution::set_error_t(::std::error_code), //-dk:TODO
+                ::nstd::execution::set_error_t(::std::exception_ptr), //-dk:TODO
                 ::nstd::execution::set_stopped_t()
             >;
 

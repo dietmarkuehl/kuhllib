@@ -40,6 +40,7 @@
 #include "nstd/execution/set_value.hpp"
 #include "nstd/functional/tag_invoke.hpp"
 #include "nstd/hidden_names/compl_sig.hpp"
+#include "nstd/hidden_names/merge_completion_signatures.hpp"
 #include "nstd/type_traits/conditional.hpp"
 #include "nstd/type_traits/copy_cvref.hpp"
 #include "nstd/type_traits/declval.hpp"
@@ -52,6 +53,9 @@
 
 namespace nstd::hidden_names::then {
     template<typename> struct cpo;
+
+    template <typename... T>
+    using variant_t = ::nstd::execution::completion_signatures<::nstd::execution::set_error_t(T)...>;
 
     template <typename Tag, typename Sender, typename Fun>
     concept has_custom_scheduler_then
@@ -131,7 +135,9 @@ namespace nstd::hidden_names::then {
     };
 
     template <typename Tag, ::nstd::execution::sender Sender, typename Fun>
-    struct sender: ::nstd::execution::sender_tag {
+    struct sender
+        : ::nstd::execution::sender_tag
+    {
         template <typename... A>
         using set_value_completions
             = ::nstd::execution::completion_signatures<
@@ -163,10 +169,15 @@ namespace nstd::hidden_names::then {
                 return ::nstd::execution::make_completion_signatures<
                     ::nstd::type_traits::copy_cvref_t<S, Sender>,
                     Env,
-                    ::nstd::type_traits::conditional_t<
-                        ::nstd::execution::value_types_of_t<Sender, Env, sender::potentially_throwing, sender::any_of>::value,
-                        ::nstd::execution::completion_signatures<::nstd::execution::set_error_t(::std::exception_ptr)>,
-                        ::nstd::execution::completion_signatures<>>,
+                    ::nstd::hidden_names::merge_completion_signatures_t<
+                        ::nstd::hidden_names::exec_envs::no_env,
+                        ::nstd::type_traits::conditional_t<
+                            ::nstd::execution::value_types_of_t<Sender, Env, sender::potentially_throwing, sender::any_of>::value,
+                            ::nstd::execution::completion_signatures<::nstd::execution::set_error_t(::std::exception_ptr)>,
+                            ::nstd::execution::completion_signatures<>
+                        >,
+                        ::nstd::execution::error_types_of_t<Sender, Env, ::nstd::hidden_names::then::variant_t>
+                    >,
                     sender::set_value_completions
                     >{};
             }

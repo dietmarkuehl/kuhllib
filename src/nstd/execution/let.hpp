@@ -113,11 +113,16 @@ namespace nstd::hidden_names::let {
     template <typename> struct state_base_emplace;
     template <typename C, typename... Args>
     struct state_base_emplace<C(Args...)> {
-        template <typename V, typename R, typename F, typename... A>
-        void emplace(V& var, R&& r, F&& f, A... a) {
+        template <typename V, typename R, typename F>
+        void emplace(V& var, R&& r, F&& f, Args... a) {
+            (void)var;
+            (void)r;
+            (void)f;
+#if 1
             var.template emplace<inner_state<R, F, C(Args...)>>(::nstd::utility::move(r),
                                                                 ::nstd::utility::move(f),
-                                                                ::nstd::utility::forward<A>(a)...);
+                                                                ::nstd::utility::forward<Args>(a)...);
+#endif
         }
     };
     template <::nstd::execution::receiver, typename, typename>
