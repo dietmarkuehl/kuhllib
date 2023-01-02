@@ -233,10 +233,10 @@ struct nstd::hidden_names::when_all::inner_state {
     ::std::optional<result_t>                             d_result;
     state_t                                               d_state;
 
-    inner_state(inner_state_args<Receiver, Error, Sender> const& args)
+    inner_state(inner_state_args<Receiver, Error, Sender>&& args)
         : d_outer_state(args.d_outer_state)
         , d_result()
-        , d_state(::nstd::execution::connect(args.d_sender,
+        , d_state(::nstd::execution::connect(::nstd::utility::move(args.d_sender),
                                              ::nstd::hidden_names::when_all::receiver<Receiver, Error, result_t>{this->d_outer_state, this->d_result}))
     {
     }

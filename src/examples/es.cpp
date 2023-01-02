@@ -275,11 +275,9 @@ void run_client(NN::io_context& context, stream_socket&& stream) {
     EX::start_detached(
         EX::just()
         | EX::let_value([&, c = client(std::move(stream))]() mutable {
-            (void)c;
-            (void)context;
 	    return EX::when_all(
-	            //make_reader(context, c),
-		        //make_writer(context, c),
+	            make_reader(context, c),
+		        make_writer(context, c),
                 EX::just()
 		    );
         })
@@ -430,24 +428,13 @@ int main()
     NN::io_context  c;
     socket_acceptor server(endpoint(NI::address_v4::any(), 12345));
 
-    EX::sender auto coro = []()->task {
-        auto[v0, v1] = co_await EX::just(17, 42);
-        std::cout << "hello, world: " << v0 << " " << v1 << "\n";
-        co_return;
-        }();
-
-    EX::run(c, std::move(coro)
-        // | [](int value)->task { std::cout << "hello, world: " << value << "\n"; co_return; })
-        // | EX::then([](int value){ std::cout << "hello, world: " << value << "\n"; })
-    );
-#if 0
     EX::run(c,
         EX::repeat_effect(
-        EX::schedule(c.scheduler())
-        | NN::async_accept(server)
-        | EX::then([&c](std::error_code ec, stream_socket stream) {
-             if (!ec) run_client(c, std::move(stream));
-          })
-        ));
-#endif
+        EX::on(c.scheduler(),
+              NN::async_accept(server)
+            | EX::then([&c](stream_socket stream, auto ) {
+                run_client(c, std::move(stream));
+            })
+        )
+    ));
 }

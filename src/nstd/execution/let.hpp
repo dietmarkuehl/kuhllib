@@ -100,7 +100,7 @@ namespace nstd::hidden_names::let {
 
         template <::nstd::execution::receiver R, typename F>
         inner_state(R&& receiver, F&& fun, Args... args)
-            : d_args(::nstd::utility::forward<Args const&>(args)...)
+            : d_args(::nstd::utility::forward<Args>(args)...)
             , d_state(::nstd::execution::connect(
                           ::std::apply([&](auto&&... a){ return fun(::nstd::utility::forward<Args>(a)...); }, this->d_args),
                           ::nstd::utility::forward<R>(receiver)))
@@ -115,14 +115,11 @@ namespace nstd::hidden_names::let {
     struct state_base_emplace<C(Args...)> {
         template <typename V, typename R, typename F>
         void emplace(V& var, R&& r, F&& f, Args... a) {
-            (void)var;
-            (void)r;
-            (void)f;
-#if 1
-            var.template emplace<inner_state<R, F, C(Args...)>>(::nstd::utility::move(r),
-                                                                ::nstd::utility::move(f),
-                                                                ::nstd::utility::forward<Args>(a)...);
-#endif
+            using RR = ::nstd::type_traits::remove_cvref_t<R>;
+            using FF = ::nstd::type_traits::remove_cvref_t<F>;
+            var.template emplace<inner_state<RR, FF, C(Args...)>>(::nstd::utility::forward<R>(r),
+                                                                  ::nstd::utility::forward<F>(f),
+                                                                  ::nstd::utility::forward<Args>(a)...);
         }
     };
     template <::nstd::execution::receiver, typename, typename>
@@ -133,7 +130,13 @@ namespace nstd::hidden_names::let {
     {
         ::nstd::type_traits::remove_cvref_t<FinalReceiver> d_receiver;
         ::nstd::type_traits::remove_cvref_t<Fun>           d_fun;
-        ::std::variant<::nstd::hidden_names::let::none, ::nstd::hidden_names::let::inner_state<FinalReceiver, Fun, C>...> d_inner_state;
+        ::std::variant<::nstd::hidden_names::let::none,
+            ::nstd::hidden_names::let::inner_state<
+                ::nstd::type_traits::remove_cvref_t<FinalReceiver>,
+                ::nstd::type_traits::remove_cvref_t<Fun>,
+                C
+            >...
+        > d_inner_state;
         template <typename R, typename F>
         state_base(R&& r, F&& f)
             : d_receiver(::nstd::utility::forward<R>(r))
