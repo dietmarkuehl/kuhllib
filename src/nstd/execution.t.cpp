@@ -57,12 +57,10 @@ static KT::testcase const tests[] = {
     }),
     KT::expect_success("receiver", []{
         return not EX::receiver<int>
-            && not EX::receiver<int, ::std::exception_ptr>
             ;
     }),
     KT::expect_success("receiver_of", []{
-        return not EX::receiver_of<int>
-            && not EX::receiver_of<int, bool, char>
+        return not EX::receiver_of<int, bool>
             ;
     }),
     KT::expect_success("schedule", []{
@@ -109,15 +107,6 @@ static KT::testcase const tests[] = {
     }),
     KT::expect_success("has_sender_types", []{
         return not HN::has_sender_types<int>;
-    }),
-    KT::expect_success("typed_sender", []{
-        return not EX::typed_sender<int>;
-    }),
-    KT::expect_success("sender_base", []{
-        return KT::assert_type_exists<EX::sender_base>;
-    }),
-    KT::expect_success("sender_traits", []{
-        return KT::assert_type_exists<EX::sender_traits<int>>;
     }),
     KT::expect_success("connect", []{
         return KT::assert_type_exists<EX::connect_t>

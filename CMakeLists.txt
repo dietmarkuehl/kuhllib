@@ -85,6 +85,8 @@ list(APPEND kuhllib_endian_components
 )
 
 list(APPEND kuhllib_execution_components
+    src/nstd/execution
+    src/nstd/execution/execution
     src/nstd/execution/async_scope
     src/nstd/execution/completion_signatures
     src/nstd/execution/completion_signatures_of_t
@@ -94,9 +96,10 @@ list(APPEND kuhllib_execution_components
     src/nstd/execution/error_types_of_t
     src/nstd/execution/get_completion_scheduler
     src/nstd/execution/get_completion_signatures
+    src/nstd/execution/get_delegatee_scheduler
     src/nstd/execution/get_env
     src/nstd/execution/get_scheduler
-    src/nstd/execution/get_delegatee_scheduler
+    src/nstd/execution/get_stop_token
     src/nstd/execution/inject_cancel
     src/nstd/execution/is_execution_policy
     src/nstd/execution/just
@@ -127,16 +130,14 @@ list(APPEND kuhllib_execution_components
     src/nstd/execution/start
     src/nstd/execution/start_detached
     src/nstd/execution/stop_token_of_t
+    src/nstd/execution/task
     src/nstd/execution/then
+    src/nstd/execution/timeout
     src/nstd/execution/value_types_of_t
     src/nstd/execution/when_all
 )
 
 list(APPEND kuhllib_xexecution_components
-    src/nstd/execution
-    src/nstd/execution/execution
-    src/nstd/execution/task
-    src/nstd/execution/timeout
 )
 
 list(APPEND kuhllib_execution_todo
@@ -145,7 +146,6 @@ list(APPEND kuhllib_execution_todo
     src/nstd/execution/forwarding_receiver_query
     src/nstd/execution/forwarding_scheduler_query
     src/nstd/execution/get_allocator
-    src/nstd/execution/get_stop_token
     src/nstd/execution/read
     src/nstd/execution/schedule_from
     src/nstd/execution/sender_of

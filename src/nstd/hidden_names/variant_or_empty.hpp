@@ -44,6 +44,8 @@ namespace nstd::hidden_names {
         struct aux<> {
             using type = nstd::hidden_names::variant_or_empty_impl::empty_variant;
         };
+        template <typename Fun>
+        auto visit(Fun&&, empty_variant const&) -> void {}
     }
     
     template <typename... T>

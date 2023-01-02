@@ -43,6 +43,18 @@ namespace EX = ::nstd::execution;
 
 // ----------------------------------------------------------------------------
 
+namespace workaround {
+    struct jthread
+        : ::std::thread {
+        using ::std::thread::thread;
+        ~jthread() {
+            this->join();
+        }
+    };
+}
+
+// ----------------------------------------------------------------------------
+
 namespace audio
 {
     class context
@@ -56,7 +68,7 @@ namespace audio
         ::std::function<auto(start_desc const&)->void>        d_start;
         ::std::function<auto(::std::span<::std::byte>)->void> d_process;
         ::std::function<auto(end_desc const&)->void>          d_end;
-        ::std::unique_ptr<::std::jthread>                     d_thread;
+        ::std::unique_ptr<::workaround::jthread>                     d_thread;
 
     public:
         template <typename Start, typename Process, typename End>
@@ -64,7 +76,7 @@ namespace audio
             this->d_start   = ::std::forward<Start>(s);
             this->d_process = ::std::forward<Process>(p);
             this->d_end     = ::std::forward<End>(e);
-            this->d_thread = ::std::make_unique<::std::jthread>([this]{ this->run(3u); });
+            this->d_thread = ::std::make_unique<::workaround::jthread>([this]{ this->run(3u); });
         }
 
         auto run(::std::size_t count) -> void {

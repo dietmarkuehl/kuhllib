@@ -27,6 +27,7 @@
 #define INCLUDED_NSTD_EXECUTION_TASK
 
 #include "nstd/execution/completion_signatures.hpp"
+#include "nstd/execution/value_types_of_t.hpp"
 #include "nstd/execution/connect.hpp"
 #include "nstd/execution/receiver.hpp"
 #include "nstd/execution/sender.hpp"
@@ -36,6 +37,7 @@
 #include "nstd/execution/start.hpp"
 
 #include <coroutine>
+#include <exception>
 #include <iostream>
 #include <memory>
 #include <optional>
@@ -133,11 +135,9 @@ struct nstd::execution::task_state<void, Promise, Receiver>
 
 template <typename Type>
 struct nstd::execution::task_promise_base {
-    template <template <typename...> class T, template <typename...> class V>
-    using value_types = V<T<Type>>;
     using completion_signatures = ::nstd::execution::completion_signatures<
         ::nstd::execution::set_value_t(Type),
-        ::nstd::execution::set_error_t(),
+        ::nstd::execution::set_error_t(::std::exception_ptr),
         ::nstd::execution::set_stopped_t()
     >;
 
@@ -155,7 +155,7 @@ struct nstd::execution::task_promise_base<void> {
     using value_types = V<T<>>;
     using completion_signatures = ::nstd::execution::completion_signatures<
         ::nstd::execution::set_value_t(),
-        ::nstd::execution::set_error_t(),
+        ::nstd::execution::set_error_t(::std::exception_ptr),
         ::nstd::execution::set_stopped_t()
     >;
 
@@ -185,24 +185,27 @@ struct nstd::execution::task {
 
         template <::nstd::execution::sender Sender>
         struct awaitable {
-            using result_type = typename Sender::template value_types<std::tuple, std::type_identity_t>;
+            using result_type
+                = ::nstd::execution::value_types_of_t<Sender, ::nstd::hidden_names::exec_envs::no_env, ::std::tuple, ::std::type_identity_t>;
 
             //awaitable(awaitable&&) = delete;
             //awaitable(awaitable const&) = delete;
+            struct env {};
             struct receiver {
                 std::optional<result_type>*  result;
                 std::coroutine_handle<void>* handle;
 
+                friend auto tag_invoke(::nstd::execution::get_env_t, receiver const&) noexcept -> env { return {}; }
                 template <typename... Args>
-                friend void tag_invoke(::nstd::execution::set_value_t, receiver&& self, Args&&... args) noexcept {
+                friend auto tag_invoke(::nstd::execution::set_value_t, receiver&& self, Args&&... args) noexcept -> void {
                     *self.result = std::make_tuple(std::forward<Args>(args)...);
                     self.handle->resume();
                 }
                 template <typename Error>
-                friend void tag_invoke(::nstd::execution::set_error_t, receiver&&, Error&& ) noexcept {
+                friend auto tag_invoke(::nstd::execution::set_error_t, receiver&&, Error&& ) noexcept -> void {
                     std::cout << "awaitable::receiver::set_error_t\n";
                 }
-                friend void tag_invoke(::nstd::execution::set_stopped_t, receiver&&) noexcept {
+                friend auto tag_invoke(::nstd::execution::set_stopped_t, receiver&&) noexcept -> void {
                     std::cout << "awaitable::receiver::set_stopped_t\n";
                 }
             };
@@ -251,13 +254,6 @@ struct nstd::execution::task {
             return awaitable<Sender>(std::forward<Sender>(s));
         }
     };
-
-
-    template <template <typename...> class T, template <typename...> class V>
-    using value_types = typename task_promise_base<Type>::template value_types<T, V>;
-    template <template <typename...> class V>
-    using error_types = V<int>;
-    static constexpr bool sends_done = true;
 
     using completion_signatures = typename task_promise_base<Type>::completion_signatures;
 

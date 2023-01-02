@@ -31,16 +31,16 @@
 namespace test_declarations {}
 namespace TD = ::test_declarations;
 namespace EX = ::nstd::execution;
-namespace ST = ::nstd::stop_token;
+namespace ST = ::nstd::stop_token_ns;
 namespace KT = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
 
 namespace test_declarations {
     namespace {
-        template <typename Receiver>
+        template <typename Env>
         concept has_get_stop_token
-            = requires(Receiver const& r) { EX::get_stop_token(r); }
+            = requires(Env const& e) { EX::get_stop_token(e); }
             ;
 
         struct non_stop_token {};
@@ -58,12 +58,10 @@ namespace test_declarations {
             auto stop_possible() const noexcept -> bool;
         };
 
-        template <typename StopToken, bool Noexcept, bool IsReceiver = true>
-        struct receiver {
+        template <typename StopToken, bool Noexcept>
+        struct env {
             bool* const value;
-            friend auto tag_invoke(EX::set_stopped_t, receiver&&) noexcept(IsReceiver) {}
-            friend auto tag_invoke(EX::set_error_t, receiver&&, std::exception_ptr) noexcept {}
-            friend auto tag_invoke(EX::get_stop_token_t, receiver const& r) noexcept(Noexcept) {
+            friend auto tag_invoke(EX::get_stop_token_t, env const& r) noexcept(Noexcept) {
                 *r.value = true;
                 return StopToken();
             }
@@ -79,34 +77,24 @@ static KT::testcase const tests[] = {
             && KT::type<EX::get_stop_token_t const> == KT::type<decltype(EX::get_stop_token)>
             ;
     }),
-    KT::expect_success("test declarations behave as expected", []{
-            return EX::receiver<TD::receiver<TD::stop_token, true>>
-                && EX::receiver<TD::receiver<TD::stop_token, false>>
-                && !EX::receiver<TD::receiver<TD::stop_token, true, false>>
-                ;
-        }),
-    KT::expect_success("receiver returning a stop_token has get_stop_token", []{
-            bool                              value(false);
-            TD::receiver<TD::stop_token, true> r{&value};
-            EX::get_stop_token(r);
-            return TD::has_get_stop_token<TD::receiver<TD::stop_token, true>>
-                && KT::type<decltype(EX::get_stop_token(r))> == KT::type<TD::stop_token>
+    KT::expect_success("env returning a stop_token has get_stop_token", []{
+            bool                          value(false);
+            TD::env<TD::stop_token, true> e{&value};
+            EX::get_stop_token(e);
+            return TD::has_get_stop_token<TD::env<TD::stop_token, true>>
+                && KT::type<decltype(EX::get_stop_token(e))> == KT::type<TD::stop_token>
                 && value
                 ;
         }),
-    KT::expect_success("non-receiver doesn't have get_stop_token", []{
-            return !TD::has_get_stop_token<TD::receiver<TD::stop_token, true, false>>
-                ;
-        }),
-    KT::expect_success("throwing get_stop_token isn't allowed ", []{
-            return TD::has_get_stop_token<TD::receiver<TD::stop_token, false>>
-                && KT::type<decltype(EX::get_stop_token(TD::receiver<TD::stop_token, false>{nullptr}))>
+    KT::expect_success("throwing get_stop_token isn't considered ", []{
+            return TD::has_get_stop_token<TD::env<TD::stop_token, false>>
+                && KT::type<decltype(EX::get_stop_token(TD::env<TD::stop_token, false>{nullptr}))>
                     == KT::type<ST::never_stop_token>
                 ;
         }),
-    KT::expect_success("return a non-stop_token from get_stop_token isn't allowed ", []{
-            return TD::has_get_stop_token<TD::receiver<TD::non_stop_token, true>>
-                && KT::type<decltype(EX::get_stop_token(TD::receiver<TD::non_stop_token, true>{nullptr}))>
+    KT::expect_success("return a non-stop_token from get_stop_token isn't considered ", []{
+            return TD::has_get_stop_token<TD::env<TD::non_stop_token, true>>
+                && KT::type<decltype(EX::get_stop_token(TD::env<TD::non_stop_token, true>{nullptr}))>
                     == KT::type<ST::never_stop_token>
                 ;
         }),

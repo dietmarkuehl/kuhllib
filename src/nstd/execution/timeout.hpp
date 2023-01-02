@@ -35,6 +35,8 @@
 #include "nstd/execution/just.hpp"
 #include "nstd/execution/get_stop_token.hpp"
 #include "nstd/execution/operation_state.hpp"
+#include "nstd/execution/error_types_of_t.hpp"
+#include "nstd/execution/value_types_of_t.hpp"
 #include "nstd/stop_token/in_place_stop_token.hpp"
 #include "nstd/type_traits/declval.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
@@ -76,9 +78,9 @@ template <::nstd::execution::receiver Receiver,
 struct nstd::execution::timeout_t::state_base
 {
     ::nstd::type_traits::remove_cvref_t<Receiver> d_receiver;
-    ::nstd::stop_token::in_place_stop_source      d_source;
-    ::std::optional<typename Sender::template value_types<::std::tuple, ::std::variant>> d_values;
-    ::std::optional<typename Sender::template error_types<::std::variant>>               d_errors;
+    ::nstd::stop_token_ns::in_place_stop_source   d_source;
+    ::std::optional<::nstd::execution::value_types_of_t<Sender>> d_values;
+    ::std::optional<::nstd::execution::error_types_of_t<Sender, ::nstd::hidden_names::exec_envs::no_env>> d_errors;
     ::std::atomic<unsigned> d_done{0u};
     auto timer_done() -> void {
         if (1u == ++this->d_done) {
@@ -86,12 +88,12 @@ struct nstd::execution::timeout_t::state_base
         }
         else {
             if (this->d_errors) {
-                ::std::visit([this](auto&& error){
+                visit([this](auto&& error){
                     ::nstd::execution::set_error(::nstd::utility::move(this->d_receiver), ::nstd::utility::move(error));
                 }, *this->d_errors);
             }
             else if (this->d_values) {
-                ::std::visit([&receiver = this->d_receiver](auto&& values)->void{
+                visit([&receiver = this->d_receiver](auto&& values)->void{
                     ::std::apply([&receiver](auto&&... args)->void{
                         ::nstd::execution::set_value(::nstd::utility::move(receiver),
                                                      ::nstd::utility::forward<decltype(args)>(args)...);
@@ -112,6 +114,9 @@ struct nstd::execution::timeout_t::sender_receiver
 {
     struct nstd::execution::timeout_t::state_base<Receiver, Sender>* d_state;
 
+    friend auto tag_invoke(::nstd::execution::get_env_t, sender_receiver const& r) noexcept {
+        return r;
+    }
     friend auto tag_invoke(::nstd::execution::get_stop_token_t, sender_receiver const& r) noexcept {
         return r.d_state->d_source.token();
     }
@@ -135,6 +140,9 @@ struct nstd::execution::timeout_t::timer_receiver
 {
     struct nstd::execution::timeout_t::state_base<Receiver, Sender>* d_state;
 
+    friend auto tag_invoke(::nstd::execution::get_env_t, timer_receiver const& r) noexcept {
+        return r;
+    }
     friend auto tag_invoke(::nstd::execution::get_stop_token_t, timer_receiver const& r) noexcept {
         return r.d_state->d_source.token();
     }
@@ -191,12 +199,6 @@ template <::nstd::execution::sender Sender, ::nstd::execution::sender Timer>
 struct nstd::execution::timeout_t::sender
 {
     using completion_signatures = ::nstd::execution::completion_signatures<>;
-
-    template <template <typename...> class T, template <typename...> class V>
-    using value_types = typename Sender::template value_types<T, V>;
-    template <template <typename...> class V>
-    using error_types = typename Sender::template error_types<V>; //-dk:TODO merge with own errors
-    static constexpr bool sends_done = true;
 
     ::nstd::type_traits::remove_cvref_t<Sender> d_sender;
     ::nstd::type_traits::remove_cvref_t<Timer>  d_timer;

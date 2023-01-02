@@ -35,11 +35,11 @@
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::execution::inline customization_points {
-    inline constexpr struct get_stop_token_t {
+namespace nstd::hidden_names::get_stop_token {
+    struct cpo {
         template <typename Env>
-            requires requires(Env&& env) {
-                { ::nstd::tag_invoke(::nstd::type_traits::declval<::nstd::execution::get_stop_token_t>(), ::nstd::utility::as_const(env)) } noexcept
+            requires requires(cpo const& tag, Env&& env) {
+                { ::nstd::tag_invoke(tag, ::nstd::utility::as_const(env)) } noexcept
                     -> nstd::stop_token_ns::stoppable_token;
             }
         constexpr auto operator()(Env&& env) const noexcept {
@@ -50,7 +50,12 @@ namespace nstd::execution::inline customization_points {
         {
             return ::nstd::stop_token_ns::never_stop_token();
         }
-    } get_stop_token;
+    };
+}
+
+namespace nstd::execution::inline customization_points {
+    using get_stop_token_t = ::nstd::hidden_names::get_stop_token::cpo;
+    inline constexpr get_stop_token_t get_stop_token{};
 }
 
 // ----------------------------------------------------------------------------
