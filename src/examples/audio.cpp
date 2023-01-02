@@ -115,15 +115,11 @@ namespace audio
     };
 
     struct buffer_sender
+        : public EX::sender_tag
     {
         using completion_signatures = EX::completion_signatures<
                 EX::set_value_t(::std::span<::std::byte>)
             >;
-        template <template <typename...> class T, template <typename...> class V>
-        using value_types = V<T<::std::span<::std::byte>>>;
-        template <template <typename...> class V>
-        using error_types = V<::std::exception_ptr>;
-        static constexpr bool sends_done = false;
 
         ::std::atomic<::audio::buffer_processor*>* d_hook;
 
@@ -176,6 +172,7 @@ namespace audio
     };
 
     struct sender
+        : public EX::sender_tag
     {
         using completion_signatures = EX::completion_signatures<
                 EX::set_value_t(audio::start_description)
@@ -204,7 +201,7 @@ namespace audio
     {
         ::audio::context* d_context;
         friend auto tag_invoke(EX::schedule_t, scheduler const& self) noexcept -> audio::sender {
-            return audio::sender{ self.d_context };
+            return audio::sender{ {}, self.d_context };
         }
     };
 

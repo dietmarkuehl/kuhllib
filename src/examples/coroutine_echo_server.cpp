@@ -69,8 +69,10 @@ namespace
             ::std::optional<int>          d_result;
             awaiter_base(handle_type h): d_handle(h) {}
         };
+        struct env {};
         struct receiver {
             awaiter_base* d_awaiter;
+            friend auto tag_invoke(EX::get_env_t, receiver const&) noexcept -> env { return {}; }
             friend auto tag_invoke(EX::set_value_t, receiver&& self, int v) noexcept -> void {
                 ::std::cout << "set_value\n";
                 self.d_awaiter->d_result = v;

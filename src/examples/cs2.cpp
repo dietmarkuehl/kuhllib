@@ -27,12 +27,7 @@
 
 #include "nstd/concepts/same_as.hpp"
 #include "nstd/execution.hpp"
-#include "nstd/net/io_context.hpp"
-#include "nstd/net/async_read_some.hpp"
-#include "nstd/net/basic_socket_acceptor.hpp"
-#include "nstd/net/basic_stream_socket.hpp"
-#include "nstd/net/ip/basic_endpoint.hpp"
-#include "nstd/net/ip/tcp.hpp"
+#include "nstd/net.hpp"
 #include <deque>
 #include <list>
 #include <memory>
@@ -68,11 +63,13 @@ namespace
             }
         }
 
+        struct env {};
         struct receiver
         {
             container*          d_container;
             container::iterator d_iterator;
 
+            friend auto tag_invoke(EX::get_env_t, receiver const&) noexcept -> env { return {}; }
             template <typename Tag>
                 requires NC::same_as<Tag, EX::set_value_t> || NC::same_as<Tag, EX::set_error_t> || NC::same_as<Tag, EX::set_stopped_t>
             friend auto tag_invoke(Tag, receiver&& r, auto&&...)
@@ -163,7 +160,7 @@ namespace
         };
 
         struct sender
-            : EX::sender_base
+            : EX::sender_tag
         {
             template <template <typename...> class T, template <typename...> class V>
             using value_types = V<T<Type>>;
@@ -208,16 +205,17 @@ namespace
     {
         return  EX::when_all(
             EX::repeat_effect_until(
-                NN::async_read_some(EX::schedule(context.scheduler()),
-                                    owner.d_socket,
-                                    NN::buffer(owner.d_buffer))
-                | EX::then([&owner](::std::size_t n){
-                    owner.d_done = n == 0;
-                    if (n) {
-                        ::std::cout << "read='" << ::std::string_view(owner.d_buffer, n) << "'\n";
-                        owner.d_queue.push(::std::string_view(owner.d_buffer, n));
-                    }
-                }),
+                EX::on(context.scheduler(),
+                      NN::async_read_some(owner.d_socket,
+                                          NN::buffer(owner.d_buffer))
+                    | EX::then([&owner](::std::size_t n){
+                        owner.d_done = n == 0;
+                        if (n) {
+                            ::std::cout << "read='" << ::std::string_view(owner.d_buffer, n) << "'\n";
+                            owner.d_queue.push(::std::string_view(owner.d_buffer, n));
+                        }
+                    })
+                ),
                 [&owner]{ return owner.d_done; }
             )
             | EX::then([&]{
@@ -228,9 +226,9 @@ namespace
                 notifying_queue<std::string>::sender(&owner.d_queue)
                 | EX::let_value([&](std::string const& s) {
                     ::std::cout << "write(" << s << ")\n";
-                    return EX::schedule(context.scheduler())
-                        |  NN::async_write(owner.d_socket, NN::buffer(s))
-                        ;
+                    return EX::on(context.scheduler(),
+                        NN::async_write(owner.d_socket, NN::buffer(s))
+                    );
                 }),
                 [&owner]{ return owner.d_done; }
             )
@@ -260,12 +258,13 @@ namespace
     {
         return
             EX::repeat_effect(
-                  EX::schedule(context.scheduler())
-                | NN::async_accept(server)
-                | EX::then([&outstanding, &context](::std::error_code, stream_socket client){
+                EX::on(context.scheduler(),
+                      NN::async_accept(server)
+                    | EX::then([&outstanding, &context](stream_socket client, auto&&){
                         ::std::cout << "client.is_open()=" << ::std::boolalpha << client.is_open() << "\n";
                         run_client(outstanding, context, ::std::move(client));
                     })
+                )
             );
     }
 }

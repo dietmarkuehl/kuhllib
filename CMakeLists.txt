@@ -399,13 +399,11 @@ target_link_libraries(kuhllib_test PUBLIC kuhllib kuhltest pthread)
 add_test(NAME kuhllib_test COMMAND $<TARGET_FILE:kuhllib_test>)
 
 
-list(APPEND kuhllib_disabled_examples
+list(APPEND kuhllib_examples
     audio
+    chat_server
     coroutine_echo_server
     cs2
-)
-list(APPEND kuhllib_examples
-    chat_server
     echo_server
     es
     simple_echo_server
