@@ -87,8 +87,12 @@ namespace nstd::execution {
             Env        env;
 
             template <typename Tag, typename... Args>
-                requires (not ::std::same_as<::nstd::execution::get_scheduler_t, Tag>)
-            friend auto tag_invoke(Tag const& tag, replace_env const& self, Args&&... args)
+                requires (not ::std::same_as<::nstd::execution::get_scheduler_t, Tag>
+                          && not ::std::same_as<::nstd::execution::set_value_t, Tag>
+                          && not ::std::same_as<::nstd::execution::set_error_t, Tag>
+                          && not ::std::same_as<::nstd::execution::set_stopped_t, Tag>
+                          )
+            friend auto tag_invoke(Tag tag, replace_env const& self, Args&&... args)
                 noexcept(noexcept(tag(self.env, ::nstd::utility::forward<Args>(args)...)))
             {
                 return tag(self.env, ::nstd::utility::forward<Args>(args)...);
@@ -108,7 +112,7 @@ namespace nstd::execution {
             Receiver*  receiver;
             template <typename Tag, typename... Args>
                 requires (not ::std::same_as<::nstd::execution::get_env_t, Tag>)
-            friend auto tag_invoke(Tag const& tag, replace_receiver&& self, Args&&... args)
+            friend auto tag_invoke(Tag tag, replace_receiver&& self, Args&&... args)
                 noexcept(noexcept(tag(::nstd::utility::move(*self.receiver), ::nstd::utility::forward<Args>(args)...)))
             {
                 return tag(::nstd::utility::move(*self.receiver), ::nstd::utility::forward<Args>(args)...);
