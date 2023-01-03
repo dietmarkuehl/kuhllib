@@ -1,4 +1,4 @@
-// src/nstd/net.hpp                                                   -*-C++-*-
+// nstd/net/async_receive.cpp                                         -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2022 Dietmar Kuehl http://www.dietmar-kuehl.de
 //
@@ -23,26 +23,10 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_SRC_NSTD_NET
-#define INCLUDED_SRC_NSTD_NET
-
-// ----------------------------------------------------------------------------
-// NetworkingTS [convenience.hdr.synop]
-
-// #include "nstd/executor.hpp"
-#include "nstd/net/io_context.hpp"
-// #include "nstd/timer.hpp"
-#include "nstd/buffer.hpp"
-#include "nstd/socket.hpp"
-#include "nstd/internet.hpp"
-#include "nstd/net/async_accept.hpp"
-#include "nstd/net/async_connect.hpp"
-#include "nstd/net/async_read_some.hpp"
-#include "nstd/net/async_receive.hpp"
-#include "nstd/net/async_send.hpp"
-#include "nstd/net/async_write.hpp"
-#include "nstd/net/async_write_some.hpp"
+#include <nstd/net/async_receive.hpp>
 
 // ----------------------------------------------------------------------------
 
-#endif
+namespace nstd::net {
+    int async_receive_dummy{};
+}
