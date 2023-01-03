@@ -60,7 +60,7 @@ namespace nstd::net::hidden_names::async_write {
     };
 }
 
-namespace nstd::net {
+namespace nstd::net::inline customization_points {
     using async_write_t = ::nstd::net::hidden_names::async_write::cpo;
     inline constexpr ::nstd::net::async_write_t async_write{};
 }

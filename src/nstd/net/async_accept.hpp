@@ -103,7 +103,7 @@ struct nstd::net::hidden_names::async_accept::cpo {
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::net {
+namespace nstd::net::inline customization_points {
     using async_accept_t = ::nstd::net::hidden_names::async_accept::cpo;
     inline constexpr async_accept_t async_accept;
 }

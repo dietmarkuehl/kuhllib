@@ -89,7 +89,7 @@ struct nstd::net::hidden_names::async_connect::cpo {
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::net {
+namespace nstd::net::inline customization_points {
     using async_connect_t = ::nstd::net::hidden_names::async_connect::cpo;
     inline constexpr async_connect_t async_connect;
 }

@@ -103,7 +103,7 @@ struct nstd::net::hidden_names::async_send::cpo {
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::net {
+namespace nstd::net::inline customization_points {
     using async_send_t = ::nstd::net::hidden_names::async_send::cpo;
     inline constexpr async_send_t async_send;
 }

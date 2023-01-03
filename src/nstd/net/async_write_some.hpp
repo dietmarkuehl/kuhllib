@@ -92,7 +92,7 @@ struct nstd::net::hidden_names::async_write_some::cpo {
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::net {
+namespace nstd::net::inline customization_points {
     using async_write_some_t = ::nstd::net::hidden_names::async_write_some::cpo;
     inline constexpr async_write_some_t async_write_some;
 }

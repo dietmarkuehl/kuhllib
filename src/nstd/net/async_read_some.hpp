@@ -91,7 +91,7 @@ struct nstd::net::hidden_names::async_read_some::cpo {
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::net {
+namespace nstd::net::inline customization_points {
     using async_read_some_t = ::nstd::net::hidden_names::async_read_some::cpo;
     inline constexpr async_read_some_t async_read_some;
 }
