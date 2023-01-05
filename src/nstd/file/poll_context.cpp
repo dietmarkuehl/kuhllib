@@ -27,10 +27,13 @@
 #include "nstd/utility/forward.hpp"
 #include "nstd/utility/move.hpp"
 #include <algorithm>
+#include <exception>
 #include <iostream>
 #include <cassert>
 #include <cerrno>
 #include <fcntl.h>
+#include <unistd.h>
+#include <cerrno>
 
 namespace NF = ::nstd::file;
 namespace UT = ::nstd::utility;
@@ -51,10 +54,11 @@ auto NF::poll_context::timer_event::operator< (timer_event const& other) const
 
 // ----------------------------------------------------------------------------
 
-NF::poll_context::operation::operation(int fd, short events, ::std::function<auto()->bool> operation)
+NF::poll_context::operation::operation(int fd, short events, ::std::function<auto()->bool> operation, io_base* id)
     : d_fd(fd)
     , d_events(events)
     , d_operation(UT::move(operation))
+    , d_id(id)
 {
 }
 
@@ -63,26 +67,43 @@ NF::poll_context::poll_context()
     , d_next_poll(this->d_poll.end())
     , d_outstanding()
 {
+    if (::pipe(this->d_pipe) < 0) {
+        throw ::std::system_error(-errno, ::std::system_category(),
+                                  "failed to create self-pipe");
+    }
+
+    fcntl(this->d_pipe[0], F_SETFL, O_NONBLOCK);
+    fcntl(this->d_pipe[1], F_SETFL, O_NONBLOCK);
+    this->submit_io(this->d_pipe[0], POLLIN, [this]{
+        char buffer[16];
+        ::read(this->d_pipe[0], buffer, sizeof(buffer));
+        return false;
+        }, &this->d_completion);
+}
+
+NF::poll_context::~poll_context() {
+    ::close(this->d_pipe[0]);
+    ::close(this->d_pipe[1]);
 }
 
 // ----------------------------------------------------------------------------
 
-auto NF::poll_context::submit_io(int fd, short events, ::std::function<auto()->bool> op) -> void
+auto NF::poll_context::submit_io(int fd, short events, ::std::function<auto()->bool> op, io_base* id) -> void
 {
     if (0 <= fd) {
-        this->d_outstanding.emplace_front(fd, events, UT::move(op));
+        this->d_outstanding.emplace_front(fd, events, UT::move(op), id);
     }
     else {
-        this->d_outstanding.emplace_back(fd, events, UT::move(op));
+        this->d_outstanding.emplace_back(fd, events, UT::move(op), id);
     }
-    //-dk:TODO trigger the new work to be picked up
+    ::write(this->d_pipe[1], "", 1);
 }
 
 template <typename Fun>
-auto NF::poll_context::submit(int fd, short events, Fun&& fun) -> void
+auto NF::poll_context::submit(int fd, short events, Fun&& fun, io_base* id) -> void
 {
     if (!fun()) {
-        this->submit_io(fd, events, UT::forward<Fun>(fun));
+        this->submit_io(fd, events, UT::forward<Fun>(fun), id);
     }
 }
 
@@ -108,12 +129,18 @@ auto NF::poll_context::handle_io() -> NF::context::count_type {
          ++this->d_next_poll) {
         for (auto rit{this->d_outstanding.begin()}; rit != this->d_outstanding.end(); ++rit) {
             if (this->d_next_poll->fd == rit->d_fd
-                && 0 != (this->d_next_poll->revents & rit->d_events)
-                && rit->d_operation())
+                && 0 != (this->d_next_poll->revents & rit->d_events))
             {
-                this->d_outstanding.erase(rit);
-                ++this->d_next_poll;
-                return 1u;
+                ::std::list<operation> tmp;
+                auto pos(::std::next(rit));
+                tmp.splice(tmp.begin(), this->d_outstanding, rit);
+                if (tmp.front().d_operation()) {
+                    ++this->d_next_poll;
+                    return 1u;
+                }
+                else {
+                    this->d_outstanding.splice(pos, tmp, tmp.begin());
+                }
             }
         }
     }
@@ -132,7 +159,7 @@ auto NF::poll_context::poll() -> bool
         short events = operation.d_events | POLLIN | POLLOUT;
         this->d_poll.push_back(::pollfd{ operation.d_fd, events, 0 });
     }
-    if (this->d_poll.empty()) {
+    if (1u == this->d_poll.size()) {
         return 0u;
     }
     while (true)
@@ -164,9 +191,19 @@ auto NF::poll_context::do_run_one() -> NF::context::count_type
 
 // ----------------------------------------------------------------------------
 
-auto NF::poll_context::do_cancel(NF::context::io_base*, NF::context::io_base*) -> void
+auto NF::poll_context::do_cancel(NF::context::io_base* to_cancel, NF::context::io_base* completion) -> void
 {
-    //-dk:TODO 
+    this->submit_io(-1, 0, [completion, to_cancel, this]{
+        auto it = ::std::find_if(this->d_outstanding.begin(), this->d_outstanding.end(),
+                                 [to_cancel](operation const& op){ return op.d_id == to_cancel; });
+        completion->result(it == this->d_outstanding.end()? -1: 0, 0);
+        if (it != this->d_outstanding.end()) {
+            it->d_id->result(-ECANCELED, 0);
+            this->d_outstanding.erase(it);
+        }
+        return true;
+    },
+    completion);
 }
 
 auto NF::poll_context::do_nop(NF::context::io_base* continuation) -> void
@@ -174,7 +211,8 @@ auto NF::poll_context::do_nop(NF::context::io_base* continuation) -> void
     this->submit_io(-1, 0, [continuation]{
         continuation->result(0, 0);
         return true;
-    });
+    },
+    continuation);
 }
 
 auto NF::poll_context::do_timer(NF::context::time_spec* ts, NF::context::io_base* continuation) -> void
@@ -216,7 +254,8 @@ auto NF::poll_context::do_accept(NF::context::native_handle_type fd,
 	case ENETUNREACH:
             return false;
         }
-    });
+    },
+    continuation);
 }
 
 auto NF::poll_context::do_connect(NF::context::native_handle_type fd, ::sockaddr const* address, ::socklen_t length, NF::context::io_base* continuation)
@@ -241,7 +280,8 @@ auto NF::poll_context::do_connect(NF::context::native_handle_type fd, ::sockaddr
                 continuation->result(-errno, 0);
             }
             return true;
-        });
+        },
+        continuation);
     }
 }
 
@@ -266,7 +306,8 @@ auto NF::poll_context::do_sendmsg(NF::context::native_handle_type fd,
 	case EINTR:
 	    return false;
         }
-    });
+    },
+    continuation);
 }
 
 auto NF::poll_context::do_recvmsg(NF::context::native_handle_type fd,
@@ -285,11 +326,12 @@ auto NF::poll_context::do_recvmsg(NF::context::native_handle_type fd,
 	    continuation->result(-errno, 0);
 	    return true;
 	case EAGAIN:
-        case (EAGAIN != EWOULDBLOCK? EWOULDBLOCK: 0):
+    case (EAGAIN != EWOULDBLOCK? EWOULDBLOCK: 0):
 	case EINTR:
 	    return false;
 	}
-    });
+    },
+    continuation);
 }
 
 auto NF::poll_context::do_read(int, ::iovec*, ::std::size_t, NF::context::io_base*) -> void

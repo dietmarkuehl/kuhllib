@@ -257,12 +257,12 @@ list(APPEND kuhllib_net_components
     src/nstd/net/ip/address
     src/nstd/net/ip/address_v4
     src/nstd/net/ip/address_v6
-    src/nstd/net/ip/make_address_v4
     src/nstd/net/ip/basic_endpoint
+    src/nstd/net/ip/make_address_v4
     src/nstd/net/ip/tcp
     src/nstd/net/ip/types
-    src/nstd/net/ip/v4_mapped
     src/nstd/net/netfwd
+    src/nstd/net/scope
     src/nstd/net/socket_base
 )
 
@@ -408,6 +408,7 @@ list(APPEND kuhllib_examples
     echo_server
     es
     simple_echo_server
+    udp-es
 )
 foreach(example ${kuhllib_examples})
     add_executable(${example} src/examples/${example}.cpp)

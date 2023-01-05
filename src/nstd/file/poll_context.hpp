@@ -48,11 +48,16 @@ class nstd::file::poll_context
     : public ::nstd::file::context
 {
 private:
+    struct empty_completion
+        : io_base {
+            auto do_result(int32_t, uint32_t) -> void override {}
+    };
     struct operation {
         int                           d_fd;
         short                         d_events;
         ::std::function<auto()->bool> d_operation;
-        operation(int, short, ::std::function<auto()->bool>);
+        io_base*                      d_id;
+        operation(int, short, ::std::function<auto()->bool>, io_base*);
     };
     struct timer_event {
         ::std::chrono::steady_clock::time_point d_expiry;
@@ -60,19 +65,21 @@ private:
 	timer_event(::std::chrono::steady_clock::time_point const&, io_base*);
 	auto operator< (timer_event const&) const -> bool;
     };
-    ::std::vector<::pollfd>           d_poll;
-    ::std::vector<::pollfd>::iterator d_next_poll;
-    ::std::list<operation>            d_outstanding;
+    empty_completion                   d_completion{};
+    ::std::vector<::pollfd>            d_poll;
+    ::std::vector<::pollfd>::iterator  d_next_poll;
+    ::std::list<operation>             d_outstanding;
     ::std::priority_queue<timer_event> d_timers;
+    int                                d_pipe[2];
 
     auto handle_scheduled() -> count_type;
     auto handle_timer() -> count_type;
     auto handle_io() -> count_type;
     auto poll() -> bool;
 
-    auto submit_io(int, short, ::std::function<auto()->bool>) -> void;
+    auto submit_io(int, short, ::std::function<auto()->bool>, io_base*) -> void;
     template <typename Fun>
-    auto submit(int, short, Fun&& fun) -> void;
+    auto submit(int, short, Fun&& fun, io_base*) -> void;
 
 protected:
     auto do_run_one() -> count_type override;
@@ -89,6 +96,8 @@ protected:
 
 public:
     poll_context();
+    poll_context(poll_context&&) = delete;
+    ~poll_context();
 };
 
 // ----------------------------------------------------------------------------

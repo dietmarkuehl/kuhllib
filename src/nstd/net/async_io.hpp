@@ -69,7 +69,9 @@ namespace nstd::net::hidden_names {
             }  
             auto operator()() noexcept -> void {
                 if (++this->d_state->d_outstanding == 2u) {
-                    ::nstd::execution::get_scheduler(::nstd::execution::get_env(this->d_state->d_receiver)).cancel(this->d_state, this);
+                    auto const& env{::nstd::execution::get_env(this->d_state->d_receiver)};
+                    auto        scheduler{::nstd::execution::get_scheduler(env)};
+                    scheduler.cancel(this->d_state, this);
                 }
             }
             virtual auto do_result(::std::int32_t, ::std::uint32_t) -> void override {
