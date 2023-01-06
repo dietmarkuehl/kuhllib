@@ -40,6 +40,8 @@
 #include <atomic>
 #include <iostream>
 #include <exception>
+#include <system_error>
+#include <cstring>
 
 // ----------------------------------------------------------------------------
 
@@ -85,15 +87,25 @@ class nstd::net::scope {
             -> void
         {
             try { ::std::rethrow_exception(error); }
-            catch (std::exception const& ex) {
-                ::std::cout << "ERROR: " << ex.what() << "\n";
+            catch (std::system_error const& ex) {
+                ::std::cout << "scope::set_error(exception_ptr): " << ::std::strerror(ex.code().value()) << "\n";
             }
+            catch (std::exception const& ex) {
+                ::std::cout << "scope::set_error(exception_ptr): " << ex.what() << "\n";
+            }
+            delete self.d_job;
+        }
+        friend auto tag_invoke(::nstd::execution::set_error_t, receiver&& self, std::error_code error) noexcept
+            -> void
+        {
+            ::std::cout << "scope::set_error(error_code): " << ::std::strerror(error.value()) << "/" << error << "\n";
             delete self.d_job;
         }
         friend auto tag_invoke(::nstd::execution::set_error_t, receiver&& self, auto&& error) noexcept
             -> void
+            requires(not ::std::same_as<::nstd::type_traits::remove_cvref_t<decltype(error)>, ::std::error_code>)
         {
-            ::std::cout << "error: " << error << "\n";
+            ::std::cout << "scope::set_error(generic): " << error << " " << typeid(decltype(error)) << "\n";
             delete self.d_job;
         }
         friend auto tag_invoke(::nstd::execution::set_stopped_t, receiver&& self) noexcept

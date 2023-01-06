@@ -50,15 +50,15 @@ struct nstd::net::hidden_names::async_read_some::operation {
 
     typename Socket::native_handle_type  d_handle;
     MBS                                  d_buffer;
-    ::msghdr                             d_msg{};
     struct state {
+        ::msghdr                             d_msg{};
     };
-    auto start(::nstd::net::io_context::scheduler_type scheduler, state&, ::nstd::file::context::io_base* cont) -> void{
+    auto start(::nstd::net::io_context::scheduler_type scheduler, state& s, ::nstd::file::context::io_base* cont) -> void{
         iovec const* iov = reinterpret_cast<::iovec const*>(&*::nstd::net::buffer_sequence_begin(this->d_buffer));
-        this->d_msg.msg_iov = const_cast<::iovec*>(iov);
-        this->d_msg.msg_iovlen = ::std::distance(::nstd::net::buffer_sequence_begin(this->d_buffer), 
+        s.d_msg.msg_iov = const_cast<::iovec*>(iov);
+        s.d_msg.msg_iovlen = ::std::distance(::nstd::net::buffer_sequence_begin(this->d_buffer), 
                                                  ::nstd::net::buffer_sequence_end(this->d_buffer)); 
-        scheduler.recvmsg(this->d_handle, &this->d_msg, int(), cont);
+        scheduler.recvmsg(this->d_handle, &s.d_msg, int(), cont);
     }
     template <::nstd::execution::receiver Receiver>
     auto complete(int32_t rc, uint32_t, bool cancelled, state&, Receiver& receiver) -> void {

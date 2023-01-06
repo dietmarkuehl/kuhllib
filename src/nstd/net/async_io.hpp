@@ -128,6 +128,7 @@ namespace nstd::net::hidden_names {
         Operation d_operation;
         template <typename... P>
         async_io_sender(P&&... p)
+            requires(not (::std::same_as<::nstd::type_traits::remove_cvref_t<P>, async_io_sender> || ...))
             : d_operation{::nstd::utility::forward<P>(p)...} {
         }
 
