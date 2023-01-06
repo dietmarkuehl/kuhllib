@@ -1,4 +1,4 @@
-// nstd/net/async_receive.hpp                                         -*-C++-*-
+// nstd/net/async_receive_from.hpp                                    -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2022 Dietmar Kuehl http://www.dietmar-kuehl.de
 //
@@ -23,10 +23,8 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_NET_ASYNC_RECEIVE
-#define INCLUDED_NSTD_NET_ASYNC_RECEIVE
-
-// ----------------------------------------------------------------------------
+#ifndef INCLUDED_NSTD_NET_ASYNC_RECEIVE_FROM
+#define INCLUDED_NSTD_NET_ASYNC_RECEIVE_FROM
 
 #include "nstd/net/async_io.hpp"
 #include "nstd/file/operation.hpp"
@@ -44,34 +42,31 @@
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::net::hidden_names::async_receive {
-    template <typename Socket, typename MBS> struct operation;
+namespace nstd::net::hidden_names::async_receive_from {
+    template <typename Socket, typename MB> struct operation;
     struct cpo;
 }
 
 // ----------------------------------------------------------------------------
 
-template <typename Socket, typename MBS>
-struct nstd::net::hidden_names::async_receive::operation {
+template <typename Socket, typename MB>
+struct nstd::net::hidden_names::async_receive_from::operation {
     using completion_signature
-        = ::nstd::execution::set_value_t(int);
+        = ::nstd::execution::set_value_t(::std::size_t, typename Socket::endpoint_type);
 
-    typename Socket::native_handle_type      d_handle;
-    ::nstd::type_traits::remove_cvref_t<MBS> d_buffers; //-dk:TODO add allocator support?
-    ::nstd::hidden_names::message_flags      d_flags;
-    ::msghdr                                 d_msgheader{};
+    typename Socket::native_handle_type     d_handle;
+    ::nstd::type_traits::remove_cvref_t<MB> d_buffer;
+    ::nstd::hidden_names::message_flags     d_flags;
     struct state {
+        ::sockaddr_storage d_address;
+        ::socklen_t        d_addrlen{sizeof(::sockaddr_storage)};
     };
-    auto start(::nstd::net::io_context::scheduler_type scheduler, state&, ::nstd::file::context::io_base* cont) -> void{
-        ::iovec const* iov = reinterpret_cast<::iovec const*>(&*::nstd::net::buffer_sequence_begin(this->d_buffers));
-        this->d_msgheader.msg_iov = const_cast<::iovec*>(iov);
-        // this->d_msgheader.msg_iovlen = 1u;
-        this->d_msgheader.msg_iovlen = ::std::distance(::nstd::net::buffer_sequence_begin(this->d_buffers),
-                                                       ::nstd::net::buffer_sequence_end(this->d_buffers));
-        scheduler.recvmsg(this->d_handle, &this->d_msgheader, static_cast<int>(this->d_flags), cont);
+    auto start(::nstd::net::io_context::scheduler_type scheduler, state& s, ::nstd::file::context::io_base* cont) -> void{
+        scheduler.recvfrom(this->d_handle, this->d_buffer.data(), this->d_buffer.size(), static_cast<int>(this->d_flags),
+                           reinterpret_cast<::sockaddr*>(&s.d_address), &s.d_addrlen, cont);
     }
     template <::nstd::execution::receiver Receiver>
-    auto complete(int32_t rc, uint32_t, bool cancelled, state&, Receiver& receiver) -> void {
+    auto complete(int32_t rc, uint32_t, bool cancelled, state& s, Receiver& receiver) -> void {
         if (cancelled) {
             ::nstd::execution::set_stopped(::nstd::utility::move(receiver));
         }
@@ -79,35 +74,40 @@ struct nstd::net::hidden_names::async_receive::operation {
             ::nstd::execution::set_error(::nstd::utility::move(receiver), ::std::error_code(-rc, std::system_category()));
         }
         else {
-            ::nstd::execution::set_value(::nstd::utility::move(receiver), rc);
+            typename Socket::endpoint_type endpoint;
+            endpoint.set_address(&s.d_address, s.d_addrlen);
+            ::nstd::execution::set_value(::nstd::utility::move(receiver), rc, endpoint);
         }
     }
 };
 
 // ----------------------------------------------------------------------------
 
-struct nstd::net::hidden_names::async_receive::cpo {
-    template <typename Socket, typename MBS>
-    friend auto tag_invoke(cpo, Socket& socket, MBS&& mbs, ::nstd::hidden_names::message_flags flags) {
-        return nstd::net::hidden_names::async_io_sender<::nstd::net::hidden_names::async_receive::operation<Socket, MBS>>(
-            socket.native_handle(), ::nstd::utility::forward<MBS>(mbs), flags
+struct nstd::net::hidden_names::async_receive_from::cpo {
+    template <typename Socket, typename MB>
+    friend auto tag_invoke(cpo,
+                           Socket&                             socket,
+                           MB&&                                mb,
+                           ::nstd::hidden_names::message_flags flags) {
+        return nstd::net::hidden_names::async_io_sender<::nstd::net::hidden_names::async_receive_from::operation<Socket, MB>>(
+            socket.native_handle(), ::nstd::utility::forward<MB>(mb), flags
             );
     }
-    template <typename Socket, typename MBS>
-    auto operator()(Socket& socket, MBS&& mbs, ::nstd::hidden_names::message_flags flags) const {
-        return ::nstd::tag_invoke(*this, socket, ::nstd::utility::forward<MBS>(mbs), flags);
+    template <typename Socket, typename MB>
+    auto operator()(Socket& socket, MB&& mb, ::nstd::hidden_names::message_flags flags) const {
+        return ::nstd::tag_invoke(*this, socket, ::nstd::utility::forward<MB>(mb), flags);
     }
-    template <typename Socket, typename MBS>
-    auto operator()(Socket& socket, MBS&& mbs) const {
-        return ::nstd::tag_invoke(*this, socket, ::nstd::utility::forward<MBS>(mbs), ::nstd::hidden_names::message_flags());
+    template <typename Socket, typename MB>
+    auto operator()(Socket& socket, MB&& mb) const {
+        return ::nstd::tag_invoke(*this, socket, ::nstd::utility::forward<MB>(mb), ::nstd::hidden_names::message_flags());
     }
 };
 
 // ----------------------------------------------------------------------------
 
 namespace nstd::net::inline customization_points {
-    using async_receive_t = ::nstd::net::hidden_names::async_receive::cpo;
-    inline constexpr async_receive_t async_receive;
+    using async_receive_from_t = ::nstd::net::hidden_names::async_receive_from::cpo;
+    inline constexpr async_receive_from_t async_receive_from;
 }
 
 // ----------------------------------------------------------------------------

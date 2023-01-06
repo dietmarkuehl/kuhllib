@@ -57,6 +57,8 @@ protected:
     auto do_recvmsg(int, ::msghdr*, int, ::nstd::file::context::io_base*) -> void override;
     auto do_read(int, ::iovec*, ::std::size_t, ::nstd::file::context::io_base*) -> void override;
     auto do_open_at(int, char const*, int, ::nstd::file::context::io_base*) -> void override;
+    auto do_recvfrom(native_handle_type, void*, ::std::size_t, int, ::sockaddr*, ::socklen_t*, io_base*) -> void override;
+    auto do_sendto(native_handle_type, void const*, ::std::size_t, int, ::sockaddr*, ::socklen_t, io_base*) -> void override;
 
 public:
     test_context();
@@ -72,6 +74,8 @@ public:
     ::std::function<auto (int, ::msghdr*, int, ::nstd::file::context::io_base*) -> void>                 on_recvmsg;
     ::std::function<auto (int, ::iovec*, ::std::size_t, ::nstd::file::context::io_base*) -> void>        on_read;
     ::std::function<auto (int, char const*, int, ::nstd::file::context::io_base*) -> void>               on_open_at;
+    ::std::function<auto (native_handle_type, void*, ::std::size_t, int, ::sockaddr*, ::socklen_t*, io_base*) -> void> on_recvfrom;
+    ::std::function<auto (native_handle_type, void const*, ::std::size_t, int, ::sockaddr*, ::socklen_t, io_base*) -> void> on_sendto;
 };
 
 // ----------------------------------------------------------------------------

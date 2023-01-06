@@ -180,7 +180,7 @@ auto NF::poll_context::poll() -> bool
 auto NF::poll_context::do_run_one() -> NF::context::count_type
 {
     while (true) {
-	    if (this->handle_timer() || this->handle_scheduled() || this->handle_io()) {
+        if (this->handle_timer() || this->handle_scheduled() || this->handle_io()) {
             return 1u;
         }
         if (!this->poll()) {
@@ -241,17 +241,17 @@ auto NF::poll_context::do_accept(NF::context::native_handle_type fd,
         case EINTR:
         case EAGAIN:
         case (EAGAIN != EWOULDBLOCK? EWOULDBLOCK: 0):
-	// Already pending errors on the new socket (Linux specific):
+         // Already pending errors on the new socket (Linux specific):
         case ENETDOWN:
-	case EPROTO:
-	case ENOPROTOOPT:
-	case EHOSTDOWN:
+        case EPROTO:
+        case ENOPROTOOPT:
+        case EHOSTDOWN:
 #ifndef __APPLE__
-	case ENONET:
+        case ENONET:
 #endif
-	case EHOSTUNREACH:
-	case EOPNOTSUPP:
-	case ENETUNREACH:
+        case EHOSTUNREACH:
+        case EOPNOTSUPP:
+        case ENETUNREACH:
             return false;
         }
     },
@@ -262,7 +262,7 @@ auto NF::poll_context::do_connect(NF::context::native_handle_type fd, ::sockaddr
     -> void
 {
     fcntl(fd, F_SETFL, O_NONBLOCK);
-	auto rc = ::connect(fd, address, length);
+        auto rc = ::connect(fd, address, length);
     if (0 == rc) {
         continuation->result(0, 0);
     }
@@ -291,20 +291,20 @@ auto NF::poll_context::do_sendmsg(NF::context::native_handle_type fd,
                                   NF::context::io_base*           continuation) -> void
 {
     this->submit(fd, POLLOUT, [fd, msg, flags, continuation]{
-	auto rc{::sendmsg(fd, msg, flags | MSG_DONTWAIT | MSG_NOSIGNAL)};
-	if (0 <= rc) {
-	   continuation->result(rc, 0);
-	   return true;
-	}
-	switch (errno) {
-	default:
-	    continuation->result(-errno, 0);
-	    return true;
-	case EAGAIN:
+        auto rc{::sendmsg(fd, msg, flags | MSG_DONTWAIT | MSG_NOSIGNAL)};
+        if (0 <= rc) {
+           continuation->result(rc, 0);
+           return true;
+        }
+        switch (errno) {
+        default:
+            continuation->result(-errno, 0);
+            return true;
+        case EAGAIN:
         case (EAGAIN != EWOULDBLOCK? EWOULDBLOCK: 0):
-	case EALREADY:
-	case EINTR:
-	    return false;
+        case EALREADY:
+        case EINTR:
+            return false;
         }
     },
     continuation);
@@ -312,24 +312,24 @@ auto NF::poll_context::do_sendmsg(NF::context::native_handle_type fd,
 
 auto NF::poll_context::do_recvmsg(NF::context::native_handle_type fd,
                                   ::msghdr*                       msg,
-				  int                             flags,
-				  NF::context::io_base*           continuation) -> void
+                                  int                             flags,
+                                  NF::context::io_base*           continuation) -> void
 {
     this->submit(fd, POLLIN, [fd, msg, flags, continuation]{
-    	auto rc{::recvmsg(fd, msg, flags | MSG_DONTWAIT)};
-	if (0 <= rc) {
-	    continuation->result(rc, 0);
-	    return true;
-	}
-	switch (errno) {
-	default:
-	    continuation->result(-errno, 0);
-	    return true;
-	case EAGAIN:
+            auto rc{::recvmsg(fd, msg, flags | MSG_DONTWAIT)};
+        if (0 <= rc) {
+            continuation->result(rc, 0);
+            return true;
+        }
+        switch (errno) {
+        default:
+            continuation->result(-errno, 0);
+            return true;
+        case EAGAIN:
     case (EAGAIN != EWOULDBLOCK? EWOULDBLOCK: 0):
-	case EINTR:
-	    return false;
-	}
+        case EINTR:
+            return false;
+        }
     },
     continuation);
 }
@@ -345,6 +345,49 @@ auto NF::poll_context::do_open_at(int fd, char const* name, int flags, NF::conte
 {
     int rc(::openat(fd, name, flags));
     continuation->result(rc < 0? -errno: rc, 0);
+}
+
+auto NF::poll_context::do_recvfrom(native_handle_type fd, void* buffer, ::std::size_t length, int flags, ::sockaddr* addr, ::socklen_t* addrlen, io_base* continuation) -> void
+{
+    this->submit(fd, POLLIN, [fd, buffer, length, flags, addr, addrlen, continuation]{
+        auto rc{::recvfrom(fd, buffer, length, flags | MSG_DONTWAIT, addr, addrlen)};
+        if (0 <= rc) {
+            continuation->result(rc, 0);
+            return true;
+        }
+        switch (errno) {
+        default:
+            continuation->result(-errno, 0);
+            return true;
+        case EAGAIN:
+        case (EAGAIN != EWOULDBLOCK? EWOULDBLOCK: 0):
+        case EINTR:
+            return false;
+        }
+    },
+    continuation);
+}
+
+auto NF::poll_context::do_sendto(native_handle_type fd, void const* buffer, ::std::size_t length, int flags, ::sockaddr* addr, ::socklen_t addrlen, io_base* continuation) -> void
+{
+    this->submit(fd, POLLOUT, [fd, buffer, length, flags, addr, addrlen, continuation]{
+        auto rc{::sendto(fd, buffer, length, flags | MSG_DONTWAIT, addr, addrlen)};
+        if (0 <= rc) {
+            continuation->result(rc, 0);
+            return true;
+        }
+        switch (errno) {
+        default:
+            continuation->result(-errno, 0);
+            return true;
+        case EAGAIN:
+        case (EAGAIN != EWOULDBLOCK? EWOULDBLOCK: 0):
+        case EINTR:
+            return false;
+        }
+    },
+    continuation);
+
 }
 
 // ----------------------------------------------------------------------------

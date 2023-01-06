@@ -247,7 +247,9 @@ list(APPEND kuhllib_net_components
     src/nstd/net/async_io
     src/nstd/net/async_read_some
     src/nstd/net/async_receive
+    src/nstd/net/async_receive_from
     src/nstd/net/async_send
+    src/nstd/net/async_send_to
     src/nstd/net/async_write
     src/nstd/net/async_write_some
     src/nstd/net/basic_socket

@@ -84,15 +84,17 @@ private:
 protected:
     auto do_run_one() -> count_type override;
 
-    auto do_cancel(io_base*, io_base*) -> void override;
-    auto do_nop(io_base*) -> void override;
-    auto do_timer(time_spec*, io_base*) -> void override;
     auto do_accept(native_handle_type, ::sockaddr*, ::socklen_t*, int, io_base*) -> void override;
+    auto do_cancel(io_base*, io_base*) -> void override;
     auto do_connect(native_handle_type, ::sockaddr const*, ::socklen_t, io_base*) -> void override;
-    auto do_sendmsg(native_handle_type, ::msghdr const*, int, io_base*) -> void override;
-    auto do_recvmsg(native_handle_type, ::msghdr*, int, io_base*) -> void override;
-    auto do_read(int, ::iovec*, ::std::size_t, io_base*) -> void override;
+    auto do_nop(io_base*) -> void override;
     auto do_open_at(int, char const*, int, io_base*) -> void override;
+    auto do_read(int, ::iovec*, ::std::size_t, io_base*) -> void override;
+    auto do_recvfrom(native_handle_type, void*, ::std::size_t, int, ::sockaddr*, ::socklen_t*, io_base*) -> void override;
+    auto do_recvmsg(native_handle_type, ::msghdr*, int, io_base*) -> void override;
+    auto do_sendmsg(native_handle_type, ::msghdr const*, int, io_base*) -> void override;
+    auto do_sendto(native_handle_type, void const*, ::std::size_t, int, ::sockaddr*, ::socklen_t, io_base*) -> void override;
+    auto do_timer(time_spec*, io_base*) -> void override;
 
 public:
     poll_context();
