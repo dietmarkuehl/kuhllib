@@ -252,6 +252,7 @@ list(APPEND kuhllib_net_components
     src/nstd/net/async_send_to
     src/nstd/net/async_write
     src/nstd/net/async_write_some
+    src/nstd/net/basic_datagram_socket
     src/nstd/net/basic_socket
     src/nstd/net/basic_socket_acceptor
     src/nstd/net/basic_stream_socket
@@ -262,6 +263,7 @@ list(APPEND kuhllib_net_components
     src/nstd/net/ip/basic_endpoint
     src/nstd/net/ip/make_address_v4
     src/nstd/net/ip/tcp
+    src/nstd/net/ip/udp
     src/nstd/net/ip/types
     src/nstd/net/netfwd
     src/nstd/net/scope

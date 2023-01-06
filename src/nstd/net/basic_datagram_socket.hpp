@@ -1,4 +1,4 @@
-// src/nstd/net.hpp                                                   -*-C++-*-
+// nstd/net/basic_datagram_socket.hpp                                 -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2022 Dietmar Kuehl http://www.dietmar-kuehl.de
 //
@@ -23,41 +23,36 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_SRC_NSTD_NET
-#define INCLUDED_SRC_NSTD_NET
+#ifndef INCLUDED_NSTD_NET_BASIC_DATAGRAM_SOCKET
+#define INCLUDED_NSTD_NET_BASIC_DATAGRAM_SOCKET
+
+#include "nstd/net/basic_socket.hpp"
+#include <system_error>
+#include <cerrno>
 
 // ----------------------------------------------------------------------------
-// NetworkingTS [convenience.hdr.synop]
 
-// #include "nstd/executor.hpp"
-#include "nstd/net/io_context.hpp"
-// #include "nstd/timer.hpp"
-#include "nstd/buffer.hpp"
-#include "nstd/socket.hpp"
-#include "nstd/internet.hpp"
-#include "nstd/net/async_accept.hpp"
-#include "nstd/net/async_connect.hpp"
-#include "nstd/net/async_read_some.hpp"
-#include "nstd/net/async_receive.hpp"
-#include "nstd/net/async_receive_from.hpp"
-#include "nstd/net/async_send.hpp"
-#include "nstd/net/async_send_to.hpp"
-#include "nstd/net/async_write.hpp"
-#include "nstd/net/async_write_some.hpp"
-#include "nstd/net/scope.hpp"
-#include "nstd/net/basic_datagram_socket.hpp"
-#include "nstd/net/basic_socket.hpp"
-#include "nstd/net/basic_stream_socket.hpp"
+namespace nstd::net {
+    template <typename Protocol>
+    class basic_datagram_socket
+        : public ::nstd::net::basic_socket<Protocol>
+    {
+    public:
+        using protocol_type = Protocol;
+        using endpoint_type = typename Protocol::endpoint;
 
-#include "nstd/net/ip/address.hpp"
-#include "nstd/net/ip/address_v4.hpp"
-#include "nstd/net/ip/address_v6.hpp"
-#include "nstd/net/ip/basic_endpoint.hpp"
-#include "nstd/net/ip/make_address_v4.hpp"
-#include "nstd/net/ip/tcp.hpp"
-#include "nstd/net/ip/udp.hpp"
-#include "nstd/net/ip/types.hpp"
-#include "nstd/net/ip/v4_mapped.hpp"
+        basic_datagram_socket(endpoint_type endpoint)
+            : ::nstd::net::basic_socket<Protocol>(endpoint.protocol())
+        {
+            ::sockaddr_storage address;
+            ::socklen_t        socklen(endpoint.get_address(&address));
+            if (::bind(this->native_handle(), reinterpret_cast<::sockaddr*>(&address), socklen)) {
+                throw ::std::system_error(errno, ::std::system_category(), "failed to bind");
+            }
+            //-dk:TODO bind
+        }
+    };
+}
 
 // ----------------------------------------------------------------------------
 

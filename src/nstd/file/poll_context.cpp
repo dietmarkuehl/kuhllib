@@ -68,7 +68,7 @@ NF::poll_context::poll_context()
     , d_outstanding()
 {
     if (::pipe(this->d_pipe) < 0) {
-        throw ::std::system_error(-errno, ::std::system_category(),
+        throw ::std::system_error(errno, ::std::system_category(),
                                   "failed to create self-pipe");
     }
 
@@ -378,7 +378,7 @@ auto NF::poll_context::do_sendto(native_handle_type fd, void const* buffer, ::st
         }
         switch (errno) {
         default:
-            continuation->result(-errno, 0);
+            continuation->result(errno, 0);
             return true;
         case EAGAIN:
         case (EAGAIN != EWOULDBLOCK? EWOULDBLOCK: 0):

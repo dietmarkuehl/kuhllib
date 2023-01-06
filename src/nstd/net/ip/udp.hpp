@@ -1,4 +1,4 @@
-// src/nstd/net.hpp                                                   -*-C++-*-
+// nstd/net/ip/udp.hpp                                                -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2022 Dietmar Kuehl http://www.dietmar-kuehl.de
 //
@@ -23,41 +23,38 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_SRC_NSTD_NET
-#define INCLUDED_SRC_NSTD_NET
+#ifndef INCLUDED_NSTD_NET_IP_UDP
+#define INCLUDED_NSTD_NET_IP_UDP
+
+#include "nstd/net/ip/basic_endpoint.hpp"
+//-dk:TODO #include "nstd/net/basic_resolver.hpp"
+#include "nstd/net/basic_datagram_socket.hpp"
 
 // ----------------------------------------------------------------------------
-// NetworkingTS [convenience.hdr.synop]
 
-// #include "nstd/executor.hpp"
-#include "nstd/net/io_context.hpp"
-// #include "nstd/timer.hpp"
-#include "nstd/buffer.hpp"
-#include "nstd/socket.hpp"
-#include "nstd/internet.hpp"
-#include "nstd/net/async_accept.hpp"
-#include "nstd/net/async_connect.hpp"
-#include "nstd/net/async_read_some.hpp"
-#include "nstd/net/async_receive.hpp"
-#include "nstd/net/async_receive_from.hpp"
-#include "nstd/net/async_send.hpp"
-#include "nstd/net/async_send_to.hpp"
-#include "nstd/net/async_write.hpp"
-#include "nstd/net/async_write_some.hpp"
-#include "nstd/net/scope.hpp"
-#include "nstd/net/basic_datagram_socket.hpp"
-#include "nstd/net/basic_socket.hpp"
-#include "nstd/net/basic_stream_socket.hpp"
+namespace nstd::net::ip {
+    class udp {
+    private:
+        int d_family;
 
-#include "nstd/net/ip/address.hpp"
-#include "nstd/net/ip/address_v4.hpp"
-#include "nstd/net/ip/address_v6.hpp"
-#include "nstd/net/ip/basic_endpoint.hpp"
-#include "nstd/net/ip/make_address_v4.hpp"
-#include "nstd/net/ip/tcp.hpp"
-#include "nstd/net/ip/udp.hpp"
-#include "nstd/net/ip/types.hpp"
-#include "nstd/net/ip/v4_mapped.hpp"
+        constexpr udp(int family): d_family(family) {}
+
+    public:
+        using endpoint = ::nstd::net::ip::basic_endpoint<udp>;
+        using socket   = ::nstd::net::basic_datagram_socket<udp>;
+
+        static constexpr auto v4() noexcept -> udp { return udp(AF_INET);  }
+        static constexpr auto v6() noexcept -> udp { return udp(AF_INET6); }
+
+        udp() = delete;
+
+        constexpr auto family()   const -> int { return this->d_family; }
+        constexpr auto type()     const -> int { return SOCK_DGRAM; }
+        constexpr auto protocol() const -> int { return IPPROTO_UDP; }
+
+        constexpr bool operator== (udp const&) const = default;
+    };
+}
 
 // ----------------------------------------------------------------------------
 

@@ -40,9 +40,9 @@ namespace NC = ::nstd::concepts;
 namespace NN = ::nstd::net;
 namespace NI = ::nstd::net::ip;
 
-//-dk:TODO using datagram_socket = NN::basic_datagram_socket<NI::udp>;
-using datagram_socket = NN::basic_socket<NI::tcp>;
-using endpoint = NI::basic_endpoint<NI::tcp>;
+using protocol = NI::udp;
+using datagram_socket = NN::basic_datagram_socket<protocol>;
+using endpoint = NI::basic_endpoint<protocol>;
 
 // ----------------------------------------------------------------------------
 
@@ -52,16 +52,20 @@ int main()
     NN::scope scope;
     auto stop = [&scope]{ scope.stop(); };
 
-    datagram_socket socket;
+    endpoint ep(NI::address_v4::any(), 12345);
+    datagram_socket socket(ep);
     char buffer[16];
 
     scope.start(
         EX::repeat_effect(
               NN::async_receive_from(socket, NN::buffer(buffer))
             | EX::let_value([&socket, &buffer, stop](::std::size_t n, auto&& endpoint){
+                ::std::cout << "received(" << n << ")\n";
                 return NN::async_send_to(socket, NN::buffer(buffer, n), endpoint)
                      | EX::then([&buffer, stop](std::size_t n) {
-                        if (std::string_view(buffer, n).starts_with("stop")) {
+                        ::std::cout << "then(" << ::std::string_view(buffer, n) << ")\n";
+                        if (::std::string_view(buffer, n).starts_with("stop")) {
+                            ::std::cout << "stopping\n";
                             stop();
                         }
                      })

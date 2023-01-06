@@ -29,6 +29,7 @@
 #include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/error_types_of_t.hpp"
 #include "nstd/execution/get_env.hpp"
+#include "nstd/execution/get_stop_token.hpp"
 #include "nstd/execution/sender.hpp"
 #include "nstd/execution/connect.hpp"
 #include "nstd/execution/start.hpp"
@@ -150,7 +151,10 @@ namespace nstd::hidden_names::repeat_effect_until
             ::nstd::execution::start(s.d_internal_state.d_state);
         }
         auto next() noexcept -> void override try {
-            if (this->d_predicate()) {
+            if (::nstd::execution::get_stop_token(::nstd::execution::get_env(this->d_receiver)).stop_requested()) {
+                ::nstd::execution::set_stopped(::nstd::utility::move(this->d_receiver));
+            }
+            else if (this->d_predicate()) {
                 ::nstd::execution::set_value(::nstd::utility::move(this->d_receiver));
             }
             else {

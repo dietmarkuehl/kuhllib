@@ -1,4 +1,4 @@
-// src/nstd/net.hpp                                                   -*-C++-*-
+// nstd/net/ip/udp.t.cpp                                              -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2022 Dietmar Kuehl http://www.dietmar-kuehl.de
 //
@@ -23,42 +23,36 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_SRC_NSTD_NET
-#define INCLUDED_SRC_NSTD_NET
-
-// ----------------------------------------------------------------------------
-// NetworkingTS [convenience.hdr.synop]
-
-// #include "nstd/executor.hpp"
-#include "nstd/net/io_context.hpp"
-// #include "nstd/timer.hpp"
-#include "nstd/buffer.hpp"
-#include "nstd/socket.hpp"
-#include "nstd/internet.hpp"
-#include "nstd/net/async_accept.hpp"
-#include "nstd/net/async_connect.hpp"
-#include "nstd/net/async_read_some.hpp"
-#include "nstd/net/async_receive.hpp"
-#include "nstd/net/async_receive_from.hpp"
-#include "nstd/net/async_send.hpp"
-#include "nstd/net/async_send_to.hpp"
-#include "nstd/net/async_write.hpp"
-#include "nstd/net/async_write_some.hpp"
-#include "nstd/net/scope.hpp"
-#include "nstd/net/basic_datagram_socket.hpp"
-#include "nstd/net/basic_socket.hpp"
-#include "nstd/net/basic_stream_socket.hpp"
-
-#include "nstd/net/ip/address.hpp"
-#include "nstd/net/ip/address_v4.hpp"
-#include "nstd/net/ip/address_v6.hpp"
-#include "nstd/net/ip/basic_endpoint.hpp"
-#include "nstd/net/ip/make_address_v4.hpp"
-#include "nstd/net/ip/tcp.hpp"
 #include "nstd/net/ip/udp.hpp"
-#include "nstd/net/ip/types.hpp"
-#include "nstd/net/ip/v4_mapped.hpp"
+#include "kuhl/test.hpp"
+
+namespace test_declaration {}
+namespace KT = ::kuhl::test;
+namespace NN = ::nstd::net;
+namespace NI = ::nstd::net::ip;
 
 // ----------------------------------------------------------------------------
 
-#endif
+static KT::testcase const tests[] = {
+    KT::expect_success("upd::v4()", []{
+            return NI::udp::v4().family()   == AF_INET
+                && NI::udp::v4().type()     == SOCK_DGRAM
+                && NI::udp::v4().protocol() == IPPROTO_UDP
+                ;
+        }),
+    KT::expect_success("upd::v6()", []{
+            return NI::udp::v6().family()   == AF_INET6
+                && NI::udp::v6().type()     == SOCK_DGRAM
+                && NI::udp::v6().protocol() == IPPROTO_UDP
+                ;
+        }),
+    KT::expect_success("op==", []{
+            return NI::udp::v4() == NI::udp::v4()
+                && NI::udp::v4() != NI::udp::v6()
+                && NI::udp::v6() != NI::udp::v4()
+                && NI::udp::v6() == NI::udp::v6()
+                ;
+        }),
+};
+
+static KT::add_tests suite("nstd/net/ip/udp", ::tests);

@@ -38,6 +38,8 @@
 #include "nstd/net/io_context.hpp"
 #include "nstd/stop_token/in_place_stop_token.hpp"
 #include <atomic>
+#include <iostream>
+#include <exception>
 
 // ----------------------------------------------------------------------------
 
@@ -79,9 +81,19 @@ class nstd::net::scope {
         {
             delete self.d_job;
         }
-        friend auto tag_invoke(::nstd::execution::set_error_t, receiver&& self, auto&&) noexcept
+        friend auto tag_invoke(::nstd::execution::set_error_t, receiver&& self, std::exception_ptr error) noexcept
             -> void
         {
+            try { ::std::rethrow_exception(error); }
+            catch (std::exception const& ex) {
+                ::std::cout << "ERROR: " << ex.what() << "\n";
+            }
+            delete self.d_job;
+        }
+        friend auto tag_invoke(::nstd::execution::set_error_t, receiver&& self, auto&& error) noexcept
+            -> void
+        {
+            ::std::cout << "error: " << error << "\n";
             delete self.d_job;
         }
         friend auto tag_invoke(::nstd::execution::set_stopped_t, receiver&& self) noexcept
