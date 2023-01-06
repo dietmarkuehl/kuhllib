@@ -60,12 +60,9 @@ int main()
         EX::repeat_effect(
               NN::async_receive_from(socket, NN::buffer(buffer))
             | EX::let_value([&socket, &buffer, stop](::std::size_t n, auto&& endpoint){
-                ::std::cout << "received(" << n << ")\n";
                 return NN::async_send_to(socket, NN::buffer(buffer, n), endpoint)
                      | EX::then([&buffer, stop](std::size_t n) {
-                        ::std::cout << "then(" << ::std::string_view(buffer, n) << ")\n";
                         if (::std::string_view(buffer, n).starts_with("stop")) {
-                            ::std::cout << "stopping\n";
                             stop();
                         }
                      })
