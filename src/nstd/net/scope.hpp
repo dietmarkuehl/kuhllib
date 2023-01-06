@@ -55,12 +55,12 @@ class nstd::net::scope {
 
         friend auto tag_invoke(::nstd::execution::get_scheduler_t, env const& self) noexcept
         {
-            return self.d_scope->d_context.scheduler();
+            return self.d_scope->scheduler();
         }
         friend auto tag_invoke(::nstd::execution::get_stop_token_t, env const& self) noexcept
             -> ::nstd::stop_token_ns::in_place_stop_token
         {
-            return self.d_scope->d_stop_source.token();
+            return self.d_scope->stop_token();
         }
     };
     struct job_base {
@@ -126,6 +126,9 @@ public:
     auto stop() -> void;
     auto run() -> void;
     auto stopped() const -> bool { return this->d_stopped; }
+
+    auto scheduler() -> typename ::nstd::net::io_context::scheduler_type { return this->d_context.scheduler(); }
+    auto stop_token() -> typename ::nstd::stop_token_ns::in_place_stop_token { return this->d_stop_source.token(); }
 };
 
 // ----------------------------------------------------------------------------
