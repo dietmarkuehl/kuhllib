@@ -1,4 +1,4 @@
-// nstd/net/async_io.hpp                                              -*-C++-*-
+// nstd/file/async_io.hpp                                             -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,8 +23,8 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_NET_ASYNC_IO
-#define INCLUDED_NSTD_NET_ASYNC_IO
+#ifndef INCLUDED_NSTD_FILE_ASYNC_IO
+#define INCLUDED_NSTD_FILE_ASYNC_IO
 
 #include "nstd/execution/connect.hpp"
 #include "nstd/execution/get_completion_scheduler.hpp"
@@ -36,7 +36,6 @@
 #include "nstd/execution/sender.hpp"
 #include "nstd/execution/set_stopped.hpp"
 #include "nstd/execution/set_error.hpp"
-#include "nstd/execution/set_value.hpp"
 #include "nstd/execution/start.hpp"
 #include "nstd/file/context.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
@@ -51,7 +50,7 @@
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::net::hidden_names {
+namespace nstd::file::hidden_names {
     template <typename Operation, ::nstd::execution::receiver Receiver>
     struct async_io_state
         : ::nstd::file::context::io_base
@@ -120,8 +119,7 @@ namespace nstd::net::hidden_names {
         using completion_signatures
             = ::nstd::execution::completion_signatures<
                 typename Operation::completion_signature,
-                ::nstd::execution::set_error_t(::std::error_code), //-dk:TODO
-                ::nstd::execution::set_error_t(::std::exception_ptr), //-dk:TODO
+                ::nstd::execution::set_error_t(::std::error_code),
                 ::nstd::execution::set_stopped_t()
             >;
 
@@ -134,7 +132,7 @@ namespace nstd::net::hidden_names {
 
         template <::nstd::execution::receiver Receiver>
         friend auto tag_invoke(::nstd::execution::connect_t, async_io_sender const& self, Receiver&& receiver)
-            -> ::nstd::net::hidden_names::async_io_state<Operation, Receiver>
+            -> ::nstd::file::hidden_names::async_io_state<Operation, Receiver>
         {
             return { self.d_operation, ::nstd::utility::forward<Receiver>(receiver) };
         }

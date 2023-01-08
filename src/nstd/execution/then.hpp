@@ -146,9 +146,7 @@ namespace nstd::hidden_names::then {
             ;
         template <typename... A>
         using set_stopped_completions
-            = ::nstd::execution::completion_signatures<
-                ::nstd::hidden_names::compl_sig_t<::nstd::execution::set_value_t, A...>
-                >
+            = ::nstd::execution::completion_signatures<::nstd::execution::set_stopped_t()>
             ;
         
         template <typename... A>
@@ -173,7 +171,9 @@ namespace nstd::hidden_names::then {
                         ::nstd::hidden_names::exec_envs::no_env,
                         ::nstd::type_traits::conditional_t<
                             ::nstd::execution::value_types_of_t<Sender, Env, sender::potentially_throwing, sender::any_of>::value,
-                            ::nstd::execution::completion_signatures<::nstd::execution::set_error_t(::std::exception_ptr)>,
+                            ::nstd::execution::completion_signatures<
+                                ::nstd::execution::set_error_t(::std::exception_ptr)
+                                >,
                             ::nstd::execution::completion_signatures<>
                         >,
                         ::nstd::execution::error_types_of_t<Sender, Env, ::nstd::hidden_names::then::variant_t>

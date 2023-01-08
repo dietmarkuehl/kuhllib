@@ -28,12 +28,13 @@
 #include "nstd/utility/move.hpp"
 #include <algorithm>
 #include <exception>
-#include <iostream>
 #include <cassert>
 #include <cerrno>
+#include <iostream>
 #include <fcntl.h>
 #include <unistd.h>
 #include <cerrno>
+#include <cstring>
 
 namespace NF = ::nstd::file;
 namespace UT = ::nstd::utility;
@@ -156,7 +157,7 @@ auto NF::poll_context::poll() -> bool
         if (operation.d_fd < 0) {
             break;
         }
-        short events = operation.d_events | POLLIN | POLLOUT;
+        short events = operation.d_events;
         this->d_poll.push_back(::pollfd{ operation.d_fd, events, 0 });
     }
     if (1u == this->d_poll.size()) {
@@ -164,6 +165,7 @@ auto NF::poll_context::poll() -> bool
     }
     while (true)
     {
+        errno = 0;
         int rc{::poll(this->d_poll.data(), this->d_poll.size(), -1)};
         if (0 <= rc) {
             this->d_next_poll = this->d_poll.begin();
@@ -316,7 +318,7 @@ auto NF::poll_context::do_recvmsg(NF::context::native_handle_type fd,
                                   NF::context::io_base*           continuation) -> void
 {
     this->submit(fd, POLLIN, [fd, msg, flags, continuation]{
-            auto rc{::recvmsg(fd, msg, flags | MSG_DONTWAIT)};
+        auto rc{::recvmsg(fd, msg, flags | MSG_DONTWAIT)};
         if (0 <= rc) {
             continuation->result(rc, 0);
             return true;
@@ -326,7 +328,7 @@ auto NF::poll_context::do_recvmsg(NF::context::native_handle_type fd,
             continuation->result(-errno, 0);
             return true;
         case EAGAIN:
-    case (EAGAIN != EWOULDBLOCK? EWOULDBLOCK: 0):
+        case (EAGAIN != EWOULDBLOCK? EWOULDBLOCK: 0):
         case EINTR:
             return false;
         }
@@ -334,10 +336,25 @@ auto NF::poll_context::do_recvmsg(NF::context::native_handle_type fd,
     continuation);
 }
 
-auto NF::poll_context::do_read(int, ::iovec*, ::std::size_t, NF::context::io_base*) -> void
+auto NF::poll_context::do_read(int fd, ::iovec* vec, ::std::size_t length, NF::context::io_base* continuation) -> void
 {
-    ::std::cout << "poll_context::do_read isn't implemented\n" << ::std::flush;
-    assert("poll_context::do_read isn't implemented" == nullptr);
+    this->submit(fd, POLLIN, [fd, vec, length, continuation]{
+        auto rc{::readv(fd, vec, length)};
+        if (0 <= rc) {
+            continuation->result(rc, 0);
+            return true;
+        }
+        switch (errno) {
+        default:
+            continuation->result(-errno, 0);
+            return true;
+        case EAGAIN:
+        case (EAGAIN != EWOULDBLOCK? EWOULDBLOCK: 0):
+        case EINTR:
+            return false;
+        }
+    },
+    continuation);
 }
 
 auto NF::poll_context::do_open_at(int fd, char const* name, int flags, NF::context::io_base* continuation)

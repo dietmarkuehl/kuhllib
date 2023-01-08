@@ -1,4 +1,4 @@
-// nstd/net/basic_datagram_socket.hpp                                 -*-C++-*-
+// nstd/file/stream.cpp                                               -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2022 Dietmar Kuehl http://www.dietmar-kuehl.de
 //
@@ -23,40 +23,19 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_NET_BASIC_DATAGRAM_SOCKET
-#define INCLUDED_NSTD_NET_BASIC_DATAGRAM_SOCKET
-
-#include "nstd/net/basic_socket.hpp"
-#include <system_error>
-#include <cerrno>
+#include <nstd/file/stream.hpp>
+#include <fcntl.h>
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::net {
-    template <typename Protocol>
-    class basic_datagram_socket
-        : public ::nstd::net::basic_socket<Protocol>
-    {
-    public:
-        using protocol_type = Protocol;
-        using endpoint_type = typename Protocol::endpoint;
-
-        basic_datagram_socket(Protocol protocol)
-            : ::nstd::net::basic_socket<Protocol>(protocol)
-        {
-        }
-        basic_datagram_socket(endpoint_type endpoint)
-            : ::nstd::net::basic_socket<Protocol>(endpoint.protocol())
-        {
-            ::sockaddr_storage address;
-            ::socklen_t        socklen(endpoint.get_address(&address));
-            if (::bind(this->native_handle(), reinterpret_cast<::sockaddr*>(&address), socklen)) {
-                throw ::std::system_error(errno, ::std::system_category(), "failed to bind");
-            }
-        }
-    };
+namespace nstd::file {
+    int stream_dummy{};
 }
 
 // ----------------------------------------------------------------------------
 
-#endif
+nstd::file::stream::stream(native_handle_type fd)
+    : d_fd(fd)
+{
+    fcntl(this->d_fd.get(), F_SETFL, O_NONBLOCK);
+}

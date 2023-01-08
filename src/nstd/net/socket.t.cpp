@@ -1,4 +1,4 @@
-// nstd/net/basic_datagram_socket.hpp                                 -*-C++-*-
+// nstd/net/socket.t.cpp                                              -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2022 Dietmar Kuehl http://www.dietmar-kuehl.de
 //
@@ -23,40 +23,50 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_NET_BASIC_DATAGRAM_SOCKET
-#define INCLUDED_NSTD_NET_BASIC_DATAGRAM_SOCKET
+#include "nstd/net/socket.hpp"
+#include "kuhl/test.hpp"
 
-#include "nstd/net/basic_socket.hpp"
-#include <system_error>
-#include <cerrno>
+namespace test_declaration {}
+namespace TD = ::test_declaration;
+namespace KT = ::kuhl::test;
+namespace NN = ::nstd::net;
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::net {
-    template <typename Protocol>
-    class basic_datagram_socket
-        : public ::nstd::net::basic_socket<Protocol>
-    {
-    public:
-        using protocol_type = Protocol;
-        using endpoint_type = typename Protocol::endpoint;
+namespace test_declaration {
+    namespace {
+        struct socket {
+            using native_handle_type = int;
+            using protocol_type = int;
 
-        basic_datagram_socket(Protocol protocol)
-            : ::nstd::net::basic_socket<Protocol>(protocol)
-        {
-        }
-        basic_datagram_socket(endpoint_type endpoint)
-            : ::nstd::net::basic_socket<Protocol>(endpoint.protocol())
-        {
-            ::sockaddr_storage address;
-            ::socklen_t        socklen(endpoint.get_address(&address));
-            if (::bind(this->native_handle(), reinterpret_cast<::sockaddr*>(&address), socklen)) {
-                throw ::std::system_error(errno, ::std::system_category(), "failed to bind");
-            }
-        }
-    };
+            auto native_handle() const -> native_handle_type { return {}; }
+            auto protocol() const -> protocol_type { return {}; }
+        };
+
+        template <typename NativeT, typename ProtocolT>
+        struct non_socket {
+            using native_handle_type = int;
+            using protocol_type = int;
+
+            auto native_handle() const -> NativeT { return {}; }
+            auto protocol() const -> ProtocolT { return {}; }
+        };
+    }
 }
 
 // ----------------------------------------------------------------------------
 
-#endif
+static KT::testcase const tests[] = {
+    KT::expect_success("type with proper native_handle and protocol is a socket", []{
+            return NN::socket<TD::socket>
+                ;
+        }),
+    KT::expect_success("type without proper protocol and native_handle isn't a socket", []{
+            return not NN::socket<TD::non_socket<int, bool>>
+                && not NN::socket<TD::non_socket<bool, int>>
+                && NN::socket<TD::non_socket<int, int>>
+                ;
+        }),
+};
+
+static KT::add_tests suite("nstd/net/socket", ::tests);

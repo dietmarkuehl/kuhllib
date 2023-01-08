@@ -28,7 +28,7 @@
 
 // ----------------------------------------------------------------------------
 
-#include "nstd/net/async_io.hpp"
+#include "nstd/file/async_io.hpp"
 #include "nstd/file/operation.hpp"
 #include "nstd/hidden_names/message_flags.hpp"
 #include "nstd/execution/completion_signatures.hpp"
@@ -89,7 +89,7 @@ struct nstd::net::hidden_names::async_receive::operation {
 struct nstd::net::hidden_names::async_receive::cpo {
     template <typename Socket, typename MBS>
     friend auto tag_invoke(cpo, Socket& socket, MBS&& mbs, ::nstd::hidden_names::message_flags flags) {
-        return nstd::net::hidden_names::async_io_sender<::nstd::net::hidden_names::async_receive::operation<Socket, MBS>>(
+        return nstd::file::hidden_names::async_io_sender<::nstd::net::hidden_names::async_receive::operation<Socket, MBS>>(
             socket.native_handle(), ::nstd::utility::forward<MBS>(mbs), flags
             );
     }

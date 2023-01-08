@@ -26,7 +26,7 @@
 #ifndef INCLUDED_NSTD_NET_ASYNC_CONNECT
 #define INCLUDED_NSTD_NET_ASYNC_CONNECT
 
-#include "nstd/net/async_io.hpp"
+#include "nstd/file/async_io.hpp"
 #include "nstd/net/io_context.hpp"
 #include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/sender.hpp"
@@ -77,7 +77,7 @@ struct nstd::net::hidden_names::async_connect::operation {
 struct nstd::net::hidden_names::async_connect::cpo {
     template <typename Socket>
     friend auto tag_invoke(cpo, Socket& socket, typename Socket::endpoint_type const& endpoint) {
-        return nstd::net::hidden_names::async_io_sender<::nstd::net::hidden_names::async_connect::operation<Socket>>(
+        return nstd::file::hidden_names::async_io_sender<::nstd::net::hidden_names::async_connect::operation<Socket>>(
             socket.native_handle(), endpoint
             );
     }

@@ -120,8 +120,9 @@ class nstd::net::scope {
     {
         decltype(::nstd::execution::connect(::nstd::type_traits::declval<Sender>(),
                                             ::nstd::net::scope::receiver{nullptr, nullptr})) d_state;
-        job(Sender&& sender, ::nstd::net::scope* scope)
-            : d_state(::nstd::execution::connect(::nstd::utility::forward<Sender>(sender),
+        template <::nstd::execution::sender S>
+        job(S&& sender, ::nstd::net::scope* scope)
+            : d_state(::nstd::execution::connect(::nstd::utility::forward<S>(sender),
                                                  ::nstd::net::scope::receiver{this, scope}))
         {
             ::nstd::execution::start(this->d_state);
@@ -148,7 +149,7 @@ public:
 template <::nstd::execution::sender Sender>
 auto nstd::net::scope::start(Sender&& sender) -> void
 {
-    new ::nstd::net::scope::job<Sender>(::nstd::utility::forward<Sender>(sender), this);
+    new ::nstd::net::scope::job<::nstd::type_traits::remove_cvref_t<Sender>>(::nstd::utility::forward<Sender>(sender), this);
 }
 
 // ----------------------------------------------------------------------------

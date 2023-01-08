@@ -1,4 +1,4 @@
-// nstd/net/basic_datagram_socket.hpp                                 -*-C++-*-
+// nstd/file.t.cpp                                                    -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2022 Dietmar Kuehl http://www.dietmar-kuehl.de
 //
@@ -23,40 +23,20 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_NET_BASIC_DATAGRAM_SOCKET
-#define INCLUDED_NSTD_NET_BASIC_DATAGRAM_SOCKET
+#include "nstd/file.hpp"
+#include "kuhl/test.hpp"
 
-#include "nstd/net/basic_socket.hpp"
-#include <system_error>
-#include <cerrno>
-
-// ----------------------------------------------------------------------------
-
-namespace nstd::net {
-    template <typename Protocol>
-    class basic_datagram_socket
-        : public ::nstd::net::basic_socket<Protocol>
-    {
-    public:
-        using protocol_type = Protocol;
-        using endpoint_type = typename Protocol::endpoint;
-
-        basic_datagram_socket(Protocol protocol)
-            : ::nstd::net::basic_socket<Protocol>(protocol)
-        {
-        }
-        basic_datagram_socket(endpoint_type endpoint)
-            : ::nstd::net::basic_socket<Protocol>(endpoint.protocol())
-        {
-            ::sockaddr_storage address;
-            ::socklen_t        socklen(endpoint.get_address(&address));
-            if (::bind(this->native_handle(), reinterpret_cast<::sockaddr*>(&address), socklen)) {
-                throw ::std::system_error(errno, ::std::system_category(), "failed to bind");
-            }
-        }
-    };
-}
+namespace KT = ::kuhl::test;
+namespace NF = ::nstd::file;
 
 // ----------------------------------------------------------------------------
 
-#endif
+static KT::testcase const tests[] = {
+    KT::expect_success("breathing", []{
+            return KT::assert_type_exists<NF::descriptor>
+                && KT::assert_type_exists<NF::stream>
+                ;
+        }),
+};
+
+static KT::add_tests suite("nstd/file", ::tests);

@@ -67,6 +67,7 @@ protected:
     virtual auto do_recvfrom(native_handle_type, void*, ::std::size_t, int, ::sockaddr*, ::socklen_t*, io_base*) -> void = 0;
     virtual auto do_sendto(native_handle_type, void const*, ::std::size_t, int, ::sockaddr*, ::socklen_t, io_base*) -> void = 0;
     virtual auto do_timer(time_spec*, io_base*) -> void = 0;
+    //-dk:TODO virtual auto do_write(int, ::iovec*, ::std::size_t, io_base*) -> void = 0;
 
 public:
 

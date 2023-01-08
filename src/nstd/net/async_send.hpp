@@ -26,7 +26,7 @@
 #ifndef INCLUDED_NSTD_NET_ASYNC_SEND
 #define INCLUDED_NSTD_NET_ASYNC_SEND
 
-#include "nstd/net/async_io.hpp"
+#include "nstd/file/async_io.hpp"
 #include "nstd/file/operation.hpp"
 #include "nstd/hidden_names/message_flags.hpp"
 #include "nstd/execution/completion_signatures.hpp"
@@ -87,7 +87,7 @@ struct nstd::net::hidden_names::async_send::operation {
 struct nstd::net::hidden_names::async_send::cpo {
     template <typename Socket, typename CBS>
     friend auto tag_invoke(cpo, Socket& socket, CBS&& cbs, ::nstd::hidden_names::message_flags flags) {
-        return nstd::net::hidden_names::async_io_sender<::nstd::net::hidden_names::async_send::operation<Socket, CBS>>(
+        return nstd::file::hidden_names::async_io_sender<::nstd::net::hidden_names::async_send::operation<Socket, CBS>>(
             socket.native_handle(), ::nstd::utility::forward<CBS>(cbs), flags
             );
     }

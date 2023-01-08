@@ -26,7 +26,7 @@
 #ifndef INCLUDED_NSTD_NET_ASYNC_WRITE_SOME
 #define INCLUDED_NSTD_NET_ASYNC_WRITE_SOME
 
-#include "nstd/net/async_io.hpp"
+#include "nstd/file/async_io.hpp"
 #include "nstd/net/io_context.hpp"
 #include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/sender.hpp"
@@ -80,7 +80,7 @@ struct nstd::net::hidden_names::async_write_some::operation {
 struct nstd::net::hidden_names::async_write_some::cpo {
     template <typename Socket, typename CBS>
     friend auto tag_invoke(cpo, Socket& socket, CBS const& buffer) {
-        return nstd::net::hidden_names::async_io_sender<::nstd::net::hidden_names::async_write_some::operation<Socket, CBS>>(
+        return nstd::file::hidden_names::async_io_sender<::nstd::net::hidden_names::async_write_some::operation<Socket, CBS>>(
             socket.native_handle(), buffer
             );
     }

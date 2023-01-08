@@ -167,6 +167,8 @@ list(APPEND kuhllib_xexecutor_components
 )
 
 list(APPEND kuhllib_file_components
+    src/nstd/file
+    src/nstd/file/async_io
     src/nstd/file/context
     src/nstd/file/descriptor
     src/nstd/file/io_base
@@ -178,6 +180,7 @@ list(APPEND kuhllib_file_components
     src/nstd/file/read
     src/nstd/file/ring
     src/nstd/file/ring_context
+    src/nstd/file/stream
     src/nstd/file/test_context
 )
 
@@ -244,7 +247,6 @@ list(APPEND kuhllib_memory_components
 list(APPEND kuhllib_net_components
     src/nstd/net/async_accept
     src/nstd/net/async_connect
-    src/nstd/net/async_io
     src/nstd/net/async_read_some
     src/nstd/net/async_receive
     src/nstd/net/async_receive_from
@@ -267,6 +269,7 @@ list(APPEND kuhllib_net_components
     src/nstd/net/ip/types
     src/nstd/net/netfwd
     src/nstd/net/scope
+    src/nstd/net/socket
     src/nstd/net/socket_base
 )
 
@@ -412,6 +415,7 @@ list(APPEND kuhllib_examples
     echo_server
     es
     simple_echo_server
+    udp-client
     udp-es
 )
 foreach(example ${kuhllib_examples})

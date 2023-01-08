@@ -44,6 +44,10 @@ namespace nstd::net {
         -> mutable_buffer const*;
     auto buffer_sequence_end(mutable_buffer const&) noexcept
         -> mutable_buffer const*;
+    auto buffer_sequence_begin(mutable_buffer&) noexcept
+        -> mutable_buffer*;
+    auto buffer_sequence_end(mutable_buffer&) noexcept
+        -> mutable_buffer*;
 
     auto buffer(void*, ::std::size_t) noexcept
         -> mutable_buffer;
@@ -142,6 +146,18 @@ inline auto nstd::net::buffer_sequence_begin(mutable_buffer const& buffer) noexc
 
 inline auto nstd::net::buffer_sequence_end(mutable_buffer const& buffer) noexcept
     -> ::nstd::net::mutable_buffer const*
+{
+    return ::nstd::net::buffer_sequence_begin(buffer) + 1;
+}
+
+inline auto nstd::net::buffer_sequence_begin(mutable_buffer& buffer) noexcept
+    -> ::nstd::net::mutable_buffer*
+{
+    return ::nstd::memory::addressof(buffer);
+}
+
+inline auto nstd::net::buffer_sequence_end(mutable_buffer& buffer) noexcept
+    -> ::nstd::net::mutable_buffer*
 {
     return ::nstd::net::buffer_sequence_begin(buffer) + 1;
 }

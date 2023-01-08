@@ -26,9 +26,12 @@
 #ifndef INCLUDED_NSTD_NET_ASYNC_READ_SOME
 #define INCLUDED_NSTD_NET_ASYNC_READ_SOME
 
-#include "nstd/net/async_io.hpp"
+#include "nstd/file/async_io.hpp"
+#include "nstd/net/socket.hpp"
 #include "nstd/net/io_context.hpp"
 #include "nstd/execution/sender.hpp"
+#include "nstd/execution/set_error.hpp"
+#include "nstd/execution/set_stopped.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/buffer/mutable_buffer.hpp"
 #include "nstd/utility/move.hpp"
@@ -38,14 +41,15 @@
 // ----------------------------------------------------------------------------
 
 namespace nstd::net::hidden_names::async_read_some {
-    template <typename Socket, typename MBS> struct operation;
+    template <typename Socket, typename MBS> struct socket_operation;
+    template <typename Socket, typename MBS> struct stream_operation;
     struct cpo;
 }
 
 // ----------------------------------------------------------------------------
 
 template <typename Socket, typename MBS>
-struct nstd::net::hidden_names::async_read_some::operation {
+struct nstd::net::hidden_names::async_read_some::socket_operation {
     using completion_signature = ::nstd::execution::set_value_t(int);
 
     typename Socket::native_handle_type  d_handle;
@@ -76,10 +80,46 @@ struct nstd::net::hidden_names::async_read_some::operation {
 
 // ----------------------------------------------------------------------------
 
+template <typename Stream, typename MBS>
+struct nstd::net::hidden_names::async_read_some::stream_operation {
+    using completion_signature = ::nstd::execution::set_value_t(int);
+
+    typename Stream::native_handle_type      d_handle;
+    ::nstd::type_traits::remove_cvref_t<MBS> d_buffer;
+    struct state {
+    };
+    auto start(::nstd::net::io_context::scheduler_type scheduler, state&, ::nstd::file::context::io_base* cont) -> void{
+        iovec* iov = reinterpret_cast<::iovec*>(&*::nstd::net::buffer_sequence_begin(this->d_buffer));
+        ::std::size_t length = ::std::distance(::nstd::net::buffer_sequence_begin(this->d_buffer), 
+                                               ::nstd::net::buffer_sequence_end(this->d_buffer)); 
+        scheduler.read(this->d_handle, iov, length, cont);
+    }
+    template <::nstd::execution::receiver Receiver>
+    auto complete(int32_t rc, uint32_t, bool cancelled, state&, Receiver& receiver) -> void {
+        if (cancelled) {
+            ::nstd::execution::set_stopped(::nstd::utility::move(receiver));
+        }
+        else if (rc < 0) {
+            ::nstd::execution::set_error(::nstd::utility::move(receiver), ::std::error_code(-rc, std::system_category()));
+        }
+        else {
+            ::nstd::execution::set_value(::nstd::utility::move(receiver), rc);
+        }
+    }
+};
+
+// ----------------------------------------------------------------------------
+
 struct nstd::net::hidden_names::async_read_some::cpo {
-    template <typename Socket, typename MBS>
+    template <::nstd::net::socket Socket, typename MBS>
     friend auto tag_invoke(cpo, Socket& socket, MBS const& buffer) {
-        return nstd::net::hidden_names::async_io_sender<::nstd::net::hidden_names::async_read_some::operation<Socket, MBS>>(
+        return nstd::file::hidden_names::async_io_sender<::nstd::net::hidden_names::async_read_some::socket_operation<Socket, MBS>>(
+            socket.native_handle(), buffer
+            );
+    }
+    template <typename Stream, typename MBS>
+    friend auto tag_invoke(cpo, Stream& socket, MBS const& buffer) {
+        return nstd::file::hidden_names::async_io_sender<::nstd::net::hidden_names::async_read_some::stream_operation<Stream, MBS>>(
             socket.native_handle(), buffer
             );
     }

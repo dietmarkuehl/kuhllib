@@ -28,6 +28,7 @@
 
 #include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/get_env.hpp"
+#include "nstd/execution/get_scheduler.hpp"
 #include "nstd/execution/get_stop_token.hpp"
 #include "nstd/execution/just.hpp"
 #include "nstd/execution/receiver.hpp"
@@ -149,6 +150,9 @@ template <::nstd::execution::receiver Receiver, typename Error>
 struct nstd::hidden_names::when_all::environment {
     ::nstd::hidden_names::when_all::state_base<Receiver, Error>& d_state;
 
+    friend auto tag_invoke(::nstd::execution::get_scheduler_t const&, environment const& self) noexcept {
+        return ::nstd::execution::get_scheduler(::nstd::execution::get_env(self.d_state.d_receiver));
+    }
     friend auto tag_invoke(::nstd::execution::get_stop_token_t const&, environment const& self) noexcept
         -> ::nstd::stop_token_ns::in_place_stop_token {
         return self.d_state.d_stop_source.token();
