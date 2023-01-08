@@ -39,6 +39,7 @@
 #include "nstd/execution/start.hpp"
 #include "nstd/file/context.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
+#include "nstd/utility/exchange.hpp"
 #include "nstd/utility/forward.hpp"
 #include "nstd/utility/move.hpp"
 
@@ -47,7 +48,6 @@
 #include <mutex>
 #include <optional>
 #include <system_error>
-#include <utility>
 #include <iostream>
 
 // ----------------------------------------------------------------------------
@@ -71,7 +71,7 @@ namespace nstd::file::hidden_names {
             }  
             cancel(cancel&& other)
                 : ::nstd::file::context::io_base()
-                , d_state(::std::exchange(other.d_state, nullptr)) {
+                , d_state(::nstd::utility::exchange(other.d_state, nullptr)) {
             }
             cancel(cancel const&) = delete;
             ~cancel() {

@@ -92,13 +92,13 @@ static KT::testcase const tests[] = {
     KT::expect_success("net::ip::tcp::v4() config", []{
             return AF_INET     == NI::tcp::v4().family()
                 && SOCK_STREAM == NI::tcp::v4().type()
-                && 0           == NI::tcp::v4().protocol()
+                && IPPROTO_TCP == NI::tcp::v4().protocol()
                 ;
         }),
     KT::expect_success("net::ip::tcp::v6() config", []{
             return AF_INET6    == NI::tcp::v6().family()
                 && SOCK_STREAM == NI::tcp::v6().type()
-                && 0           == NI::tcp::v6().protocol()
+                && IPPROTO_TCP == NI::tcp::v6().protocol()
                 ;
         }),
 };

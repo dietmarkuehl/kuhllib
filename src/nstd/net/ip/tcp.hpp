@@ -59,7 +59,7 @@ public:
 
     constexpr auto family() const noexcept -> int { return this->d_family; }
     constexpr auto type() const noexcept -> int { return SOCK_STREAM; }
-    constexpr auto protocol() const noexcept -> int { return 0; }
+    constexpr auto protocol() const noexcept -> int { return IPPROTO_TCP; }
     constexpr auto operator== (tcp const&) const noexcept -> bool = default;
 };
 

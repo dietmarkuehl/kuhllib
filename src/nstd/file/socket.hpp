@@ -30,6 +30,7 @@
 
 #include <cstddef>
 #ifndef _MSC_VER
+#    include <netinet/in.h>
 #    include <sys/socket.h>
 #    include <sys/types.h>
 #    include <sys/uio.h>

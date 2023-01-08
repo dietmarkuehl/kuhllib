@@ -209,6 +209,7 @@ list(APPEND kuhllib_hidden_components
     src/nstd/hidden_names/decayed_tuple
     src/nstd/hidden_names/filter_completions
     src/nstd/hidden_names/is_instance_of
+    src/nstd/hidden_names/log_completion
     src/nstd/hidden_names/merge_completion_signatures
     src/nstd/hidden_names/message_flags
     src/nstd/hidden_names/movable_value
