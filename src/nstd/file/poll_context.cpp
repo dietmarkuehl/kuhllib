@@ -364,49 +364,6 @@ auto NF::poll_context::do_open_at(int fd, char const* name, int flags, NF::conte
     continuation->result(rc < 0? -errno: rc, 0);
 }
 
-auto NF::poll_context::do_recvfrom(native_handle_type fd, void* buffer, ::std::size_t length, int flags, ::sockaddr* addr, ::socklen_t* addrlen, io_base* continuation) -> void
-{
-    this->submit(fd, POLLIN, [fd, buffer, length, flags, addr, addrlen, continuation]{
-        auto rc{::recvfrom(fd, buffer, length, flags | MSG_DONTWAIT, addr, addrlen)};
-        if (0 <= rc) {
-            continuation->result(rc, 0);
-            return true;
-        }
-        switch (errno) {
-        default:
-            continuation->result(-errno, 0);
-            return true;
-        case EAGAIN:
-        case (EAGAIN != EWOULDBLOCK? EWOULDBLOCK: 0):
-        case EINTR:
-            return false;
-        }
-    },
-    continuation);
-}
-
-auto NF::poll_context::do_sendto(native_handle_type fd, void const* buffer, ::std::size_t length, int flags, ::sockaddr* addr, ::socklen_t addrlen, io_base* continuation) -> void
-{
-    this->submit(fd, POLLOUT, [fd, buffer, length, flags, addr, addrlen, continuation]{
-        auto rc{::sendto(fd, buffer, length, flags | MSG_DONTWAIT, addr, addrlen)};
-        if (0 <= rc) {
-            continuation->result(rc, 0);
-            return true;
-        }
-        switch (errno) {
-        default:
-            continuation->result(errno, 0);
-            return true;
-        case EAGAIN:
-        case (EAGAIN != EWOULDBLOCK? EWOULDBLOCK: 0):
-        case EINTR:
-            return false;
-        }
-    },
-    continuation);
-
-}
-
 // ----------------------------------------------------------------------------
 
 namespace nstd::file {

@@ -141,12 +141,6 @@ public:
     auto sendmsg(::nstd::file::context::native_handle_type fd, ::msghdr const* msg, int flags, ::nstd::file::context::io_base* cont) -> void {
         this->d_context->hidden_context()->sendmsg(fd, msg, flags, cont);
     }
-    auto recvfrom(::nstd::file::context::native_handle_type fd, void* buffer, std::size_t length, int flags, ::sockaddr* addr, ::socklen_t* addrlen, ::nstd::file::context::io_base* cont) -> void {
-        this->d_context->hidden_context()->recvfrom(fd, buffer, length, flags, addr, addrlen, cont);
-    }
-    auto sendto(::nstd::file::context::native_handle_type fd, void const* buffer, std::size_t length, int flags, ::sockaddr* addr, ::socklen_t addrlen, ::nstd::file::context::io_base* cont) -> void {
-        this->d_context->hidden_context()->sendto(fd, buffer, length, flags, addr, addrlen, cont);
-    }
 
     friend auto tag_invoke(::nstd::execution::schedule_t, scheduler_type const& scheduler) -> sender;
 };

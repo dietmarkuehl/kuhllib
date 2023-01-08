@@ -156,8 +156,8 @@ public:
     template <typename Callable>
     struct callback_type
         : ::nstd::stop_token_ns::in_place_stop_callback<Callable> {
-        callback_type(in_place_stop_token token, Callable callback)
-            : ::nstd::stop_token_ns::in_place_stop_callback<Callable>(token, callback) {
+        callback_type(in_place_stop_token token, Callable&& callback)
+            : ::nstd::stop_token_ns::in_place_stop_callback<Callable>(token, ::nstd::utility::move(callback)) {
         }
     };
 

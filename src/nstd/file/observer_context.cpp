@@ -173,19 +173,3 @@ auto nstd::file::observer_context::do_open_at(int fd, char const* path, int flag
         ::std::cout << "< open_at(" << fd << "): rc=" << rc << ", flags=" << flags << "\n";
     }));
 }
-
-auto nstd::file::observer_context::do_recvfrom(native_handle_type fd, void* buffer, ::std::size_t length, int flags, ::sockaddr* addr, ::socklen_t* addrlen, io_base* cont) -> void
-{
-    ::std::cout << "> recvfrom(" << fd << ", " << buffer << ", " << length << ", " << std::hex << flags << std::dec << ", " << addr << ", " << addrlen << ")\n";
-    this->d_context.recvfrom(fd, buffer, length, flags, addr, addrlen, this->add(cont, [=](int size, int){
-        ::std::cout << "< recvfrom(" << fd << ", " << buffer << ", " << length << ", " << std::hex << flags << std::dec << ", " << addr << ", " << addrlen << ")->" << size << "\n";
-    }));
-}
-
-auto nstd::file::observer_context::do_sendto(native_handle_type fd, void const* buffer, ::std::size_t length, int flags, ::sockaddr* addr, ::socklen_t addrlen, io_base* cont) -> void
-{
-    ::std::cout << "> sendto(" << fd << ", " << buffer << ", " << length << ", " << std::hex << flags << std::dec << ", " << addr << ", " << addrlen << ")\n";
-    this->d_context.sendto(fd, buffer, length, flags, addr, addrlen, this->add(cont, [=](int size, int){
-        ::std::cout << "< sendto(" << fd << ", " << buffer << ", " << length << ", " << std::hex << flags << std::dec << ", " << addr << ", " << addrlen << ")->" << size << "\n";
-    }));
-}

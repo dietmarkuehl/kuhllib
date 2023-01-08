@@ -64,8 +64,6 @@ protected:
     virtual auto do_read(int, ::iovec*, ::std::size_t, io_base*) -> void = 0;
     virtual auto do_recvmsg(native_handle_type, ::msghdr*, int, io_base*) -> void = 0;
     virtual auto do_sendmsg(native_handle_type, ::msghdr const*, int, io_base*) -> void = 0;
-    virtual auto do_recvfrom(native_handle_type, void*, ::std::size_t, int, ::sockaddr*, ::socklen_t*, io_base*) -> void = 0;
-    virtual auto do_sendto(native_handle_type, void const*, ::std::size_t, int, ::sockaddr*, ::socklen_t, io_base*) -> void = 0;
     virtual auto do_timer(time_spec*, io_base*) -> void = 0;
     //-dk:TODO virtual auto do_write(int, ::iovec*, ::std::size_t, io_base*) -> void = 0;
 
@@ -87,8 +85,6 @@ public:
     auto recvmsg(native_handle_type, ::msghdr*, int, io_base*) -> void;
     auto read(native_handle_type, ::iovec*, ::std::size_t, io_base*) -> void;
     auto open_at(int, char const*, int, io_base*) -> void;
-    auto recvfrom(native_handle_type, void*, ::std::size_t, int, ::sockaddr*, ::socklen_t*, io_base*) -> void;
-    auto sendto(native_handle_type, void const*, ::std::size_t, int, ::sockaddr*, ::socklen_t, io_base*) -> void;
 };
 
 // ----------------------------------------------------------------------------
@@ -171,15 +167,6 @@ inline auto nstd::file::context::open_at(int fd,
     this->do_open_at(fd, name, flags, handler);
 }
 
-inline auto nstd::file::context::recvfrom(native_handle_type fd, void* buffer, ::std::size_t length, int flags, ::sockaddr* addr, ::socklen_t* addrlen, io_base* handler) -> void
-{
-    this->do_recvfrom(fd, buffer, length, flags, addr, addrlen, handler);
-}
-
-inline auto nstd::file::context::sendto(native_handle_type fd, void const* buffer, ::std::size_t length, int flags, ::sockaddr* addr, ::socklen_t addrlen, io_base* handler) -> void
-{
-    this->do_sendto(fd, buffer, length, flags, addr, addrlen, handler);
-}
 // ----------------------------------------------------------------------------
 
 #endif

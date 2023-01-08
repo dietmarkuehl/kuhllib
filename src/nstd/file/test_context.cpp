@@ -107,16 +107,6 @@ auto NF::test_context::do_open_at(int fd, char const* path, int flags, io_base* 
     this->on_open_at(fd, path, flags, cont);
 }
 
-auto NF::test_context::do_recvfrom(native_handle_type fd, void* buffer, ::std::size_t length, int flags, ::sockaddr* addr, ::socklen_t* addrlen, io_base* cont) -> void
-{
-    this->on_recvfrom(fd, buffer, length, flags, addr, addrlen, cont);
-}
-
-auto NF::test_context::do_sendto(native_handle_type fd, void const* buffer, ::std::size_t length, int flags, ::sockaddr* addr, ::socklen_t addrlen, io_base* cont) -> void
-{
-    this->on_sendto(fd, buffer, length, flags, addr, addrlen, cont);
-}
-
 // ----------------------------------------------------------------------------
 
 auto NF::test_context::make_ready(int rc, int flags, ::nstd::file::context::io_base* cont) -> void

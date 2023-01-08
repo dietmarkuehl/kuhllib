@@ -318,14 +318,6 @@ auto NF::ring_context::do_open_at(int fd,
         });
 }
 
-auto NF::ring_context::do_recvfrom(native_handle_type, void*, ::std::size_t, int, ::sockaddr*, ::socklen_t*, io_base*) -> void
-{
-}
-
-auto NF::ring_context::do_sendto(native_handle_type, void const*, ::std::size_t, int, ::sockaddr*, ::socklen_t, io_base*) -> void
-{
-}
-
 #else
 
 namespace nstd::file {

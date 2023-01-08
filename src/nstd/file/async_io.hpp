@@ -47,6 +47,7 @@
 #include <mutex>
 #include <optional>
 #include <system_error>
+#include <utility>
 #include <iostream>
 
 // ----------------------------------------------------------------------------
@@ -68,8 +69,15 @@ namespace nstd::file::hidden_names {
                 , d_state(state) {
                 ::std::cout << "registering cancel callback\n";
             }  
+            cancel(cancel&& other)
+                : ::nstd::file::context::io_base()
+                , d_state(::std::exchange(other.d_state, nullptr)) {
+            }
+            cancel(cancel const&) = delete;
             ~cancel() {
-                ::std::cout << "deregistering cancel callback\n";
+                if (this->d_state) {
+                    ::std::cout << "deregistering cancel callback\n";
+                }
             }
             auto operator()() noexcept -> void {
                 std::cout << "engaging cancel\n" << ::std::flush;
