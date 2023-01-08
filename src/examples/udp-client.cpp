@@ -67,7 +67,7 @@ int main() {
     scope.start(
         EX::repeat_effect(
               NN::async_receive_from(socket, NN::buffer(datagram))
-            | HN::log_completion("async_receive_from")
+            | HN::log_completion("----> async_receive_from")
             | EX::then([&datagram](int n, auto endpoint){
                 ::std::string_view sv(datagram, 0 < n && datagram[n-1] == '\n'? n-1: n);
                 ::std::cout << "received='" << sv << "' from " << endpoint << "\n";

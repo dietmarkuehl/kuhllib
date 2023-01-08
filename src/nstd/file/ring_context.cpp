@@ -147,9 +147,10 @@ auto NF::ring_context::intern_submit(::std::size_t) -> void
 
 auto NF::ring_context::run_one() -> NF::ring_context::count_type
 {
-    //-dk:TODO remove ::std::cout << "ring_context::run_one()\n";
+    if (0u == this->d_outstanding) {
+        return 0u;
+    }
     io_uring_enter(this->d_fd.get(), 0u, 1u, IORING_ENTER_GETEVENTS, ::sigset_t{});
-    //-dk:TODO remove ::std::cout << "ring_context::run_one() done\n";
     return process_result();
 }
 
@@ -158,11 +159,10 @@ auto NF::ring_context::run()
 {
     NF::ring_context::count_type rc{};
 
-    do
+    while (0u != this->d_outstanding)
     {
         rc += this->run_one();
     }
-    while (0u != this->d_outstanding);
     
     return rc;
 }
@@ -171,7 +171,7 @@ auto NF::ring_context::run()
 
 auto NF::ring_context::do_run_one() -> NF::ring_context::count_type
 {
-    return this->run_one();
+    return this->NF::ring_context::run_one();
 }
 
 // ----------------------------------------------------------------------------
