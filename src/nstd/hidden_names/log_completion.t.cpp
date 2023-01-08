@@ -100,13 +100,13 @@ static KT::testcase const tests[] = {
         }),
     KT::expect_success("set_error without message", []{
             ::std::ostringstream out;
-            TR::sync_wait(HN::log_completion(EX::just_error(0), out));
+            TR::sync_wait(HN::log_completion(EX::just_error(0), out) | EX::upon_error([](auto&&){}));
             return out.str() == "set_error(E)\n"
                 ;
         }),
     KT::expect_success("set_error with message", []{
             ::std::ostringstream out;
-            TR::sync_wait(HN::log_completion(EX::just_error(0), "foo", out));
+            TR::sync_wait(HN::log_completion(EX::just_error(0), "foo", out) | EX::upon_error([](auto&&){}));
             return out.str() == "foo set_error(E)\n"
                 ;
         }),

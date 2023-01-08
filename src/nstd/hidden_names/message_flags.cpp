@@ -32,7 +32,8 @@ namespace nstd::hidden_names {
     int message_flags_dummy{0};
 }
 
-auto nstd::hidden_names::operator<< (::std::ostream& out, ::nstd::hidden_names::message_flags flags)
+auto nstd::hidden_names::message_flags_hidden::operator<< (::std::ostream& out,
+                                                           ::nstd::hidden_names::message_flags_hidden::message_flags flags)
     -> ::std::ostream&
 {
     char const* sep("");

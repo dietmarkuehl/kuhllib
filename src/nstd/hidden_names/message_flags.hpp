@@ -32,7 +32,7 @@
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::hidden_names {
+namespace nstd::hidden_names::message_flags_hidden {
     enum class message_flags: unsigned int {
         peek = MSG_PEEK,
         out_of_band = MSG_OOB,
@@ -67,6 +67,10 @@ namespace nstd::hidden_names {
     }
 
     auto operator<< (::std::ostream&, message_flags) -> ::std::ostream&;
+}
+
+namespace nstd::hidden_names {
+    using message_flags = ::nstd::hidden_names::message_flags_hidden::message_flags;
 }
 
 // ----------------------------------------------------------------------------
