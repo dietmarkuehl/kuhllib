@@ -48,7 +48,6 @@
 #include <mutex>
 #include <optional>
 #include <system_error>
-#include <iostream>
 
 // ----------------------------------------------------------------------------
 
@@ -67,7 +66,6 @@ namespace nstd::file::hidden_names {
             cancel(async_io_state* state)
                 : ::nstd::file::context::io_base()
                 , d_state(state) {
-                ::std::cout << "registering cancel callback\n";
             }  
             cancel(cancel&& other)
                 : ::nstd::file::context::io_base()
@@ -76,11 +74,9 @@ namespace nstd::file::hidden_names {
             cancel(cancel const&) = delete;
             ~cancel() {
                 if (this->d_state) {
-                    ::std::cout << "deregistering cancel callback\n";
                 }
             }
             auto operator()() noexcept -> void {
-                std::cout << "engaging cancel\n" << ::std::flush;
                 if (++this->d_state->d_outstanding == 2u) {
                     auto const& env{::nstd::execution::get_env(this->d_state->d_receiver)};
                     auto        scheduler{::nstd::execution::get_scheduler(env)};

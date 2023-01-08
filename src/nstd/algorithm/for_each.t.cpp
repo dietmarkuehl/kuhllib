@@ -35,7 +35,6 @@
 #include "kuhl/test.hpp"
 #include <vector>
 #include <cstddef>
-#include <iostream>
 
 namespace NA = nstd::algorithm;
 namespace NC = nstd::cursor;

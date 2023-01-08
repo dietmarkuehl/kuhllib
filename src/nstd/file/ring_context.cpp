@@ -31,7 +31,6 @@
 #include <functional>
 #include <stdexcept>
 #include <type_traits>
-#include <iostream> //-dk:TODO
 #include <cstring> //-dk:TODO
 #include <cerrno>
 #include <unistd.h>
@@ -44,7 +43,6 @@
 #include <sys/mman.h>
 #include <sys/uio.h>
 #include <fcntl.h>
-#include <iostream>
 
 namespace NF = ::nstd::file;
 
@@ -125,14 +123,12 @@ auto NF::ring_context::process_result() -> ::std::size_t
     auto head(this->d_completion.head());
     auto tail(this->d_completion.tail());
     if (head != tail) {
-        //-dk:TODO remove ::std::cout << "ring_context::process_result() got a result\n";
         io_uring_cqe result{this->d_completion.get(head)};
         this->d_completion.advance_head();
         --this->d_outstanding;
         reinterpret_cast<NF::ring_context::io_base*>(result.user_data)->result(result.res, result.flags);
         return 1u;
     }
-    //-dk:TODO remove ::std::cout << "ring_context::process_result() didn't get a result\n";
     return 0u;
 }
 
@@ -140,9 +136,7 @@ auto NF::ring_context::process_result() -> ::std::size_t
 
 auto NF::ring_context::intern_submit(::std::size_t) -> void
 {
-    //-dk:TODO remove ::std::cout << "ring_context::intern_submit()\n";
     io_uring_enter(this->d_fd.get(), 1u, 0u, 0u, ::sigset_t{});
-    //-dk:TODO remove ::std::cout << "ring_context::inter_submit() done\n";
 }
 
 auto NF::ring_context::run_one() -> NF::ring_context::count_type
@@ -200,7 +194,6 @@ auto NF::ring_context::do_timer(::nstd::file::context::time_spec* time, io_base*
 
 auto NF::ring_context::do_cancel(io_base* to_cancel, io_base* continuation) -> void
 {
-    ::std::cout << "ring_context::do_cancel\n" << ::std::flush;
     this->submit([=](::io_uring_sqe& element){
         element = ::io_uring_sqe{};
         element.opcode    = IORING_OP_ASYNC_CANCEL;

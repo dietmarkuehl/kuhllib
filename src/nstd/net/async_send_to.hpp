@@ -39,7 +39,6 @@
 #include "nstd/net/io_context.hpp"
 
 #include <system_error>
-#include <iostream>
 
 // ----------------------------------------------------------------------------
 
@@ -76,7 +75,6 @@ struct nstd::net::hidden_names::async_send_to::operation {
     }
     template <::nstd::execution::receiver Receiver>
     auto complete(int32_t rc, uint32_t, bool cancelled, state&, Receiver& receiver) -> void {
-        ::std::cout << "send_to complete(rc=" << rc << ", cancelled=" << ::std::boolalpha << cancelled << ")\n"; 
         if (cancelled) {
             ::nstd::execution::set_stopped(::nstd::utility::move(receiver));
         }

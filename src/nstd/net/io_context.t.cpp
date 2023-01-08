@@ -30,7 +30,6 @@
 #include "nstd/utility/move.hpp"
 #include <chrono>
 #include <type_traits>
-#include <iostream>
 #include "kuhl/test.hpp"
 
 namespace NN = ::nstd::net;

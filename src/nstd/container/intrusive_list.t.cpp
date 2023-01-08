@@ -28,7 +28,6 @@
 #include "kuhl/test.hpp"
 #include <algorithm>
 #include <array>
-#include <iostream>
 
 namespace NC = ::nstd::container;
 namespace UT = ::nstd::utility;

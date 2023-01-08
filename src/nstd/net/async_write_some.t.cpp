@@ -33,7 +33,6 @@
 #include <nstd/net/basic_stream_socket.hpp>
 #include <nstd/net/ip/tcp.hpp>
 #include "kuhl/test.hpp"
-#include <iostream>
 
 namespace EX = ::nstd::execution;
 namespace NF = ::nstd::file;

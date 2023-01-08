@@ -45,7 +45,6 @@ int read(int, char*, int) { return 0; }
 #    include <unistd.h>
 #    include <sys/uio.h>
 #endif
-#include <iostream> //-dk:TODO remove
 
 // ----------------------------------------------------------------------------
 
@@ -70,9 +69,6 @@ namespace nstd::file {
         read_receiver(read_receiver&&) = default;
 
         auto do_result(::std::int32_t res, ::uint32_t) -> void override {
-            ::std::cout << "read::do_result(res=" << res << ", ...)\n";
-            ::std::cout.write(reinterpret_cast<char const*>(+this->d_buffer), res);
-            ::std::cout << "\n";
             if (-1 <  res) {
                 ::nstd::execution::set_value(::nstd::utility::move(this->d_receiver),
                                              this->d_buffer,
@@ -85,19 +81,15 @@ namespace nstd::file {
         }
 
         friend auto tag_invoke(::nstd::execution::set_value_t, read_receiver&& r, ::nstd::file::descriptor&& fd) noexcept -> void {
-            ::std::cout << "read: rvalue set_value\n";
             r.d_fd = ::nstd::utility::move(fd);
             r.submit(r.d_fd.get());
         }
         friend auto tag_invoke(::nstd::execution::set_value_t, read_receiver&& r, ::nstd::file::descriptor const& fd) noexcept -> void {
-            ::std::cout << "read: lvalue set_value\n";
             r.submit(fd.get());
         }
         auto submit(int fd) {
             this->d_context->read(fd, this->d_iovec, 1u, this);
             this->d_iovec[0] = ::iovec{ .iov_base = this->d_buffer, .iov_len = sizeof(this->d_buffer) };
-            ::std::cout << "buffer=" << +this->d_buffer << " "
-                        << "iovec=" << this->d_iovec[0].iov_base << "/" << this->d_iovec[0].iov_len << "\n";
         }
         friend auto tag_invoke(::nstd::execution::set_error_t, read_receiver&& r, auto&& err) noexcept -> void {
             ::nstd::execution::set_error(::nstd::utility::move(r.d_receiver),

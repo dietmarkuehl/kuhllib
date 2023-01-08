@@ -38,11 +38,11 @@
 
 #include <coroutine>
 #include <exception>
-#include <iostream>
 #include <memory>
 #include <optional>
 #include <type_traits>
 #include <utility>
+#include <cassert>
 
 // ----------------------------------------------------------------------------
 
@@ -193,10 +193,10 @@ struct nstd::execution::task {
                 }
                 template <typename Error>
                 friend auto tag_invoke(::nstd::execution::set_error_t, receiver&&, Error&& ) noexcept -> void {
-                    std::cout << "awaitable::receiver::set_error_t\n";
+                    assert(nullptr == "awaitable::receiver::set_error_t");
                 }
                 friend auto tag_invoke(::nstd::execution::set_stopped_t, receiver&&) noexcept -> void {
-                    std::cout << "awaitable::receiver::set_stopped_t\n";
+                    assert(nullptr == "awaitable::receiver::set_stopped_t");
                 }
             };
 

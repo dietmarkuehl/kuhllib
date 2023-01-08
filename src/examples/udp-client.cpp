@@ -25,8 +25,6 @@
 
 #include "nstd/execution.hpp"
 #include "nstd/file.hpp"
-#include "nstd/hidden_names/log_completion.hpp"
-#include "nstd/hidden_names/print_completion_signatures.hpp"
 #include "nstd/net.hpp"
 #include "nstd/thread/sync_wait.hpp"
 #include <iostream>
@@ -56,25 +54,18 @@ int main() {
                     std::cout << "stopping client\n";
                     stop();
                 }
-                return NN::async_send_to(socket, NN::buffer(buffer, n), endpoint)
-                    |  HN::log_completion("--> async_send_to(stdin)")
-                    ;
+                return NN::async_send_to(socket, NN::buffer(buffer, n), endpoint);
             })
-            | HN::log_completion("--> let_value(stdin)")
         )
-        | HN::log_completion("--> repeat_effect(stdin)")
     );
     scope.start(
         EX::repeat_effect(
               NN::async_receive_from(socket, NN::buffer(datagram))
-            | HN::log_completion("----> async_receive_from")
             | EX::then([&datagram](int n, auto endpoint){
                 ::std::string_view sv(datagram, 0 < n && datagram[n-1] == '\n'? n-1: n);
                 ::std::cout << "received='" << sv << "' from " << endpoint << "\n";
             })
-            | HN::log_completion("async_receive_from/then")
         )
-        | HN::log_completion("--> repeat_effect(socket)")
     );
 
     scope.run();

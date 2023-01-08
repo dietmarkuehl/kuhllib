@@ -45,7 +45,6 @@
 #ifndef _MSC_VER
 #    include <netinet/ip.h>
 #endif
-#include <iostream> //-dk:TODO remove
 
 // ----------------------------------------------------------------------------
 

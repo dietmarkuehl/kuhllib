@@ -38,10 +38,8 @@
 #include "nstd/net/io_context.hpp"
 #include "nstd/stop_token/in_place_stop_token.hpp"
 #include <atomic>
-#include <iostream>
 #include <exception>
 #include <system_error>
-#include <cstring>
 
 // ----------------------------------------------------------------------------
 
@@ -52,6 +50,12 @@ namespace nstd::net {
 // ----------------------------------------------------------------------------
 
 class nstd::net::scope {
+private:
+    struct job_base {
+        virtual ~job_base() = default;
+    };
+
+public:
     struct env {
         ::nstd::net::scope* d_scope;
 
@@ -65,12 +69,13 @@ class nstd::net::scope {
             return self.d_scope->stop_token();
         }
     };
-    struct job_base {
-        virtual ~job_base() = default;
-    };
     struct receiver {
         job_base*           d_job;
         ::nstd::net::scope* d_scope;
+
+        auto handle_set_error(::std::exception_ptr) -> void;
+        auto handle_set_error(::std::error_code) -> void;
+        auto handle_set_stopped() -> void;
 
         friend auto tag_invoke(::nstd::execution::get_env_t, receiver const& self) noexcept
             -> ::nstd::net::scope::env
@@ -86,34 +91,24 @@ class nstd::net::scope {
         friend auto tag_invoke(::nstd::execution::set_error_t, receiver&& self, std::exception_ptr error) noexcept
             -> void
         {
-            try { ::std::rethrow_exception(error); }
-            catch (std::system_error const& ex) {
-                ::std::cout << "scope::set_error(exception_ptr): " << ::std::strerror(ex.code().value()) << "\n";
-            }
-            catch (std::exception const& ex) {
-                ::std::cout << "scope::set_error(exception_ptr): " << ex.what() << "\n";
-            }
+            self.handle_set_error(error);
             delete self.d_job;
         }
         friend auto tag_invoke(::nstd::execution::set_error_t, receiver&& self, std::error_code error) noexcept
             -> void
         {
-            ::std::cout << "scope::set_error(error_code): " << ::std::strerror(error.value()) << "/" << error << "\n";
-            delete self.d_job;
-        }
-        friend auto tag_invoke(::nstd::execution::set_error_t, receiver&& self, auto&& error) noexcept
-            -> void
-            requires(not ::std::same_as<::nstd::type_traits::remove_cvref_t<decltype(error)>, ::std::error_code>)
-        {
-            ::std::cout << "scope::set_error(generic): " << error << " " << typeid(decltype(error)) << "\n";
+            self.handle_set_error(error);
             delete self.d_job;
         }
         friend auto tag_invoke(::nstd::execution::set_stopped_t, receiver&& self) noexcept
             -> void
         {
+            self.handle_set_stopped();
             delete self.d_job;
         }
     };
+
+private:
     template <typename Sender>
     struct job
         : ::nstd::net::scope::job_base
