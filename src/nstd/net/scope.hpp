@@ -137,7 +137,8 @@ public:
     template <::nstd::execution::sender Sender>
     auto start(Sender&&) -> void;
     auto stop() -> void;
-    auto run() -> void;
+    auto run() -> ::std::size_t;
+    auto run_one() -> ::std::size_t;
     auto stopped() const -> bool { return this->d_stopped; }
 
     auto scheduler() -> typename ::nstd::net::io_context::scheduler_type { return this->d_context.scheduler(); }

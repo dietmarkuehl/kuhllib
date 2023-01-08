@@ -39,7 +39,12 @@ auto nstd::net::scope::stop() -> void
     this->d_stop_source.stop();
 }
 
-auto nstd::net::scope::run() -> void
+auto nstd::net::scope::run_one() -> ::std::size_t
 {
-    this->d_context.run();
+    return this->d_context.run_one();
+}
+
+auto nstd::net::scope::run() -> ::std::size_t
+{
+    return this->d_context.run();
 }

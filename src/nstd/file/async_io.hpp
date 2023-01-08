@@ -111,11 +111,16 @@ namespace nstd::file::hidden_names {
             , d_callback{} {
         }
         friend void tag_invoke(::nstd::execution::start_t, async_io_state& self) noexcept {
-            auto env = nstd::execution::get_env(self.d_receiver);
-            auto scheduler = ::nstd::execution::get_scheduler(env);
-            self.d_callback.emplace(::nstd::execution::get_stop_token(env), cancel(&self));
-            ++self.d_outstanding;
-            self.d_operation.start(scheduler, self.d_state, &self);
+            auto&& env{::nstd::execution::get_env(self.d_receiver)};
+            if (::nstd::execution::get_stop_token(env).stop_requested()) {
+                ::nstd::execution::set_stopped(::nstd::utility::move(self.d_receiver));
+            }
+            else {
+                auto scheduler = ::nstd::execution::get_scheduler(env);
+                self.d_callback.emplace(::nstd::execution::get_stop_token(env), cancel(&self));
+                ++self.d_outstanding;
+                self.d_operation.start(scheduler, self.d_state, &self);
+            }
         }
 
         auto do_result(int32_t rc, uint32_t flags) -> void override {
