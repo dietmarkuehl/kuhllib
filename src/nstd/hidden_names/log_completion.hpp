@@ -26,9 +26,17 @@
 #ifndef INCLUDED_NSTD_HIDDEN_NAMES_LOG_COMPLETION
 #define INCLUDED_NSTD_HIDDEN_NAMES_LOG_COMPLETION
 
+#include "nstd/execution/connect.hpp"
+#include "nstd/execution/get_completion_signatures.hpp"
+#include "nstd/execution/get_env.hpp"
+#include "nstd/execution/receiver.hpp"
 #include "nstd/execution/sender.hpp"
-#include "nstd/execution/then.hpp"
+#include "nstd/execution/set_error.hpp"
+#include "nstd/execution/set_stopped.hpp"
+#include "nstd/execution/set_value.hpp"
 #include "nstd/utility/forward.hpp"
+#include "nstd/utility/move.hpp"
+
 #include <ostream>
 #include <string>
 

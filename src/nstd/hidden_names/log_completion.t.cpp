@@ -25,6 +25,7 @@
 
 #include "nstd/hidden_names/log_completion.hpp"
 #include "nstd/execution/just.hpp"
+#include "nstd/execution/then.hpp"
 #include "nstd/thread/sync_wait.hpp"
 #include "kuhl/test.hpp"
 #include <sstream>
