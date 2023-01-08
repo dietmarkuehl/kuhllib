@@ -49,24 +49,24 @@ int main() {
     NN::ip::basic_endpoint<NN::ip::udp>    endpoint(NN::ip::address_v4::any(), 12345);
 
     scope.start(
-        EX::when_all(
-            EX::repeat_effect(
-                  NN::async_read_some(stdin, NN::buffer(buffer))
-                | EX::let_value([&buffer, &endpoint, &socket, stop](int n){
-                    std::cout << "n=" << n << ": '" << ::std::string_view(buffer, n) << "'\n";
-                    if (n == 0 || ::std::string_view(buffer, n).starts_with("lstop")) {
-                        std::cout << "stopping client\n";
-                        stop();
-                    }
-                    return NN::async_send_to(socket, NN::buffer(buffer, n), endpoint);
-                })
-            ),
-            EX::repeat_effect(
-                  NN::async_receive_from(socket, NN::buffer(datagram))
-                | EX::then([&datagram](int n, auto endpoint){
-                    ::std::cout << "received from " << endpoint << ": '" << ::std::string_view(datagram, n) << "'\n";
-                })
-            )
+        EX::repeat_effect(
+              NN::async_read_some(stdin, NN::buffer(buffer))
+            | EX::let_value([&buffer, &endpoint, &socket, stop](int n){
+                if (n == 0 || ::std::string_view(buffer, n).starts_with("lstop")) {
+                    std::cout << "stopping client\n";
+                    stop();
+                }
+                return NN::async_send_to(socket, NN::buffer(buffer, n), endpoint);
+            })
+        )
+    );
+    scope.start(
+        EX::repeat_effect(
+              NN::async_receive_from(socket, NN::buffer(datagram))
+            | EX::then([&datagram](int n, auto endpoint){
+                ::std::string_view sv(datagram, 0 < n && datagram[n-1] == '\n'? n-1: n);
+                ::std::cout << "received='" << sv << "' from " << endpoint << "\n";
+            })
         )
     );
 
