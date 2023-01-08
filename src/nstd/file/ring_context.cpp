@@ -44,6 +44,7 @@
 #include <sys/mman.h>
 #include <sys/uio.h>
 #include <fcntl.h>
+#include <iostream>
 
 namespace NF = ::nstd::file;
 
@@ -199,6 +200,7 @@ auto NF::ring_context::do_timer(::nstd::file::context::time_spec* time, io_base*
 
 auto NF::ring_context::do_cancel(io_base* to_cancel, io_base* continuation) -> void
 {
+    ::std::cout << "ring_context::do_cancel\n" << ::std::flush;
     this->submit([=](::io_uring_sqe& element){
         element = ::io_uring_sqe{};
         element.opcode    = IORING_OP_ASYNC_CANCEL;
@@ -314,6 +316,14 @@ auto NF::ring_context::do_open_at(int fd,
         element.open_flags = flags;
         element.user_data  = reinterpret_cast<decltype(element.user_data)>(continuation);
         });
+}
+
+auto NF::ring_context::do_recvfrom(native_handle_type, void*, ::std::size_t, int, ::sockaddr*, ::socklen_t*, io_base*) -> void
+{
+}
+
+auto NF::ring_context::do_sendto(native_handle_type, void const*, ::std::size_t, int, ::sockaddr*, ::socklen_t, io_base*) -> void
+{
 }
 
 #else

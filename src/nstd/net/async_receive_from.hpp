@@ -39,6 +39,7 @@
 #include "nstd/net/io_context.hpp"
 
 #include <system_error>
+#include <iostream>
 
 // ----------------------------------------------------------------------------
 
@@ -55,18 +56,23 @@ struct nstd::net::hidden_names::async_receive_from::operation {
         = ::nstd::execution::set_value_t(::std::size_t, typename Socket::endpoint_type);
 
     typename Socket::native_handle_type     d_handle;
-    ::nstd::type_traits::remove_cvref_t<MB> d_buffer;
+    ::nstd::type_traits::remove_cvref_t<MB> d_buffers;
     ::nstd::hidden_names::message_flags     d_flags;
     struct state {
         ::sockaddr_storage d_address;
-        ::socklen_t        d_addrlen{sizeof(::sockaddr_storage)};
+        ::msghdr           d_msg{};
     };
     auto start(::nstd::net::io_context::scheduler_type scheduler, state& s, ::nstd::file::context::io_base* cont) -> void{
-        scheduler.recvfrom(this->d_handle, this->d_buffer.data(), this->d_buffer.size(), static_cast<int>(this->d_flags),
-                           reinterpret_cast<::sockaddr*>(&s.d_address), &s.d_addrlen, cont);
+        s.d_msg.msg_name    = &s.d_address;
+        s.d_msg.msg_namelen = sizeof(::sockaddr_storage);
+        s.d_msg.msg_iov     = reinterpret_cast<::iovec*>(&*::nstd::net::buffer_sequence_begin(this->d_buffers));
+        s.d_msg.msg_iovlen  = ::std::distance(::nstd::net::buffer_sequence_begin(this->d_buffers),
+                                              ::nstd::net::buffer_sequence_end(this->d_buffers));
+        scheduler.recvmsg(this->d_handle, &s.d_msg, static_cast<int>(this->d_flags), cont);
     }
     template <::nstd::execution::receiver Receiver>
     auto complete(int32_t rc, uint32_t, bool cancelled, state& s, Receiver& receiver) -> void {
+        ::std::cout << "receive_from complete(rc=" << rc << ", cancelled=" << ::std::boolalpha << cancelled << ")\n"; 
         if (cancelled) {
             ::nstd::execution::set_stopped(::nstd::utility::move(receiver));
         }
@@ -75,7 +81,7 @@ struct nstd::net::hidden_names::async_receive_from::operation {
         }
         else {
             typename Socket::endpoint_type endpoint;
-            endpoint.set_address(&s.d_address, s.d_addrlen);
+            endpoint.set_address(&s.d_address, s.d_msg.msg_namelen);
             ::nstd::execution::set_value(::nstd::utility::move(receiver), rc, endpoint);
         }
     }

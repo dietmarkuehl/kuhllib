@@ -39,6 +39,7 @@
 #include "nstd/net/io_context.hpp"
 
 #include <system_error>
+#include <iostream>
 
 // ----------------------------------------------------------------------------
 
@@ -55,20 +56,27 @@ struct nstd::net::hidden_names::async_send_to::operation {
         = ::nstd::execution::set_value_t(int);
 
     typename Socket::native_handle_type      d_handle;
-    ::nstd::type_traits::remove_cvref_t<CB> d_buffer;
+    ::nstd::type_traits::remove_cvref_t<CB> d_buffers;
     ::nstd::hidden_names::message_flags      d_flags;
     typename Socket::endpoint_type           d_endpoint;
 
     struct state {
         ::sockaddr_storage d_address;
+        ::msghdr           d_msg;
     };
     auto start(::nstd::net::io_context::scheduler_type scheduler, state& s, ::nstd::file::context::io_base* cont) -> void{
-        ::socklen_t addrlen{this->d_endpoint.get_address(&s.d_address)};
-        scheduler.sendto(this->d_handle, this->d_buffer.data(), this->d_buffer.size(), static_cast<int>(this->d_flags),
-                         reinterpret_cast<::sockaddr*>(&s.d_address), addrlen, cont);
+
+        ::iovec const* iov = reinterpret_cast<::iovec const*>(&*::nstd::net::buffer_sequence_begin(this->d_buffers));
+        s.d_msg.msg_name    = &s.d_address;
+        s.d_msg.msg_namelen = this->d_endpoint.get_address(&s.d_address);
+        s.d_msg.msg_iov     = const_cast<::iovec*>(iov);
+        s.d_msg.msg_iovlen  = ::std::distance(::nstd::net::buffer_sequence_begin(this->d_buffers),
+                                              ::nstd::net::buffer_sequence_end(this->d_buffers));
+        scheduler.sendmsg(this->d_handle, &s.d_msg, static_cast<int>(this->d_flags), cont);
     }
     template <::nstd::execution::receiver Receiver>
     auto complete(int32_t rc, uint32_t, bool cancelled, state&, Receiver& receiver) -> void {
+        ::std::cout << "send_to complete(rc=" << rc << ", cancelled=" << ::std::boolalpha << cancelled << ")\n"; 
         if (cancelled) {
             ::nstd::execution::set_stopped(::nstd::utility::move(receiver));
         }
