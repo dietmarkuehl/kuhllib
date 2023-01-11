@@ -46,6 +46,8 @@ class nstd::stop_token_ns::in_place_stop_callback_base
 private:
     virtual auto do_call() -> void {}
 public:
+    in_place_stop_callback_base() = default;
+    in_place_stop_callback_base(in_place_stop_callback_base&&) = delete;
     virtual ~in_place_stop_callback_base() = default;
     in_place_stop_callback_base*      d_next = nullptr;
     ::std::atomic<bool> d_called = false;
@@ -85,8 +87,10 @@ public:
         while (head && (head == &this->d_marker || !this->d_list.compare_exchange_strong(head, &this->d_marker))) {
         }
         if (head) {
-            for (auto node = head; node; node = node->d_next) {
+            for (auto node = head; node; ) {
+                auto tmp = node->d_next;
                 node->call();
+                node = tmp;
             }
             this->d_list = nullptr;
         }
