@@ -28,6 +28,7 @@
 
 #include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/connect.hpp"
+#include "nstd/execution/get_attrs.hpp"
 #include "nstd/execution/receiver.hpp"
 #include "nstd/execution/receiver_of.hpp"
 #include "nstd/execution/set_stopped.hpp"
@@ -45,6 +46,8 @@
 // [exec.just]
 
 namespace nstd::hidden_names {
+    struct just_env {};
+
     template <typename Signal, typename... A>
     struct just_sender
         : ::nstd::execution::sender_tag
@@ -82,6 +85,11 @@ namespace nstd::hidden_names {
         just_sender(just_sender&&) = default;
         just_sender(just_sender const&) = default;
 
+        friend auto tag_invoke(::nstd::execution::get_attrs_t, just_sender const&) noexcept
+            -> just_env
+        {
+            return {};
+        }
         template <::nstd::execution::receiver Receiver>
             requires ::nstd::execution::receiver_of<Receiver, completion_signatures>
         friend auto tag_invoke(::nstd::execution::connect_t,

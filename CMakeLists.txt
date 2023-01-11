@@ -8,9 +8,17 @@ set(CMAKE_CXX_STANDARD 20)
 
 if(CMAKE_COMPILER_IS_GNUCXX)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -W -Wall -Werror -fconcepts-diagnostics-depth=4 -ftemplate-backtrace-limit=0")
+
+    add_compile_options(-fsanitize=undefined)
+    add_compile_options(-fno-sanitize-recover)
+    add_link_options(-fsanitize=undefined)
 endif()
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -W -Wall -Werror -stdlib=libc++")
+
+    add_compile_options(-fsanitize=undefined)
+    add_compile_options(-fno-sanitize-recover)
+    add_link_options(-fsanitize=undefined)
 endif()
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DNOMINMAX")
@@ -87,6 +95,7 @@ list(APPEND kuhllib_endian_components
 list(APPEND kuhllib_execution_components
     src/nstd/execution
     src/nstd/execution/execution
+    src/nstd/execution/add_value
     src/nstd/execution/async_scope
     src/nstd/execution/completion_signatures
     src/nstd/execution/completion_signatures_of_t
@@ -94,6 +103,7 @@ list(APPEND kuhllib_execution_components
     src/nstd/execution/dependent_completion_signatures
     src/nstd/execution/env_of_t
     src/nstd/execution/error_types_of_t
+    src/nstd/execution/get_attrs
     src/nstd/execution/get_completion_scheduler
     src/nstd/execution/get_completion_signatures
     src/nstd/execution/get_delegatee_scheduler
