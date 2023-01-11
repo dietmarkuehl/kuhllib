@@ -132,6 +132,7 @@ public:
         auto& link(this->link(*pos));
         this->link(*link.d_prev).d_next = link.d_next;
         this->link(*link.d_next).d_prev = link.d_prev;
+        link.d_next = link.d_prev = &*pos;
     }
     auto pop_front() -> void {
         this->erase(this->begin());
