@@ -45,11 +45,11 @@
 // ----------------------------------------------------------------------------
 // [exec.just]
 
-namespace nstd::hidden_names {
-    struct just_env {};
+namespace nstd::hidden_names::just {
+    struct env {};
 
     template <typename Signal, typename... A>
-    struct just_sender
+    struct sender
         : ::nstd::execution::sender_tag
     {
         using completion_signatures
@@ -80,31 +80,31 @@ namespace nstd::hidden_names {
 
         template <typename... Args>
             requires ::std::is_constructible_v<::std::tuple<A...>, Args...>
-        just_sender(Args&&... args): d_value{::nstd::utility::forward<Args>(args)...} {}
-        just_sender(just_sender&) = default;
-        just_sender(just_sender&&) = default;
-        just_sender(just_sender const&) = default;
+        sender(Args&&... args): d_value{::nstd::utility::forward<Args>(args)...} {}
+        sender(sender&) = default;
+        sender(sender&&) = default;
+        sender(sender const&) = default;
 
-        friend auto tag_invoke(::nstd::execution::get_attrs_t, just_sender const&) noexcept
-            -> just_env
+        friend auto tag_invoke(::nstd::execution::get_attrs_t, sender const&) noexcept
+            -> env
         {
             return {};
         }
         template <::nstd::execution::receiver Receiver>
             requires ::nstd::execution::receiver_of<Receiver, completion_signatures>
         friend auto tag_invoke(::nstd::execution::connect_t,
-                               just_sender const& sender,
+                               sender const& sndr,
                                Receiver&&  receiver)
         {
-            return operation_state<Receiver>{sender.d_value, ::nstd::utility::forward<Receiver>(receiver)};
+            return operation_state<Receiver>{sndr.d_value, ::nstd::utility::forward<Receiver>(receiver)};
         }
         template <::nstd::execution::receiver Receiver>
             requires ::nstd::execution::receiver_of<Receiver, completion_signatures>
         friend auto tag_invoke(::nstd::execution::connect_t,
-                               just_sender&& sender,
+                               sender&& sndr,
                                Receiver&&  receiver)
         {
-            return operation_state<Receiver>{::nstd::utility::move(sender.d_value),
+            return operation_state<Receiver>{::nstd::utility::move(sndr.d_value),
                                              ::nstd::utility::forward<Receiver>(receiver)};
         }
     };
@@ -113,23 +113,23 @@ namespace nstd::hidden_names {
 namespace nstd::execution {
     template <::nstd::hidden_names::movable_value... A>
     inline auto just(A&&... a) noexcept((::std::is_nothrow_constructible_v<::nstd::type_traits::remove_cvref_t<A>, A> && ...))
-        -> ::nstd::hidden_names::just_sender<::nstd::execution::set_value_t, ::nstd::type_traits::remove_cvref_t<A>...> {
-        return ::nstd::hidden_names::just_sender<::nstd::execution::set_value_t, ::nstd::type_traits::remove_cvref_t<A>...>(
+        -> ::nstd::hidden_names::just::sender<::nstd::execution::set_value_t, ::nstd::type_traits::remove_cvref_t<A>...> {
+        return ::nstd::hidden_names::just::sender<::nstd::execution::set_value_t, ::nstd::type_traits::remove_cvref_t<A>...>(
             ::nstd::utility::forward<A>(a)...
             );
     }
 
     template <::nstd::hidden_names::movable_value E>
     inline auto just_error(E&& e) noexcept(::std::is_nothrow_constructible_v<::nstd::type_traits::remove_cvref_t<E>, E>)
-        -> ::nstd::hidden_names::just_sender<::nstd::execution::set_error_t, ::nstd::type_traits::remove_cvref_t<E>> {
-        return ::nstd::hidden_names::just_sender<::nstd::execution::set_error_t, ::nstd::type_traits::remove_cvref_t<E>>(
+        -> ::nstd::hidden_names::just::sender<::nstd::execution::set_error_t, ::nstd::type_traits::remove_cvref_t<E>> {
+        return ::nstd::hidden_names::just::sender<::nstd::execution::set_error_t, ::nstd::type_traits::remove_cvref_t<E>>(
             ::nstd::utility::forward<E>(e)
             );
     }
 
     inline auto just_stopped() noexcept
-        -> ::nstd::hidden_names::just_sender<::nstd::execution::set_stopped_t> {
-        return ::nstd::hidden_names::just_sender<::nstd::execution::set_stopped_t>();
+        -> ::nstd::hidden_names::just::sender<::nstd::execution::set_stopped_t> {
+        return ::nstd::hidden_names::just::sender<::nstd::execution::set_stopped_t>();
     }
 }
 
