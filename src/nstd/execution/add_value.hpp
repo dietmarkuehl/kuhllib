@@ -61,10 +61,11 @@ namespace nstd::hidden_names::add_value {
 
             template <typename... Args>
             friend auto tag_invoke(::nstd::execution::set_value_t, receiver&& self, Args&&... args) noexcept {
-                ::std::apply([&](auto&&... ){
+                ::std::apply([&](auto&&... values){
                     ::nstd::execution::set_value(
                         ::nstd::utility::move(self.d_downstream),
-                        ::nstd::utility::forward<Args>(args)...
+                        ::nstd::utility::forward<Args>(args)...,
+                        ::nstd::utility::move(values)...
                     );
                 }, ::nstd::utility::move(self.d_values));
             }
@@ -95,7 +96,7 @@ namespace nstd::hidden_names::add_value {
             };
 
             template <typename Env>
-            friend auto tag_invoke(::nstd::execution::get_completion_signatures_t, sender const&, Env&&) {
+            friend auto tag_invoke(::nstd::execution::get_completion_signatures_t, sender const&, Env&&) noexcept {
                 return ::nstd::execution::make_completion_signatures<
                     Upstream,
                     Env,
@@ -115,12 +116,21 @@ namespace nstd::hidden_names::add_value {
                     }
                 );
             }
+            template <::nstd::execution::receiver Rcvr>
+            friend auto tag_invoke(::nstd::execution::connect_t, sender const& self, Rcvr&& rcvr)
+            {
+                return ::nstd::execution::connect(
+                    self.d_upstream,
+                    receiver<Rcvr, Values...>{ ::nstd::utility::forward<Rcvr>(rcvr), self.d_values }
+                );
+            }
+
         };
-        template <::nstd::execution::sender Upstream, typename... Values>
-            requires(not (false || ... || ::nstd::execution::sender<Values>))
-        friend auto tag_invoke(cpo, Upstream&& upstream, Values&&... values)
-            -> sender<Upstream, Values...>
+        template <typename Upstream, typename... Values>
+        friend auto tag_invoke(::nstd::hidden_names::add_value::cpo, Upstream&& upstream, Values&&... values)
+            -> ::nstd::hidden_names::add_value::cpo::sender<Upstream, Values...>
         {
+            static_assert(::nstd::execution::sender<Upstream>);
             return {
                 ::nstd::utility::forward<Upstream>(upstream),
                 { ::nstd::utility::forward<Values>(values)... }
@@ -128,7 +138,6 @@ namespace nstd::hidden_names::add_value {
         }
 
         template <::nstd::execution::sender Upstream, typename... Values>
-            requires(not (false || ... || ::nstd::execution::sender<Values>))
         auto operator()(Upstream&& upstream, Values&&... values) const
         {
             return ::nstd::tag_invoke(*this,
@@ -152,7 +161,6 @@ namespace nstd::hidden_names::add_value {
             }
         };
         template <typename... Values>
-            requires(not (false || ... || ::nstd::execution::sender<Values>))
         auto operator()(Values&&... values) const
             -> closure<Values...>
         {

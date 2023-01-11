@@ -24,42 +24,86 @@
 // ----------------------------------------------------------------------------
 
 #include "nstd/execution/add_value.hpp"
+#include "nstd/execution/start.hpp"
+#include "nstd/execution/operation_state.hpp"
 #include "nstd/execution/just.hpp"
+#include "nstd/execution/start.hpp"
+#include "nstd/execution/set_value.hpp"
 #include "nstd/execution/then.hpp"
+#include "nstd/thread/sync_wait.hpp"
+#include "nstd/type_traits/remove_cvref.hpp"
+#include "nstd/utility/move.hpp"
 #include "kuhl/test.hpp"
 
 namespace test_declaration {}
 namespace TD = ::test_declaration;
 namespace KT = ::kuhl::test;
 namespace EX = ::nstd::execution;
+namespace TR = ::nstd::this_thread;
+namespace TT = ::nstd::type_traits;
+namespace UT = ::nstd::utility;
 
 // ----------------------------------------------------------------------------
 
 namespace test_declaration {
     namespace {
+        template <EX::receiver R>
+        struct state {
+            TT::remove_cvref_t<R> r;
+            friend auto tag_invoke(EX::start_t, state& self) noexcept -> void {
+                EX::set_value(UT::move(self.r));
+            }
+        };
+        struct sender {
+            using completion_signatures = EX::completion_signatures<EX::set_value_t()>;
+
+             template <EX::receiver R>
+            friend auto tag_invoke(EX::connect_t, sender&&, R&& r)
+                -> state<R> {
+                return { UT::forward<R>(r) };
+            }
+        };
     }
 }
 
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
+    KT::expect_success("dummy", []{ return true; }),
+    KT::expect_success("TD::sender is a sender", []{ return EX::sender<TD::sender>; }),
     KT::expect_success("breathing", []{
             auto sender
-                = EX::add_value(EX::just('a'), 17, true)
-                | EX::then([](char, int, bool){})
+                = EX::add_value(TD::sender(), 17, true)
+                | EX::then([](auto&&...){})
                 ;
-            static_assert(EX::sender<decltype(sender)>);
+            TR::sync_wait(::nstd::utility::move(sender));
+            return EX::sender<decltype(sender)>;
+        }),
+    KT::expect_success("breathing", []{
+            bool check_values{false};
+            auto sender
+                = EX::add_value(EX::just('a'), 17, true)
+                | EX::then([&](char c, int i, bool b){
+                    check_values = c == 'a' && i == 17 && b == true;
+                })
+                ;
+            TR::sync_wait(sender);
             return EX::sender<decltype(sender)>
+                && check_values
                 ;
         }),
     KT::expect_success("piped use", []{
+            bool check_values{false};
             auto sender
                 = EX::just('a')
                 | EX::add_value(17, true)
-                | EX::then([](char, int, bool){})
+                | EX::then([&](char c, int i, bool b){
+                    check_values = c == 'a' && i == 17 && b == true;
+                })
                 ;
-            static_assert(EX::sender<decltype(sender)>);
+            TR::sync_wait(sender);
             return EX::sender<decltype(sender)>
+                && check_values
                 ;
         }),
 };
