@@ -274,6 +274,7 @@ list(APPEND kuhllib_net_components
     src/nstd/net/basic_socket
     src/nstd/net/basic_socket_acceptor
     src/nstd/net/basic_stream_socket
+    src/nstd/net/get_iovec
     src/nstd/net/io_context
     src/nstd/net/ip/address
     src/nstd/net/ip/address_v4

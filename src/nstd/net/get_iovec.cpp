@@ -1,6 +1,6 @@
-// nstd/buffer/sequence.hpp                                           -*-C++-*-
+// nstd/net/get_iovec.cpp                                             -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2022 Dietmar Kuehl http://www.dietmar-kuehl.de
+//  Copyright (C) 2023 Dietmar Kuehl http://www.dietmar-kuehl.de
 //
 //  Permission is hereby granted, free of charge, to any person
 //  obtaining a copy of this software and associated documentation
@@ -23,25 +23,10 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_BUFFER_SEQUENCE
-#define INCLUDED_NSTD_BUFFER_SEQUENCE
-
-#include <cstddef>
+#include <nstd/net/get_iovec.hpp>
 
 // ----------------------------------------------------------------------------
 
 namespace nstd::net {
-    template <typename Cont>
-    auto buffer_sequence_begin(Cont& cont) noexcept -> decltype(cont.begin()) { return cont.begin(); }
-    template <typename Cont>
-    auto buffer_sequence_end(Cont& cont) noexcept -> decltype(cont.end()) { return cont.end(); }
-
-    template <typename Buffer, ::std::size_t Size>
-    auto buffer_sequence_begin(Buffer const (&array)[Size]) noexcept -> Buffer const* { return +array; }
-    template <typename Buffer, ::std::size_t Size>
-    auto buffer_sequence_end(Buffer const (&array)[Size]) noexcept -> Buffer const* { return +array + Size; }
+    int get_iovec_dummy{};
 }
-
-// ----------------------------------------------------------------------------
-
-#endif
