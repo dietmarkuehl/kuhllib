@@ -42,6 +42,7 @@ int main() {
 
     char buffer[128];
     NF::stream stdin(0);
+    NF::stream stdout(1);
     char datagram[128];
     NN::basic_datagram_socket<NN::ip::udp> socket(NN::ip::udp::v4());
     NN::ip::basic_endpoint<NN::ip::udp>    endpoint(NN::ip::address_v4::any(), 12345);
@@ -61,15 +62,13 @@ int main() {
     scope.start(
         EX::repeat_effect(
               NN::async_receive_from(socket, NN::buffer(datagram))
-            | EX::then([&datagram](int n, auto endpoint){
+            | EX::let_value([&stdout, &datagram](int n, auto endpoint){
                 ::std::string_view sv(datagram, 0 < n && datagram[n-1] == '\n'? n-1: n);
                 ::std::cout << "received='" << sv << "' from " << endpoint << "\n";
+                return NN::async_write_some(stdout, NN::buffer(datagram, n));
             })
         )
     );
 
     scope.run();
-    while (scope.run_one()) {
-        std::cout << "ran one\n";
-    }
 }

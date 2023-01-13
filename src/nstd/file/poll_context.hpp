@@ -90,6 +90,7 @@ protected:
     auto do_nop(io_base*) -> void override;
     auto do_open_at(int, char const*, int, io_base*) -> void override;
     auto do_read(int, ::iovec*, ::std::size_t, io_base*) -> void override;
+    auto do_write(int, ::iovec*, ::std::size_t, io_base*) -> void override;
     auto do_recvmsg(native_handle_type, ::msghdr*, int, io_base*) -> void override;
     auto do_sendmsg(native_handle_type, ::msghdr const*, int, io_base*) -> void override;
     auto do_timer(time_spec*, io_base*) -> void override;

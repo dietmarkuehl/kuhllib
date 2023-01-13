@@ -166,6 +166,14 @@ auto nstd::file::observer_context::do_read(int fd, ::iovec* vec, ::std::size_t l
     }));
 }
 
+auto nstd::file::observer_context::do_write(int fd, ::iovec* vec, ::std::size_t len, io_base* cont) -> void
+{
+    ::std::cout << "> write(" << fd << ", ...)\n";
+    this->d_context.read(fd, vec, len, this->add(cont, [fd](int rc, int flags){
+        ::std::cout << "< write(" << fd << "): rc=" << rc << ", flags=" << flags << "\n";
+    }));
+}
+
 auto nstd::file::observer_context::do_open_at(int fd, char const* path, int flags, io_base* cont) -> void
 {
     ::std::cout << "> open_at(" << fd << ", '" << path << "', " << std::hex << flags << std::dec << ")\n";

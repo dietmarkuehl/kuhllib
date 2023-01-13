@@ -357,6 +357,27 @@ auto NF::poll_context::do_read(int fd, ::iovec* vec, ::std::size_t length, NF::c
     continuation);
 }
 
+auto NF::poll_context::do_write(int fd, ::iovec* vec, ::std::size_t length, NF::context::io_base* continuation) -> void
+{
+    this->submit(fd, POLLOUT, [fd, vec, length, continuation]{
+        auto rc{::writev(fd, vec, length)};
+        if (0 <= rc) {
+            continuation->result(rc, 0);
+            return true;
+        }
+        switch (errno) {
+        default:
+            continuation->result(-errno, 0);
+            return true;
+        case EAGAIN:
+        case (EAGAIN != EWOULDBLOCK? EWOULDBLOCK: 0):
+        case EINTR:
+            return false;
+        }
+    },
+    continuation);
+}
+
 auto NF::poll_context::do_open_at(int fd, char const* name, int flags, NF::context::io_base* continuation)
     -> void
 {

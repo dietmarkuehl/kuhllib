@@ -96,25 +96,23 @@ template <typename Stream, typename MBS>
 struct nstd::net::hidden_names::async_read_some::stream_operation {
     using completion_signature = ::nstd::execution::set_value_t(int);
     using buffer_sequence = ::nstd::type_traits::remove_cvref_t<MBS>;
+    template <typename Env>
+    using iovec = decltype(::nstd::net::get_iovec(::nstd::type_traits::declval<Env>(), ::nstd::type_traits::declval<buffer_sequence>()));
 
     typename Stream::native_handle_type d_handle;
     buffer_sequence                     d_buffer;
 
     template <typename Env>
     struct state {
-        using iovec = decltype(::nstd::net::get_iovec(::nstd::type_traits::declval<Env>(), ::nstd::type_traits::declval<buffer_sequence>()));
-        iovec d_vec;
+        iovec<Env> d_iovec;
     };
     template <typename Env>
     auto connect(Env const& env) -> state<Env> {
         return { ::nstd::net::get_iovec(env, this->d_buffer) };
     }
     template <typename Env>
-    auto start(::nstd::net::io_context::scheduler_type scheduler, state<Env>&, ::nstd::file::context::io_base* cont) -> void{
-        iovec* iov = reinterpret_cast<::iovec*>(&*::nstd::net::buffer_sequence_begin(this->d_buffer));
-        ::std::size_t length = ::std::distance(::nstd::net::buffer_sequence_begin(this->d_buffer), 
-                                               ::nstd::net::buffer_sequence_end(this->d_buffer)); 
-        scheduler.read(this->d_handle, iov, length, cont);
+    auto start(::nstd::net::io_context::scheduler_type scheduler, state<Env>& s, ::nstd::file::context::io_base* cont) -> void{
+        scheduler.read(this->d_handle, s.d_iovec.data(), s.d_iovec.size(), cont);
     }
     template <::nstd::execution::receiver Receiver, typename Env>
     auto complete(int32_t rc, uint32_t, bool cancelled, state<Env>&, Receiver& receiver) -> void {

@@ -65,7 +65,7 @@ protected:
     virtual auto do_recvmsg(native_handle_type, ::msghdr*, int, io_base*) -> void = 0;
     virtual auto do_sendmsg(native_handle_type, ::msghdr const*, int, io_base*) -> void = 0;
     virtual auto do_timer(time_spec*, io_base*) -> void = 0;
-    //-dk:TODO virtual auto do_write(int, ::iovec*, ::std::size_t, io_base*) -> void = 0;
+    virtual auto do_write(int, ::iovec*, ::std::size_t, io_base*) -> void = 0;
 
 public:
 
@@ -84,6 +84,7 @@ public:
     auto sendmsg(native_handle_type, ::msghdr const*, int, io_base*) -> void;
     auto recvmsg(native_handle_type, ::msghdr*, int, io_base*) -> void;
     auto read(native_handle_type, ::iovec*, ::std::size_t, io_base*) -> void;
+    auto write(native_handle_type, ::iovec*, ::std::size_t, io_base*) -> void;
     auto open_at(int, char const*, int, io_base*) -> void;
 };
 
@@ -157,6 +158,14 @@ inline auto nstd::file::context::read(::nstd::file::context::native_handle_type 
                                       io_base* handler) -> void
 {
     this->do_read(fd, vec, size, handler);
+}
+
+inline auto nstd::file::context::write(::nstd::file::context::native_handle_type fd,
+                                       ::iovec* vec,
+                                       ::std::size_t size,
+                                       io_base* handler) -> void
+{
+    this->do_write(fd, vec, size, handler);
 }
 
 inline auto nstd::file::context::open_at(int fd,

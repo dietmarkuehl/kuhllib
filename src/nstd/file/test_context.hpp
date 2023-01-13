@@ -56,6 +56,7 @@ protected:
     auto do_sendmsg(int, ::msghdr const*, int, ::nstd::file::context::io_base*) -> void override;
     auto do_recvmsg(int, ::msghdr*, int, ::nstd::file::context::io_base*) -> void override;
     auto do_read(int, ::iovec*, ::std::size_t, ::nstd::file::context::io_base*) -> void override;
+    auto do_write(int, ::iovec*, ::std::size_t, ::nstd::file::context::io_base*) -> void override;
     auto do_open_at(int, char const*, int, ::nstd::file::context::io_base*) -> void override;
 
 public:
@@ -71,6 +72,7 @@ public:
     ::std::function<auto (int, ::msghdr const*, int, ::nstd::file::context::io_base*) -> void>           on_sendmsg;
     ::std::function<auto (int, ::msghdr*, int, ::nstd::file::context::io_base*) -> void>                 on_recvmsg;
     ::std::function<auto (int, ::iovec*, ::std::size_t, ::nstd::file::context::io_base*) -> void>        on_read;
+    ::std::function<auto (int, ::iovec*, ::std::size_t, ::nstd::file::context::io_base*) -> void>        on_write;
     ::std::function<auto (int, char const*, int, ::nstd::file::context::io_base*) -> void>               on_open_at;
 };
 

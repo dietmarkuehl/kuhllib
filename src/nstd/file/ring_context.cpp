@@ -295,6 +295,22 @@ auto NF::ring_context::do_read(int fd,
         });
 }
 
+auto NF::ring_context::do_write(int fd,
+                               ::iovec* vec,
+                               ::std::size_t size,
+                               io_base* continuation)
+    -> void
+{
+    this->submit([=](io_uring_sqe& element){
+        element = ::io_uring_sqe{};
+        element.opcode     = IORING_OP_WRITEV;
+        element.fd         = fd;
+        element.addr       = reinterpret_cast<decltype(element.addr)>(vec);
+        element.len        = size;
+        element.user_data  = reinterpret_cast<decltype(element.user_data)>(continuation);
+        });
+}
+
 auto NF::ring_context::do_open_at(int fd,
                                   char const* name,
                                   int flags,
