@@ -38,6 +38,7 @@
 #include "nstd/type_traits/remove_cvref.hpp"
 #include "nstd/type_traits/declval.hpp"
 #include <exception>
+#include <mutex>
 #include <new>
 
 // ----------------------------------------------------------------------------
@@ -47,6 +48,14 @@ namespace nstd::hidden_names::repeat_effect_until
     template <typename... T>
     using variant_t = ::nstd::execution::completion_signatures<::nstd::execution::set_error_t(T)...>;
     struct env {};
+
+    class marker {
+        bool d_value{false};
+    public:
+        explicit operator bool() const noexcept { return this->d_value; }
+        auto lock() noexcept -> void { this->d_value = true; }
+        auto unlock() noexcept -> void { this->d_value = false; }
+    };
 
     template <::nstd::execution::sender Sender, typename Predicate, typename Receiver>
     struct state_base
@@ -124,7 +133,9 @@ namespace nstd::hidden_names::repeat_effect_until
             }
         };
 
-        bool d_engaged = false;
+        ::nstd::hidden_names::repeat_effect_until::marker d_running;
+        bool d_ready{false};
+        bool d_engaged{false};
         union holder {
             holder(){}
             ~holder(){}
@@ -150,16 +161,25 @@ namespace nstd::hidden_names::repeat_effect_until
             ::nstd::execution::start(s.d_internal_state.d_state);
         }
         auto next() noexcept -> void override try {
-            if (::nstd::execution::get_stop_token(::nstd::execution::get_env(this->d_receiver)).stop_requested()) {
-                ::nstd::execution::set_stopped(::nstd::utility::move(this->d_receiver));
+            if (this->d_running) {
+                this->d_ready = true;
+                return;
             }
-            else if (this->d_predicate()) {
-                ::nstd::execution::set_value(::nstd::utility::move(this->d_receiver));
-            }
-            else {
-                this->d_internal_state.d_state.~internal_state();
-                new(&this->d_internal_state.d_state) internal_state(this->d_sender, receiver_type{this});
-                ::nstd::execution::start(this->d_internal_state.d_state);
+
+            ::std::lock_guard kerberos(this->d_running);
+            for (this->d_ready = true; this->d_ready; ) {
+                this->d_ready = false;
+                if (::nstd::execution::get_stop_token(::nstd::execution::get_env(this->d_receiver)).stop_requested()) {
+                    ::nstd::execution::set_stopped(::nstd::utility::move(this->d_receiver));
+                }
+                else if (this->d_predicate()) {
+                    ::nstd::execution::set_value(::nstd::utility::move(this->d_receiver));
+                }
+                else {
+                    this->d_internal_state.d_state.~internal_state();
+                    new(&this->d_internal_state.d_state) internal_state(this->d_sender, receiver_type{this});
+                    ::nstd::execution::start(this->d_internal_state.d_state);
+                }
             }
         }
         catch (...) {
