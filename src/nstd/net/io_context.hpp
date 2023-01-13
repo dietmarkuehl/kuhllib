@@ -138,6 +138,9 @@ public:
     auto read(::nstd::file::context::native_handle_type fd, ::iovec* vec, ::std::size_t length, ::nstd::file::context::io_base* cont) -> void {
         this->d_context->hidden_context()->read(fd, vec, length, cont);
     }
+    auto write(::nstd::file::context::native_handle_type fd, ::iovec* vec, ::std::size_t length, ::nstd::file::context::io_base* cont) -> void {
+        this->d_context->hidden_context()->write(fd, vec, length, cont);
+    }
     auto sendmsg(::nstd::file::context::native_handle_type fd, ::msghdr const* msg, int flags, ::nstd::file::context::io_base* cont) -> void {
         this->d_context->hidden_context()->sendmsg(fd, msg, flags, cont);
     }

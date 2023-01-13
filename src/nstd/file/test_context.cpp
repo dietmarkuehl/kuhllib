@@ -102,6 +102,11 @@ auto NF::test_context::do_read(int fd, ::iovec* data, ::std::size_t len, io_base
     this->on_read(fd, data, len, cont);
 }
 
+auto NF::test_context::do_write(int fd, ::iovec* data, ::std::size_t len, io_base* cont) -> void
+{
+    this->on_write(fd, data, len, cont);
+}
+
 auto NF::test_context::do_open_at(int fd, char const* path, int flags, io_base* cont) -> void
 {
     this->on_open_at(fd, path, flags, cont);

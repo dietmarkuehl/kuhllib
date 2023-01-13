@@ -69,7 +69,4 @@ int main() {
     );
 
     scope.run();
-    while (scope.run_one()) {
-        std::cout << "ran one\n";
-    }
 }

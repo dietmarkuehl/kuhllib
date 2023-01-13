@@ -52,14 +52,18 @@ struct nstd::net::hidden_names::async_connect::operation {
     typename Socket::native_handle_type      d_handle;
     typename Socket::endpoint_type           d_endpoint;
     ::sockaddr_storage                       d_address{};
+    template <typename Env>
     struct state {
     };
-    auto start(::nstd::net::io_context::scheduler_type scheduler, state&, ::nstd::file::context::io_base* cont) -> void{
+    template <typename Env>
+    auto connect(Env const&) -> state<Env> { return {}; }
+    template <typename Env>
+    auto start(::nstd::net::io_context::scheduler_type scheduler, state<Env>&, ::nstd::file::context::io_base* cont) -> void{
         ::socklen_t length = this->d_endpoint.get_address(&this->d_address);
         scheduler.connect(this->d_handle, reinterpret_cast<::sockaddr*>(&this->d_address), length, cont);
     }
-    template <::nstd::execution::receiver Receiver>
-    auto complete(int32_t rc, uint32_t, bool cancelled, state&, Receiver& receiver) -> void {
+    template <::nstd::execution::receiver Receiver, typename Env>
+    auto complete(int32_t rc, uint32_t, bool cancelled, state<Env>&, Receiver& receiver) -> void {
         if (cancelled) {
             ::nstd::execution::set_stopped(::nstd::utility::move(receiver));
         }

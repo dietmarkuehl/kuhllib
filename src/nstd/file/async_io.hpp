@@ -94,7 +94,7 @@ namespace nstd::file::hidden_names {
 
         ::nstd::type_traits::remove_cvref_t<Receiver> d_receiver;
         Operation                                     d_operation;
-        typename Operation::state                     d_state;
+        typename Operation::template state<env_t>     d_state;
         ::std::atomic<std::size_t>                    d_outstanding{0u};
         ::std::atomic<bool>                           d_cancelled{false};
         ::std::optional<callback_t>                   d_callback;
@@ -103,7 +103,7 @@ namespace nstd::file::hidden_names {
         async_io_state(O&& o, R&& r)
             : d_receiver(::nstd::utility::forward<R>(r))
             , d_operation(::nstd::utility::forward<O>(o))
-            , d_state{}
+            , d_state(this->d_operation.connect(::nstd::execution::get_env(this->d_receiver)))
             , d_callback{} {
         }
         friend void tag_invoke(::nstd::execution::start_t, async_io_state& self) noexcept {

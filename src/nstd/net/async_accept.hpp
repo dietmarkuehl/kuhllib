@@ -58,15 +58,19 @@ struct nstd::net::hidden_names::async_accept::operation {
 
     typename Acceptor::protocol_type      d_protocol;
     typename Acceptor::native_handle_type d_handle;
+    template <typename>
     struct state {
         ::sockaddr_storage               d_addr;
         ::socklen_t                      d_len{sizeof(::sockaddr_storage)};
     };
-    auto start(::nstd::net::io_context::scheduler_type scheduler, state& s, ::nstd::file::context::io_base* cont) -> void{
+    template <typename Env>
+    auto connect(Env const&) -> state<Env> { return {}; }
+    template <typename Env>
+    auto start(::nstd::net::io_context::scheduler_type scheduler, state<Env>& s, ::nstd::file::context::io_base* cont) -> void{
         scheduler.accept(this->d_handle, reinterpret_cast<sockaddr*>(&s.d_addr), &s.d_len, 0, cont);
     }
-    template <::nstd::execution::receiver Receiver>
-    auto complete(int32_t rc, uint32_t, bool cancelled, state& s, Receiver& receiver) -> void {
+    template <typename Env, ::nstd::execution::receiver Receiver>
+    auto complete(int32_t rc, uint32_t, bool cancelled, state<Env>& s, Receiver& receiver) -> void {
         if (cancelled) {
             if (0 <= rc) {
                 // release the file descriptor if the accept was successful but cancelled

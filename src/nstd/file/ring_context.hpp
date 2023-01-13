@@ -124,6 +124,7 @@ public:
     auto do_nop(io_base*) -> void override;
     auto do_open_at(int, char const*, int, io_base*) -> void override;
     auto do_read(int, ::iovec*, ::std::size_t, io_base*) -> void override;
+    auto do_write(int, ::iovec*, ::std::size_t, io_base*) -> void override;
     auto do_recvmsg(int, ::msghdr*, int, io_base*) -> void override;
     auto do_sendmsg(int, ::msghdr const*, int, io_base*) -> void override;
     auto do_timer(::nstd::file::context::time_spec*, io_base*) -> void override;
