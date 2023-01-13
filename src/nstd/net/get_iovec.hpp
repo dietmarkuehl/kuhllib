@@ -30,6 +30,7 @@
 #include "nstd/buffer/mutable_buffer.hpp"
 #include "nstd/buffer/sequence.hpp"
 #include "nstd/functional/tag_invoke.hpp"
+#include "nstd/type_traits/remove_cvref.hpp"
 #include <algorithm>
 #include <iterator>
 #include <array>
@@ -87,31 +88,32 @@ namespace nstd::hidden_names::get_iovec {
 
     struct cpo {
         template <typename Env, typename BufferSequence>
-        friend auto tag_invoke(cpo, Env const&, BufferSequence const& bseq) {
+            requires (not ::std::same_as<::nstd::net::const_buffer, ::nstd::type_traits::remove_cvref_t<BufferSequence>>)
+        friend auto tag_invoke(cpo const&, Env const&, BufferSequence const& bseq) {
             return vector_iovec(bseq);
         }
         template <typename Env>
-        friend auto tag_invoke(cpo, Env const&, ::nstd::net::mutable_buffer const& bseq) {
+        friend auto tag_invoke(cpo const&, Env const&, ::nstd::net::mutable_buffer const& bseq) -> array_iovec<1u> {
             return array_iovec<1u>(bseq);
         }
         template <typename Env>
-        friend auto tag_invoke(cpo, Env const&, ::nstd::net::const_buffer const& bseq) {
+        friend auto tag_invoke(cpo const, Env const&, ::nstd::net::const_buffer const& bseq) -> array_iovec<1u> {
             return array_iovec<1u>(bseq);
         }
         template <typename Env, ::std::size_t N>
-        friend auto tag_invoke(cpo, Env const&, ::nstd::net::mutable_buffer const (&bseq)[N]) {
+        friend auto tag_invoke(cpo const&, Env const&, ::nstd::net::mutable_buffer const (&bseq)[N]) -> array_iovec<N> {
             return array_iovec<N>(bseq);
         }
         template <typename Env, ::std::size_t N>
-        friend auto tag_invoke(cpo, Env const&, ::nstd::net::const_buffer const (&bseq)[N]) {
+        friend auto tag_invoke(cpo const&, Env const&, ::nstd::net::const_buffer const (&bseq)[N]) -> array_iovec<N> {
             return array_iovec<N>(bseq);
         }
         template <typename Env, ::std::size_t N>
-        friend auto tag_invoke(cpo, Env const&, ::std::array<::nstd::net::mutable_buffer, N> const& bseq) {
+        friend auto tag_invoke(cpo const&, Env const&, ::std::array<::nstd::net::mutable_buffer, N> const& bseq) -> array_iovec<N> {
             return array_iovec<N>(bseq);
         }
         template <typename Env, ::std::size_t N>
-        friend auto tag_invoke(cpo, Env const&, ::std::array<::nstd::net::const_buffer, N> const& bseq) {
+        friend auto tag_invoke(cpo const&, Env const&, ::std::array<::nstd::net::const_buffer, N> const& bseq) -> array_iovec<N> {
             return array_iovec<N>(bseq);
         }
 

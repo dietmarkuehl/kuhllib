@@ -28,6 +28,7 @@
 
 #include "nstd/file/async_io.hpp"
 #include "nstd/file/operation.hpp"
+#include "nstd/net/get_iovec.hpp"
 #include "nstd/hidden_names/message_flags.hpp"
 #include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/sender.hpp"
@@ -53,24 +54,36 @@ template <typename Socket, typename MB>
 struct nstd::net::hidden_names::async_receive_from::operation {
     using completion_signature
         = ::nstd::execution::set_value_t(::std::size_t, typename Socket::endpoint_type);
+    using buffer_sequence = ::nstd::type_traits::remove_cvref_t<MB>;
+    template <typename Env>
+    using iovec = decltype(::nstd::net::get_iovec(::nstd::type_traits::declval<Env>(), ::nstd::type_traits::declval<buffer_sequence>()));
 
     typename Socket::native_handle_type     d_handle;
-    ::nstd::type_traits::remove_cvref_t<MB> d_buffers;
+    ::nstd::type_traits::remove_cvref_t<MB> d_buffer;
     ::nstd::hidden_names::message_flags     d_flags;
+    template <typename Env>
     struct state {
         ::sockaddr_storage d_address;
+        iovec<Env>         d_iovec;
         ::msghdr           d_msg{};
+        state(Env const& env, buffer_sequence const& buffer)
+            : d_iovec(::nstd::net::get_iovec(env, buffer)) {
+            this->d_msg.msg_name    = &this->d_address;
+            this->d_msg.msg_namelen = sizeof(::sockaddr_storage);
+            this->d_msg.msg_iov     = this->d_iovec.data();
+            this->d_msg.msg_iovlen  = this->d_iovec.size();
+        }
     };
-    auto start(::nstd::net::io_context::scheduler_type scheduler, state& s, ::nstd::file::context::io_base* cont) -> void{
-        s.d_msg.msg_name    = &s.d_address;
-        s.d_msg.msg_namelen = sizeof(::sockaddr_storage);
-        s.d_msg.msg_iov     = reinterpret_cast<::iovec*>(&*::nstd::net::buffer_sequence_begin(this->d_buffers));
-        s.d_msg.msg_iovlen  = ::std::distance(::nstd::net::buffer_sequence_begin(this->d_buffers),
-                                              ::nstd::net::buffer_sequence_end(this->d_buffers));
+    template <typename Env>
+    auto connect(Env const& env) -> state<Env> {
+        return state<Env>(env, this->d_buffer);
+    }
+    template <typename Env>
+    auto start(::nstd::net::io_context::scheduler_type scheduler, state<Env>& s, ::nstd::file::context::io_base* cont) -> void{
         scheduler.recvmsg(this->d_handle, &s.d_msg, static_cast<int>(this->d_flags), cont);
     }
-    template <::nstd::execution::receiver Receiver>
-    auto complete(int32_t rc, uint32_t, bool cancelled, state& s, Receiver& receiver) -> void {
+    template <::nstd::execution::receiver Receiver, typename Env>
+    auto complete(int32_t rc, uint32_t, bool cancelled, state<Env>& s, Receiver& receiver) -> void {
         if (cancelled) {
             ::nstd::execution::set_stopped(::nstd::utility::move(receiver));
         }

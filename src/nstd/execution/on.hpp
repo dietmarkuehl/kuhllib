@@ -86,6 +86,7 @@ namespace nstd::execution {
             nstd::type_traits::remove_cvref_t<Scheduler>* scheduler;
             Env        env;
 
+#if 0
             template <typename Tag, typename... Args>
                 requires (not ::std::same_as<::nstd::execution::get_scheduler_t, Tag>
                           && not ::std::same_as<::nstd::execution::set_value_t, Tag>
@@ -97,6 +98,7 @@ namespace nstd::execution {
             {
                 return tag(self.env, ::nstd::utility::forward<Args>(args)...);
             }
+#endif
             friend auto tag_invoke(::nstd::execution::get_scheduler_t, replace_env const& self) noexcept {
                 return *self.scheduler;
             }
