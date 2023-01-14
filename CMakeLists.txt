@@ -187,6 +187,7 @@ list(APPEND kuhllib_file_components
     src/nstd/file/context
     src/nstd/file/descriptor
     src/nstd/file/io_base
+    src/nstd/file/io_object
     src/nstd/file/mapped_memory
     src/nstd/file/observer_context
     src/nstd/file/open_flags
@@ -260,8 +261,7 @@ list(APPEND kuhllib_memory_components
     src/nstd/memory/uninitialized_default_construct
 )
 
-list(APPEND kuhllib_net_components
-    src/nstd/net/async_accept
+list(APPEND xkuhllib_net_components
     src/nstd/net/async_connect
     src/nstd/net/async_read_some
     src/nstd/net/async_receive
@@ -272,10 +272,8 @@ list(APPEND kuhllib_net_components
     src/nstd/net/async_write
     src/nstd/net/basic_datagram_socket
     src/nstd/net/basic_socket
-    src/nstd/net/basic_socket_acceptor
     src/nstd/net/basic_stream_socket
     src/nstd/net/get_iovec
-    src/nstd/net/io_context
     src/nstd/net/ip/address
     src/nstd/net/ip/address_v4
     src/nstd/net/ip/address_v6
@@ -285,8 +283,14 @@ list(APPEND kuhllib_net_components
     src/nstd/net/ip/udp
     src/nstd/net/ip/types
     src/nstd/net/netfwd
-    src/nstd/net/scope
     src/nstd/net/socket
+)
+
+list(APPEND kuhllib_net_components
+    src/nstd/net/async_accept
+    src/nstd/net/basic_socket_acceptor
+    src/nstd/net/io_context
+    src/nstd/net/scope
     src/nstd/net/socket_base
 )
 

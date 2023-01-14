@@ -68,7 +68,7 @@ public:
     auto operator= (socket_base&&) -> socket_base& = default;
 
     using native_handle_type = int;
-    auto native_handle() const -> native_handle_type { return this->d_descriptor.get(); }
+    auto native_handle() const noexcept -> native_handle_type { return this->d_descriptor.get(); }
     auto is_open() const noexcept -> bool { return this->d_descriptor.is_open(); }
 
     auto non_blocking() const noexcept -> bool;

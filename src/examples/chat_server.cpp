@@ -232,7 +232,7 @@ namespace {
         return EX::repeat_effect(
                   EX::on(scheduler,
                     NN::async_accept(server)
-                  | EX::then([&cs, scheduler](stream_socket client, auto&& endpoint) {
+                  | EX::then([&cs, scheduler](auto&& client, auto&& endpoint) {
                        ::std::cout << "accepted a new client: " << endpoint << "\n";
                         cs.add_client(::std::move(client), scheduler);
                     })

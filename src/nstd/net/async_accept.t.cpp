@@ -68,6 +68,8 @@ namespace test_declarations
 
             stream() = default;
             stream(protocol_type, native_handle_type handle): handle(handle) {}
+
+            auto native_handle() const noexcept -> native_handle_type { return handle; }
         };
 
         struct endpoint {
@@ -88,7 +90,7 @@ namespace test_declarations
             using endpoint_type = TD::endpoint;
 
             auto protocol() const -> socket_type::protocol_type { return {}; }
-            auto native_handle() const -> native_handle_type { return {}; }
+            auto native_handle() const noexcept -> native_handle_type { return {}; }
         };
 
         struct receiver {

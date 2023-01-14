@@ -28,6 +28,7 @@
 
 #include "nstd/file/async_io.hpp"
 #include "nstd/net/io_context.hpp"
+#include "nstd/net/socket.hpp"
 #include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/get_completion_scheduler.hpp"
 #include "nstd/execution/get_env.hpp"
@@ -44,6 +45,30 @@
 
 // ----------------------------------------------------------------------------
 
+namespace nstd::hidden_names::async_accept {
+    template <typename Acceptor>
+    struct operation {
+        using completion_signature
+            = ::nstd::execution::set_value_t(typename Acceptor::socket_type, typename Acceptor::endpoint_type);
+    };
+}
+
+namespace nstd::net::inline customization_points {
+    using async_accept_t =
+        ::nstd::hidden_names::async_io::cpo<
+            ::nstd::hidden_names::async_accept::operation
+        >;
+    inline constexpr async_accept_t async_accept_adapter{};
+
+    template <::nstd::net::socket Socket>
+    inline auto async_accept(Socket&& socket) {
+        return async_accept_adapter.factory(socket);
+    }
+}
+
+// ----------------------------------------------------------------------------
+
+#if 0
 namespace nstd::net::hidden_names::async_accept {
     template <typename Acceptor> struct operation;
     struct cpo;
@@ -111,6 +136,7 @@ namespace nstd::net::inline customization_points {
     using async_accept_t = ::nstd::net::hidden_names::async_accept::cpo;
     inline constexpr async_accept_t async_accept;
 }
+#endif
 
 // ----------------------------------------------------------------------------
 

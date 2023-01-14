@@ -61,7 +61,6 @@ class nstd::net::basic_socket_acceptor
     : public ::nstd::net::socket_base
 {
 public:
-    using native_handle_type = int;
     using protocol_type      = AcceptableProtocol;
     using endpoint_type      = typename protocol_type::endpoint;
     using socket_type        = typename protocol_type::socket;

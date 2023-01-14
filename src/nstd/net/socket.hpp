@@ -26,16 +26,19 @@
 #ifndef INCLUDED_NSTD_NET_SOCKET
 #define INCLUDED_NSTD_NET_SOCKET
 
-#include <concepts>
+#include "nstd/type_traits/remove_cvref.hpp"
+#include "nstd/concepts/same_as.hpp"
 
 // ----------------------------------------------------------------------------
 
 namespace nstd::net {
-    template <typename T>
+    template <typename Socket>
     concept socket =
-        requires(T s) {
-            { s.native_handle() } -> ::std::same_as<typename T::native_handle_type>;
-            { s.protocol() } -> ::std::same_as<typename T::protocol_type>;
+        requires(Socket const& s) {
+            { s.native_handle() }
+                -> ::nstd::concepts::same_as<typename ::nstd::type_traits::remove_cvref_t<Socket>::native_handle_type>;
+            { s.protocol() }
+                -> ::nstd::concepts::same_as<typename ::nstd::type_traits::remove_cvref_t<Socket>::protocol_type>;
         };
 }
 

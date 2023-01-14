@@ -38,16 +38,86 @@
 #include "nstd/execution/set_error.hpp"
 #include "nstd/execution/start.hpp"
 #include "nstd/file/context.hpp"
+#include "nstd/file/io_object.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
 #include "nstd/utility/exchange.hpp"
 #include "nstd/utility/forward.hpp"
 #include "nstd/utility/move.hpp"
 
+#include "nstd/execution/add_value.hpp"
+#include "nstd/execution/just.hpp"
 #include <atomic>
 #include <functional>
 #include <mutex>
 #include <optional>
 #include <system_error>
+
+// ----------------------------------------------------------------------------
+
+namespace nstd::hidden_names::async_io {
+    template <template <typename> class Operation,
+              ::nstd::execution::receiver Receiver,
+              ::nstd::file::io_object Stream>
+    struct state {
+        ::nstd::type_traits::remove_cvref_t<Receiver> d_receiver;
+        Stream&                                       d_stream;
+
+        friend auto tag_invoke(::nstd::execution::start_t, state&) noexcept -> void {
+        }
+    };
+
+    template <template <typename> class Operation,
+              ::nstd::execution::sender Sender,
+              ::nstd::file::io_object Stream>
+    struct sender
+    {
+        using completion_signatures
+            = ::nstd::execution::completion_signatures<
+                typename Operation<Stream>::completion_signature,
+                ::nstd::execution::set_error_t(::std::error_code), //-dk:TODO add upstream errors
+                ::nstd::execution::set_stopped_t()
+            >;
+
+        ::nstd::type_traits::remove_cvref_t<Sender> d_sender;
+        Stream&                                     d_stream;
+
+        friend auto tag_invoke(::nstd::execution::get_attrs_t, sender const& self) noexcept {
+            return ::nstd::execution::get_attrs(self.d_sender);
+        }
+        template <::nstd::execution::receiver Receiver>
+        friend auto tag_invoke(::nstd::execution::connect_t, sender const& self, Receiver&& receiver) noexcept {
+            return ::nstd::hidden_names::async_io::state<Operation, Receiver, Stream>{
+                ::nstd::utility::forward<Receiver>(receiver),
+                self.d_stream
+            };
+        }
+    };
+
+    template <template <typename> class Operation>
+    struct cpo
+        : ::nstd::execution::sender_adaptor_closure<cpo<Operation>>
+    {
+        template <::nstd::execution::sender Sender, ::nstd::file::io_object Stream>
+        auto operator()(Sender&& sender, Stream& stream) const {
+            return ::nstd::hidden_names::async_io::sender<Operation, Sender, Stream>{
+                ::nstd::utility::forward<Sender>(sender),
+                stream
+            };
+        } 
+        template <::nstd::file::io_object Stream>
+        auto operator()(Stream& stream) const {
+            return ::nstd::execution::sender_adaptor_closure<cpo<Operation>>::operator()(stream);
+        } 
+        template <::nstd::file::io_object Stream, typename... Args>
+        auto factory(Stream& stream, Args&&... args) const {
+            return (*this)(
+                ::nstd::execution::just()
+                | ::nstd::execution::add_value(::nstd::utility::forward<Args>(args)...),
+                stream);
+                 
+        } 
+    };
+}
 
 // ----------------------------------------------------------------------------
 

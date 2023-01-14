@@ -176,7 +176,7 @@ namespace
             EX::repeat_effect(
                 EX::on(context.scheduler(),
                       NN::async_accept(server)
-                    | EX::then([&outstanding, &context](stream_socket client, auto&& endpoint){
+                    | EX::then([&outstanding, &context](auto&& client, auto&& endpoint){
                         ::std::cout << "accepted connection from " << endpoint << "\n";
                         run_client(outstanding, context, ::std::move(client));
                     })
