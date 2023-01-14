@@ -47,7 +47,7 @@ namespace nstd::hidden_names::sender_adaptor_closure_ns
     template <typename T>
     using decay_or_ref_t = typename ::nstd::hidden_names::sender_adaptor_closure_ns::decay_or_ref<T>::type;
         
-    template <typename C, typename... T>
+    template <typename CPO, typename... T>
     struct adaptor
     {
         ::std::tuple<::nstd::hidden_names::sender_adaptor_closure_ns::decay_or_ref_t<T>...> args;
@@ -57,15 +57,15 @@ namespace nstd::hidden_names::sender_adaptor_closure_ns
         }
         template <::nstd::execution::sender Sender>
         auto operator()(Sender&& sender) {
-            return ::std::apply([&sender](auto&&... a){ return C()(::nstd::utility::forward<Sender>(sender), a...); }, this->args);
+            return ::std::apply([&sender](auto&&... a){ return CPO()(::nstd::utility::forward<Sender>(sender), a...); }, this->args);
         }
     };
 
-    template <typename C>
+    template <typename CPO>
     struct sender_adaptor_closure {
         template <typename... A>
         auto operator()(A&&... a) const {
-            return ::nstd::hidden_names::sender_adaptor_closure_ns::adaptor<C, A...>(
+            return ::nstd::hidden_names::sender_adaptor_closure_ns::adaptor<CPO, A...>(
                 ::nstd::utility::forward<A>(a)...
             );
         }
