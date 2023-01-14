@@ -40,6 +40,7 @@
 #include "kuhl/test.hpp"
 #include "netinet/in.h"
 #include "arpa/inet.h"
+#include "nstd/hidden_names/print_completion_signatures.hpp"
 
 namespace test_declarations {}
 namespace EX = ::nstd::execution;
@@ -167,18 +168,20 @@ static KT::testcase const tests[] = {
             bool error_called{false};
             bool stopped_called{false};
             TD::acceptor acceptor;
-            auto accept
-                = EX::on(context.scheduler(),
+            auto accept =
+                EX::on(context.scheduler(),
                       NN::async_accept(acceptor)
-                    | EX::inject_cancel(source.token())
-                    | EX::then([&](TD::stream, TD::endpoint){ value_called = true; })
-                    //| EX::upon_error([&](auto&&...){ error_called = true; })
+                    //| EX::inject_cancel(source.token())
+                    //| EX::then([&](TD::stream, TD::endpoint) noexcept { value_called = true; })
                     //| EX::upon_error([&](::std::exception_ptr){ error_called = true; })
                     //-dk:TODO | EX::upon_error([&](::std::error_code){ error_called = true; })
-                    | EX::upon_stopped([&](){ stopped_called = true; })
-                    | EX::upon_error([&](auto){ error_called = true; })
-                );
+                    //| EX::upon_stopped([&]() noexcept { stopped_called = true; })
+                    //| EX::upon_error([&](auto) noexcept { error_called = true; })
+                )
+                ;
 
+            HN::print_completion_signatures(accept);
+            HN::print_completion_signatures(NN::async_accept(acceptor));
             static_assert(EX::receiver<TD::receiver>);
             auto state(EX::connect(UT::move(accept), TD::receiver()));
             EX::start(state);

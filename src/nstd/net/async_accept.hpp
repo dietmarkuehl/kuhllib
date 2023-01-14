@@ -46,10 +46,19 @@
 // ----------------------------------------------------------------------------
 
 namespace nstd::hidden_names::async_accept {
-    template <typename Acceptor>
+    template <typename Acceptor, typename Env>
     struct operation {
         using completion_signature
             = ::nstd::execution::set_value_t(typename Acceptor::socket_type, typename Acceptor::endpoint_type);
+        
+        struct state {
+            ::sockaddr_storage d_address;
+            ::socklen_t        d_length{sizeof(::sockaddr_storage)};
+            auto start(Acceptor& socket, auto&& scheduler, ::nstd::file::io_base* cont) noexcept -> void {
+                scheduler.accept(socket.native_handle(), reinterpret_cast<sockaddr*>(&this->d_address), &this->d_length, 0, cont);
+            }
+        };
+        static auto connect(Env const&) -> state { return {}; };
     };
 }
 
