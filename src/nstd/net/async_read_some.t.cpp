@@ -55,7 +55,7 @@ static KT::testcase const tests[] = {
             //HN::print_completion_signatures(sender);
             //std::cout << "is completion signatures: " << std::boolalpha << HN::is_completion_signatures<TT::remove_cvref_t<decltype(sender)>::completion_signatures> << "\n";
             return KT::use(sender)
-                && HN::is_completion_signatures<decltype(sender)::completion_signatures>
+                && HN::is_completion_signatures<decltype(EX::get_completion_signatures(sender))>
                 ;
         }),
     KT::expect_success("using async_read with let", []{

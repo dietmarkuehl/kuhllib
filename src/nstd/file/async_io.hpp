@@ -122,7 +122,7 @@ namespace nstd::hidden_names::async_io {
                     else {
                         ::nstd::execution::set_error(
                             ::nstd::utility::move(this->d_receiver),
-                            ::std::system_error(result, ::std::system_category())
+                            ::std::error_code(result, ::std::system_category())
                             );
                     }
                 }

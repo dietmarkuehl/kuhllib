@@ -27,6 +27,7 @@
 #define INCLUDED_NSTD_NET_ASYNC_READ_SOME
 
 #include "nstd/file/async_io.hpp"
+#include "nstd/file/io_object.hpp"
 #include "nstd/net/get_iovec.hpp"
 #include "nstd/net/socket.hpp"
 #include "nstd/net/io_context.hpp"
@@ -41,6 +42,67 @@
 
 // ----------------------------------------------------------------------------
 
+namespace nstd::hidden_names::async_read_some {
+    template <::nstd::file::io_object IOObject, typename Env>
+    struct operation {
+        using completion_signature = ::nstd::execution::set_value_t(::std::size_t);
+        
+        template <typename IOVector>
+        struct state {
+            IOVector d_iovec;
+            ::msghdr d_msg{};
+
+            template <typename Buffers>
+            state(Env const& env, Buffers&& buffers)
+                : d_iovec(::nstd::net::get_iovec(env, ::nstd::utility::forward<Buffers>(buffers)))
+            {
+                this->d_msg.msg_iov    = this->d_iovec.data();
+                this->d_msg.msg_iovlen = this->d_iovec.size();
+            }
+            auto start(
+                ::nstd::file::io_object auto& object,
+                auto&& scheduler,
+                ::nstd::file::io_base* cont) noexcept -> void
+            {
+                scheduler.read(object.native_handle(), this->d_iovec.data(), this->d_iovec.size(), cont);
+            }
+            auto start(
+                ::nstd::net::socket auto& socket,
+                auto&& scheduler,
+                ::nstd::file::io_base* cont) noexcept -> void
+            {
+                scheduler.recvmsg(socket.native_handle(), &this->d_msg, int(), cont);
+            }
+            template <typename Receiver>
+            auto complete(::std::int32_t n, ::std::uint32_t, Receiver& receiver) noexcept -> void {
+                ::nstd::execution::set_value(::nstd::utility::move(receiver), ::std::size_t(n));
+            }
+        };
+        template <typename Buffers>
+        static auto connect(Env const& env, Buffers&& buffers)
+        {
+            using iovec_t = decltype(::nstd::net::get_iovec(env, ::nstd::utility::forward<Buffers>(buffers)));
+            return state<iovec_t>(env, ::nstd::utility::forward<Buffers>(buffers));
+        }
+    };
+}
+
+namespace nstd::net::inline customization_points {
+    using async_read_some_t =
+        ::nstd::hidden_names::async_io::cpo<
+            ::nstd::hidden_names::async_read_some::operation
+        >;
+    inline constexpr async_read_some_t async_read_some_adapter{};
+
+    template <::nstd::file::io_object IOObject, typename Buffers>
+    inline auto async_read_some( IOObject&& io_object, Buffers&& buffers)  {
+        return ::nstd::net::async_read_some_adapter(
+            ::nstd::execution::just(::nstd::utility::forward<Buffers>(buffers)),
+            io_object);
+    }
+}
+
+#if 0
 namespace nstd::net::hidden_names::async_read_some {
     template <typename Socket, typename MBS> struct socket_operation;
     template <typename Socket, typename MBS> struct stream_operation;
@@ -137,24 +199,9 @@ struct nstd::net::hidden_names::async_read_some::cpo {
             socket.native_handle(), buffer
             );
     }
-    template <typename Stream, typename MBS>
-    friend auto tag_invoke(cpo, Stream& socket, MBS const& buffer) {
-        return nstd::file::hidden_names::async_io_sender<::nstd::net::hidden_names::async_read_some::stream_operation<Stream, MBS>>(
-            socket.native_handle(), buffer
-            );
-    }
-    template <typename Socket, typename MBS>
-    auto operator()(Socket& socket, MBS const& buffer) const {
-        return ::nstd::tag_invoke(*this, socket, buffer);
-    }
 };
 
-// ----------------------------------------------------------------------------
-
-namespace nstd::net::inline customization_points {
-    using async_read_some_t = ::nstd::net::hidden_names::async_read_some::cpo;
-    inline constexpr async_read_some_t async_read_some;
-}
+#endif
 
 // ----------------------------------------------------------------------------
 

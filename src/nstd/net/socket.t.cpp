@@ -39,7 +39,7 @@ namespace test_declaration {
             using native_handle_type = int;
             using protocol_type = int;
 
-            auto native_handle() const -> native_handle_type { return {}; }
+            auto native_handle() const noexcept -> native_handle_type { return {}; }
             auto protocol() const -> protocol_type { return {}; }
         };
 
@@ -48,7 +48,7 @@ namespace test_declaration {
             using native_handle_type = int;
             using protocol_type = int;
 
-            auto native_handle() const -> NativeT { return {}; }
+            auto native_handle() const noexcept -> NativeT { return {}; }
             auto protocol() const -> ProtocolT { return {}; }
         };
     }

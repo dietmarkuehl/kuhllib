@@ -43,7 +43,7 @@ public:
     using native_handle_type = int;
     explicit stream(native_handle_type fd);
 
-    auto native_handle() const -> native_handle_type { return this->d_fd.get(); }
+    auto native_handle() const noexcept -> native_handle_type { return this->d_fd.get(); }
 };
 
 // ----------------------------------------------------------------------------

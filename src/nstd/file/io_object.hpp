@@ -27,6 +27,7 @@
 #define INCLUDED_NSTD_FILE_IO_OBJECT
 
 #include "nstd/concepts/same_as.hpp"
+#include "nstd/type_traits/remove_cvref.hpp"
 
 // ----------------------------------------------------------------------------
 
@@ -34,9 +35,9 @@ namespace nstd::file {
     template <typename Object>
     concept io_object
         = requires(Object const& object) {
-            typename Object::native_handle_type;
+            typename ::nstd::type_traits::remove_cvref_t<Object>::native_handle_type;
             { object.native_handle() } noexcept
-                -> ::nstd::concepts::same_as<typename Object::native_handle_type>;
+                -> ::nstd::concepts::same_as<typename ::nstd::type_traits::remove_cvref_t<Object>::native_handle_type>;
         }
         ;
 }

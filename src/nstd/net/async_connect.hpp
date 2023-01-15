@@ -58,7 +58,7 @@ namespace nstd::hidden_names::async_connect {
             }
         };
         static auto connect(Env const&, typename Socket::endpoint_type const& endpoint)
-            -> state { return state(endpoint); };
+            -> state { return state(endpoint); }
     };
 }
 
