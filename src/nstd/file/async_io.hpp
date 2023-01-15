@@ -61,9 +61,50 @@ namespace nstd::hidden_names::async_io {
     struct state_base
         : ::nstd::file::io_base
     {
+        using env_t = decltype(::nstd::execution::get_env(::nstd::type_traits::declval<Receiver>()));
+        using stop_token_t = decltype(::nstd::execution::get_stop_token(::nstd::type_traits::declval<env_t>()));
+
+        struct cancel
+            : ::nstd::file::io_base {
+            state_base* d_state;
+            cancel(state_base* state)
+                : ::nstd::file::io_base()
+                , d_state(state) {
+            }  
+            cancel(cancel&& other)
+                : ::nstd::file::io_base()
+                , d_state(::nstd::utility::exchange(other.d_state, nullptr)) {
+            }
+            cancel(cancel const&) = delete;
+            auto operator()() noexcept -> void {
+                if (++this->d_state->d_outstanding == 2u) {
+                    auto const& env{::nstd::execution::get_env(this->d_state->d_receiver)};
+                    auto        scheduler{::nstd::execution::get_scheduler(env)};
+                    scheduler.cancel(this->d_state, this);
+                }
+            }
+            virtual auto do_result(::std::int32_t, ::std::uint32_t) -> void override {
+                this->d_state->d_cancelled = true;
+                if (--this->d_state->d_outstanding == 0u) {
+                    if (this->d_state->d_result < 0) {
+                        ::nstd::execution::set_stopped(::nstd::utility::move(this->d_state->d_receiver));
+                    }
+                    else {
+                        this->d_state->complete(this->d_state->d_result, this->d_state->d_flags);
+                    }
+                }
+            }
+        };
+        using callback_t = typename stop_token_t::template callback_type<cancel>;
+
         ::nstd::type_traits::remove_cvref_t<Receiver> d_receiver;
         Stream&                                       d_stream;
         InnerState                                    d_inner_state{};
+        ::std::optional<callback_t>                   d_callback;
+        ::std::atomic<::std::size_t>                  d_outstanding{};
+        ::std::atomic<bool>                           d_cancelled{false};
+        ::std::int32_t                                d_result{};
+        ::std::uint32_t                               d_flags{};
 
         template <::nstd::execution::receiver R>
         state_base(R&& receiver, Stream& stream) 
@@ -75,8 +116,36 @@ namespace nstd::hidden_names::async_io {
             ::std::cout << "state_base dtor=" << this << "\n";
         }
 
-        auto do_result(::std::int32_t, ::std::uint32_t) -> void override {
+        auto do_result(::std::int32_t result, ::std::uint32_t flags) -> void override {
             ::std::cout << "state_base::do_result\n";
+            this->d_result = result;
+            this->d_flags  = flags;
+            if (0 == --this->d_outstanding) {
+                if (result < 0) {
+                    if (this->d_cancelled) {
+                        ::nstd::execution::set_stopped(::nstd::utility::move(this->d_receiver));
+                    }
+                    else {
+                        ::nstd::execution::set_error(
+                            ::nstd::utility::move(this->d_receiver),
+                            ::std::system_error(result, ::std::system_category())
+                            );
+                    }
+                }
+                else {
+                    this->complete(result, flags);
+                }
+            }
+        }
+        auto engage_callback() ->  void {
+            auto env{::nstd::execution::get_env(this->d_receiver)};
+            this->d_callback.emplace(::nstd::execution::get_stop_token(env), state_base::cancel(this));
+        }
+        auto complete(::std::int32_t result, ::std::uint32_t flags) -> void {
+            ::std::visit(
+                [&](auto& inner){ inner.d_state.complete(result, flags, this->d_receiver) ;},
+                this->d_inner_state
+            );
         }
     };
 
@@ -93,8 +162,13 @@ namespace nstd::hidden_names::async_io {
             }
         };
     };
+    struct empty_state {
+        struct nested {
+            auto complete(::std::int32_t, ::std::uint32_t, auto&) -> void {}
+        } d_state;
+    };
     template <typename... T>
-    using variant = ::std::variant<::std::monostate, T...>;
+    using variant = ::std::variant<empty_state, T...>;
 
     template <::nstd::execution::receiver Receiver, ::nstd::file::io_object Stream, typename Completions, typename Env, typename Operation>
     struct receiver {
@@ -105,8 +179,12 @@ namespace nstd::hidden_names::async_io {
         }
         template <typename... Args>
         friend auto tag_invoke(::nstd::execution::set_value_t, receiver&& self, Args&&... args) noexcept {
+            ::std::cout << "async_io::set_value state=" << self.d_state << "\n";
+
+            ++self.d_state->d_outstanding;
+            self.d_state->engage_callback();
+
             using state_type = typename inner_state_t<Env, Operation>::template inner_holder<Args...>;
-            ::std::cout << "async_io::set_value" << sizeof(state_type) << " state=" << self.d_state << "\n";
             self.d_state->d_inner_state.template emplace<state_type>(
                 ::nstd::execution::get_env(self.d_state->d_receiver),
                 ::nstd::utility::forward<Args>(args)...

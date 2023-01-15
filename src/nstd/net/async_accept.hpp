@@ -52,10 +52,23 @@ namespace nstd::hidden_names::async_accept {
             = ::nstd::execution::set_value_t(typename Acceptor::socket_type, typename Acceptor::endpoint_type);
         
         struct state {
+            ::std::optional<typename Acceptor::protocol_type> d_protocol;
             ::sockaddr_storage d_address;
             ::socklen_t        d_length{sizeof(::sockaddr_storage)};
             auto start(Acceptor& socket, auto&& scheduler, ::nstd::file::io_base* cont) noexcept -> void {
+                this->d_protocol = socket.protocol();
                 scheduler.accept(socket.native_handle(), reinterpret_cast<sockaddr*>(&this->d_address), &this->d_length, 0, cont);
+            }
+            template <typename Receiver>
+            auto complete(::std::int32_t fd, ::std::uint32_t, Receiver& receiver) noexcept -> void {
+                ::std::cout << "complete\n";
+                typename Acceptor::endpoint_type endpoint;
+                endpoint.set_address(&this->d_address, this->d_length);
+                ::nstd::execution::set_value(
+                    ::nstd::utility::move(receiver),
+                    typename Acceptor::socket_type(*this->d_protocol, fd),
+                    endpoint
+                );
             }
         };
         static auto connect(Env const&) -> state { return {}; };
