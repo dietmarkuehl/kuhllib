@@ -276,15 +276,7 @@ namespace nstd::hidden_names::async_io {
         } 
         template <::nstd::file::io_object Stream>
         auto operator()(Stream& stream) const {
-            return ::nstd::execution::sender_adaptor_closure<cpo<Operation>>::operator()(stream);
-        } 
-        template <::nstd::file::io_object Stream, typename... Args>
-        auto factory(Stream& stream, Args&&... args) const {
-            return (*this)(
-                ::nstd::execution::just()
-                | ::nstd::execution::add_value(::nstd::utility::forward<Args>(args)...),
-                stream);
-                 
+            return ::nstd::execution::sender_adaptor_closure<cpo<Operation>>::operator()(::std::ref(stream));
         } 
     };
 }

@@ -33,6 +33,7 @@
 #include "nstd/execution/get_completion_scheduler.hpp"
 #include "nstd/execution/get_env.hpp"
 #include "nstd/execution/get_scheduler.hpp"
+#include "nstd/execution/just.hpp"
 #include "nstd/execution/scheduler.hpp"
 #include "nstd/execution/sender.hpp"
 #include "nstd/execution/sender_adaptor_closure.hpp"
@@ -83,7 +84,7 @@ namespace nstd::net::inline customization_points {
 
     template <::nstd::net::socket Socket>
     inline auto async_accept(Socket&& socket) {
-        return async_accept_adapter.factory(socket);
+        return ::nstd::net::async_accept_adapter(::nstd::execution::just(), socket);
     }
 }
 

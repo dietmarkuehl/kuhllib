@@ -151,6 +151,46 @@ static KT::testcase const tests[] = {
                 && endpoint.addr.sin_addr.s_addr == htonl(0x01020304);
                 ;
         }),
+    KT::expect_success("piped", []{
+            NF::test_context test_context;
+            NN::io_context   context(&test_context);
+            test_context.on_accept = [&test_context](int, ::sockaddr* addr, ::socklen_t* len, int, NF::context::io_base* cont){
+                if (addr && len && sizeof(sockaddr_in) <= *len) {
+                    ::sockaddr_in* addr_in = reinterpret_cast<::sockaddr_in*>(addr);
+                    addr_in->sin_family = AF_INET;
+                    addr_in->sin_port   = htons(17);
+                    addr_in->sin_addr.s_addr = htonl(0x01020304);
+                    *len = sizeof(sockaddr_in);
+                }
+                test_context.make_ready(5, 0, cont);
+            };
+
+            bool         value_called(false);
+            int          handle{};
+            TD::endpoint endpoint;
+            TD::acceptor acceptor;
+            auto accept
+                = EX::on(context.scheduler(),
+                      EX::just()
+                    | NN::async_accept_adapter(acceptor)
+                    | EX::then([&](TD::stream stream, TD::endpoint ep){
+                        handle   = stream.handle;
+                        endpoint = ep;
+                        value_called = true;
+                    })
+                )
+                ;
+
+            EX::start_detached(accept);
+            auto rc(context.run());
+            return rc == 2
+                && value_called
+                && handle == 5
+                && endpoint.addr.sin_family == AF_INET
+                && endpoint.addr.sin_port   == htons(17)
+                && endpoint.addr.sin_addr.s_addr == htonl(0x01020304);
+                ;
+        }),
     KT::expect_success("cancelation", []{
             NF::test_context test_context;
             NN::io_context   context(&test_context);
