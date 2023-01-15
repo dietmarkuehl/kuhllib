@@ -28,6 +28,7 @@
 
 #include "nstd/file/async_io.hpp"
 #include "nstd/net/io_context.hpp"
+#include "nstd/net/socket.hpp"
 #include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/sender.hpp"
 #include "nstd/execution/set_value.hpp"
@@ -37,65 +38,43 @@
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::net::hidden_names::async_connect {
-    template <typename Socket> struct operation;
-    struct cpo;
+namespace nstd::hidden_names::async_connect {
+    template <typename Socket, typename Env>
+    struct operation {
+        using completion_signature = ::nstd::execution::set_value_t();
+        
+        struct state {
+            ::sockaddr_storage d_address;
+            ::socklen_t        d_length{sizeof(::sockaddr_storage)};
+            state(typename Socket::endpoint_type const& endpoint) {
+                this->d_length = endpoint.get_address(&this->d_address);
+            }
+            auto start(Socket& socket, auto&& scheduler, ::nstd::file::io_base* cont) noexcept -> void {
+                scheduler.connect(socket.native_handle(), reinterpret_cast<sockaddr*>(&this->d_address), this->d_length, cont);
+            }
+            template <typename Receiver>
+            auto complete(::std::int32_t, ::std::uint32_t, Receiver& receiver) noexcept -> void {
+                ::nstd::execution::set_value(::nstd::utility::move(receiver));
+            }
+        };
+        static auto connect(Env const&, typename Socket::endpoint_type const& endpoint)
+            -> state { return state(endpoint); };
+    };
 }
 
-// ----------------------------------------------------------------------------
-
-template <typename Socket>
-struct nstd::net::hidden_names::async_connect::operation {
-    using completion_signature
-        = ::nstd::execution::set_value_t();
-
-    typename Socket::native_handle_type      d_handle;
-    typename Socket::endpoint_type           d_endpoint;
-    ::sockaddr_storage                       d_address{};
-    template <typename Env>
-    struct state {
-    };
-    template <typename Env>
-    auto connect(Env const&) -> state<Env> { return {}; }
-    template <typename Env>
-    auto start(::nstd::net::io_context::scheduler_type scheduler, state<Env>&, ::nstd::file::context::io_base* cont) -> void{
-        ::socklen_t length = this->d_endpoint.get_address(&this->d_address);
-        scheduler.connect(this->d_handle, reinterpret_cast<::sockaddr*>(&this->d_address), length, cont);
-    }
-    template <::nstd::execution::receiver Receiver, typename Env>
-    auto complete(int32_t rc, uint32_t, bool cancelled, state<Env>&, Receiver& receiver) -> void {
-        if (cancelled) {
-            ::nstd::execution::set_stopped(::nstd::utility::move(receiver));
-        }
-        else if (rc < 0) {
-            ::nstd::execution::set_error(::nstd::utility::move(receiver), ::std::error_code(-rc, std::system_category()));
-        }
-        else {
-            ::nstd::execution::set_value(::nstd::utility::move(receiver));
-        }
-    }
-};
-
-// ----------------------------------------------------------------------------
-
-struct nstd::net::hidden_names::async_connect::cpo {
-    template <typename Socket>
-    friend auto tag_invoke(cpo, Socket& socket, typename Socket::endpoint_type const& endpoint) {
-        return nstd::file::hidden_names::async_io_sender<::nstd::net::hidden_names::async_connect::operation<Socket>>(
-            socket.native_handle(), endpoint
-            );
-    }
-    template <typename Socket>
-    auto operator()(Socket& socket, typename Socket::endpoint_type const& endpoint) const {
-        return ::nstd::tag_invoke(*this, socket, endpoint);
-    }
-};
-
-// ----------------------------------------------------------------------------
-
 namespace nstd::net::inline customization_points {
-    using async_connect_t = ::nstd::net::hidden_names::async_connect::cpo;
-    inline constexpr async_connect_t async_connect;
+    using async_connect_t =
+        ::nstd::hidden_names::async_io::cpo<
+            ::nstd::hidden_names::async_connect::operation
+        >;
+    inline constexpr async_connect_t async_connect_adapter{};
+
+    template <::nstd::net::socket Socket>
+    inline auto async_connect(
+        Socket&& socket,
+        typename ::nstd::type_traits::remove_cvref_t<Socket>::endpoint_type const& endpoint) {
+        return ::nstd::net::async_connect_adapter(::nstd::execution::just(endpoint), socket);
+    }
 }
 
 // ----------------------------------------------------------------------------

@@ -262,35 +262,35 @@ list(APPEND kuhllib_memory_components
 )
 
 list(APPEND xkuhllib_net_components
+)
+
+list(APPEND kuhllib_net_components
+    src/nstd/net/async_accept
     src/nstd/net/async_connect
     src/nstd/net/async_read_some
     src/nstd/net/async_receive
     src/nstd/net/async_receive_from
     src/nstd/net/async_send
     src/nstd/net/async_send_to
-    src/nstd/net/async_write_some
     src/nstd/net/async_write
+    src/nstd/net/async_write_some
     src/nstd/net/basic_datagram_socket
     src/nstd/net/basic_socket
+    src/nstd/net/basic_socket_acceptor
     src/nstd/net/basic_stream_socket
     src/nstd/net/get_iovec
+    src/nstd/net/io_context
     src/nstd/net/ip/address
     src/nstd/net/ip/address_v4
     src/nstd/net/ip/address_v6
     src/nstd/net/ip/basic_endpoint
     src/nstd/net/ip/make_address_v4
     src/nstd/net/ip/tcp
-    src/nstd/net/ip/udp
     src/nstd/net/ip/types
+    src/nstd/net/ip/udp
     src/nstd/net/netfwd
-    src/nstd/net/socket
-)
-
-list(APPEND kuhllib_net_components
-    src/nstd/net/async_accept
-    src/nstd/net/basic_socket_acceptor
-    src/nstd/net/io_context
     src/nstd/net/scope
+    src/nstd/net/socket
     src/nstd/net/socket_base
 )
 
