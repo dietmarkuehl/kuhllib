@@ -55,10 +55,12 @@ namespace nstd::hidden_names::async_receive {
         struct state {
             IOVector d_iovec;
             ::msghdr d_msg{};
+            int      d_flags;
 
             template <typename Buffers>
-            state(Env const& env, Buffers&& buffers)
+            state(Env const& env, Buffers&& buffers, ::nstd::hidden_names::message_flags flags)
                 : d_iovec(::nstd::net::get_iovec(env, ::nstd::utility::forward<Buffers>(buffers)))
+                , d_flags(static_cast<int>(flags))
             {
                 this->d_msg.msg_iov    = this->d_iovec.data();
                 this->d_msg.msg_iovlen = this->d_iovec.size();
@@ -68,7 +70,7 @@ namespace nstd::hidden_names::async_receive {
                 auto&& scheduler,
                 ::nstd::file::io_base* cont) noexcept -> void
             {
-                scheduler.recvmsg(socket.native_handle(), &this->d_msg, int(), cont);
+                scheduler.recvmsg(socket.native_handle(), &this->d_msg, this->d_flags, cont);
             }
             template <typename Receiver>
             auto complete(::std::int32_t n, ::std::uint32_t, Receiver& receiver) noexcept -> void {
@@ -79,7 +81,13 @@ namespace nstd::hidden_names::async_receive {
         static auto connect(Env const& env, Buffers&& buffers)
         {
             using iovec_t = decltype(::nstd::net::get_iovec(env, ::nstd::utility::forward<Buffers>(buffers)));
-            return state<iovec_t>(env, ::nstd::utility::forward<Buffers>(buffers));
+            return state<iovec_t>(env, ::nstd::utility::forward<Buffers>(buffers), ::nstd::hidden_names::message_flags{});
+        }
+        template <typename Buffers>
+        static auto connect(Env const& env, Buffers&& buffers, ::nstd::hidden_names::message_flags flags)
+        {
+            using iovec_t = decltype(::nstd::net::get_iovec(env, ::nstd::utility::forward<Buffers>(buffers)));
+            return state<iovec_t>(env, ::nstd::utility::forward<Buffers>(buffers), flags);
         }
     };
 }
@@ -95,6 +103,12 @@ namespace nstd::net::inline customization_points {
     inline auto async_receive(Socket&& socket, Buffers&& buffers)  {
         return ::nstd::net::async_receive_adapter(
             ::nstd::execution::just(::nstd::utility::forward<Buffers>(buffers)),
+            socket);
+    }
+    template <::nstd::net::socket Socket, typename Buffers>
+    inline auto async_receive(Socket&& socket, Buffers&& buffers, ::nstd::hidden_names::message_flags flags)  {
+        return ::nstd::net::async_receive_adapter(
+            ::nstd::execution::just(::nstd::utility::forward<Buffers>(buffers), flags),
             socket);
     }
 }
