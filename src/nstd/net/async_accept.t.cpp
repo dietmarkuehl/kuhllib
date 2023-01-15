@@ -171,8 +171,8 @@ static KT::testcase const tests[] = {
             auto accept =
                 EX::on(context.scheduler(),
                       NN::async_accept(acceptor)
-                    // | EX::inject_cancel(source.token())
                     | EX::then([&](TD::stream, TD::endpoint) noexcept { value_called = true; })
+                    | EX::inject_cancel(source.token())
                     //| EX::upon_error([&](::std::exception_ptr){ error_called = true; })
                     //-dk:TODO | EX::upon_error([&](::std::error_code){ error_called = true; })
                     | EX::upon_stopped([&]() noexcept { stopped_called = true; })

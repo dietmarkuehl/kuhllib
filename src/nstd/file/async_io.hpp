@@ -52,7 +52,6 @@
 #include <optional>
 #include <system_error>
 #include <variant>
-#include <iostream> //-dk:TODO remove
 
 // ----------------------------------------------------------------------------
 
@@ -110,14 +109,9 @@ namespace nstd::hidden_names::async_io {
         state_base(R&& receiver, Stream& stream) 
             : d_receiver(::nstd::utility::forward<R>(receiver))
             , d_stream(stream) {
-            ::std::cout << ::std::unitbuf << "state_base ctor=" << this << "\n";
-        }
-        ~state_base() {
-            ::std::cout << "state_base dtor=" << this << "\n";
         }
 
         auto do_result(::std::int32_t result, ::std::uint32_t flags) -> void override {
-            ::std::cout << "state_base::do_result\n";
             this->d_result = result;
             this->d_flags  = flags;
             if (0 == --this->d_outstanding) {
@@ -179,7 +173,6 @@ namespace nstd::hidden_names::async_io {
         }
         template <typename... Args>
         friend auto tag_invoke(::nstd::execution::set_value_t, receiver&& self, Args&&... args) noexcept {
-            ::std::cout << "async_io::set_value state=" << self.d_state << "\n";
 
             ++self.d_state->d_outstanding;
             self.d_state->engage_callback();
@@ -196,7 +189,6 @@ namespace nstd::hidden_names::async_io {
         }
         template <typename Error>
         friend auto tag_invoke(::nstd::execution::set_error_t, receiver&& self, Error&& error) noexcept {
-            ::std::cout << "async_io::set_error\n";
             ::nstd::execution::set_error(
                 ::nstd::utility::move(self.d_state->d_receiver),
                 ::nstd::utility::forward<Error>(error)
@@ -204,7 +196,6 @@ namespace nstd::hidden_names::async_io {
         }
         template <typename Error>
         friend auto tag_invoke(::nstd::execution::set_stopped_t, receiver&& self) noexcept {
-            ::std::cout << "async_io::set_stopped\n";
             ::nstd::execution::set_stopped(::nstd::utility::move(self.d_state->d_receiver));
         }
     };

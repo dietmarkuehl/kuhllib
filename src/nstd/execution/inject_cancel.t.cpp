@@ -57,8 +57,7 @@ namespace test_declarations
             TT::remove_cvref_t<Receiver> d_receiver;
             friend auto tag_invoke(EX::start_t, state& self) noexcept -> void
             {
-                static_assert(EX::receiver<decltype(self.d_receiver)>);
-                auto token{EX::get_stop_token(self.d_receiver)};
+                auto token{EX::get_stop_token(EX::get_env(self.d_receiver))};
                 if (token.stop_requested()) {
                     EX::set_stopped(UT::move(self.d_receiver));
                 }

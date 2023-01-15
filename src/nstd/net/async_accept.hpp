@@ -61,7 +61,6 @@ namespace nstd::hidden_names::async_accept {
             }
             template <typename Receiver>
             auto complete(::std::int32_t fd, ::std::uint32_t, Receiver& receiver) noexcept -> void {
-                ::std::cout << "complete\n";
                 typename Acceptor::endpoint_type endpoint;
                 endpoint.set_address(&this->d_address, this->d_length);
                 ::nstd::execution::set_value(
