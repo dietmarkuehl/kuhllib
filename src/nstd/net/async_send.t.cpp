@@ -52,11 +52,13 @@ namespace test_declarations {
     namespace {
         struct socket {
             using native_handle_type = int;
+            using protocol_type      = int;
             socket() = default;
             socket(socket&&) = default;
             socket(socket const&) = delete;
             
-            auto native_handle() const -> native_handle_type { return 17; }
+            auto native_handle() const noexcept -> native_handle_type { return 17; }
+            auto protocol() const -> protocol_type { return {}; }
             template <typename CBS>
             auto enqueue(NF::operation_send<CBS>& op) {
                 op.submit();
