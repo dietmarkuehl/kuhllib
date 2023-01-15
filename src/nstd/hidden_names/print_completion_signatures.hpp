@@ -49,9 +49,22 @@ namespace nstd::hidden_names {
 
     template <typename T> struct print_type { static ::std::string str() { return ::std::string("<unknown:") + typeid(::nstd::type_traits::declval<T>()).name() + ">"; } };
 
-    template <> struct print_type<bool> { static ::std::string str() { return "int"; } };
+    template <> struct print_type<bool> { static ::std::string str() { return "bool"; } };
+    template <> struct print_type<char> { static ::std::string str() { return "char"; } };
+    template <> struct print_type<wchar_t> { static ::std::string str() { return "wchar_t"; } };
+    template <> struct print_type<signed char> { static ::std::string str() { return "signed char"; } };
+    template <> struct print_type<short> { static ::std::string str() { return "short"; } };
     template <> struct print_type<int> { static ::std::string str() { return "int"; } };
+    template <> struct print_type<long> { static ::std::string str() { return "long"; } };
+    template <> struct print_type<long long> { static ::std::string str() { return "long long"; } };
+    template <> struct print_type<unsigned char> { static ::std::string str() { return "unsigned char"; } };
+    template <> struct print_type<unsigned short> { static ::std::string str() { return "unsigned short"; } };
+    template <> struct print_type<unsigned int> { static ::std::string str() { return "unsigned int"; } };
+    template <> struct print_type<unsigned long> { static ::std::string str() { return "unsigned long"; } };
+    template <> struct print_type<unsigned long long> { static ::std::string str() { return "unsigned long long"; } };
+    template <> struct print_type<float> { static ::std::string str() { return "float"; } };
     template <> struct print_type<double> { static ::std::string str() { return "double"; } };
+    template <> struct print_type<long double> { static ::std::string str() { return "long double"; } };
     template <> struct print_type<::std::exception_ptr> { static ::std::string str() { return "std::exception_ptr"; } };
     template <> struct print_type<::std::error_code> { static ::std::string str() { return "std::error_code"; } };
     template <> struct print_type<::std::string> { static ::std::string str() { return "std::string"; } };

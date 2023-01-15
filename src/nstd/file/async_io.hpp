@@ -34,11 +34,14 @@
 #include "nstd/execution/receiver.hpp"
 #include "nstd/execution/scheduler.hpp"
 #include "nstd/execution/sender.hpp"
+#include "nstd/execution/set_value.hpp"
 #include "nstd/execution/set_stopped.hpp"
 #include "nstd/execution/set_error.hpp"
 #include "nstd/execution/start.hpp"
+#include "nstd/hidden_names/merge_completion_signatures.hpp"
 #include "nstd/file/context.hpp"
 #include "nstd/file/io_object.hpp"
+#include "nstd/functional/tag_invoke.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
 #include "nstd/utility/exchange.hpp"
 #include "nstd/utility/forward.hpp"
@@ -146,6 +149,9 @@ namespace nstd::hidden_names::async_io {
     template <typename Env, typename Operation>
     struct inner_state_t {
         template <typename... Args>
+            requires requires(Env const& env, Args&&... args) {
+                Operation::connect(env, ::nstd::utility::forward<Args>(args)...);
+            }
         struct inner_holder {
             using inner_type = decltype(Operation::connect(::nstd::type_traits::declval<Env>(), ::nstd::type_traits::declval<Args>()...));
             inner_type d_state;
@@ -173,7 +179,8 @@ namespace nstd::hidden_names::async_io {
         }
         template <typename... Args>
         friend auto tag_invoke(::nstd::execution::set_value_t, receiver&& self, Args&&... args) noexcept {
-
+            (void)self;
+#if 1
             ++self.d_state->d_outstanding;
             self.d_state->engage_callback();
 
@@ -186,6 +193,7 @@ namespace nstd::hidden_names::async_io {
                     ::nstd::execution::get_scheduler(::nstd::execution::get_env(self.d_state->d_receiver)),
                     self.d_state
                     );
+#endif
         }
         template <typename Error>
         friend auto tag_invoke(::nstd::execution::set_error_t, receiver&& self, Error&& error) noexcept {
@@ -240,11 +248,19 @@ namespace nstd::hidden_names::async_io {
     {
         template <typename Env>
         friend auto tag_invoke(::nstd::execution::get_completion_signatures_t, sender const&, Env const&) noexcept {
-            return ::nstd::execution::completion_signatures<
+            using own_signatures_t  = ::nstd::execution::completion_signatures<
                 typename Operation<Stream, Env>::completion_signature,
-                ::nstd::execution::set_error_t(::std::error_code), //-dk:TODO add upstream errors
+                ::nstd::execution::set_error_t(::std::error_code),
+                ::nstd::execution::set_error_t(::std::exception_ptr), //-dk:TODO remove - needs to come from upstream
                 ::nstd::execution::set_stopped_t()
-            >{};
+            >;
+            #if 0
+            //-dk:TODO add upstream errors
+            using upstream_errors_t = ::nstd::execution::error_types_of_t<::nstd::type_traits::remove_cvref_t<Sender>, Env>;
+            return ::nstd::hidden_names::merge_completion_signatures_t<own_signatures_t, upstream_errors_t>{};
+            #else
+            return own_signatures_t{};
+            #endif
         }
 
         ::nstd::type_traits::remove_cvref_t<Sender> d_sender;
@@ -255,6 +271,14 @@ namespace nstd::hidden_names::async_io {
         }
         template <::nstd::execution::receiver Receiver>
         friend auto tag_invoke(::nstd::execution::connect_t, sender const& self, Receiver&& receiver) noexcept {
+            return ::nstd::hidden_names::async_io::state<Operation, Sender, Receiver, Stream>{
+                self.d_sender,
+                ::nstd::utility::forward<Receiver>(receiver),
+                self.d_stream
+            };
+        }
+        template <::nstd::execution::receiver Receiver>
+        friend auto tag_invoke(::nstd::execution::connect_t, sender&& self, Receiver&& receiver) noexcept {
             return ::nstd::hidden_names::async_io::state<Operation, Sender, Receiver, Stream>{
                 self.d_sender,
                 ::nstd::utility::forward<Receiver>(receiver),

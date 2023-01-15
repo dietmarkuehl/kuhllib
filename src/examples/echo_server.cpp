@@ -138,19 +138,22 @@ namespace
         NN::io_context&  context) 
     {
         return 
-            EX::repeat_effect_until(
+            //EX::repeat_effect_until(
                 EX::on(context.scheduler(), NN::async_read_some(owner.d_socket, NN::buffer(owner.d_buffer)))
-                    | compose(
-                        [&context, &owner](::std::size_t n){
-                            ::std::cout << "read(" << n << ")='" << std::string_view(owner.d_buffer, n) << "'\n";
-                            owner.d_done = n == 0;
-                            return EX::on(context.scheduler(),
-                                          NN::async_write(owner.d_socket, NN::buffer(owner.d_buffer, n))
-                            );
-                        })
-                ,
-                [&owner]{ return owner.d_done; }
-            )
+                | EX::then([](auto&& n){
+                    static_assert(::nstd::concepts::same_as<::std::size_t, ::nstd::type_traits::remove_cvref_t<decltype(n)>>);
+                })
+                //    | compose(
+                //        [&context, &owner](::std::size_t n){
+                //            ::std::cout << "read(" << n << ")='" << std::string_view(owner.d_buffer, n) << "'\n";
+                //            owner.d_done = n == 0;
+                //            return EX::on(context.scheduler(),
+                //                          NN::async_write(owner.d_socket, NN::buffer(owner.d_buffer, n))
+                //            );
+                //        })
+            //    ,
+            //    [&owner]{ return owner.d_done; }
+            //)
             ;
     }
     auto run_client(starter&         outstanding,

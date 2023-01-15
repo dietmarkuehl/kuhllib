@@ -31,6 +31,7 @@
 #include "nstd/execution/get_completion_signatures.hpp"
 #include "nstd/execution/get_env.hpp"
 #include "nstd/execution/get_scheduler.hpp"
+#include "nstd/execution/get_stop_token.hpp"
 #include "nstd/execution/make_completion_signatures.hpp"
 #include "nstd/execution/receiver.hpp"
 #include "nstd/execution/scheduler.hpp"
@@ -112,19 +113,40 @@ namespace nstd::execution {
             using env_t = decltype(::nstd::execution::get_env(::nstd::type_traits::declval<Receiver>()));
             Scheduler* scheduler;
             Receiver*  receiver;
-            template <typename Tag, typename... Args>
-                requires (not ::std::same_as<::nstd::execution::get_env_t, Tag>)
-            friend auto tag_invoke(Tag tag, replace_receiver&& self, Args&&... args)
-                noexcept(noexcept(tag(::nstd::utility::move(*self.receiver), ::nstd::utility::forward<Args>(args)...)))
-            {
-                return tag(::nstd::utility::move(*self.receiver), ::nstd::utility::forward<Args>(args)...);
-            }
+
             friend auto tag_invoke(::nstd::execution::get_env_t, replace_receiver const& self) noexcept {
                 return ::nstd::execution::hidden_names::on::replace_env<Scheduler, env_t>{
                     self.scheduler,
                     ::nstd::execution::get_env(*self.receiver)
                     };
             }
+#if 0
+            template <typename Tag, typename... Args>
+                requires (not ::std::same_as<::nstd::execution::get_env_t, Tag>)
+            friend auto tag_invoke(Tag tag, replace_receiver&& self, Args&&... args)
+                noexcept(noexcept(tag(::nstd::utility::move(*self.receiver), ::nstd::utility::forward<Args>(args)...)))
+            {
+                static_assert(::std::same_as<int, Tag>);
+                return tag(::nstd::utility::move(*self.receiver), ::nstd::utility::forward<Args>(args)...);
+            }
+#else
+            friend auto tag_invoke(::nstd::execution::get_stop_token_t tag, replace_receiver const& self)
+                noexcept(noexcept(tag(::nstd::utility::move(*self.receiver))))
+            {
+                return tag(::nstd::utility::move(*self.receiver));
+            }
+            template <typename... Args>
+            friend auto tag_invoke(::nstd::execution::set_value_t tag, replace_receiver&& self, Args&&... args) noexcept -> void {
+                tag(::nstd::utility::move(*self.receiver), ::nstd::utility::forward<Args>(args)...);
+            }
+            template <typename Error>
+            friend auto tag_invoke(::nstd::execution::set_error_t tag, replace_receiver&& self, Error&& error) noexcept -> void {
+                tag(::nstd::utility::move(*self.receiver), ::nstd::utility::forward<Error>(error));
+            }
+            friend auto tag_invoke(::nstd::execution::set_stopped_t tag, replace_receiver&& self) noexcept -> void {
+                tag(::nstd::utility::move(*self.receiver));
+            }
+#endif
         };
         template <::nstd::execution::scheduler Scheduler, ::nstd::execution::sender Sender, ::nstd::execution::receiver Receiver>
         struct state_base {
