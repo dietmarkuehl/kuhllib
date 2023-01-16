@@ -46,7 +46,7 @@ The key abstraction of the sender/receiver consists of three parts:
 ### First Example of a Sender: `just`
 
 The basic concepts are demonstrated by the [first
-program](getting-started-1) implementing a simple sender `just`
+program](getting-started-1.cpp) implementing a simple sender `just`
 which "just" provides its values synchronously as soon as it gets
 started.
 
