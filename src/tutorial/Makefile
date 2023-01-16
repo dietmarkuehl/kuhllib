@@ -23,13 +23,24 @@
 #   OTHER DEALINGS IN THE SOFTWARE.
 #  ----------------------------------------------------------------------------
 
+
+COMPILER = unknown
+BUILDDIR = build-$(COMPILER)
+
+ifneq ($(CMAKE_CXX),)
+    CMAKE_CXX_ARG += -DCMAKE_CXX_COMPILER=$(CMAKE_CXX)
+endif
+ifneq ($(CMAKE_CC),)
+    CMAKE_CXX_ARG += -DCMAKE_C_COMPILER=$(CMAKE_CC)
+endif
+
 .PHONY: default clean
 
 default:
-	@mkdir -p build
-	cd build; cmake ..
-	cd build; $(MAKE)
+	@mkdir -p $(BUILDDIR)
+	cd $(BUILDDIR); cmake ..
+	cd $(BUILDDIR); $(MAKE)
 
 clean:
-	$(RM) -r build
+	$(RM) -r $(BUILDDIR)
 	$(RM) mkerr olderr *~
