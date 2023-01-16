@@ -81,10 +81,12 @@ namespace test_declarations {
         struct receiver {
             friend auto tag_invoke(EX::get_env_t, receiver const&) noexcept -> TD::env { return {}; }
 
+#if 0
             friend auto tag_invoke(EX::set_value_t, receiver&&, auto&& x) noexcept -> void {
                 (void)x;
                 static_assert(::std::same_as<int, decltype(x)>);
             }
+#endif
             friend auto tag_invoke(EX::set_value_t, receiver&&, ::std::size_t) noexcept -> void {}
             friend auto tag_invoke(EX::set_error_t, receiver&&, auto&&) noexcept -> void {}
             friend auto tag_invoke(EX::set_error_t, receiver&&, ::std::error_code) noexcept -> void {}

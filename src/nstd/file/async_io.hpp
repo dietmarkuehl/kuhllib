@@ -171,41 +171,43 @@ namespace nstd::hidden_names::async_io {
     using variant = ::std::variant<empty_state, T...>;
 
     template <::nstd::execution::receiver Receiver, ::nstd::file::io_object Stream, typename Completions, typename Env, typename Operation>
-    struct receiver {
-        state_base<Receiver, Stream, Completions>* d_state;
+    struct receiver_cloak {
+        struct receiver {
+            state_base<Receiver, Stream, Completions>* d_state;
 
-        friend auto tag_invoke(::nstd::execution::get_env_t, receiver const& self) noexcept {
-            return ::nstd::execution::get_env(self.d_state->d_receiver);
-        }
-        template <typename... Args>
-        friend auto tag_invoke(::nstd::execution::set_value_t, receiver&& self, Args&&... args) noexcept {
-            (void)self;
+            friend auto tag_invoke(::nstd::execution::get_env_t, receiver const& self) noexcept {
+                return ::nstd::execution::get_env(self.d_state->d_receiver);
+            }
+            template <typename... Args>
+            friend auto tag_invoke(::nstd::execution::set_value_t, receiver&& self, Args&&... args) noexcept {
+                (void)self;
 #if 1
-            ++self.d_state->d_outstanding;
-            self.d_state->engage_callback();
+                ++self.d_state->d_outstanding;
+                self.d_state->engage_callback();
 
-            using state_type = typename inner_state_t<Env, Operation>::template inner_holder<Args...>;
-            self.d_state->d_inner_state.template emplace<state_type>(
-                ::nstd::execution::get_env(self.d_state->d_receiver),
-                ::nstd::utility::forward<Args>(args)...
-                ).d_state.start(
-                    self.d_state->d_stream,
-                    ::nstd::execution::get_scheduler(::nstd::execution::get_env(self.d_state->d_receiver)),
-                    self.d_state
-                    );
+                using state_type = typename inner_state_t<Env, Operation>::template inner_holder<Args...>;
+                self.d_state->d_inner_state.template emplace<state_type>(
+                    ::nstd::execution::get_env(self.d_state->d_receiver),
+                    ::nstd::utility::forward<Args>(args)...
+                    ).d_state.start(
+                        self.d_state->d_stream,
+                        ::nstd::execution::get_scheduler(::nstd::execution::get_env(self.d_state->d_receiver)),
+                        self.d_state
+                        );
 #endif
-        }
-        template <typename Error>
-        friend auto tag_invoke(::nstd::execution::set_error_t, receiver&& self, Error&& error) noexcept {
-            ::nstd::execution::set_error(
-                ::nstd::utility::move(self.d_state->d_receiver),
-                ::nstd::utility::forward<Error>(error)
-            );
-        }
-        template <typename Error>
-        friend auto tag_invoke(::nstd::execution::set_stopped_t, receiver&& self) noexcept {
-            ::nstd::execution::set_stopped(::nstd::utility::move(self.d_state->d_receiver));
-        }
+            }
+            template <typename Error>
+            friend auto tag_invoke(::nstd::execution::set_error_t, receiver&& self, Error&& error) noexcept {
+                ::nstd::execution::set_error(
+                    ::nstd::utility::move(self.d_state->d_receiver),
+                    ::nstd::utility::forward<Error>(error)
+                );
+            }
+            template <typename Error>
+            friend auto tag_invoke(::nstd::execution::set_stopped_t, receiver&& self) noexcept {
+                ::nstd::execution::set_stopped(::nstd::utility::move(self.d_state->d_receiver));
+            }
+        };
     };
 
     template <template <typename, typename> class Operation,
@@ -221,70 +223,74 @@ namespace nstd::hidden_names::async_io {
                     variant
                 >
              >
-    struct state
-        : ::nstd::hidden_names::async_io::state_base<Receiver, Stream, Completions>
-    {
-        using receiver_t = ::nstd::hidden_names::async_io::receiver<Receiver, Stream, Completions, Env, Operation<Stream, Env>>;
-        using upstream_state_t = decltype(::nstd::execution::connect(::nstd::type_traits::declval<UpstreamSender>(), ::nstd::type_traits::declval<receiver_t>()));
-
-        upstream_state_t d_state;
-
-        template <::nstd::execution::sender US, ::nstd::execution::receiver R>
-        state(US&& upstream_sender, R&& receiver, Stream& stream)
-            : ::nstd::hidden_names::async_io::state_base<Receiver, Stream, Completions>(::nstd::utility::forward<R>(receiver), stream)
-            , d_state(::nstd::execution::connect(::nstd::utility::forward<US>(upstream_sender), receiver_t{this}))
+    struct state_cloak {
+        struct state
+            : ::nstd::hidden_names::async_io::state_base<Receiver, Stream, Completions>
         {
-        }
+            using receiver_t = typename ::nstd::hidden_names::async_io::receiver_cloak<Receiver, Stream, Completions, Env, Operation<Stream, Env>>::receiver;
+            using upstream_state_t = decltype(::nstd::execution::connect(::nstd::type_traits::declval<UpstreamSender>(), ::nstd::type_traits::declval<receiver_t>()));
 
-        friend auto tag_invoke(::nstd::execution::start_t, state& self) noexcept -> void {
-            ::nstd::execution::start(self.d_state);
-        }
+            upstream_state_t d_state;
+
+            template <::nstd::execution::sender US, ::nstd::execution::receiver R>
+            state(US&& upstream_sender, R&& receiver, Stream& stream)
+                : ::nstd::hidden_names::async_io::state_base<Receiver, Stream, Completions>(::nstd::utility::forward<R>(receiver), stream)
+                , d_state(::nstd::execution::connect(::nstd::utility::forward<US>(upstream_sender), receiver_t{this}))
+            {
+            }
+
+            friend auto tag_invoke(::nstd::execution::start_t, state& self) noexcept -> void {
+                ::nstd::execution::start(self.d_state);
+            }
+        };
     };
 
     template <template <typename, typename> class Operation,
               ::nstd::execution::sender Sender,
               ::nstd::file::io_object Stream>
-    struct sender
+    struct sender_cloak
     {
-        template <typename Env>
-        friend auto tag_invoke(::nstd::execution::get_completion_signatures_t, sender const&, Env const&) noexcept {
-            using own_signatures_t  = ::nstd::execution::completion_signatures<
-                typename Operation<Stream, Env>::completion_signature,
-                ::nstd::execution::set_error_t(::std::error_code),
-                ::nstd::execution::set_error_t(::std::exception_ptr), //-dk:TODO remove - needs to come from upstream
-                ::nstd::execution::set_stopped_t()
-            >;
+        struct sender {
+            template <typename Env>
+            friend auto tag_invoke(::nstd::execution::get_completion_signatures_t, sender const&, Env const&) noexcept {
+                using own_signatures_t  = ::nstd::execution::completion_signatures<
+                    typename Operation<Stream, Env>::completion_signature,
+                    ::nstd::execution::set_error_t(::std::error_code),
+                    ::nstd::execution::set_error_t(::std::exception_ptr), //-dk:TODO remove - needs to come from upstream
+                    ::nstd::execution::set_stopped_t()
+                >;
             #if 0
-            //-dk:TODO add upstream errors
-            using upstream_errors_t = ::nstd::execution::error_types_of_t<::nstd::type_traits::remove_cvref_t<Sender>, Env>;
-            return ::nstd::hidden_names::merge_completion_signatures_t<own_signatures_t, upstream_errors_t>{};
+                //-dk:TODO add upstream errors
+                using upstream_errors_t = ::nstd::execution::error_types_of_t<::nstd::type_traits::remove_cvref_t<Sender>, Env>;
+                return ::nstd::hidden_names::merge_completion_signatures_t<own_signatures_t, upstream_errors_t>{};
             #else
-            return own_signatures_t{};
+                return own_signatures_t{};
             #endif
-        }
+            }
 
-        ::nstd::type_traits::remove_cvref_t<Sender> d_sender;
-        Stream&                                     d_stream;
+            ::nstd::type_traits::remove_cvref_t<Sender> d_sender;
+            Stream&                                     d_stream;
 
-        friend auto tag_invoke(::nstd::execution::get_attrs_t, sender const& self) noexcept {
-            return ::nstd::execution::get_attrs(self.d_sender);
-        }
-        template <::nstd::execution::receiver Receiver>
-        friend auto tag_invoke(::nstd::execution::connect_t, sender const& self, Receiver&& receiver) noexcept {
-            return ::nstd::hidden_names::async_io::state<Operation, Sender, Receiver, Stream>{
-                self.d_sender,
-                ::nstd::utility::forward<Receiver>(receiver),
-                self.d_stream
-            };
-        }
-        template <::nstd::execution::receiver Receiver>
-        friend auto tag_invoke(::nstd::execution::connect_t, sender&& self, Receiver&& receiver) noexcept {
-            return ::nstd::hidden_names::async_io::state<Operation, Sender, Receiver, Stream>{
-                self.d_sender,
-                ::nstd::utility::forward<Receiver>(receiver),
-                self.d_stream
-            };
-        }
+            friend auto tag_invoke(::nstd::execution::get_attrs_t, sender const& self) noexcept {
+                return ::nstd::execution::get_attrs(self.d_sender);
+            }
+            template <::nstd::execution::receiver Receiver>
+            friend auto tag_invoke(::nstd::execution::connect_t, sender const& self, Receiver&& receiver) noexcept {
+                return typename ::nstd::hidden_names::async_io::state_cloak<Operation, Sender, Receiver, Stream>::state{
+                    self.d_sender,
+                    ::nstd::utility::forward<Receiver>(receiver),
+                    self.d_stream
+                };
+            }
+            template <::nstd::execution::receiver Receiver>
+            friend auto tag_invoke(::nstd::execution::connect_t, sender&& self, Receiver&& receiver) noexcept {
+                return typename ::nstd::hidden_names::async_io::state_cloak<Operation, Sender, Receiver, Stream>::state{
+                    self.d_sender,
+                    ::nstd::utility::forward<Receiver>(receiver),
+                    self.d_stream
+                };
+            }
+        };
     };
 
     template <template <typename, typename> class Operation>
@@ -293,7 +299,7 @@ namespace nstd::hidden_names::async_io {
     {
         template <::nstd::execution::sender Sender, ::nstd::file::io_object Stream>
         auto operator()(Sender&& sender, Stream& stream) const {
-            return ::nstd::hidden_names::async_io::sender<Operation, Sender, Stream>{
+            return typename ::nstd::hidden_names::async_io::sender_cloak<Operation, Sender, Stream>::sender{
                 ::nstd::utility::forward<Sender>(sender),
                 stream
             };
