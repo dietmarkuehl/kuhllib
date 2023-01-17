@@ -58,172 +58,184 @@ namespace nstd::hidden_names::repeat_effect_until
     };
 
     template <::nstd::execution::sender Sender, typename Predicate, typename Receiver>
-    struct state_base
-    {
-        using sender_type = ::nstd::type_traits::remove_cvref_t<Sender>;
-
-        sender_type                                    d_sender;
-        ::nstd::type_traits::remove_cvref_t<Predicate> d_predicate;
-        ::nstd::type_traits::remove_cvref_t<Receiver>  d_receiver;
-
-        template <::nstd::execution::sender S,
-                  typename P,
-                  ::nstd::execution::receiver R>
-        state_base(S&& sender, P&& predicate, R&& receiver)
-            : d_sender(::nstd::utility::forward<S>(sender))
-            , d_predicate(::nstd::utility::forward<P>(predicate))
-            , d_receiver(::nstd::utility::forward<R>(receiver))
+    struct state_base_cloak {
+        struct state_base
         {
-        }
+            using sender_type = ::nstd::type_traits::remove_cvref_t<Sender>;
 
-        static_assert(::nstd::execution::sender<sender_type>);
+            sender_type                                    d_sender;
+            ::nstd::type_traits::remove_cvref_t<Predicate> d_predicate;
+            ::nstd::type_traits::remove_cvref_t<Receiver>  d_receiver;
 
-        virtual auto next() -> void = 0;
-    };
-
-    template <::nstd::execution::sender Sender, typename Predicate, typename Receiver>
-    struct receiver {
-        state_base<Sender, Predicate, Receiver>* d_state;
-        friend auto tag_invoke(::nstd::execution::get_env_t, receiver const& self) noexcept
-            -> decltype(::nstd::execution::get_env(::nstd::type_traits::declval<Receiver const&>()))
-        {
-            return ::nstd::execution::get_env(self.d_state->d_receiver);
-        }
-        friend auto tag_invoke(::nstd::execution::set_value_t, receiver&& r, auto&&...)
-            noexcept -> void
-        {
-            r.d_state->next();
-        }
-        template <typename Error>
-        friend auto tag_invoke(::nstd::execution::set_error_t, receiver&& r, Error&& e)
-            noexcept -> void {
-            ::nstd::execution::set_error(::nstd::utility::move(r.d_state->d_receiver),
-                                         ::nstd::utility::forward<Error>(e));
-        }
-        friend auto tag_invoke(::nstd::execution::set_stopped_t, receiver&& r)
-            noexcept -> void
-        {
-            ::nstd::execution::set_stopped(::nstd::utility::move(r.d_state->d_receiver));
-        }
-    };
-
-    template <::nstd::execution::sender Sender, typename Predicate, typename Receiver>
-    struct state
-        : state_base<Sender, Predicate, Receiver>
-    {
-        using state_base   = ::nstd::hidden_names::repeat_effect_until::state_base<Sender, Predicate, Receiver>;
-        using sender_type   = typename state_base::sender_type;
-        using receiver_type = ::nstd::hidden_names::repeat_effect_until::receiver<Sender, Predicate, Receiver>;
-        static_assert(::nstd::execution::receiver<receiver_type>);
-        struct internal_state {
-            using state_type = decltype(::nstd::execution::connect(::nstd::type_traits::declval<Sender>(),
-                                                                   ::nstd::type_traits::declval<receiver_type>()));
-            state_type d_state;
-            template <typename S>
-            internal_state(S&& sender, receiver_type&& receiver)
-                : d_state(::nstd::execution::connect(Sender(::nstd::utility::forward<S>(sender)), ::nstd::utility::move(receiver)))
+            template <::nstd::execution::sender S,
+                      typename P,
+                      ::nstd::execution::receiver R>
+            state_base(S&& sender, P&& predicate, R&& receiver)
+                : d_sender(::nstd::utility::forward<S>(sender))
+                , d_predicate(::nstd::utility::forward<P>(predicate))
+                , d_receiver(::nstd::utility::forward<R>(receiver))
             {
-                (void)sender;
-                (void)receiver;
             }
 
-            friend auto tag_invoke(::nstd::execution::start_t, internal_state& self) noexcept -> void {
-                (void)self;
-                ::nstd::execution::start(self.d_state);
+            static_assert(::nstd::execution::sender<sender_type>);
+
+            virtual auto next() -> void = 0;
+        };
+    };
+    template <::nstd::execution::sender Sender, typename Predicate, typename Receiver>
+    using state_base = typename state_base_cloak<Sender, Predicate, Receiver>::state_base;
+
+    template <::nstd::execution::sender Sender, typename Predicate, typename Receiver>
+    struct receiver_cloak {
+        struct receiver {
+            state_base<Sender, Predicate, Receiver>* d_state;
+            friend auto tag_invoke(::nstd::execution::get_env_t, receiver const& self) noexcept
+                -> decltype(::nstd::execution::get_env(::nstd::type_traits::declval<Receiver const&>()))
+            {
+                return ::nstd::execution::get_env(self.d_state->d_receiver);
+            }
+            friend auto tag_invoke(::nstd::execution::set_value_t, receiver&& r, auto&&...)
+                noexcept -> void
+            {
+                r.d_state->next();
+            }
+            template <typename Error>
+            friend auto tag_invoke(::nstd::execution::set_error_t, receiver&& r, Error&& e)
+                noexcept -> void {
+                ::nstd::execution::set_error(::nstd::utility::move(r.d_state->d_receiver),
+                                             ::nstd::utility::forward<Error>(e));
+            }
+            friend auto tag_invoke(::nstd::execution::set_stopped_t, receiver&& r)
+                noexcept -> void
+            {
+                ::nstd::execution::set_stopped(::nstd::utility::move(r.d_state->d_receiver));
             }
         };
-
-        ::nstd::hidden_names::repeat_effect_until::marker d_running;
-        bool d_ready{false};
-        bool d_engaged{false};
-        union holder {
-            holder(){}
-            ~holder(){}
-            internal_state d_state;
-        } d_internal_state;
-
-        template <typename S, typename P, typename R>
-        state(S&& sndr, P&& predicate, R&& receiver)
-            : state_base(::nstd::utility::forward<S>(sndr),
-                         ::nstd::utility::forward<P>(predicate),
-                         ::nstd::utility::forward<R>(receiver))
-        {
-        }
-        ~state() {
-            if (this->d_engaged) {
-                this->d_internal_state.d_state.~internal_state();
-            }
-        }
-
-        friend auto tag_invoke(::nstd::execution::start_t, state& s) noexcept -> void {
-            new(&s.d_internal_state.d_state) internal_state(s.d_sender, receiver_type{&s});
-            s.d_engaged = true;
-            ::nstd::execution::start(s.d_internal_state.d_state);
-        }
-        auto next() noexcept -> void override try {
-            if (this->d_running) {
-                this->d_ready = true;
-                return;
-            }
-
-            ::std::lock_guard kerberos(this->d_running);
-            for (this->d_ready = true; this->d_ready; ) {
-                this->d_ready = false;
-                if (::nstd::execution::get_stop_token(::nstd::execution::get_env(this->d_receiver)).stop_requested()) {
-                    ::nstd::execution::set_stopped(::nstd::utility::move(this->d_receiver));
-                }
-                else if (this->d_predicate()) {
-                    ::nstd::execution::set_value(::nstd::utility::move(this->d_receiver));
-                }
-                else {
-                    this->d_internal_state.d_state.~internal_state();
-                    new(&this->d_internal_state.d_state) internal_state(this->d_sender, receiver_type{this});
-                    ::nstd::execution::start(this->d_internal_state.d_state);
-                }
-            }
-        }
-        catch (...) {
-            ::nstd::execution::set_error(::nstd::utility::move(this->d_receiver),
-                                         ::std::current_exception());
-        }
     };
+    template <::nstd::execution::sender Sender, typename Predicate, typename Receiver>
+    using receiver = typename receiver_cloak<Sender, Predicate, Receiver>::receiver;
 
+    template <::nstd::execution::sender Sender, typename Predicate, typename Receiver>
+    struct state_cloak {
+        struct state
+            : state_base<Sender, Predicate, Receiver>
+        {
+            using state_base   = ::nstd::hidden_names::repeat_effect_until::state_base<Sender, Predicate, Receiver>;
+            using sender_type   = typename state_base::sender_type;
+            using receiver_type = ::nstd::hidden_names::repeat_effect_until::receiver<Sender, Predicate, Receiver>;
+            static_assert(::nstd::execution::receiver<receiver_type>);
+            struct internal_state {
+                using state_type = decltype(::nstd::execution::connect(::nstd::type_traits::declval<Sender>(),
+                                                                       ::nstd::type_traits::declval<receiver_type>()));
+                state_type d_state;
+                template <typename S>
+                internal_state(S&& sender, receiver_type&& receiver)
+                    : d_state(::nstd::execution::connect(Sender(::nstd::utility::forward<S>(sender)), ::nstd::utility::move(receiver)))
+                {
+                }
+
+                friend auto tag_invoke(::nstd::execution::start_t, internal_state& self) noexcept -> void {
+                    ::nstd::execution::start(self.d_state);
+                }
+            };
+
+            ::nstd::hidden_names::repeat_effect_until::marker d_running;
+            bool d_ready{false};
+            bool d_engaged{false};
+            union holder {
+                holder(){}
+                ~holder(){}
+                internal_state d_state;
+            } d_internal_state;
+
+            template <typename S, typename P, typename R>
+            state(S&& sndr, P&& predicate, R&& receiver)
+                : state_base(::nstd::utility::forward<S>(sndr),
+                             ::nstd::utility::forward<P>(predicate),
+                             ::nstd::utility::forward<R>(receiver))
+            {
+            }
+            ~state() {
+                if (this->d_engaged) {
+                    this->d_internal_state.d_state.~internal_state();
+                }
+            }
+
+            friend auto tag_invoke(::nstd::execution::start_t, state& s) noexcept -> void {
+                new(&s.d_internal_state.d_state) internal_state(s.d_sender, receiver_type{&s});
+                s.d_engaged = true;
+                ::nstd::execution::start(s.d_internal_state.d_state);
+            }
+            auto next() noexcept -> void override try {
+                if (this->d_running) {
+                    this->d_ready = true;
+                    return;
+                }
+
+                ::std::lock_guard kerberos(this->d_running);
+                for (this->d_ready = true; this->d_ready; ) {
+                    this->d_ready = false;
+                    if (::nstd::execution::get_stop_token(::nstd::execution::get_env(this->d_receiver)).stop_requested()) {
+                        ::nstd::execution::set_stopped(::nstd::utility::move(this->d_receiver));
+                    }
+                    else if (this->d_predicate()) {
+                        ::nstd::execution::set_value(::nstd::utility::move(this->d_receiver));
+                    }
+                    else {
+                        this->d_internal_state.d_state.~internal_state();
+                        new(&this->d_internal_state.d_state) internal_state(this->d_sender, receiver_type{this});
+                        ::nstd::execution::start(this->d_internal_state.d_state);
+                    }
+                }
+            }
+            catch (...) {
+                ::nstd::execution::set_error(::nstd::utility::move(this->d_receiver),
+                                             ::std::current_exception());
+            }
+        };
+    };
+    template <::nstd::execution::sender Sender, typename Predicate, typename Receiver>
+    using state = typename state_cloak<Sender, Predicate, Receiver>::state;
 
     template <::nstd::execution::sender Sender, typename Predicate>
-    struct sender {
-        using completion_signatures =
-            ::nstd::hidden_names::merge_completion_signatures_t<
-                ::nstd::hidden_names::exec_envs::no_env,
-                ::nstd::execution::completion_signatures<
-                    ::nstd::execution::set_value_t(),
-                    ::nstd::execution::set_error_t(::std::exception_ptr),
-                    ::nstd::execution::set_stopped_t()
-                >,
-                ::nstd::execution::error_types_of_t<
-                    Sender,
-                    ::nstd::hidden_names::repeat_effect_until::env,
-                    ::nstd::hidden_names::repeat_effect_until::variant_t
-                >
-            >;
+    struct sender_cloak {
+        struct sender {
+            using completion_signatures =
+                ::nstd::hidden_names::merge_completion_signatures_t<
+                    ::nstd::hidden_names::exec_envs::no_env,
+                    ::nstd::execution::completion_signatures<
+                        ::nstd::execution::set_value_t(),
+                        ::nstd::execution::set_error_t(::std::exception_ptr),
+                        ::nstd::execution::set_stopped_t()
+                    >,
+                    ::nstd::execution::error_types_of_t<
+                        Sender,
+                        ::nstd::hidden_names::repeat_effect_until::env,
+                        ::nstd::hidden_names::repeat_effect_until::variant_t
+                    >
+                >;
 
-        ::nstd::type_traits::remove_cvref_t<Sender> d_sender;
-        ::nstd::type_traits::remove_cvref_t<Predicate> d_predicate;
+            ::nstd::type_traits::remove_cvref_t<Sender> d_sender;
+            ::nstd::type_traits::remove_cvref_t<Predicate> d_predicate;
 
-        template <typename Receiver>
-        friend auto tag_invoke(::nstd::execution::connect_t, sender&& sndr, Receiver&& receiver) noexcept {
-            return ::nstd::hidden_names::repeat_effect_until::state<Sender, Predicate, Receiver>(
-                        ::nstd::utility::move(sndr.d_sender),
-                        ::nstd::utility::move(sndr.d_predicate),
-                        ::nstd::utility::forward<Receiver>(receiver));
-        }
-        template <typename Receiver>
-        friend auto tag_invoke(::nstd::execution::connect_t, sender const& sndr, Receiver&& receiver) noexcept {
-            return ::nstd::hidden_names::repeat_effect_until::state<Sender const&, Predicate, Receiver>(
-                        sndr.d_sender,
-                        sndr.d_predicate,
-                        ::nstd::utility::forward<Receiver>(receiver));
-        }
+            template <typename Receiver>
+            friend auto tag_invoke(::nstd::execution::connect_t, sender&& sndr, Receiver&& receiver) noexcept {
+                return ::nstd::hidden_names::repeat_effect_until::state<Sender, Predicate, Receiver>(
+                            ::nstd::utility::move(sndr.d_sender),
+                            ::nstd::utility::move(sndr.d_predicate),
+                            ::nstd::utility::forward<Receiver>(receiver));
+            }
+            template <typename Receiver>
+            friend auto tag_invoke(::nstd::execution::connect_t, sender const& sndr, Receiver&& receiver) noexcept {
+                return ::nstd::hidden_names::repeat_effect_until::state<Sender const&, Predicate, Receiver>(
+                            sndr.d_sender,
+                            sndr.d_predicate,
+                            ::nstd::utility::forward<Receiver>(receiver));
+            }
+        };
     };
+    template <::nstd::execution::sender Sender, typename Predicate>
+    using sender = typename sender_cloak<Sender, Predicate>::sender;
 
     struct cpo {
         template <::nstd::execution::sender Sender, typename Predicate>
@@ -244,7 +256,7 @@ namespace nstd::hidden_names::repeat_effect_until
 
 // ----------------------------------------------------------------------------
 
-namespace nstd::execution {
+namespace nstd::execution::inline customization_points {
     using repeat_effect_until_t = ::nstd::hidden_names::repeat_effect_until::cpo;
     inline constexpr repeat_effect_until_t repeat_effect_until{};
 }

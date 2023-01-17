@@ -83,167 +83,175 @@ namespace nstd::hidden_names::then {
         ;
 
     template <typename Tag, ::nstd::execution::receiver Receiver, typename Fun>
-    struct receiver {
-        ::nstd::type_traits::remove_cvref_t<Receiver> d_receiver;
-        ::nstd::type_traits::remove_cvref_t<Fun>      d_fun;
+    struct receiver_cloak {
+        struct receiver {
+            ::nstd::type_traits::remove_cvref_t<Receiver> d_receiver;
+            ::nstd::type_traits::remove_cvref_t<Fun>      d_fun;
 
-        friend auto tag_invoke(::nstd::execution::get_env_t, receiver const& self) noexcept {
-            return ::nstd::execution::get_env(self.d_receiver);
-        }
-        template <typename... Args>
-        friend auto tag_invoke(Tag, receiver&& self, Args&&... args) noexcept -> void
-            requires requires(Fun fun, Args&&... args) { //-dk:TODO this requires shouldn't be necessary!
-                ::std::invoke(fun, ::nstd::utility::forward<Args>(args)...);
+            friend auto tag_invoke(::nstd::execution::get_env_t, receiver const& self) noexcept {
+                return ::nstd::execution::get_env(self.d_receiver);
             }
-        {
-            try {
-                if constexpr (::nstd::concepts::same_as<void, decltype(::std::invoke(self.d_fun, ::nstd::utility::forward<Args>(args)...))>) {
-                    ::std::invoke(self.d_fun, ::nstd::utility::forward<Args>(args)...);
-                    ::nstd::execution::set_value(::nstd::utility::move(self.d_receiver));
+            template <typename... Args>
+            friend auto tag_invoke(Tag, receiver&& self, Args&&... args) noexcept -> void
+                requires requires(Fun fun, Args&&... args) { //-dk:TODO this requires shouldn't be necessary!
+                    ::std::invoke(fun, ::nstd::utility::forward<Args>(args)...);
                 }
-                else {
-                    ::nstd::execution::set_value(::nstd::utility::move(self.d_receiver),
-                                                 ::std::invoke(self.d_fun, ::nstd::utility::forward<Args>(args)...));
+            {
+                try {
+                    if constexpr (::nstd::concepts::same_as<void, decltype(::std::invoke(self.d_fun, ::nstd::utility::forward<Args>(args)...))>) {
+                        ::std::invoke(self.d_fun, ::nstd::utility::forward<Args>(args)...);
+                        ::nstd::execution::set_value(::nstd::utility::move(self.d_receiver));
+                    }
+                    else {
+                        ::nstd::execution::set_value(::nstd::utility::move(self.d_receiver),
+                                                     ::std::invoke(self.d_fun, ::nstd::utility::forward<Args>(args)...));
+                    }
+                }
+                catch (...) {
+                    ::nstd::execution::set_error(::nstd::utility::move(self.d_receiver),
+                                                 ::std::current_exception());
                 }
             }
-            catch (...) {
+            template <typename... Args>
+                requires (not ::std::is_same_v<Tag, ::nstd::execution::set_value_t>)
+            friend auto tag_invoke(::nstd::execution::set_value_t, receiver&& self, Args&&... args) noexcept
+                -> void
+            {
+                ::nstd::execution::set_value(::nstd::utility::move(self.d_receiver),
+                                             ::nstd::utility::forward<Args>(args)...);
+            }
+            template <typename Error>
+                requires (not ::std::is_same_v<Tag, ::nstd::execution::set_error_t>)
+            friend auto tag_invoke(::nstd::execution::set_error_t, receiver&& self, Error&& error) noexcept -> void {
                 ::nstd::execution::set_error(::nstd::utility::move(self.d_receiver),
-                                             ::std::current_exception());
+                                             ::nstd::utility::forward<Error>(error));
             }
-        }
-        template <typename... Args>
-            requires (not ::std::is_same_v<Tag, ::nstd::execution::set_value_t>)
-        friend auto tag_invoke(::nstd::execution::set_value_t, receiver&& self, Args&&... args) noexcept
-            -> void
-        {
-            ::nstd::execution::set_value(::nstd::utility::move(self.d_receiver),
-                                         ::nstd::utility::forward<Args>(args)...);
-        }
-        template <typename Error>
-            requires (not ::std::is_same_v<Tag, ::nstd::execution::set_error_t>)
-        friend auto tag_invoke(::nstd::execution::set_error_t, receiver&& self, Error&& error) noexcept -> void {
-            ::nstd::execution::set_error(::nstd::utility::move(self.d_receiver),
-                                         ::nstd::utility::forward<Error>(error));
-        }
-        friend
-        auto tag_invoke(::nstd::type_traits::conditional_t<::std::is_same_v<Tag, ::nstd::execution::set_stopped_t>,
-                                                           int,
-                                                           ::nstd::execution::set_stopped_t>,
-                        receiver&& self) noexcept -> void {
-            ::nstd::execution::set_stopped(::nstd::utility::move(self.d_receiver));
-        }
+            friend
+            auto tag_invoke(::nstd::type_traits::conditional_t<::std::is_same_v<Tag, ::nstd::execution::set_stopped_t>,
+                                                               int,
+                                                               ::nstd::execution::set_stopped_t>,
+                            receiver&& self) noexcept -> void {
+                ::nstd::execution::set_stopped(::nstd::utility::move(self.d_receiver));
+            }
+        };
     };
+    template <typename Tag, ::nstd::execution::receiver Receiver, typename Fun>
+    using receiver = typename receiver_cloak<Tag, Receiver, Fun>::receiver;
 
     template <typename Tag, ::nstd::execution::sender Sender, typename Fun>
-    struct sender
-        : ::nstd::execution::sender_tag
-    {
-        template <typename... A>
-        using set_value_completions
-            = ::nstd::execution::completion_signatures<
-                ::nstd::hidden_names::compl_sig_t<::nstd::execution::set_value_t, ::std::invoke_result_t<Fun, A...>>
-                >
-            ;
-        template <typename... A>
-        using set_stopped_completions
-            = ::nstd::execution::completion_signatures<::nstd::execution::set_stopped_t()>
-            ;
-        
-        template <typename... A>
-        using potentially_throwing
-            = ::nstd::type_traits::bool_constant<!::std::is_nothrow_invocable_v<Fun, A...>>
-            ;
-        
-        template <typename... B>
-        using any_of
-            = ::nstd::type_traits::bool_constant<(false || ... || B::value)>
-            ;
-
-        template <typename S, typename Env>
-        friend auto tag_invoke(::nstd::execution::get_completion_signatures_t, S&&, Env&&) noexcept
-            requires ::std::is_same_v<sender, ::nstd::type_traits::remove_cvref_t<S>>
+    struct sender_cloak {
+        struct sender
+            : ::nstd::execution::sender_tag
         {
-            if constexpr (::std::same_as<Tag, ::nstd::execution::set_value_t>) {
-                return ::nstd::execution::make_completion_signatures<
-                    ::nstd::type_traits::copy_cvref_t<S, Sender>,
-                    Env,
-                    ::nstd::hidden_names::merge_completion_signatures_t<
-                        ::nstd::hidden_names::exec_envs::no_env,
+            template <typename... A>
+            using set_value_completions
+                = ::nstd::execution::completion_signatures<
+                    ::nstd::hidden_names::compl_sig_t<::nstd::execution::set_value_t, ::std::invoke_result_t<Fun, A...>>
+                    >
+                ;
+            template <typename... A>
+            using set_stopped_completions
+                = ::nstd::execution::completion_signatures<::nstd::execution::set_stopped_t()>
+                ;
+        
+            template <typename... A>
+            using potentially_throwing
+                = ::nstd::type_traits::bool_constant<!::std::is_nothrow_invocable_v<Fun, A...>>
+                ;
+        
+            template <typename... B>
+            using any_of
+                = ::nstd::type_traits::bool_constant<(false || ... || B::value)>
+                ;
+
+            template <typename S, typename Env>
+            friend auto tag_invoke(::nstd::execution::get_completion_signatures_t, S&&, Env&&) noexcept
+                requires ::std::is_same_v<sender, ::nstd::type_traits::remove_cvref_t<S>>
+            {
+                if constexpr (::std::same_as<Tag, ::nstd::execution::set_value_t>) {
+                    return ::nstd::execution::make_completion_signatures<
+                        ::nstd::type_traits::copy_cvref_t<S, Sender>,
+                        Env,
+                        ::nstd::hidden_names::merge_completion_signatures_t<
+                            ::nstd::hidden_names::exec_envs::no_env,
+                            ::nstd::type_traits::conditional_t<
+                                ::nstd::execution::value_types_of_t<Sender, Env, potentially_throwing, any_of>::value,
+                                ::nstd::execution::completion_signatures<
+                                    ::nstd::execution::set_error_t(::std::exception_ptr)
+                                    >,
+                                ::nstd::execution::completion_signatures<>
+                            >,
+                            ::nstd::execution::error_types_of_t<Sender, Env, ::nstd::hidden_names::then::variant_t>
+                        >,
+                        set_value_completions
+                        >{};
+                }
+                else if constexpr (::std::same_as<Tag, ::nstd::execution::set_error_t>) {
+                    return ::nstd::execution::completion_signatures<>();
+#if 0
+                    return ::nstd::execution::make_completion_signatures<
+                        ::nstd::type_traits::copy_cvref_t<S, Sender>,
+                        Env,
                         ::nstd::type_traits::conditional_t<
                             ::nstd::execution::value_types_of_t<Sender, Env, sender::potentially_throwing, sender::any_of>::value,
-                            ::nstd::execution::completion_signatures<
-                                ::nstd::execution::set_error_t(::std::exception_ptr)
-                                >,
-                            ::nstd::execution::completion_signatures<>
-                        >,
-                        ::nstd::execution::error_types_of_t<Sender, Env, ::nstd::hidden_names::then::variant_t>
-                    >,
-                    sender::set_value_completions
-                    >{};
-            }
-            else if constexpr (::std::same_as<Tag, ::nstd::execution::set_error_t>) {
-                return ::nstd::execution::completion_signatures<>();
-#if 0
-                return ::nstd::execution::make_completion_signatures<
-                    ::nstd::type_traits::copy_cvref_t<S, Sender>,
-                    Env,
-                    ::nstd::type_traits::conditional_t<
-                        ::nstd::execution::value_types_of_t<Sender, Env, sender::potentially_throwing, sender::any_of>::value,
-                        ::nstd::execution::completion_signatures<::nstd::execution::set_error_t(::std::exception_ptr)>,
-                        ::nstd::execution::completion_signatures<>>,
-                    sender::set_value_completions
-                    >{};
+                            ::nstd::execution::completion_signatures<::nstd::execution::set_error_t(::std::exception_ptr)>,
+                            ::nstd::execution::completion_signatures<>>,
+                        sender::set_value_completions
+                        >{};
 #endif
-            }
-            else {
-                return ::nstd::execution::make_completion_signatures<
-                    ::nstd::type_traits::copy_cvref_t<S, Sender>,
-                    Env,
-                    ::nstd::execution::completion_signatures<
-                        ::nstd::hidden_names::compl_sig_t<::nstd::execution::set_value_t, ::std::invoke_result_t<Fun>>
-                    >
-                    , sender::set_stopped_completions
-                    >{};
+                }
+                else {
+                    return ::nstd::execution::make_completion_signatures<
+                        ::nstd::type_traits::copy_cvref_t<S, Sender>,
+                        Env,
+                        ::nstd::execution::completion_signatures<
+                            ::nstd::hidden_names::compl_sig_t<::nstd::execution::set_value_t, ::std::invoke_result_t<Fun>>
+                        >
+                        , set_stopped_completions
+                        >{};
 #if 0
-                return ::nstd::hidden_names::merge_completion_signatures_t<
-                    Env,
-                    //::nstd::execution::value_types_of_t<Sender, Env>,
-                    //::nstd::execution::error_types_of_t<Sender, Env>,
-                    ::nstd::execution::completion_signatures<
-                        ::nstd::hidden_names::compl_sig_t<::nstd::execution::set_value_t, ::std::invoke_result_t<Fun>>
-                    >>{};
+                    return ::nstd::hidden_names::merge_completion_signatures_t<
+                        Env,
+                        //::nstd::execution::value_types_of_t<Sender, Env>,
+                        //::nstd::execution::error_types_of_t<Sender, Env>,
+                        ::nstd::execution::completion_signatures<
+                            ::nstd::hidden_names::compl_sig_t<::nstd::execution::set_value_t, ::std::invoke_result_t<Fun>>
+                        >>{};
 #endif
+                }
             }
-        }
 
-        ::nstd::type_traits::remove_cvref_t<Sender> d_sender;
-        ::nstd::type_traits::remove_cvref_t<Fun>    d_fun;
+            ::nstd::type_traits::remove_cvref_t<Sender> d_sender;
+            ::nstd::type_traits::remove_cvref_t<Fun>    d_fun;
 
-        template <typename T>
-            requires requires(Sender&& sender) {
-                ::nstd::execution::get_completion_scheduler<T>(sender);
+            template <typename T>
+                requires requires(Sender&& sender) {
+                    ::nstd::execution::get_completion_scheduler<T>(sender);
+                }
+            friend auto tag_invoke(::nstd::execution::get_completion_scheduler_t<T>, sender const& self) noexcept {
+                return ::nstd::execution::get_completion_scheduler<T>(self.d_sender);
             }
-        friend auto tag_invoke(::nstd::execution::get_completion_scheduler_t<T>, sender const& self) noexcept {
-            return ::nstd::execution::get_completion_scheduler<T>(self.d_sender);
-        }
-        template <::nstd::execution::receiver Receiver>
-        friend auto tag_invoke(::nstd::execution::connect_t, sender&& self, Receiver&& r)
-        {
-            return ::nstd::execution::connect(::nstd::utility::move(self.d_sender),
-                                              ::nstd::hidden_names::then::receiver<Tag, Receiver, Fun>{
-                                                  ::nstd::utility::forward<Receiver>(r),
-                                                  ::nstd::utility::move(self.d_fun)
-                                              });
-        }
-        template <::nstd::execution::receiver Receiver>
-        friend auto tag_invoke(::nstd::execution::connect_t, sender const& self, Receiver r) {
-            return ::nstd::execution::connect(self.d_sender,
-                                              ::nstd::hidden_names::then::receiver<Tag, Receiver, Fun>{
-                                                  ::nstd::utility::forward<Receiver>(r),
-                                                  self.d_fun
-                                              });
-        }
+            template <::nstd::execution::receiver Receiver>
+            friend auto tag_invoke(::nstd::execution::connect_t, sender&& self, Receiver&& r)
+            {
+                return ::nstd::execution::connect(::nstd::utility::move(self.d_sender),
+                                                  ::nstd::hidden_names::then::receiver<Tag, Receiver, Fun>{
+                                                      ::nstd::utility::forward<Receiver>(r),
+                                                      ::nstd::utility::move(self.d_fun)
+                                                  });
+            }
+            template <::nstd::execution::receiver Receiver>
+            friend auto tag_invoke(::nstd::execution::connect_t, sender const& self, Receiver r) {
+                return ::nstd::execution::connect(self.d_sender,
+                                                  ::nstd::hidden_names::then::receiver<Tag, Receiver, Fun>{
+                                                      ::nstd::utility::forward<Receiver>(r),
+                                                      self.d_fun
+                                                  });
+            }
+        };
     };
+    template <typename Tag, ::nstd::execution::sender Sender, typename Fun>
+    using sender = typename sender_cloak<Tag, Sender, Fun>::sender;
 
     template <typename Tag>
     struct cpo

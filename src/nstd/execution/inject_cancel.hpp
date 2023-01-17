@@ -49,85 +49,87 @@ namespace nstd::execution {
     inline constexpr struct inject_cancel_t
     {
         template <::nstd::stop_token_ns::stoppable_token Token, typename Env>
-        struct env {
-            ::nstd::type_traits::remove_cvref_t<Token> d_token;
-            ::nstd::type_traits::remove_cvref_t<Env>   d_env;
-            friend auto tag_invoke(::nstd::execution::get_stop_token_t, env const& self) noexcept -> Token {
-                return self.d_token;
-            }
+        struct env_cloak {
+            struct env {
+                ::nstd::type_traits::remove_cvref_t<Token> d_token;
+                ::nstd::type_traits::remove_cvref_t<Env>   d_env;
+                friend auto tag_invoke(::nstd::execution::get_stop_token_t, env const& self) noexcept -> Token {
+                    return self.d_token;
+                }
 #if 0
-            friend auto tag_invoke(auto tag, env const& self) noexcept {
-                return tag(self.d_env);
-            }
+                friend auto tag_invoke(auto tag, env const& self) noexcept {
+                    return tag(self.d_env);
+                }
 #else
-            friend auto tag_invoke(::nstd::execution::get_scheduler_t tag, env const& self) noexcept {
-                return tag(self.d_env);
-            }
+                friend auto tag_invoke(::nstd::execution::get_scheduler_t tag, env const& self) noexcept {
+                    return tag(self.d_env);
+                }
 #endif
+            };
         };
 
         template <::nstd::stop_token_ns::stoppable_token Token, ::nstd::execution::receiver Receiver>
-        struct receiver
-        {
-            ::nstd::type_traits::remove_cvref_t<Token>    d_token;
-            ::nstd::type_traits::remove_cvref_t<Receiver> d_receiver;
+        struct receiver_cloak {
+            struct receiver
+            {
+                ::nstd::type_traits::remove_cvref_t<Token>    d_token;
+                ::nstd::type_traits::remove_cvref_t<Receiver> d_receiver;
 
-            friend auto tag_invoke(::nstd::execution::get_env_t, receiver const& self) noexcept {
-#if 1
-                using env_t = decltype(::nstd::execution::get_env(self.d_receiver));
-                return ::nstd::execution::inject_cancel_t::env<Token, env_t>{ self.d_token, ::nstd::execution::get_env(self.d_receiver) };
-#else
-                return ::nstd::execution::get_env(self.d_receiver);
-#endif
-            }
+                friend auto tag_invoke(::nstd::execution::get_env_t, receiver const& self) noexcept {
+                    using env_t = decltype(::nstd::execution::get_env(self.d_receiver));
+                    return typename ::nstd::execution::inject_cancel_t::env_cloak<Token, env_t>::env{ self.d_token, ::nstd::execution::get_env(self.d_receiver) };
+                }
 #if 0
-            template <typename Tag, typename... Args>
-            friend auto tag_invoke(Tag tag, receiver&& self, Args&&... args) noexcept
-            {
-                return tag(::nstd::utility::move(self.d_receiver), ::nstd::utility::forward<Args>(args)...);
-            }
+                template <typename Tag, typename... Args>
+                friend auto tag_invoke(Tag tag, receiver&& self, Args&&... args) noexcept
+                {
+                    return tag(::nstd::utility::move(self.d_receiver), ::nstd::utility::forward<Args>(args)...);
+                }
 #else
-            template <typename... Args>
-            friend auto tag_invoke(::nstd::execution::set_value_t tag, receiver&& self, Args&&... args) noexcept
-            {
-                return tag(::nstd::utility::move(self.d_receiver), ::nstd::utility::forward<Args>(args)...);
-            }
-            template <typename Error>
-            friend auto tag_invoke(::nstd::execution::set_error_t tag, receiver&& self, Error&& error) noexcept
-            {
-                return tag(::nstd::utility::move(self.d_receiver), ::nstd::utility::forward<Error>(error));
-            }
-            friend auto tag_invoke(::nstd::execution::set_stopped_t tag, receiver&& self) noexcept
-            {
-                return tag(::nstd::utility::move(self.d_receiver));
-            }
+                template <typename... Args>
+                friend auto tag_invoke(::nstd::execution::set_value_t tag, receiver&& self, Args&&... args) noexcept
+                {
+                    return tag(::nstd::utility::move(self.d_receiver), ::nstd::utility::forward<Args>(args)...);
+                }
+                template <typename Error>
+                friend auto tag_invoke(::nstd::execution::set_error_t tag, receiver&& self, Error&& error) noexcept
+                {
+                    return tag(::nstd::utility::move(self.d_receiver), ::nstd::utility::forward<Error>(error));
+                }
+                friend auto tag_invoke(::nstd::execution::set_stopped_t tag, receiver&& self) noexcept
+                {
+                    return tag(::nstd::utility::move(self.d_receiver));
+                }
 #endif
+            };
         };
         template <::nstd::execution::sender Sender, ::nstd::stop_token_ns::stoppable_token Token>
-        struct sender
-        {
-            friend auto tag_invoke( ::nstd::execution::get_completion_signatures_t, sender const&, auto env) {
-                return ::nstd::hidden_names::add_signatures_t<
-                    decltype(::nstd::execution::get_completion_signatures(::nstd::type_traits::declval<Sender>(), env)),
-                    ::nstd::execution::set_stopped_t()
-                    >{};
-            }
-
-            ::nstd::type_traits::remove_cvref_t<Sender> d_sender;
-            ::nstd::type_traits::remove_cvref_t<Token>  d_token;
-
-            template <nstd::execution::receiver Receiver>
-            friend auto tag_invoke(::nstd::execution::connect_t, sender&& self, Receiver&& rceiver) noexcept
+        struct sender_cloak {
+            struct sender
             {
-                return ::nstd::execution::connect(::nstd::utility::move(self.d_sender),
-                                                  receiver<Token, Receiver>{
-                                                      ::nstd::utility::move(self.d_token),
-                                                      ::nstd::utility::forward<Receiver>(rceiver)
-                                                  });
-            }
+                friend auto tag_invoke( ::nstd::execution::get_completion_signatures_t, sender const&, auto env) {
+                    return ::nstd::hidden_names::add_signatures_t<
+                        decltype(::nstd::execution::get_completion_signatures(::nstd::type_traits::declval<Sender>(), env)),
+                        ::nstd::execution::set_stopped_t()
+                        >{};
+                }
+
+                ::nstd::type_traits::remove_cvref_t<Sender> d_sender;
+                ::nstd::type_traits::remove_cvref_t<Token>  d_token;
+
+                template <nstd::execution::receiver Receiver>
+                friend auto tag_invoke(::nstd::execution::connect_t, sender&& self, Receiver&& rceiver) noexcept
+                {
+                    return ::nstd::execution::connect(::nstd::utility::move(self.d_sender),
+                                                      typename receiver_cloak<Token, Receiver>::receiver{
+                                                          ::nstd::utility::move(self.d_token),
+                                                          ::nstd::utility::forward<Receiver>(rceiver)
+                                                      });
+                }
+            };
         };
         template <::nstd::execution::sender Sender, ::nstd::stop_token_ns::stoppable_token Token>
-        auto operator()(Sender&& sndr, Token token) const -> sender<Sender, Token>
+        auto operator()(Sender&& sndr, Token token) const -> typename sender_cloak<Sender, Token>::sender
         {
             return { ::nstd::utility::forward<Sender>(sndr), ::nstd::utility::forward<Token>(token) };
         }
@@ -140,8 +142,8 @@ namespace nstd::execution {
     } inject_cancel;
 }
 
-static_assert(::nstd::execution::receiver<::nstd::execution::inject_cancel_t::receiver<::nstd::stop_token_ns::never_stop_token, ::nstd::execution::hidden_names::test_receiver>>);
-static_assert(::nstd::execution::receiver<::nstd::execution::inject_cancel_t::receiver<::nstd::stop_token_ns::in_place_stop_token, ::nstd::execution::hidden_names::test_receiver>>);
+static_assert(::nstd::execution::receiver<typename ::nstd::execution::inject_cancel_t::receiver_cloak<::nstd::stop_token_ns::never_stop_token, ::nstd::execution::hidden_names::test_receiver>::receiver>);
+static_assert(::nstd::execution::receiver<typename ::nstd::execution::inject_cancel_t::receiver_cloak<::nstd::stop_token_ns::in_place_stop_token, ::nstd::execution::hidden_names::test_receiver>::receiver>);
 
 // ----------------------------------------------------------------------------
 

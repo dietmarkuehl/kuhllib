@@ -89,26 +89,30 @@ namespace nstd::hidden_names::let {
         || ::std::invocable<Fun>
         ;
 
-    template <::nstd::execution::receiver, typename, typename> struct inner_state;
+    template <::nstd::execution::receiver, typename, typename> struct inner_state_cloak;
     template <::nstd::execution::receiver FinalReceiver, typename Fun, typename Tag, typename... Args>
-    struct inner_state<FinalReceiver, Fun, Tag(Args...)> {
-        using sender_t = ::std::invoke_result_t<Fun, ::nstd::type_traits::remove_reference_t<Args>...>;
-        using state_t  = ::std::invoke_result_t<::nstd::execution::connect_t, sender_t, FinalReceiver>;
+    struct inner_state_cloak<FinalReceiver, Fun, Tag(Args...)> {
+        struct inner_state {
+            using sender_t = ::std::invoke_result_t<Fun, ::nstd::type_traits::remove_reference_t<Args>...>;
+            using state_t  = ::std::invoke_result_t<::nstd::execution::connect_t, sender_t, FinalReceiver>;
 
-        ::std::tuple<::nstd::type_traits::remove_reference_t<Args>...> d_args;
-        state_t                                                        d_state;
+            ::std::tuple<::nstd::type_traits::remove_reference_t<Args>...> d_args;
+            state_t                                                        d_state;
 
-        template <::nstd::execution::receiver R, typename F>
-        inner_state(R&& receiver, F&& fun, Args... args)
-            : d_args(::nstd::utility::forward<Args>(args)...)
-            , d_state(::nstd::execution::connect(
+            template <::nstd::execution::receiver R, typename F>
+            inner_state(R&& receiver, F&& fun, Args... args)
+                : d_args(::nstd::utility::forward<Args>(args)...)
+                , d_state(::nstd::execution::connect(
                           ::std::apply([&](auto&&... a){ return fun(::nstd::utility::forward<Args>(a)...); }, this->d_args),
                           ::nstd::utility::forward<R>(receiver)))
-        {
-            static_assert(::std::same_as<decltype(::std::apply([&](auto&&... a){ return fun(::nstd::utility::forward<Args>(a)...); }, this->d_args)), sender_t>);
-            ::nstd::execution::start(this->d_state);
-        }
+            {
+                static_assert(::std::same_as<decltype(::std::apply([&](auto&&... a){ return fun(::nstd::utility::forward<Args>(a)...); }, this->d_args)), sender_t>);
+                ::nstd::execution::start(this->d_state);
+            }
+        };
     };
+    template <::nstd::execution::receiver FinalReceiver, typename Fun, typename Signature>
+    using inner_state = typename inner_state_cloak<FinalReceiver, Fun, Signature>::inner_state;
 
     template <typename> struct state_base_emplace;
     template <typename C, typename... Args>
@@ -146,13 +150,13 @@ namespace nstd::hidden_names::let {
     };
 
     template <typename Tag, ::nstd::execution::receiver FinalReceiver, typename Fun, typename C>
-    struct receiver_impl {
-        struct hidden {
+    struct receiver_impl_cloak {
+        struct receiver_impl {
         ::nstd::hidden_names::let::state_base<FinalReceiver, Fun, C>& d_state;
 
         template <typename CPO, typename... A>
             requires (::nstd::hidden_names::let::is_completion_signal<CPO>)
-        friend auto tag_invoke(CPO cpo, hidden&& self, A&&... a) noexcept -> void {
+        friend auto tag_invoke(CPO cpo, receiver_impl&& self, A&&... a) noexcept -> void {
             if constexpr (::std::same_as<Tag, ::nstd::type_traits::remove_cvref_t<CPO>>) {
                 self.d_state.emplace(self.d_state.d_inner_state,
                                      ::nstd::utility::move(self.d_state.d_receiver),
@@ -168,18 +172,18 @@ namespace nstd::hidden_names::let {
         }
 
 #if 0
-        friend auto tag_invoke(::nstd::execution::get_env_t cpo, hidden const& self) noexcept {
+        friend auto tag_invoke(::nstd::execution::get_env_t cpo, receiver_impl const& self) noexcept {
             return cpo(self.d_state.d_receiver);
         }
 #else
         template <typename CPO, typename... A>
             requires (not ::nstd::hidden_names::let::is_completion_signal<CPO>)
-        friend auto tag_invoke(CPO cpo, hidden&& self, A&&... args) noexcept {
+        friend auto tag_invoke(CPO cpo, receiver_impl&& self, A&&... args) noexcept {
             return cpo(::nstd::utility::move(self.d_state.d_receiver), ::nstd::utility::forward<A>(args)...);
         }
         template <typename CPO, typename... A>
             requires (not ::nstd::hidden_names::let::is_completion_signal<CPO>)
-        friend auto tag_invoke(CPO cpo, hidden const& self, A&&... args) noexcept {
+        friend auto tag_invoke(CPO cpo, receiver_impl const& self, A&&... args) noexcept {
             return cpo(self.d_state.d_receiver, ::nstd::utility::forward<A>(args)...);
         }
 #endif
@@ -187,36 +191,43 @@ namespace nstd::hidden_names::let {
     };
 
     template <typename Tag, ::nstd::execution::receiver FinalReceiver, typename Fun, typename C>
-    using receiver = typename receiver_impl<Tag, FinalReceiver, Fun, C>::hidden;
+    using receiver = typename receiver_impl_cloak<Tag, FinalReceiver, Fun, C>::receiver_impl;
 
     template <typename                    Tag,
               ::nstd::execution::sender   Sender,
               ::nstd::execution::receiver Receiver,
               typename                    Fun>
-    struct state
-        : ::nstd::hidden_names::let::state_base<Receiver, Fun, ::nstd::hidden_names::filter_completions_t<Tag, ::nstd::hidden_names::get_completion_signatures::from_sender_receiver<Sender, Receiver>>>
-    {
-        using completions_t = ::nstd::hidden_names::filter_completions_t<Tag, ::nstd::hidden_names::get_completion_signatures::from_sender_receiver<Sender, Receiver>>;
-        using base_t = ::nstd::hidden_names::let::state_base<Receiver, Fun, completions_t>;
-        using receiver_t = ::nstd::hidden_names::let::receiver<Tag, Receiver, Fun, completions_t>;
-        static_assert(::nstd::execution::receiver<receiver_t>);
-        static_assert(::nstd::execution::receiver_of<receiver_t, completions_t>);
-        using state_t = decltype(::nstd::execution::connect(::nstd::type_traits::declval<Sender>(),
-                                                            ::nstd::type_traits::declval<receiver_t>()));
-
-        state_t d_state;
-
-        template <typename F, ::nstd::execution::receiver R>
-        state(Sender&& sender, F&& fun, R&& receiver)
-            : base_t(::nstd::utility::forward<R>(receiver), ::nstd::utility::forward<F>(fun))
-            , d_state(::nstd::execution::connect(::nstd::utility::forward<Sender>(sender),
-                                                 receiver_t{ *this }))
+    struct state_cloak {
+        struct state
+            : ::nstd::hidden_names::let::state_base<Receiver, Fun, ::nstd::hidden_names::filter_completions_t<Tag, ::nstd::hidden_names::get_completion_signatures::from_sender_receiver<Sender, Receiver>>>
         {
-        }
-        friend auto tag_invoke(::nstd::execution::start_t, state& self) noexcept -> void {
-            ::nstd::execution::start(self.d_state);
-        }
+            using completions_t = ::nstd::hidden_names::filter_completions_t<Tag, ::nstd::hidden_names::get_completion_signatures::from_sender_receiver<Sender, Receiver>>;
+            using base_t = ::nstd::hidden_names::let::state_base<Receiver, Fun, completions_t>;
+            using receiver_t = ::nstd::hidden_names::let::receiver<Tag, Receiver, Fun, completions_t>;
+            static_assert(::nstd::execution::receiver<receiver_t>);
+            static_assert(::nstd::execution::receiver_of<receiver_t, completions_t>);
+            using state_t = decltype(::nstd::execution::connect(::nstd::type_traits::declval<Sender>(),
+                                                                ::nstd::type_traits::declval<receiver_t>()));
+
+            state_t d_state;
+
+            template <typename F, ::nstd::execution::receiver R>
+            state(Sender&& sender, F&& fun, R&& receiver)
+                : base_t(::nstd::utility::forward<R>(receiver), ::nstd::utility::forward<F>(fun))
+                , d_state(::nstd::execution::connect(::nstd::utility::forward<Sender>(sender),
+                                                     receiver_t{ *this }))
+            {
+            }
+            friend auto tag_invoke(::nstd::execution::start_t, state& self) noexcept -> void {
+                ::nstd::execution::start(self.d_state);
+            }
+        };
     };
+    template <typename                    Tag,
+              ::nstd::execution::sender   Sender,
+              ::nstd::execution::receiver Receiver,
+              typename                    Fun>
+    using state = typename state_cloak<Tag, Sender, Receiver, Fun>::state;
 
     template <typename...> struct join_completions;
     template <>
@@ -278,40 +289,44 @@ namespace nstd::hidden_names::let {
     };
 
     template <typename Tag, ::nstd::execution::sender Sender, typename Fun>
-    struct sender {
-        template <typename E>
-        friend auto tag_invoke(::nstd::execution::get_completion_signatures_t, sender const&, E const& e) noexcept
-            -> typename ::nstd::hidden_names::let::join_completions<
-                   typename transform_completions<E, Fun, ::nstd::hidden_names::filter_completions_t<Tag,
-                       decltype(::nstd::execution::get_completion_signatures(::nstd::type_traits::declval<Sender>(), e))
-                    >>::type,
-                   typename rest<Tag, Sender, E>::type
-                   >::type {
-            return {};
-        }
+    struct sender_cloak {
+        struct sender {
+            template <typename E>
+            friend auto tag_invoke(::nstd::execution::get_completion_signatures_t, sender const&, E const& e) noexcept
+                -> typename ::nstd::hidden_names::let::join_completions<
+                       typename transform_completions<E, Fun, ::nstd::hidden_names::filter_completions_t<Tag,
+                           decltype(::nstd::execution::get_completion_signatures(::nstd::type_traits::declval<Sender>(), e))
+                        >>::type,
+                       typename rest<Tag, Sender, E>::type
+                       >::type {
+                return {};
+            }
 
-        ::nstd::type_traits::remove_cvref_t<Sender> d_sender;
-        ::nstd::type_traits::remove_cvref_t<Fun>    d_fun;
+            ::nstd::type_traits::remove_cvref_t<Sender> d_sender;
+            ::nstd::type_traits::remove_cvref_t<Fun>    d_fun;
 
-        template <::nstd::execution::receiver Receiver>
-        friend auto tag_invoke(::nstd::execution::connect_t, sender&& self, Receiver&& receiver)
-            -> ::nstd::hidden_names::let::state<Tag, Sender, Receiver, Fun> {
-            return ::nstd::hidden_names::let::state<Tag, Sender, Receiver, Fun>(
-                ::nstd::utility::move(self.d_sender),
-                ::nstd::utility::move(self.d_fun),
-                ::nstd::utility::forward<Receiver>(receiver)
-            );
-        }
-        template <::nstd::execution::receiver Receiver>
-        friend auto tag_invoke(::nstd::execution::connect_t, sender const& self, Receiver&& receiver)
-            -> ::nstd::hidden_names::let::state<Tag, Sender, Fun, Receiver> {
-            return ::nstd::hidden_names::let::state<Tag, Sender, Fun, Receiver>(
-                self.d_sender,
-                self.d_fun,
-                ::nstd::utility::forward<Receiver>(receiver)
-            );
-        }
+            template <::nstd::execution::receiver Receiver>
+            friend auto tag_invoke(::nstd::execution::connect_t, sender&& self, Receiver&& receiver)
+                -> ::nstd::hidden_names::let::state<Tag, Sender, Receiver, Fun> {
+                return ::nstd::hidden_names::let::state<Tag, Sender, Receiver, Fun>(
+                    ::nstd::utility::move(self.d_sender),
+                    ::nstd::utility::move(self.d_fun),
+                    ::nstd::utility::forward<Receiver>(receiver)
+                );
+            }
+            template <::nstd::execution::receiver Receiver>
+            friend auto tag_invoke(::nstd::execution::connect_t, sender const& self, Receiver&& receiver)
+                -> ::nstd::hidden_names::let::state<Tag, Sender, Fun, Receiver> {
+                return ::nstd::hidden_names::let::state<Tag, Sender, Fun, Receiver>(
+                    self.d_sender,
+                    self.d_fun,
+                    ::nstd::utility::forward<Receiver>(receiver)
+                );
+            }
+        };
     };
+    template <typename Tag, ::nstd::execution::sender Sender, typename Fun>
+    using sender = typename sender_cloak<Tag, Sender, Fun>::sender;
 
     template <typename Tag>
     struct cpo

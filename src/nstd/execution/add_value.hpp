@@ -50,85 +50,88 @@
 namespace nstd::hidden_names::add_value {
     struct cpo {
         template <::nstd::execution::receiver Downstream, typename... Values>
-        struct receiver
+        struct receiver_cloak
         {
-            ::nstd::type_traits::remove_cvref_t<Downstream>              d_downstream;
-            ::std::tuple<::nstd::type_traits::remove_cvref_t<Values>...> d_values;
+            struct receiver {
+                ::nstd::type_traits::remove_cvref_t<Downstream>              d_downstream;
+                ::std::tuple<::nstd::type_traits::remove_cvref_t<Values>...> d_values;
 
-            friend auto tag_invoke(::nstd::execution::get_env_t, receiver const& self) noexcept {
-                return ::nstd::execution::get_env(self.d_downstream);
-            }
+                friend auto tag_invoke(::nstd::execution::get_env_t, receiver const& self) noexcept {
+                    return ::nstd::execution::get_env(self.d_downstream);
+                }
 
-            template <typename... Args>
-            friend auto tag_invoke(::nstd::execution::set_value_t, receiver&& self, Args&&... args) noexcept {
-                ::std::apply([&](auto&&... values){
-                    ::nstd::execution::set_value(
+                template <typename... Args>
+                friend auto tag_invoke(::nstd::execution::set_value_t, receiver&& self, Args&&... args) noexcept {
+                    ::std::apply([&](auto&&... values){
+                        ::nstd::execution::set_value(
+                            ::nstd::utility::move(self.d_downstream),
+                            ::nstd::utility::forward<Args>(args)...,
+                            ::nstd::utility::move(values)...
+                        );
+                    }, ::nstd::utility::move(self.d_values));
+                }
+                template <typename Error>
+                friend auto tag_invoke(::nstd::execution::set_error_t, receiver&& self, Error&& error) noexcept {
+                    ::nstd::execution::set_error(
                         ::nstd::utility::move(self.d_downstream),
-                        ::nstd::utility::forward<Args>(args)...,
-                        ::nstd::utility::move(values)...
-                    );
-                }, ::nstd::utility::move(self.d_values));
-            }
-            template <typename Error>
-            friend auto tag_invoke(::nstd::execution::set_error_t, receiver&& self, Error&& error) noexcept {
-                ::nstd::execution::set_error(
-                    ::nstd::utility::move(self.d_downstream),
-                    ::nstd::utility::forward<Error>(error)
-                    );
-            }
-            template <typename Error>
-            friend auto tag_invoke(::nstd::execution::set_stopped_t, receiver&& self) noexcept {
-                ::nstd::execution::set_stopped(::nstd::utility::move(self.d_downstream));
-            }
+                        ::nstd::utility::forward<Error>(error)
+                        );
+                }
+                template <typename Error>
+                friend auto tag_invoke(::nstd::execution::set_stopped_t, receiver&& self) noexcept {
+                    ::nstd::execution::set_stopped(::nstd::utility::move(self.d_downstream));
+                }
+            };
         };
 
         template <::nstd::execution::sender Upstream, typename... Values>
-        struct sender
-        {
-            template <typename... A>
-            using make_set_value = ::nstd::execution::completion_signatures<::nstd::execution::set_value_t(A..., Values...)>;
+        struct sender_cloak {
+            struct sender
+            {
+                template <typename... A>
+                using make_set_value = ::nstd::execution::completion_signatures<::nstd::execution::set_value_t(A..., Values...)>;
 
-            ::nstd::type_traits::remove_cvref_t<Upstream>                d_upstream;
-            ::std::tuple<::nstd::type_traits::remove_cvref_t<Values>...> d_values;
+                ::nstd::type_traits::remove_cvref_t<Upstream>                d_upstream;
+                ::std::tuple<::nstd::type_traits::remove_cvref_t<Values>...> d_values;
 
-            friend auto tag_invoke(::nstd::execution::get_attrs_t, sender const& self) noexcept {
-                return ::nstd::execution::get_attrs(self.d_upstream);
+                friend auto tag_invoke(::nstd::execution::get_attrs_t, sender const& self) noexcept {
+                    return ::nstd::execution::get_attrs(self.d_upstream);
+                };
+
+                template <typename Env>
+                friend auto tag_invoke(::nstd::execution::get_completion_signatures_t, sender const&, Env&&) noexcept {
+                    return ::nstd::execution::make_completion_signatures<
+                        Upstream,
+                        Env,
+                        ::nstd::execution::completion_signatures<>,
+                        make_set_value
+                        >{};
+                }
+
+                template <::nstd::execution::receiver Rcvr>
+                friend auto tag_invoke(::nstd::execution::connect_t, sender&& self, Rcvr&& rcvr)
+                {
+                    return ::nstd::execution::connect(
+                        ::nstd::utility::move(self.d_upstream),
+                        typename receiver_cloak<Rcvr, Values...>::receiver{
+                            ::nstd::utility::forward<Rcvr>(rcvr),
+                            ::nstd::utility::move(self.d_values)
+                        }
+                    );
+                }
+                template <::nstd::execution::receiver Rcvr>
+                friend auto tag_invoke(::nstd::execution::connect_t, sender const& self, Rcvr&& rcvr)
+                {
+                    return ::nstd::execution::connect(
+                        self.d_upstream,
+                        typename receiver_cloak<Rcvr, Values...>::receiver{ ::nstd::utility::forward<Rcvr>(rcvr), self.d_values }
+                    );
+                }
             };
-
-            template <typename Env>
-            friend auto tag_invoke(::nstd::execution::get_completion_signatures_t, sender const&, Env&&) noexcept {
-                return ::nstd::execution::make_completion_signatures<
-                    Upstream,
-                    Env,
-                    ::nstd::execution::completion_signatures<>,
-                    make_set_value
-                    >{};
-            }
-
-            template <::nstd::execution::receiver Rcvr>
-            friend auto tag_invoke(::nstd::execution::connect_t, sender&& self, Rcvr&& rcvr)
-            {
-                return ::nstd::execution::connect(
-                    ::nstd::utility::move(self.d_upstream),
-                    receiver<Rcvr, Values...>{
-                        ::nstd::utility::forward<Rcvr>(rcvr),
-                        ::nstd::utility::move(self.d_values)
-                    }
-                );
-            }
-            template <::nstd::execution::receiver Rcvr>
-            friend auto tag_invoke(::nstd::execution::connect_t, sender const& self, Rcvr&& rcvr)
-            {
-                return ::nstd::execution::connect(
-                    self.d_upstream,
-                    receiver<Rcvr, Values...>{ ::nstd::utility::forward<Rcvr>(rcvr), self.d_values }
-                );
-            }
-
         };
         template <typename Upstream, typename... Values>
         friend auto tag_invoke(::nstd::hidden_names::add_value::cpo, Upstream&& upstream, Values&&... values)
-            -> ::nstd::hidden_names::add_value::cpo::sender<Upstream, Values...>
+            -> typename ::nstd::hidden_names::add_value::cpo::sender_cloak<Upstream, Values...>::sender
         {
             static_assert(::nstd::execution::sender<Upstream>);
             return {
@@ -146,23 +149,25 @@ namespace nstd::hidden_names::add_value {
         }
 
         template <typename... Values>
-        struct closure
-            : ::nstd::execution::sender_tag
-        {
-            ::std::tuple<::nstd::type_traits::remove_cvref_t<Values>...> d_values;
-            template <::nstd::execution::sender Upstream>
-            auto operator()(Upstream&& upstream) && {
-                return ::std::apply([&](auto&&... values){
-                    return cpo{}(
-                        ::nstd::utility::forward<Upstream>(upstream),
-                        ::nstd::utility::move(values)...
-                    );
-                }, ::nstd::utility::move(this->d_values));
-            }
+        struct closure_cloak {
+            struct closure
+                : ::nstd::execution::sender_tag
+            {
+                ::std::tuple<::nstd::type_traits::remove_cvref_t<Values>...> d_values;
+                template <::nstd::execution::sender Upstream>
+                auto operator()(Upstream&& upstream) && {
+                    return ::std::apply([&](auto&&... values){
+                        return cpo{}(
+                            ::nstd::utility::forward<Upstream>(upstream),
+                            ::nstd::utility::move(values)...
+                        );
+                    }, ::nstd::utility::move(this->d_values));
+                }
+            };
         };
         template <typename... Values>
         auto operator()(Values&&... values) const
-            -> closure<Values...>
+            -> typename closure_cloak<Values...>::closure
         {
             return { {}, { ::nstd::utility::forward<Values>(values)... } };
         }

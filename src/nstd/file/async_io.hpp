@@ -250,7 +250,9 @@ namespace nstd::hidden_names::async_io {
               ::nstd::file::io_object Stream>
     struct sender_cloak
     {
-        struct sender {
+        struct sender
+            : nstd::execution::sender_tag
+        {
             template <typename Env>
             friend auto tag_invoke(::nstd::execution::get_completion_signatures_t, sender const&, Env const&) noexcept {
                 using own_signatures_t  = ::nstd::execution::completion_signatures<
@@ -300,6 +302,7 @@ namespace nstd::hidden_names::async_io {
         template <::nstd::execution::sender Sender, ::nstd::file::io_object Stream>
         auto operator()(Sender&& sender, Stream& stream) const {
             return typename ::nstd::hidden_names::async_io::sender_cloak<Operation, Sender, Stream>::sender{
+                {},
                 ::nstd::utility::forward<Sender>(sender),
                 stream
             };

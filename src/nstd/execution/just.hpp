@@ -49,87 +49,91 @@ namespace nstd::hidden_names::just {
     struct env {};
 
     template <typename Signal, typename... A>
-    struct sender
-        : ::nstd::execution::sender_tag
-    {
-        using completion_signatures
-            = ::nstd::execution::completion_signatures<
-                Signal(A...),
-                ::nstd::execution::set_error_t(::std::exception_ptr)
-                >;
+    struct sender_cloak {
+        struct sender
+            : ::nstd::execution::sender_tag
+        {
+            using completion_signatures
+                = ::nstd::execution::completion_signatures<
+                    Signal(A...),
+                    ::nstd::execution::set_error_t(::std::exception_ptr)
+                    >;
 
-        template <::nstd::execution::receiver Receiver>
-        struct operation_state {
-            ::std::tuple<A...>  d_value;
-            Receiver            d_receiver;
-            friend auto tag_invoke(::nstd::execution::start_t, operation_state& s) noexcept -> void
-                try {
-                    ::std::apply([&s](A&&... a){
-                                        Signal{}(::nstd::utility::move(s.d_receiver),
-                                                 ::nstd::utility::forward<decltype(a)>(a)...);
-                                 },
-                                 ::nstd::utility::move(s.d_value));
-                }
-                catch (...) {
-                    ::nstd::execution::set_error(::nstd::utility::move(s.d_receiver),
-                                                 ::std::current_exception());
-                }
+            template <::nstd::execution::receiver Receiver>
+            struct operation_state_cloak {
+                struct operation_state {
+                    ::std::tuple<A...>  d_value;
+                    Receiver            d_receiver;
+                    friend auto tag_invoke(::nstd::execution::start_t, operation_state& s) noexcept -> void
+                        try {
+                            ::std::apply([&s](A&&... a){
+                                                Signal{}(::nstd::utility::move(s.d_receiver),
+                                                         ::nstd::utility::forward<decltype(a)>(a)...);
+                                         },
+                                         ::nstd::utility::move(s.d_value));
+                        }
+                        catch (...) {
+                            ::nstd::execution::set_error(::nstd::utility::move(s.d_receiver),
+                                                         ::std::current_exception());
+                        }
+                };
+            };
+
+            [[no_unique_address]] ::std::tuple<A...> d_value;
+
+            template <typename... Args>
+                requires ::std::is_constructible_v<::std::tuple<A...>, Args...>
+            sender(Args&&... args): d_value{::nstd::utility::forward<Args>(args)...} {}
+            sender(sender&) = default;
+            sender(sender&&) = default;
+            sender(sender const&) = default;
+
+            friend auto tag_invoke(::nstd::execution::get_attrs_t, sender const&) noexcept
+                -> env
+            {
+                return {};
+            }
+            template <::nstd::execution::receiver Receiver>
+                requires ::nstd::execution::receiver_of<Receiver, completion_signatures>
+            friend auto tag_invoke(::nstd::execution::connect_t,
+                                   sender const& sndr,
+                                   Receiver&&  receiver)
+            {
+                return typename operation_state_cloak<Receiver>::operation_state{sndr.d_value, ::nstd::utility::forward<Receiver>(receiver)};
+            }
+            template <::nstd::execution::receiver Receiver>
+                requires ::nstd::execution::receiver_of<Receiver, completion_signatures>
+            friend auto tag_invoke(::nstd::execution::connect_t,
+                                   sender&& sndr,
+                                   Receiver&&  receiver)
+            {
+                return typename operation_state_cloak<Receiver>::operation_state{::nstd::utility::move(sndr.d_value),
+                                                 ::nstd::utility::forward<Receiver>(receiver)};
+            }
         };
-
-        [[no_unique_address]] ::std::tuple<A...> d_value;
-
-        template <typename... Args>
-            requires ::std::is_constructible_v<::std::tuple<A...>, Args...>
-        sender(Args&&... args): d_value{::nstd::utility::forward<Args>(args)...} {}
-        sender(sender&) = default;
-        sender(sender&&) = default;
-        sender(sender const&) = default;
-
-        friend auto tag_invoke(::nstd::execution::get_attrs_t, sender const&) noexcept
-            -> env
-        {
-            return {};
-        }
-        template <::nstd::execution::receiver Receiver>
-            requires ::nstd::execution::receiver_of<Receiver, completion_signatures>
-        friend auto tag_invoke(::nstd::execution::connect_t,
-                               sender const& sndr,
-                               Receiver&&  receiver)
-        {
-            return operation_state<Receiver>{sndr.d_value, ::nstd::utility::forward<Receiver>(receiver)};
-        }
-        template <::nstd::execution::receiver Receiver>
-            requires ::nstd::execution::receiver_of<Receiver, completion_signatures>
-        friend auto tag_invoke(::nstd::execution::connect_t,
-                               sender&& sndr,
-                               Receiver&&  receiver)
-        {
-            return operation_state<Receiver>{::nstd::utility::move(sndr.d_value),
-                                             ::nstd::utility::forward<Receiver>(receiver)};
-        }
     };
 }
 
 namespace nstd::execution {
     template <::nstd::hidden_names::movable_value... A>
     inline auto just(A&&... a) noexcept((::std::is_nothrow_constructible_v<::nstd::type_traits::remove_cvref_t<A>, A> && ...))
-        -> ::nstd::hidden_names::just::sender<::nstd::execution::set_value_t, ::nstd::type_traits::remove_cvref_t<A>...> {
-        return ::nstd::hidden_names::just::sender<::nstd::execution::set_value_t, ::nstd::type_traits::remove_cvref_t<A>...>(
+        -> typename ::nstd::hidden_names::just::sender_cloak<::nstd::execution::set_value_t, ::nstd::type_traits::remove_cvref_t<A>...>::sender {
+        return typename ::nstd::hidden_names::just::sender_cloak<::nstd::execution::set_value_t, ::nstd::type_traits::remove_cvref_t<A>...>::sender(
             ::nstd::utility::forward<A>(a)...
             );
     }
 
     template <::nstd::hidden_names::movable_value E>
     inline auto just_error(E&& e) noexcept(::std::is_nothrow_constructible_v<::nstd::type_traits::remove_cvref_t<E>, E>)
-        -> ::nstd::hidden_names::just::sender<::nstd::execution::set_error_t, ::nstd::type_traits::remove_cvref_t<E>> {
-        return ::nstd::hidden_names::just::sender<::nstd::execution::set_error_t, ::nstd::type_traits::remove_cvref_t<E>>(
+        -> typename ::nstd::hidden_names::just::sender_cloak<::nstd::execution::set_error_t, ::nstd::type_traits::remove_cvref_t<E>>::sender {
+        return typename ::nstd::hidden_names::just::sender_cloak<::nstd::execution::set_error_t, ::nstd::type_traits::remove_cvref_t<E>>::sender(
             ::nstd::utility::forward<E>(e)
             );
     }
 
     inline auto just_stopped() noexcept
-        -> ::nstd::hidden_names::just::sender<::nstd::execution::set_stopped_t> {
-        return ::nstd::hidden_names::just::sender<::nstd::execution::set_stopped_t>();
+        -> typename ::nstd::hidden_names::just::sender_cloak<::nstd::execution::set_stopped_t>::sender {
+        return typename ::nstd::hidden_names::just::sender_cloak<::nstd::execution::set_stopped_t>::sender();
     }
 }
 

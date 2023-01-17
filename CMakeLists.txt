@@ -427,19 +427,16 @@ add_executable(kuhllib_test ${kuhllib_tstfiles})
 target_link_libraries(kuhllib_test PUBLIC kuhllib kuhltest pthread)
 add_test(NAME kuhllib_test COMMAND $<TARGET_FILE:kuhllib_test>)
 
-
-list(APPEND xkuhllib_examples
+list(APPEND kuhllib_examples
+    audio
+    coroutine_echo_server
+    simple_echo_server
     chat_server
     cs2
     es
     echo_server
     udp-client
     udp-es
-)
-list(APPEND kuhllib_examples
-    audio
-    coroutine_echo_server
-    simple_echo_server
 )
 foreach(example ${kuhllib_examples})
     add_executable(${example} src/examples/${example}.cpp)

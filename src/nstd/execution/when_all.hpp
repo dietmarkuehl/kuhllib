@@ -56,13 +56,38 @@
 
 namespace nstd::hidden_names::when_all {
     enum class completion_kind { set_value, set_error, set_stopped };
-    template <::nstd::execution::receiver, typename> struct state_base;
-    template <::nstd::execution::receiver, typename> struct environment;
-    template <::nstd::execution::receiver, typename, typename> struct receiver;
-    template <::nstd::execution::receiver, typename, ::nstd::execution::sender> struct inner_state_args;
-    template <::nstd::execution::receiver, typename, ::nstd::execution::sender> struct inner_state;
-    template <::nstd::execution::receiver, typename, ::nstd::execution::sender...> struct state;
-    template <::nstd::execution::sender...> struct sender;
+    template <::nstd::execution::receiver, typename>
+    struct state_base_cloak;
+    template <::nstd::execution::receiver Receiver, typename Error>
+    using state_base = typename state_base_cloak<Receiver, Error>::state_base;
+
+    template <::nstd::execution::receiver, typename>
+    struct environment_cloak;
+    template <::nstd::execution::receiver Receiver, typename Error>
+    using environment = typename environment_cloak<Receiver, Error>::environment;
+
+    template <::nstd::execution::receiver, typename, typename>
+    struct receiver_cloak;
+    template <::nstd::execution::receiver Receiver, typename Error, typename Result>
+    using receiver = typename receiver_cloak<Receiver, Error, Result>::receiver;
+
+    template <::nstd::execution::receiver, typename, ::nstd::execution::sender>
+    struct inner_state_args_cloak;
+    template <::nstd::execution::receiver Receiver, typename Error, ::nstd::execution::sender Sender>
+    using inner_state_args = typename inner_state_args_cloak<Receiver, Error, Sender>::inner_state_args;
+
+    template <::nstd::execution::receiver, typename, ::nstd::execution::sender>
+    struct inner_state_cloak;
+    template <::nstd::execution::receiver Receiver, typename Error, ::nstd::execution::sender Sender>
+    using inner_state = typename inner_state_cloak<Receiver, Error, Sender>::inner_state;
+
+    template <::nstd::execution::receiver, typename, ::nstd::execution::sender...>
+    struct state_cloak;
+    template <::nstd::execution::receiver Receiver, typename Error, ::nstd::execution::sender... Sender>
+    using state = typename state_cloak<Receiver, Error, Sender...>::state;
+
+    template <::nstd::execution::sender... Sender> struct sender_cloak;
+    template <::nstd::execution::sender... Sender> using sender = typename sender_cloak<Sender...>::sender;
 
     template <typename> struct set_value_from_tuple_impl;
     template <typename... T>
@@ -113,7 +138,12 @@ namespace nstd::execution {
 // ----------------------------------------------------------------------------
 
 template <::nstd::execution::receiver Receiver, typename Error>
-struct nstd::hidden_names::when_all::state_base {
+struct nstd::hidden_names::when_all::state_base_cloak {
+    struct state_base;
+};
+
+template <::nstd::execution::receiver Receiver, typename Error>
+struct nstd::hidden_names::when_all::state_base_cloak<Receiver, Error>::state_base {
     using stop_token_t = decltype(::nstd::execution::get_stop_token(::nstd::type_traits::declval<Receiver const&>()));
     struct on_stop {
         ::nstd::stop_token_ns::in_place_stop_source& d_stop_source;
@@ -147,7 +177,12 @@ struct nstd::hidden_names::when_all::state_base {
 // ----------------------------------------------------------------------------
 
 template <::nstd::execution::receiver Receiver, typename Error>
-struct nstd::hidden_names::when_all::environment {
+struct nstd::hidden_names::when_all::environment_cloak {
+    struct environment;
+};
+
+template <::nstd::execution::receiver Receiver, typename Error>
+struct nstd::hidden_names::when_all::environment_cloak<Receiver, Error>::environment {
     ::nstd::hidden_names::when_all::state_base<Receiver, Error>& d_state;
 
     friend auto tag_invoke(::nstd::execution::get_scheduler_t const&, environment const& self) noexcept {
@@ -176,7 +211,12 @@ struct nstd::hidden_names::when_all::environment {
 // ----------------------------------------------------------------------------
 
 template <::nstd::execution::receiver Receiver, typename Error, typename Result>
-struct nstd::hidden_names::when_all::receiver {
+struct nstd::hidden_names::when_all::receiver_cloak {
+    struct receiver;
+};
+
+template <::nstd::execution::receiver Receiver, typename Error, typename Result>
+struct nstd::hidden_names::when_all::receiver_cloak<Receiver, Error, Result>::receiver {
     state_base<Receiver, Error>&  d_state;
     ::std::optional<Result>&      d_result;
 
@@ -216,7 +256,12 @@ struct nstd::hidden_names::when_all::receiver {
 // ----------------------------------------------------------------------------
 
 template <::nstd::execution::receiver Receiver, typename Error, ::nstd::execution::sender Sender>
-struct nstd::hidden_names::when_all::inner_state_args {
+struct nstd::hidden_names::when_all::inner_state_args_cloak {
+    struct inner_state_args;
+};
+
+template <::nstd::execution::receiver Receiver, typename Error, ::nstd::execution::sender Sender>
+struct nstd::hidden_names::when_all::inner_state_args_cloak<Receiver, Error, Sender>::inner_state_args {
     ::nstd::hidden_names::when_all::state_base<Receiver, Error>& d_outer_state;
     Sender&                                               d_sender;
 
@@ -228,7 +273,12 @@ struct nstd::hidden_names::when_all::inner_state_args {
 };
 
 template <::nstd::execution::receiver Receiver, typename Error, ::nstd::execution::sender Sender>
-struct nstd::hidden_names::when_all::inner_state {
+struct nstd::hidden_names::when_all::inner_state_cloak {
+    struct inner_state;
+};
+
+template <::nstd::execution::receiver Receiver, typename Error, ::nstd::execution::sender Sender>
+struct nstd::hidden_names::when_all::inner_state_cloak<Receiver, Error, Sender>::inner_state {
     using result_t = ::nstd::execution::value_types_of_t<Sender, int, ::nstd::hidden_names::decayed_tuple, ::nstd::type_traits::type_identity_t>;
     using state_t = decltype(::nstd::execution::connect(::nstd::type_traits::declval<Sender>(),
                                                         ::nstd::type_traits::declval<::nstd::hidden_names::when_all::receiver<Receiver, Error, result_t>>()));
@@ -255,7 +305,12 @@ struct nstd::hidden_names::when_all::inner_state {
 // ----------------------------------------------------------------------------
 
 template <::nstd::execution::receiver Receiver, typename Error, ::nstd::execution::sender... Sender>
-struct nstd::hidden_names::when_all::state
+struct nstd::hidden_names::when_all::state_cloak {
+    struct state;
+};
+
+template <::nstd::execution::receiver Receiver, typename Error, ::nstd::execution::sender... Sender>
+struct nstd::hidden_names::when_all::state_cloak<Receiver, Error, Sender...>::state
     : ::nstd::hidden_names::when_all::state_base<Receiver, Error>
 {
     using state_t = ::std::tuple<::nstd::hidden_names::when_all::inner_state<Receiver, Error, Sender>...>;
@@ -296,7 +351,12 @@ struct nstd::hidden_names::when_all::state
 // ----------------------------------------------------------------------------
 
 template <::nstd::execution::sender... Sender>
-struct nstd::hidden_names::when_all::sender
+struct nstd::hidden_names::when_all::sender_cloak {
+    struct sender;
+};
+
+template <::nstd::execution::sender... Sender>
+struct nstd::hidden_names::when_all::sender_cloak<Sender...>::sender
 {
     ::std::tuple<Sender...> d_sender;
 

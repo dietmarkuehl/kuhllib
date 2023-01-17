@@ -48,7 +48,7 @@
 namespace nstd::hidden_names {
     namespace async_scope {
         struct spawn_receiver;
-        template <::nstd::execution::sender> struct nest_sender;
+        template <::nstd::execution::sender> struct nest_sender_cloak;
         template <::nstd::execution::sender> struct spawn_future_sender;
         struct upon_empty_sender;
     }
@@ -61,27 +61,32 @@ namespace nstd::execution {
 // ----------------------------------------------------------------------------
 
 template <::nstd::execution::sender Sender>
-struct nstd::hidden_names::async_scope::nest_sender
-{
-    template <::nstd::execution::receiver Receiver>
-    struct receiver
+struct nstd::hidden_names::async_scope::nest_sender_cloak {
+    struct nest_sender 
     {
-        ::nstd::type_traits::remove_cvref_t<Receiver> d_receiver;
-        template <typename Tag, typename... A>
-        friend auto tag_invoke(Tag&& tag, receiver&& r, A... a) noexcept(noexcept(tag(::nstd::utility::move(r.d_receiver), nstd::utility::forward<A>(a)...)))
+        template <::nstd::execution::receiver Receiver>
+        struct receiver_cloak
         {
-            return tag(::nstd::utility::move(r.d_receiver), nstd::utility::forward<A>(a)...);
+            struct receiver {
+                ::nstd::type_traits::remove_cvref_t<Receiver> d_receiver;
+                template <typename Tag, typename... A>
+                friend auto tag_invoke(Tag&& tag, receiver&& r, A... a) noexcept(noexcept(tag(::nstd::utility::move(r.d_receiver), nstd::utility::forward<A>(a)...)))
+                {
+                    return tag(::nstd::utility::move(r.d_receiver), nstd::utility::forward<A>(a)...);
+                }
+            };
+        };
+
+        ::nstd::type_traits::remove_cvref_t<Sender> d_sender;
+
+        template <::nstd::execution::receiver R>
+        friend auto tag_invoke(::nstd::execution::connect_t, nest_sender&& self, R&& r)
+        {
+            return ::nstd::execution::connect(::nstd::utility::move(self.d_sender),
+                                              receiver<R>(::nstd::utility::forward<R>(r))
+                                              );
         }
     };
-    ::nstd::type_traits::remove_cvref_t<Sender> d_sender;
-
-    template <::nstd::execution::receiver R>
-    friend auto tag_invoke(::nstd::execution::connect_t, nest_sender&& self, R&& r)
-    {
-        return ::nstd::execution::connect(::nstd::utility::move(self.d_sender),
-                                          receiver<R>(::nstd::utility::forward<R>(r))
-                                          );
-    }
 };
 
 // ----------------------------------------------------------------------------
@@ -101,23 +106,25 @@ struct nstd::hidden_names::async_scope::upon_empty_sender
         virtual auto do_complete() -> void {}
     };
     template <::nstd::execution::receiver Receiver>
-    struct state
-        : state_base
-    {
-        ::nstd::type_traits::remove_cvref_t<Receiver> d_receiver;
-        friend auto tag_invoke(::nstd::execution::start_t, state& self) noexcept -> void {
-            self.insert();
-        }
-        auto do_complete() -> void override {
-            ::nstd::execution::set_value(::nstd::utility::move(this->d_receiver));
-        }
+    struct state_cloak {
+        struct state
+            : state_base
+        {
+            ::nstd::type_traits::remove_cvref_t<Receiver> d_receiver;
+            friend auto tag_invoke(::nstd::execution::start_t, state& self) noexcept -> void {
+                self.insert();
+            }
+            auto do_complete() -> void override {
+                ::nstd::execution::set_value(::nstd::utility::move(this->d_receiver));
+            }
+        };
     };
 
     ::nstd::execution::async_scope* scope;
 
     template <::nstd::execution::receiver Receiver>
     friend auto tag_invoke(::nstd::execution::connect_t, upon_empty_sender&& self, Receiver&& r)
-        -> state<Receiver> {
+        -> typename state_cloak<Receiver>::receiver {
             return { self.scope, ::nstd::utility::forward<Receiver>(r) };
         };
 };
@@ -145,7 +152,7 @@ public:
 
     template <nstd::execution::sender Sender>
     auto nest(Sender&& sender)
-        -> ::nstd::hidden_names::async_scope::nest_sender<Sender>;
+        -> typename ::nstd::hidden_names::async_scope::nest_sender_cloak<Sender>::nest_sender;
 
     [[nodiscard]]
     ::nstd::hidden_names::async_scope::upon_empty_sender upon_empty() const noexcept { return {}; }
@@ -165,7 +172,7 @@ private:
 
 template <nstd::execution::sender Sender>
 auto nstd::execution::async_scope::nest(Sender&& s)
-    -> ::nstd::hidden_names::async_scope::nest_sender<Sender>
+    -> typename ::nstd::hidden_names::async_scope::nest_sender_cloak<Sender>::nest_sender
 {
     ++this->d_outstanding;
     return { ::nstd::utility::forward<Sender>(s) };
