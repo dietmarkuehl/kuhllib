@@ -4,9 +4,10 @@ This directory aims to provide a tutorial on how to use and implement
 sender/receiver components (see the
 [`std::execution`](http://wg21.link/p2300) proposal). The examples
 in the tutorial start substantially simplified compared to a full
-generic version. The simplification is intended to avoid distraction
-while getting familiar with the basics. The hope is to get eventually
-get to full-fledged generic components.
+generic version (for an overview of simplifications [see
+below](#simplifications)). The simplification is intended to avoid
+distraction while getting familiar with the basics. The hope is to
+get eventually get to full-fledged generic components.
 
 ## Getting Started
 
@@ -231,3 +232,53 @@ Each corresponding state object gets `start()`ed which, of course,
 just registered the work to be done with the scheduler. Once the
 work is submitted the loop at the end just executes all work of the
 `context`.
+
+## Simplifications
+
+To keep the early examples understandable the tutorial starts off
+with numerous simplifications: a full-fledged, generic version is
+more involved but is entirely possible. This section yields an
+overview of how the presentation is simplified and where things
+are heading without much of an explanation. The items are not
+listed in any particular order.
+
+- Senders are copyable. In a proper abstraction senders are, in
+    general, only required to be movable. For some algorithms, e.g.,
+    `repeat_effect_until(sender, condition)` executing the argument
+    `sender` potentially repeatedly until `condition` is met, senders
+    may need to be copyable. Thus, it is desirable for senders to
+    be copyable but many algorithms can work with movable senders.
+- Receivers are copyable. In a proper abstractions it is sufficient
+    for receivers to be movable. (-dk:TODO: confirm)
+- The initial abstraction starts off with just one completion signal,
+    `set_value`. Clearly, there are also failure cases and it is
+    useful to use a different completion signal for errors:
+    `set_error`. There are various reasons why scheduled work isn't
+    needed to complete and operations are stopped. The result isn't
+    a success or an error and gets reported on the `set_stopped`
+    completion signal.
+- Each completion signal has just one variation while it may be
+    desirable to complete with different argument types. For example,
+    there may be a `set_error` using an `std::error_code` for
+    non-exceptional result and `std::exception_ptr` for exceptional
+    results.
+- The `set_value` completion signal uses exactly one argument. Some
+    operations have no results, e.g., the sender returned from
+    `schedule()` on a scheduler.  Likewise, other senders have
+    multiple arguments. In combination with the previous point
+    that leads to list of signatures representing completions:
+    each type in the list a function type whose return type indicates
+    the completion channel (`set_value`, `set_error`, or `set_stopped`)
+    and whose parameter types represents the types returned.
+- For various reasons it is useful to provide costumizations propagated
+    using either a sender or a receiver. Thus, both of these concepts
+    provide access to an `environment` using `get_attrs()` for senders
+    and `get_env()` for receivers. The customizations may be empty and
+    expected elements are probably defaulted.
+- Senders waiting for result or executing substantial amount of
+    work should support cancellation. For this, the environment for
+    the receiver supports access to a _stop token_ which is defaulted
+    to a stop token which will never indicate a request to stop.
+- The initial examples use member functions which can't be customized
+    easily. A real implementation uses _customization point objects_
+    together with `tag_invoke()` to support very flexible customization.
