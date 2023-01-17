@@ -90,8 +90,6 @@ namespace tut
 
         then(InnerSender sender, Fn function) : d_innerSender(sender), d_function(function) {}
 
-        // for review: can user call connect multiple times? (can we move objects into state?)
-        // todo: describe it in documentation for "just"
         template <typename Receiver>
         auto connect(Receiver receiver)
         {
@@ -125,6 +123,4 @@ int main()
                              { return value + 55; });
     auto state = sender3.connect(print_receiver{});
     state.start();
-
-    // todo: maybe it's better to rename state to operationState to be more compatible with Eric's presentation and P2300
 }
