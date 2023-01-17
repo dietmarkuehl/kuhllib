@@ -55,6 +55,46 @@ namespace tut {
 }
 
 // ----------------------------------------------------------------------------
+// then - a sender taking the result of the other sender and passing it into a function
+
+namespace tut
+{
+    template <typename InnerSender, typename Fn>
+    class then
+    {
+    private:
+        template <typename Receiver>
+        struct inner_receiver
+        {
+            Fn d_function;
+            Receiver d_nextReceiver;
+
+            template <typename T>
+            void set_value(T const &value)
+            {
+                d_nextReceiver.set_value(d_function(value));
+            }
+        };
+
+        InnerSender d_innerSender;
+        Fn d_function;
+
+    public:
+        using result_t = std::invoke_result_t<Fn, typename InnerSender::result_t>;
+
+        then(InnerSender sender, Fn function) : d_innerSender(sender), d_function(function) {}
+
+        // for review: can user call connect multiple times? (can we move objects into state?)
+        // todo: describe it in documentation for "just"
+        template <typename Receiver>
+        auto connect(Receiver receiver)
+        {
+            return d_innerSender.connect(inner_receiver<Receiver>{d_function, receiver});
+        }
+    };
+}
+
+// ----------------------------------------------------------------------------
 // A context with a scheduler to run work items manually controlled: each
 // time run_next() is called, the next work item is extracted and run.
 
@@ -88,11 +128,9 @@ namespace tut {
                 , d_receiver(receiver) {
             }
             void start() {
-                std::cout << "state::start: " << this << "\n";
                 d_context->submit(this);
             }
             void complete() override {
-                std::cout << "state::complete: " << this << "\n";
                 d_receiver.set_value(tut::none{});
             }
         };
@@ -111,7 +149,6 @@ namespace tut {
         state_base* d_stack{nullptr};
         void submit(state_base* work) {
             work->d_next = std::exchange(d_stack, work);
-            std::cout << "submit: " << work << " => stack=" << d_stack << " next=" << work->d_next << " empty()=" << std::boolalpha << empty() << "\n";
         }
     public:
         class scheduler {
@@ -135,10 +172,10 @@ namespace tut {
 // ----------------------------------------------------------------------------
 
 namespace {
-    struct receiver {
+    struct print_receiver {
         template <typename T>
         void set_value(T const& value) {
-            std::cout << "receiver::set_value(" << value << ")\n";
+            std::cout << "print_receiver::set_value(" << value << ")\n";
         }
     };
 }
@@ -149,9 +186,21 @@ int main()
 {
     tut::manual_context context;
 
-    auto state1(context.get_scheduler().schedule().connect(receiver()));
+    auto state1(
+        tut::then(
+            tut::then(
+                context.get_scheduler().schedule(),
+                [](tut::none){ std::cout << "schedule 1 completed\n"; return tut::none{}; }
+            ),
+            [](tut::none){ std::cout << "chained then completed\n"; return tut::none{}; }
+        ).connect(print_receiver()));
+    auto state2(
+        tut::then(
+            context.get_scheduler().schedule(),
+            [](tut::none){ std::cout << "schedule 2 completed\n"; return tut::none{}; }
+        ).connect(print_receiver()));
+
     state1.start();
-    auto state2(context.get_scheduler().schedule().connect(receiver()));
     state2.start();
 
     std::cout << "two state objects are started\n";

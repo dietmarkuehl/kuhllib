@@ -71,7 +71,7 @@ The class `tut::just` is straight forward:
     which simply calls `d_receiver.set_value(d_value)` with the stored
     value.
 
-To demonstrate the operation of this sender, a rather base `receiver`
+To demonstrate the operation of this sender, a rather basic `print_receiver`
 is implemented: it only provides a `set_value()` method printing
 the received parameter. The `main()` function creates `tut::just`
 object, and `connect()`s a `receiver` to produce a `state` object.
@@ -85,17 +85,20 @@ on the sender/receiver abstraction.
 
 ## Chaining Work on the Completion of Other Sender: `then`
 
-`then` example program ([getting-started-2.cpp](getting-started-2.cpp)) is built on top of the
+The `then` example program ([getting-started-2.cpp](getting-started-2.cpp)) is built on top of the
 `just` example and implements a sender `then`.
 
-`then` takes the other sender and a functor accepting single arguemnt
-of type returned by the sender execution. The work of `then` is
-to execute the given function immediatly after the completion of the given sender. The value returned by the sender will be passed to a
-function. And the value returned by the function will be reported
-to a receiver by calling `set_value`.
+`then` takes the other sender and a function object accepting a
+single argument of the type returned by the sender execution. The
+work of `then` is to execute the given function immediatly after
+the completion of the given sender. The value returned by the sender
+will be passed to a function. And the value returned by the function
+will be reported to a receiver by calling `set_value`.
 
-`then` sender can accept any sender including `then` sender itself allowing the chaining. The following example will provide the result
-of multiplying 42 by 100 and then adding 55:
+The `then` sender can accept any sender including another `then`
+sender itself allowing the chaining. The following example will
+provide the result of multiplying 42 by 100 and then adding 55:
+
 ```
     auto sender1 = tut::just(42);
     auto sender2 = tut::then(sender1, [](auto value)
@@ -115,37 +118,39 @@ receiver `d_nextReceiver` and the function `d_function`.
 The work of the `inner_receiver` receiver is to exexcute the function
 with a given value provided by the sender we want to chain.
 
-The idea of the `inner_receiver` sender is to be `the man in the middle` 
+The idea of the `inner_receiver` sender is to be "the man in the middle" 
 between the other sender and a given recevier. The first `just` exmaple 
 can be represented as follows:
+
 ```
  just(42) -> operation state <- receiver
  
  start: receiver.set_value(42)
 ```
-`then` sender wraps the receiver and transforms the value with a function before passing to the "original" receiver:
+
+The `then` sender wraps the receiver and transforms the value with a function before passing to the "original" receiver:
+
 ```
  just(42) -> operation state <- then_receiver <- receiver
  
  start: then_receiver.set_value(42) -> receiver(Fn(42))
 ```
 
-The rest of `then` sender implementation is similar to `just`:
+The rest of the `then` sender implementation is similar to `just`:
 - The constructor just stores a copy of the sender passed in the
-    member variable `d_innerSender` and a copy of the function into `d_function`.
+    member variable `d_innerSender` and a copy of the function object into `d_function`.
 
 - To support introspection the result type is made available as 
     `result_t`. The type is based on the function return type.
     However, the function return type may depend on the argument type, which is the inner sender's `result_t`. In order to get that `std::invoke_result_t` helper is used.
 
 - The `connect()` member function is templatized on a `Receiver`
-    type. The expected behaviour is to return `then` sender `operation 
+    type. The expected behaviour is to return the `then` sender `operation 
     state`. However, in this example this state would just forward the 
     `start` call to an `operation state` created by the inner sender. 
     Therefore, the state of the inner sender is returned unchanged.
 
 The example program demonstrates the chaining of the example above by printing the value 42*100+55 = 4255.
-
 
 ## Asynchronously Scheduling Work: Schedulers
 

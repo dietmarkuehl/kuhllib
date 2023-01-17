@@ -55,10 +55,10 @@ namespace tut {
 // ----------------------------------------------------------------------------
 
 namespace {
-    struct receiver {
+    struct print_receiver {
         template <typename T>
         void set_value(T const& value) {
-            std::cout << "receiver::set_value(" << value << ")\n";
+            std::cout << "print_receiver::set_value(" << value << ")\n";
         }
     };
 }
@@ -67,6 +67,6 @@ namespace {
 
 int main()
 {
-    auto state(tut::just(42).connect(receiver()));
+    auto state(tut::just(42).connect(print_receiver()));
     state.start();
 }
