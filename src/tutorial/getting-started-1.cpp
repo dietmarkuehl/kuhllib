@@ -33,7 +33,7 @@ namespace tut {
     class just {
     private:
         template <typename Receiver>
-        struct state {
+        struct operation_state {
             Receiver d_receiver;
             Value    d_value;
 
@@ -45,9 +45,10 @@ namespace tut {
         using result_t = Value;
 
         just(Value const& value): d_value(value) {}
+
         template <typename Receiver>
-        auto connect(Receiver receiver) {
-            return state<Receiver>{ receiver, d_value };
+        operation_state<Receiver> connect(Receiver receiver) {
+            return { receiver, d_value };
         }
     };
 }
