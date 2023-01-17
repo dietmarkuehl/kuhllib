@@ -67,6 +67,10 @@ The class `tut::just` is straight forward:
     of the `receiver` and `d_value`. The members of the state are
     initialized using [aggregate
     initialization](https://en.cppreference.com/w/cpp/language/aggregate_initialization).
+    The fact that `state<Receiver>` stores copies of the `receiver`
+    and `d_value` allows users to call connect multiple times on the
+    same sender. In general, it is not required, therefore `connect()`
+    function can be implemented taking r-value reffrenece to a recevier.
 
 - The `state<Receiver>` class template has a member function `start()`
     which simply calls `d_receiver.set_value(d_value)` with the stored
