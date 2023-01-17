@@ -137,23 +137,20 @@ namespace
         client& owner,
         NN::io_context&  context) 
     {
-        return 
-            //EX::repeat_effect_until(
-                EX::on(context.scheduler(), NN::async_read_some(owner.d_socket, NN::buffer(owner.d_buffer)))
-                | EX::then([](auto&& n){
-                    static_assert(::nstd::concepts::same_as<::std::size_t, ::nstd::type_traits::remove_cvref_t<decltype(n)>>);
-                })
-                //    | compose(
-                //        [&context, &owner](::std::size_t n){
-                //            ::std::cout << "read(" << n << ")='" << std::string_view(owner.d_buffer, n) << "'\n";
-                //            owner.d_done = n == 0;
-                //            return EX::on(context.scheduler(),
-                //                          NN::async_write(owner.d_socket, NN::buffer(owner.d_buffer, n))
-                //            );
-                //        })
-            //    ,
-            //    [&owner]{ return owner.d_done; }
-            //)
+        return EX::repeat_effect_until(
+                EX::on(context.scheduler(),
+                    NN::async_read_some(owner.d_socket, NN::buffer(owner.d_buffer)))
+                    | compose(
+                        [&context, &owner](::std::size_t n){
+                            ::std::cout << "read(" << n << ")='" << std::string_view(owner.d_buffer, n) << "'\n";
+                            owner.d_done = n == 0;
+                            return EX::on(context.scheduler(),
+                                          NN::async_write(owner.d_socket, NN::buffer(owner.d_buffer, n))
+                            );
+                        })
+                ,
+                [&owner]{ return owner.d_done; }
+            )
             ;
     }
     auto run_client(starter&         outstanding,
@@ -179,7 +176,7 @@ namespace
             EX::repeat_effect(
                 EX::on(context.scheduler(),
                       NN::async_accept(server)
-                    | EX::then([&outstanding, &context](auto&& client, auto&& endpoint){
+                    | EX::then([&outstanding, &context](stream_socket&& client, auto&& endpoint){
                         ::std::cout << "accepted connection from " << endpoint << "\n";
                         run_client(outstanding, context, ::std::move(client));
                     })
