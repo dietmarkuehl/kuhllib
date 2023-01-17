@@ -172,14 +172,16 @@ namespace nstd::hidden_names::repeat_effect_until
                     return;
                 }
 
-                ::std::lock_guard kerberos(this->d_running);
+                ::std::lock_guard kerberos(this->d_running); // NOT a mutex: just used to set/reset a bool
                 for (this->d_ready = true; this->d_ready; ) {
                     this->d_ready = false;
                     if (::nstd::execution::get_stop_token(::nstd::execution::get_env(this->d_receiver)).stop_requested()) {
                         ::nstd::execution::set_stopped(::nstd::utility::move(this->d_receiver));
+			break;
                     }
                     else if (this->d_predicate()) {
                         ::nstd::execution::set_value(::nstd::utility::move(this->d_receiver));
+			break;
                     }
                     else {
                         this->d_internal_state.d_state.~internal_state();
