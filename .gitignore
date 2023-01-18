@@ -1,4 +1,4 @@
-.vscode
+.DS_Store
 build-*
 tmp
 build
@@ -10,6 +10,4 @@ olderr
 Testing
 ci-build
 ci-debug
-src/async_operations.txt
-
-https://www.dropbox.com/sh/8d4e8mjdyaz6lh8/AAAbSCrs-HGao2XSlL0jTg_da?dl=0&preview=Structured+Networking+copy.png
+src/toy/.vscode
