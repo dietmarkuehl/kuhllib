@@ -35,7 +35,7 @@ namespace tut {
     class just {
     private:
         template <typename Receiver>
-        struct state {
+        struct operation_state {
             Receiver d_receiver;
             Value    d_value;
 
@@ -47,9 +47,10 @@ namespace tut {
         using result_t = Value;
 
         just(Value const& value): d_value(value) {}
+
         template <typename Receiver>
-        auto connect(Receiver receiver) {
-            return state<Receiver>{ receiver, d_value };
+        operation_state<Receiver> connect(Receiver receiver) {
+            return { receiver, d_value };
         }
     };
 }
@@ -84,8 +85,6 @@ namespace tut
 
         then(InnerSender sender, Fn function) : d_innerSender(sender), d_function(function) {}
 
-        // for review: can user call connect multiple times? (can we move objects into state?)
-        // todo: describe it in documentation for "just"
         template <typename Receiver>
         auto connect(Receiver receiver)
         {
@@ -110,20 +109,20 @@ namespace tut {
         class scheduler;
     
     private:
-        struct state_base {
-            state_base() = default;
-            state_base(state_base&&) = delete;
-            state_base* d_next{nullptr};
+        struct operation_state_base {
+            operation_state_base() = default;
+            operation_state_base(operation_state_base&&) = delete;
+            operation_state_base* d_next{nullptr};
             virtual void complete() = 0;
         };
         template <typename Receiver>
-        struct state
-            : state_base
+        struct operation_state
+            : operation_state_base
         {
             manual_context* d_context;
             Receiver        d_receiver;
 
-            state(manual_context* context, Receiver receiver)
+            operation_state(manual_context* context, Receiver receiver)
                 : d_context(context)
                 , d_receiver(receiver) {
             }
@@ -143,11 +142,13 @@ namespace tut {
             using result_t = tut::none;
             explicit sender(manual_context* context): d_context(context) {}
             template <typename Receiver>
-            state<Receiver> connect(Receiver receiver){ return state<Receiver>(d_context, receiver); }
+            operation_state<Receiver> connect(Receiver receiver){
+                 return { d_context, receiver };
+            }
         };
     
-        state_base* d_stack{nullptr};
-        void submit(state_base* work) {
+        operation_state_base* d_stack{nullptr};
+        void submit(operation_state_base* work) {
             work->d_next = std::exchange(d_stack, work);
         }
     public:
@@ -203,7 +204,7 @@ int main()
     state1.start();
     state2.start();
 
-    std::cout << "two state objects are started\n";
+    std::cout << "two operation state objects are started\n";
 
     while (!context.empty()) {
         std::cout << "running next\n";

@@ -36,7 +36,7 @@ namespace tut
     {
     private:
         template <typename Receiver>
-        struct state
+        struct operation_state
         {
             Receiver d_receiver;
             Value d_value;
@@ -49,11 +49,12 @@ namespace tut
     public:
         using result_t = Value;
 
-        just(Value const &value) : d_value(value) {}
+        just(Value const& value): d_value(value) {}
+
         template <typename Receiver>
-        auto connect(Receiver receiver)
+        operation_state<Receiver> connect(Receiver receiver)
         {
-            return state<Receiver>{receiver, d_value};
+            return { receiver, d_value };
         }
     };
 }
