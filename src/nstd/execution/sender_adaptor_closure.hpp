@@ -49,6 +49,7 @@ namespace nstd::hidden_names::sender_adaptor_closure_ns
         
     template <typename CPO, typename... T>
     struct adaptor
+	: ::nstd::execution::sender_tag
     {
         ::std::tuple<::nstd::hidden_names::sender_adaptor_closure_ns::decay_or_ref_t<T>...> args;
         template <typename... A>
