@@ -59,6 +59,12 @@
 // ----------------------------------------------------------------------------
 
 namespace nstd::hidden_names::async_io {
+    template <typename... T>
+    using set_error_variant_t
+        = ::nstd::execution::completion_signatures<
+            ::nstd::execution::set_error_t(T)...
+        >;
+
     template <::nstd::execution::receiver Receiver, ::nstd::file::io_object Stream, typename InnerState>
     struct state_base
         : ::nstd::file::io_base
@@ -258,16 +264,15 @@ namespace nstd::hidden_names::async_io {
                 using own_signatures_t  = ::nstd::execution::completion_signatures<
                     typename Operation<Stream, Env>::completion_signature,
                     ::nstd::execution::set_error_t(::std::error_code),
-                    ::nstd::execution::set_error_t(::std::exception_ptr), //-dk:TODO remove - needs to come from upstream
                     ::nstd::execution::set_stopped_t()
                 >;
-            #if 0
-                //-dk:TODO add upstream errors
-                using upstream_errors_t = ::nstd::execution::error_types_of_t<::nstd::type_traits::remove_cvref_t<Sender>, Env>;
-                return ::nstd::hidden_names::merge_completion_signatures_t<own_signatures_t, upstream_errors_t>{};
-            #else
-                return own_signatures_t{};
-            #endif
+                using upstream_errors_t
+                    = ::nstd::execution::error_types_of_t<
+                        ::nstd::type_traits::remove_cvref_t<Sender>,
+                        Env,
+                        ::nstd::hidden_names::async_io::set_error_variant_t
+                        >;
+                return ::nstd::hidden_names::merge_completion_signatures_t<Env, upstream_errors_t, own_signatures_t>{};
             }
 
             ::nstd::type_traits::remove_cvref_t<Sender> d_sender;
