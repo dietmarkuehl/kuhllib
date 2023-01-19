@@ -26,7 +26,7 @@
 #include "nstd/hidden_names/merge_completion_signatures.hpp"
 #include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/set_value.hpp"
-#include "nstd/hidden_names/print_completion_signatures.hpp"
+#include "nstd/execution/no_env.hpp"
 #include "kuhl/test.hpp"
 
 #include <system_error>

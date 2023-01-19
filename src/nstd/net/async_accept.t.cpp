@@ -40,7 +40,6 @@
 #include "kuhl/test.hpp"
 #include "netinet/in.h"
 #include "arpa/inet.h"
-#include "nstd/hidden_names/print_completion_signatures.hpp"
 
 namespace test_declarations {}
 namespace EX = ::nstd::execution;
@@ -51,7 +50,6 @@ namespace NN = ::nstd::net;
 namespace ST = ::nstd::stop_token_ns;
 namespace UT = ::nstd::utility;
 namespace TT = ::nstd::this_thread;
-namespace HN = ::nstd::hidden_names;
 namespace TD = test_declarations;
 
 // ----------------------------------------------------------------------------
@@ -220,8 +218,6 @@ static KT::testcase const tests[] = {
                 )
                 ;
 
-            HN::print_completion_signatures(accept);
-            HN::print_completion_signatures(NN::async_accept(acceptor));
             static_assert(EX::receiver<TD::receiver>);
             auto state(EX::connect(UT::move(accept), TD::receiver()));
             EX::start(state);

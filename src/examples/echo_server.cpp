@@ -42,9 +42,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "nstd/hidden_names/print_completion_signatures.hpp"
-namespace HN = ::nstd::hidden_names;
-
 namespace EX = ::nstd::execution;
 namespace NC = ::nstd::concepts;
 namespace NN = ::nstd::net;

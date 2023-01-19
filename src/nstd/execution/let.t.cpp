@@ -36,15 +36,12 @@
 #include "nstd/execution/schedule.hpp"
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/start.hpp"
-#include "nstd/hidden_names/print_completion_signatures.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
 #include "nstd/thread/sync_wait.hpp"
 #include "nstd/utility/forward.hpp"
 #include "nstd/utility/move.hpp"
 #include <concepts>
 #include "kuhl/test.hpp"
-
-namespace HN = ::nstd::hidden_names;
 
 namespace test_declarations {}
 namespace TD = test_declarations;
@@ -304,7 +301,6 @@ static KT::testcase const tests[] = {
         auto sender = EX::let_value(
             TD::error_sender<TD::error<0>>(),
             []{ return TD::error_sender<TD::error<1>>(); });
-        // HN::print_completion_signatures(sender);
         return EX::sender<decltype(sender)>
             && ::std::same_as<EX::error_types_of_t<decltype(sender), TD::env, TD::variant_t>,
                               EX::completion_signatures<

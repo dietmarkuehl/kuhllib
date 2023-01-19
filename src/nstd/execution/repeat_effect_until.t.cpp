@@ -32,7 +32,6 @@
 #include "nstd/execution/set_error.hpp"
 #include "nstd/execution/set_stopped.hpp"
 #include "nstd/execution/then.hpp"
-#include "nstd/hidden_names/print_completion_signatures.hpp"
 #include "nstd/thread/sync_wait.hpp"
 #include "nstd/utility/move.hpp"
 #include "kuhl/test.hpp"
@@ -41,7 +40,6 @@ namespace test_declarations {}
 namespace TD = ::test_declarations;
 namespace KT = ::kuhl::test;
 namespace EX = ::nstd::execution;
-namespace HN = ::nstd::hidden_names;
 namespace TR = ::nstd::this_thread;
 namespace TT = ::nstd::type_traits;
 namespace UT = ::nstd::utility;
@@ -157,7 +155,6 @@ static KT::testcase const tests[] = {
         auto sender = EX::repeat_effect_until(
             TD::error_sender<::std::exception_ptr, ::std::error_code>(),
             []{ return true; });
-        //HN::print_completion_signatures(sender);
         return EX::sender<decltype(sender)>
             && ::std::same_as<EX::error_types_of_t<decltype(sender), TD::env, TD::variant_t>,
                               EX::completion_signatures<
