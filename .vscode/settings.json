@@ -1,3 +1,6 @@
 {
-    "cmake.buildDirectory" : "${workspaceRoot}/build/${buildType}-${buildKit}"
+    "cmake.buildDirectory": "${workspaceRoot}/build/${buildType}-${buildKit}",
+    "gcovViewer.buildDirectories": [
+        "/Users/kuehl/src/kuhllib/build/Coverage-gcc-12.2.0"
+    ]
 }
