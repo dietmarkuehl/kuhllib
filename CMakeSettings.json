@@ -2,7 +2,7 @@
     "configurations": [
         {
             "name": "x64-Debug",
-            "generator": "Ninja",
+            "generator": "Makefile",
             "configurationType": "Debug",
             "inheritEnvironments": [ "msvc_x64_x64" ],
             "buildRoot": "${projectDir}\\out\\build\\${name}",

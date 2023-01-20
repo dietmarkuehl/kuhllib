@@ -12,51 +12,36 @@
                 'short': 'Release',
                 'long':  'Optimized Build',
                 'buildType': 'Release'
-            }
-        }
-    },
-    'sanitize': {
-        'default': 'ubsan',
-        'description': 'Sanitizer',
-        'choices': {
-            'none': {
-                'short': 'None',
-                'long':  'No Sanitizer'
+            },
+            'coverage': {
+                'short': 'Coverage',
+                'long':  'Coverage',
+                'settings': { 'COVERAGE': 'ON' },
+                'buildType': 'Coverage'
             },
             'asan': {
                 'short': 'ASAN',
                 'long':  'Adress Sanitizer',
-                'settings': { 'SANITIZE': '-fsanitize=address' }
+                'settings': { 'SANITIZE': '-fsanitize=address' },
+                'buildType': 'asan'
             },
             'msan': {
                 'short': 'MSAN',
                 'long':  'Memory Sanitizer',
-                'settings': { 'SANITIZE': '-fsanitize=memory' }
+                'settings': { 'SANITIZE': '-fsanitize=memory' },
+                'buildType': 'msan'
             },
             'tsan': {
                 'short': 'TSAN',
                 'long':  'Thread Sanitizer',
-                'settings': { 'SANITIZE': '-fsanitize=thread' }
+                'settings': { 'SANITIZE': '-fsanitize=thread' },
+                'buildType': 'tsan'
             },
             'ubsan': {
                 'short': 'UBSAN',
                 'long':  'Undefined Behavior Sanitizer',
-                'settings': { 'SANITIZE': '-fsanitize=undefined' }
-            }
-        }
-    },
-    'recovery': {
-        'default': 'none',
-        'description': 'Recovery',
-        'choices': {
-            'rnone': {
-                'short': 'None',
-                'long':  'No Recovery',
-                'settings': { 'SANITIZE_RECOVER': '-fno-sanitize-recover' }
-            },
-            'rfull': {
-                'short': 'Full',
-                'long':  'FUll Recovery'
+                'settings': { 'SANITIZE': '-fsanitize=undefined' },
+                'buildType': 'ubsan'
             }
         }
     }
