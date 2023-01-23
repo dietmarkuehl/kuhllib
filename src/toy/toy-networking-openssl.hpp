@@ -43,7 +43,6 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
-#include <iostream> //-dk:TODO remove
 
 #include <stddef.h>
 #include <string.h>
@@ -66,18 +65,13 @@ struct socket
 {
     static SSL_CTX* context() {
         static SSL_CTX* rc = []{
-            std::cout << "SSL_library_init\n";
             SSL_library_init();
-            std::cout << "SSL_load_error_strings\n";
             SSL_load_error_strings();
-            std::cout << "SSL_CTX_new\n";
             SSL_CTX* rc = SSL_CTX_new(TLS_method());
 
-            std::cout << "SSL_CTX_use_certificate_file\n";
             if (SSL_CTX_use_certificate_file(rc, "tmp/cert.pem", SSL_FILETYPE_PEM) != 1) {
                 throw std::runtime_error("failed to use certificated");
             }
-            std::cout << "SSL_CTX_use_PrivateKey_file\n";
             if (SSL_CTX_use_PrivateKey_file(rc, "tmp/cert.pem", SSL_FILETYPE_PEM) != 1) {
                 throw std::runtime_error("failed to use private key");
             }
@@ -96,16 +90,13 @@ struct socket
         if (::fcntl(fd, F_SETFL, O_NONBLOCK) < 0) {
             throw std::runtime_error("fcntl");
         }
-        std::cout << "socket(int) " << *this << "\n";
     }
     void make_ssl() {
         auto ctx = context();
-        std::cout << "SSL_new\n";
         ssl = SSL_new(ctx);
         if (!ssl) {
             throw std::runtime_error("failed to create SSL socket");
         }
-        std::cout << "SSL_set_fd\n";
         if (!SSL_set_fd(ssl, fd)) {
             throw std::runtime_error("failed to set file descriptor for SSL socket");
         }
@@ -120,20 +111,16 @@ struct socket
         : fd(std::exchange(other.fd, -1))
         , ssl(std::exchange(other.ssl, nullptr))
     {
-        std::cout << "socket(socket&&) " << *this << " other=" << other << "\n";
     }
     socket& operator= (socket&& other) {
         if (this != &other) {
             std::swap(fd, other.fd);
             std::swap(ssl, other.ssl);
         }
-        std::cout << "op=(socket&&) " << *this << " other=" << other << "\n";
         return *this;
     }
     ~socket() {
-        std::cout << "~socket() " << *this << "\n";
         if (ssl != nullptr) {
-            std::cout << "SSL_free\n";
             SSL_free(ssl);
         }
         if (fd != -1) ::close(fd);
@@ -274,24 +261,18 @@ namespace hidden_async_accept {
             }
             friend void start(state& self) { self.try_accept_or_submit(); }
             void submit() {
-                std::cout << "submit(" << fd << ", " << (events == POLLIN? "POLLIN": "POLLOUT") << ") POLLIN=" << POLLIN << " POLL_IN=" << POLL_IN << "\n";
                 cb.engage(*this);
                 c.add(this);
             }
             void try_accept_or_submit() {
                 int rc(::accept(fd, reinterpret_cast<::sockaddr*>(&addr), &len));
                 if (0 <= rc) {
-                    toy::socket result(rc);
-                    auto ssl = result.get_ssl();
-                    std::cout << "SSL_set_accept_state\n";
-                    SSL_set_accept_state(ssl);
-                    set_value(receiver, std::move(result));
-                    #if 0
                     d_result = toy::socket(rc);
+                    auto ssl = d_result.get_ssl();
+                    SSL_set_accept_state(ssl);
                     shaking_hands = true;
                     this->io::fd = rc;
                     ssl_accept();
-                    #endif
                 }
                 else if (errno == EINTR || errno == EWOULDBLOCK) {
                     submit();
@@ -304,45 +285,37 @@ namespace hidden_async_accept {
                 cb.disengage();
 
                 if (shaking_hands) {
-                    std::cout << "complete while shaking hands\n";
                     ssl_accept();
                 }
                 else {
-                    std::cout << "complete while accepting\n";
                     try_accept_or_submit();
                 }
             }
             void ssl_accept() {
                 ERR_clear_error();
                 auto ssl = d_result.get_ssl();
-                std::cout << "SSL_accept\n";
                 switch (int ret = SSL_accept(ssl)) {
                 default:
                     switch (int error = SSL_get_error(ssl, ret)) {
                         default:
-                            std::cout << "error(" << ret << ", " << error << ") from SSL_accept: " << ERR_error_string(error, nullptr) << "\n";
                             set_error(receiver, std::make_exception_ptr(std::system_error(error, ssl_category())));
                             break;
                         case SSL_ERROR_WANT_READ:
                             ERR_get_error();
-                            std::cout << "SSL_accept needs to read more \n";
                             this->events = POLLIN;
                             submit();
                             break;
                         case SSL_ERROR_WANT_WRITE:
                             ERR_get_error();
-                            std::cout << "SSL_accept needs to write more \n";
                             this->events = POLLOUT;
                             submit();
                             break;
                     }
                     break;
                 case 1: // success
-                    std::cout << "success from SSL_accept\n";
                     set_value(receiver, std::move(d_result));
                     break;
                 case 0:
-                    std::cout << "hard error from SSL_accept: " << SSL_get_error(ssl, ret) << "\n";
                     set_error(receiver, std::make_exception_ptr(std::system_error(SSL_get_error(ssl, ret), ssl_category())));
                     break;
                 }
@@ -400,7 +373,6 @@ namespace hidden_async_connect {
             }
             void complete() override final {
                 if (shaking_hands) {
-                    std::cout << "complete while shaking hands\n";
                     connect();
                     return;
                 }
@@ -415,33 +387,27 @@ namespace hidden_async_connect {
                     set_error(receiver, std::make_exception_ptr(std::runtime_error(std::string("connect: ") + ::strerror(rc))));
                 }
                 else {
-                    std::cout << "delayed connect completed\n";
                     this->connect();
                 }
             }
             void connect() {
                 auto ssl = d_socket.get_ssl();
                 if (not shaking_hands) {
-                    std::cout << "SSL_set_connect_state\n";
                     SSL_set_connect_state(ssl);
                     shaking_hands = true;
                 }
-                std::cout << "SSL_connect\n";
                 switch (int ret = SSL_connect(ssl)) {
                 default:
                     switch (int error = SSL_get_error(ssl, ret)) {
                         default:
-                            std::cout << "error from SSL_connect: " << ERR_error_string(error, nullptr) << "\n";
                             set_error(receiver, std::make_exception_ptr(std::system_error(error, ssl_category())));
                             break;
                         case SSL_ERROR_WANT_READ:
-                            std::cout << "SSL_connect needs to read more \n";
                             this->events = POLLIN;
                             this->cb.engage(*this);
                             this->c.add(this);
                             break;
                         case SSL_ERROR_WANT_WRITE:
-                            std::cout << "SSL_connect needs to write more \n";
                             this->events = POLLOUT;
                             this->cb.engage(*this);
                             this->c.add(this);
@@ -449,11 +415,9 @@ namespace hidden_async_connect {
                     }
                     break;
                 case 1: // success
-                    std::cout << "success from SSL_connect\n";
                     set_value(receiver, ret);
                     break;
                 case 0:
-                    std::cout << "hard error from SSL_connect: " << SSL_get_error(ssl, ret) << "\n";
                     set_error(receiver, std::make_exception_ptr(std::system_error(SSL_get_error(ssl, ret), ssl_category())));
                     break;
                 }
@@ -517,14 +481,11 @@ namespace hidden_async_write_some {
                 self.c.add(&self);
             }
             void complete() override final {
-                std::cout << "write state complete\n";
                 cb.disengage();
                 auto ssl = d_socket.get_ssl();
-                std::cout << "SSL_write\n";
                 auto res{SSL_write(ssl, buffer, len)};
                 if (0 < res) {
                     set_value(std::move(receiver), result_t(res));
-                    std::cout << "write completed\n";
                 }
                 else {
                     switch (int error = SSL_get_error(ssl, res)) {
@@ -600,17 +561,13 @@ namespace hidden_async_read_some {
             friend void start(state& self) {
                 self.cb.engage(self);
                 self.c.add(&self);
-                std::cout << "read started\n";
             }
             void complete() override final {
-                std::cout << "read state complete\n";
                 cb.disengage();
                 auto ssl = d_socket.get_ssl();
-                std::cout << "SSL_read\n";
                 auto res{SSL_read(ssl, buffer, len)};
                 if (0 < res) {
                     set_value(std::move(receiver), result_t(res));
-                    std::cout << "read completed\n";
                 }
                 else {
                     switch (int error = SSL_get_error(ssl, res)) {

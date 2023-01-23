@@ -160,10 +160,12 @@ ENDIF()
 
 # try to use OPENSSL
 set(CMAKE_REQUIRED_INCLUDES /opt/openssl/include)
-set(CMAKE_REQUIRED_LINK_OPTIONS -lssl -lcrypto)
+set(CMAKE_REQUIRED_LINK_OPTIONS -L/opt/openssl/lib -lssl -lcrypto)
 CHECK_INCLUDE_FILE(openssl/ssl.h TOY_HAS_OPENSSL)
 if(TOY_HAS_OPENSSL)
     # foreach(demo ${TOY_DEMOS})
+    add_compile_options(-I/opt/openssl/include)
+    add_link_options(-L/opt/openssl/lib)
     foreach(demo toy-client toy-echo)
         set(demo_executable ${demo}-${CMAKE_CXX_COMPILER_ID}-openssl)
         add_executable(${demo_executable} ${demo}.cpp)
