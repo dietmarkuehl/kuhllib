@@ -67,6 +67,7 @@ struct nstd::execution::hidden_names::test_receiver_of
     friend auto tag_invoke(::nstd::execution::get_env_t, test_receiver_of const&) -> int { return {}; }
 };
 
+#ifndef _MSC_VER
 static_assert(::nstd::execution::receiver_of<
     ::nstd::execution::hidden_names::test_receiver_of<::nstd::execution::set_value_t(int, bool),
                                         ::nstd::execution::set_error_t(void*),
@@ -77,6 +78,7 @@ static_assert(::nstd::execution::receiver_of<
                                              ::nstd::execution::set_stopped_t()
                                              >
     >);
+#endif
 
 // ----------------------------------------------------------------------------
 

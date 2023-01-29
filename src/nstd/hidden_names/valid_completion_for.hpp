@@ -32,13 +32,26 @@
 // [exec.recv]
 
 namespace nstd::hidden_names {
+    template <typename, typename>
+    struct nothrow_tag_invocable_helper_t {
+        static constexpr bool value{false};
+    };
+    template <typename T, typename Tag, typename... A>
+    struct nothrow_tag_invocable_helper_t<T, Tag(*)(A...)> {
+        static constexpr bool value{::nstd::nothrow_tag_invocable<Tag, T, A...>};
+    };
+
     template <typename Signature, typename T>
     concept valid_completion_for
+#ifndef _MSC_VER
         = requires(Signature* sig) {
             []<typename Tag, typename...A>(Tag(*)(A...))
                 requires ::nstd::nothrow_tag_invocable<Tag, T, A...>
             {}(sig);
         }
+#else
+        = nothrow_tag_invocable_helper_t<T, Signature>::value;
+#endif
         ;
 }
 

@@ -37,5 +37,7 @@ namespace nstd::file {
 nstd::file::stream::stream(native_handle_type fd)
     : d_fd(fd)
 {
+#ifndef _MSC_VER
     fcntl(this->d_fd.get(), F_SETFL, O_NONBLOCK);
+#endif
 }

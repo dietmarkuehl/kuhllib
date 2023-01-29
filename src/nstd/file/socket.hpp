@@ -36,8 +36,9 @@
 #    include <sys/uio.h>
 #else
 #    include <WinSock2.h>
+#    include <WS2tcpip.h>
 
-using socklen_t = ::std::size_t;
+using socklen_t = int;
 
 struct iovec { //-dk:TODO abstract iovec nicer
     void* iov_base;
@@ -58,11 +59,6 @@ struct in_addr_t {
     char buffer[4];
 };
 
-struct sockaddr_in6 {
-    int sin6_family;
-    short sin6_port;
-    char sin6_addr[16];
-};
 #endif
 
 // ----------------------------------------------------------------------------

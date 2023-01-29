@@ -188,6 +188,8 @@ namespace nstd::hidden_names::sync_wait {
             bool                         done(false);
             ::std::exception_ptr         ex;
 
+            static_assert(::nstd::execution::sender<Sender>);
+            static_assert(::nstd::execution::receiver<receiver<type>>);
             auto state = ::nstd::execution::connect(::nstd::utility::forward<Sender>(s),
                                                     receiver<type>{&bottleneck, &condition, &done, &res, &ex});
             ::nstd::execution::start(state);

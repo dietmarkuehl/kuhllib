@@ -27,6 +27,7 @@
 #include <iostream>
 #include <system_error>
 #include <cstring>
+#include <string.h>
 
 // ----------------------------------------------------------------------------
 
@@ -58,7 +59,13 @@ auto nstd::net::scope::receiver::handle_set_error(std::exception_ptr error) -> v
 {
     try { ::std::rethrow_exception(error); }
     catch (std::system_error const& ex) {
-        ::std::cerr << "scope::set_error(exception_ptr): " << ::std::strerror(ex.code().value()) << "\n";
+#ifndef _MSC_VER
+        auto error_str{std::strerror(ex.code().value())};
+#else
+        char error_str[1024];
+        strerror_s(error_str, sizeof(error_str), ex.code().value());
+#endif
+        ::std::cerr << "scope::set_error(exception_ptr): " << error_str << "\n";
     }
     catch (std::exception const& ex) {
         ::std::cerr << "scope::set_error(exception_ptr): " << ex.what() << "\n";
@@ -67,7 +74,13 @@ auto nstd::net::scope::receiver::handle_set_error(std::exception_ptr error) -> v
 
 auto nstd::net::scope::receiver::handle_set_error(std::error_code error) -> void
 {
-    ::std::cout << "scope::set_error(error_code): " << ::std::strerror(error.value()) << "/" << error << "\n";
+#ifndef _MSC_VER
+        auto error_str{std::strerror(error.value())};
+#else
+        char error_str[1024];
+        strerror_s(error_str, sizeof(error_str), error.value());
+#endif
+    ::std::cout << "scope::set_error(error_code): " << error_str << "/" << error << "\n";
 }
 
 auto nstd::net::scope::receiver::handle_set_stopped() -> void

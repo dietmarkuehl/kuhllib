@@ -82,7 +82,7 @@ private:
     int                      d_flags{};
 
 protected:
-    auto open(int domain, int type, int protocol) -> int;
+    auto open(int domain, int type, int protocol) -> native_handle_type;
 
 public:
     socket_base() = default;

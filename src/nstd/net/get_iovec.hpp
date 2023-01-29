@@ -36,9 +36,13 @@
 #include <array>
 #include <utility>
 #include <vector>
-#include <sys/types.h>
-#include <sys/uio.h>
-#include <unistd.h>
+#ifndef _MSC_VER
+#    include <sys/types.h>
+#    include <sys/uio.h>
+#    include <unistd.h>
+#else
+#    include <winsock2.h>
+#endif
 
 // ----------------------------------------------------------------------------
 
@@ -60,7 +64,7 @@ namespace nstd::hidden_names::get_iovec {
                              });
         };
         auto data() noexcept -> ::iovec* { return this->d_seq.data(); }
-        auto size() noexcept -> int      { return this->d_seq.size(); }
+        auto size() noexcept -> int      { return int(this->d_seq.size()); }
     };
 
     template <::std::size_t N, typename = ::std::make_index_sequence<N>>

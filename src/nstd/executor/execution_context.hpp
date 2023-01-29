@@ -167,6 +167,7 @@ inline auto nstd::net::execution_context::key() -> ::std::size_t
 
 // ----------------------------------------------------------------------------
 
+#ifndef _MSC_VER
 template<typename Service>
 inline auto nstd::net::use_service(::nstd::net::execution_context& ctxt)
     -> typename Service::key_type&
@@ -174,6 +175,7 @@ inline auto nstd::net::use_service(::nstd::net::execution_context& ctxt)
 {
     return ctxt.use_service<Service>();
 }
+#endif
 template<typename Service, typename... Args>
 inline auto nstd::net::make_service(::nstd::net::execution_context& ctxt, Args&&... args)
     -> Service&

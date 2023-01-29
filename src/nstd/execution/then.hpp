@@ -159,9 +159,21 @@ namespace nstd::hidden_names::then {
                 = ::nstd::type_traits::bool_constant<!::std::is_nothrow_invocable_v<Fun, A...>>
                 ;
         
+#ifdef _MSC_VER
+            template <typename...> struct any_of_t;
+            template <> struct any_of_t<> { static constexpr bool value{false}; };
+            template <typename T> struct any_of_t<T> { static constexpr bool value{T::value}; };
+            template <typename H, typename F, typename...T> struct any_of_t<H, F, T...> {
+                static constexpr bool value{H::value || any_of_t<F, T...>::value };
+            };
+#endif
             template <typename... B>
             using any_of
+#ifndef _MSC_VER
                 = ::nstd::type_traits::bool_constant<(false || ... || B::value)>
+#else
+                = ::nstd::type_traits::bool_constant<any_of_t<B...>::value>;
+#endif
                 ;
 
             template <typename S, typename Env>

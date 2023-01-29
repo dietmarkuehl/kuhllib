@@ -25,12 +25,16 @@
 
 #include "nstd/net/socket_base.hpp"
 #include <system_error>
-#include <unistd.h>
-#include <fcntl.h>
+#ifndef _MSC_VER
+#    include <unistd.h>
+#    include <fcntl.h>
+#else
+#    include <winsock2.h>
+#endif
 
 // ----------------------------------------------------------------------------
 
-auto nstd::net::socket_base::open(int domain, int type, int protocol) -> int
+auto nstd::net::socket_base::open(int domain, int type, int protocol) -> native_handle_type
 {
     this->d_descriptor = ::nstd::file::descriptor(::socket(domain, type, protocol));
 #if 0
@@ -57,7 +61,11 @@ nstd::net::socket_base::socket_base(int domain, int type, int protocol)
 
 auto nstd::net::socket_base::non_blocking() const noexcept -> bool
 {
+#ifndef _MSC_VER
     return this->d_flags & O_NONBLOCK;
+#else
+    return false; //-dk:TODO determine blocking for Windows
+#endif
 }
 
 // ----------------------------------------------------------------------------

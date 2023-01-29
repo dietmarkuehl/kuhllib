@@ -40,7 +40,7 @@ class nstd::file::stream {
 private:
     ::nstd::file::descriptor d_fd;
 public:
-    using native_handle_type = int;
+    using native_handle_type = ::nstd::file::descriptor::native_handle_type;
     explicit stream(native_handle_type fd);
 
     auto native_handle() const noexcept -> native_handle_type { return this->d_fd.get(); }

@@ -30,8 +30,12 @@
 #include <exception>
 #include <cassert>
 #include <cerrno>
-#include <fcntl.h>
-#include <unistd.h>
+#ifndef _MSC_VER
+#    include <fcntl.h>
+#    include <unistd.h>
+#else
+#    include <winsock2.h>
+#endif
 #include <system_error>
 #include <cerrno>
 #include <cstring>
@@ -68,6 +72,7 @@ NF::poll_context::poll_context()
     , d_next_poll(this->d_poll.end())
     , d_outstanding()
 {
+#ifndef _MSC_VER
     if (::pipe(this->d_pipe) < 0) {
         throw ::std::system_error(errno, ::std::system_category(),
                                   "failed to create self-pipe");
@@ -80,11 +85,14 @@ NF::poll_context::poll_context()
         ::read(this->d_pipe[0], buffer, sizeof(buffer));
         return false;
         }, &this->d_completion);
+#endif
 }
 
 NF::poll_context::~poll_context() {
+#ifndef _MSC_VER
     ::close(this->d_pipe[0]);
     ::close(this->d_pipe[1]);
+#endif
 }
 
 // ----------------------------------------------------------------------------
@@ -97,7 +105,9 @@ auto NF::poll_context::submit_io(int fd, short events, ::std::function<auto()->b
     else {
         this->d_outstanding.emplace_back(fd, events, UT::move(op), id);
     }
+#ifndef _MSC_VER
     ::write(this->d_pipe[1], "", 1);
+#endif
 }
 
 template <typename Fun>
@@ -160,6 +170,7 @@ auto NF::poll_context::handle_io() -> NF::context::count_type {
 
 // ----------------------------------------------------------------------------
 
+#ifndef _MSC_VER
 auto NF::poll_context::poll() -> bool
 {
     this->d_poll.clear();
@@ -408,3 +419,5 @@ auto NF::poll_context::do_open_at(int fd, char const* name, int flags, NF::conte
 namespace nstd::file {
     int poll_context_dummy = 0;
 }
+
+#endif

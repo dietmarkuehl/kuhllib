@@ -55,6 +55,7 @@ int main()
     endpoint ep(NI::address_v4::any(), 12345);
     datagram_socket socket(ep);
     char buffer[16];
+    static_assert(NN::socket<datagram_socket>);
 
     scope.start(
         EX::repeat_effect(

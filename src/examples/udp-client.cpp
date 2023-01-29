@@ -41,14 +41,14 @@ int main() {
     auto stop = [&scope]{ scope.stop(); };
 
     char buffer[128];
-    NF::stream stdin(0);
+    NF::stream in(0);
     char datagram[128];
     NN::basic_datagram_socket<NN::ip::udp> socket(NN::ip::udp::v4());
     NN::ip::basic_endpoint<NN::ip::udp>    endpoint(NN::ip::address_v4::any(), 12345);
 
     scope.start(
         EX::repeat_effect(
-              NN::async_read_some(stdin, NN::buffer(buffer))
+              NN::async_read_some(in, NN::buffer(buffer))
             | EX::let_value([&buffer, &endpoint, &socket, stop](int n){
                 if (n == 0 || ::std::string_view(buffer, n).starts_with("lstop")) {
                     std::cout << "stopping client\n";

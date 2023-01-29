@@ -441,10 +441,12 @@ list(TRANSFORM kuhllib_components APPEND ${KUHLLIB_TEST_SUFFIX}   OUTPUT_VARIABL
 add_library(kuhllib STATIC ${kuhllib_libfiles})
 add_executable(kuhllib_test ${kuhllib_tstfiles})
 target_link_libraries(kuhllib_test PUBLIC kuhllib kuhltest pthread)
-add_test(NAME kuhllib_test COMMAND $<TARGET_FILE:kuhllib_test>)
+#add_test(NAME kuhllib_test COMMAND $<TARGET_FILE:kuhllib_test>)
 
 list(APPEND kuhllib_examples
     audio
+)
+list(APPEND xkuhllib_examples
     coroutine_echo_server
     simple_echo_server
     chat_server

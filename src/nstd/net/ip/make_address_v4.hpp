@@ -27,7 +27,12 @@
 #define INCLUDED_NSTD_NET_IP_MAKE_ADDRESS_V4
 
 #include "nstd/net/ip/address_v4.hpp"
-#include <arpa/inet.h>
+#ifndef _MSC_VER
+#    include <arpa/inet.h>
+#else
+#    include <winsock2.h>
+#    include <Ws2tcpip.h>
+#endif
 
 // ----------------------------------------------------------------------------
 

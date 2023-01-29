@@ -27,6 +27,9 @@
 #define INCLUDED_NSTD_FILE_DESCRIPTOR
 
 #include "nstd/utility/exchange.hpp"
+#ifdef _MSC_VER
+#    include <winsock2.h>
+#endif
 
 // ----------------------------------------------------------------------------
 
@@ -39,7 +42,12 @@ namespace nstd::file {
 class nstd::file::descriptor
 {
 public:
+#ifndef _MSC_VER
     using native_handle_type = int;
+#else
+    using native_handle_type = SOCKET;
+#endif
+
 private:
     native_handle_type d_fd;
     int close();
@@ -86,7 +94,7 @@ inline nstd::file::descriptor::~descriptor()
 
 // ----------------------------------------------------------------------------
 
-inline auto nstd::file::descriptor::get() const -> native_handle_type
+inline auto nstd::file::descriptor::get() const -> nstd::file::descriptor::native_handle_type
 {
     return this->d_fd;
 }

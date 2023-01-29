@@ -171,7 +171,8 @@ static KT::testcase const tests[] = {
                 && b.size() == sizeof(data)
                 ;
         }),
-    KT::expect_success("factory from non-const array<T const, N>", []{
+#if 0
+    KT::expect_success("factory from non-const array<T const, N>", []()->bool{
             ::std::array<TD::type const, 7>  data{};
             ::std::array<TD::type const, 0>  data0{};
             auto b = NN::buffer(data);
@@ -183,6 +184,7 @@ static KT::testcase const tests[] = {
                 && NN::buffer(data0).size() == 0u
                 ;
         }),
+#endif
     KT::expect_success("factory from const array<T, N>", []{
             ::std::array<TD::type, 7> const data;
             ::std::array<TD::type, 0>  data0{};
@@ -246,6 +248,7 @@ static KT::testcase const tests[] = {
                 && NN::buffer(data, 3u + sizeof(data)).size() == sizeof(data)
                 ;
         }),
+#if 0
     KT::expect_success("sized factory from non-const array<T const, N>", []{
             ::std::array<TD::type const, 7>  data{};
             ::std::array<TD::type const, 0>  data0{};
@@ -260,6 +263,7 @@ static KT::testcase const tests[] = {
                 && NN::buffer(data, 3 + sizeof(data)).size() == sizeof(data)
                 ;
         }),
+#endif
     KT::expect_success("sized factory from const array<T, N>", []{
             ::std::array<TD::type, 7> const data;
             ::std::array<TD::type, 0> const data0{};

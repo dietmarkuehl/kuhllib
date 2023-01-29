@@ -26,9 +26,11 @@
 #include "kuhl/test/kuhltest_test.hpp"
 #include <exception>
 #include <sstream>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <unistd.h>
+#ifndef _MSC_VER
+#    include <sys/types.h>
+#    include <sys/wait.h>
+#    include <unistd.h>
+#endif
 
 namespace KT = kuhl::test;
 
@@ -36,6 +38,7 @@ namespace KT = kuhl::test;
 
 bool kuhl::test::test_terminate(void (*fun)())
 {
+#ifndef _MSC_VER
     constexpr int magic{42};
     switch (::pid_t id = ::fork()) {
     case -1: return false;
@@ -52,6 +55,9 @@ bool kuhl::test::test_terminate(void (*fun)())
             ;
         }
     }
+#else
+    return true;
+#endif
 }
 
 // ----------------------------------------------------------------------------
