@@ -443,6 +443,7 @@ list(APPEND kuhllib_examples
     echo_server
     udp-client
     udp-es
+    std-io-to-tty
 )
 foreach(example ${kuhllib_examples})
     add_executable(${example} src/examples/${example}.cpp)

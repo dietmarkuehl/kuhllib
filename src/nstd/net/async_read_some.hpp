@@ -95,7 +95,7 @@ namespace nstd::net::inline customization_points {
     inline constexpr async_read_some_t async_read_some_adapter{};
 
     template <::nstd::file::io_object IOObject, typename Buffers>
-    inline auto async_read_some(IOObject&& io_object, Buffers&& buffers)  {
+    inline auto async_read_some(IOObject& io_object, Buffers&& buffers)  {
         return ::nstd::net::async_read_some_adapter(
             ::nstd::execution::just(::nstd::utility::forward<Buffers>(buffers)),
             io_object);

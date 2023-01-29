@@ -43,7 +43,7 @@
 // ----------------------------------------------------------------------------
 
 namespace nstd::hidden_names::async_write_some {
-    template <::nstd::net::socket Socket, typename Env>
+    template <::nstd::file::io_object Object, typename Env>
     struct operation {
         using completion_signature = ::nstd::execution::set_value_t(::std::size_t);
         
@@ -71,7 +71,7 @@ namespace nstd::hidden_names::async_write_some {
                 auto&& scheduler,
                 ::nstd::file::io_base* cont) noexcept -> void
             {
-                scheduler.write(object.native_handle(), &this->d_iovec.data(), this->d_iovec.size(), cont);
+                scheduler.write(object.native_handle(), this->d_iovec.data(), this->d_iovec.size(), cont);
             }
             template <typename Receiver>
             auto complete(::std::int32_t n, ::std::uint32_t, Receiver& receiver) noexcept -> void {
@@ -94,13 +94,13 @@ namespace nstd::net::inline customization_points {
         >;
     inline constexpr async_write_some_t async_write_some_adapter{};
 
-    template <::nstd::net::socket Socket, typename Buffers>
+    template <::nstd::file::io_object Object, typename Buffers>
     inline auto async_write_some(
-        Socket&& socket,
+        Object& object,
         Buffers&& buffers) {
         return ::nstd::net::async_write_some_adapter(
             ::nstd::execution::just(::nstd::utility::forward<Buffers>(buffers)),
-            socket);
+            object);
     }
 }
 
