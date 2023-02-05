@@ -186,8 +186,6 @@ namespace nstd::hidden_names::async_io {
             }
             template <typename... Args>
             friend auto tag_invoke(::nstd::execution::set_value_t, receiver&& self, Args&&... args) noexcept {
-                (void)self;
-#if 1
                 ++self.d_state->d_outstanding;
                 self.d_state->engage_callback();
 
@@ -200,7 +198,6 @@ namespace nstd::hidden_names::async_io {
                         ::nstd::execution::get_scheduler(::nstd::execution::get_env(self.d_state->d_receiver)),
                         self.d_state
                         );
-#endif
             }
             template <typename Error>
             friend auto tag_invoke(::nstd::execution::set_error_t, receiver&& self, Error&& error) noexcept {

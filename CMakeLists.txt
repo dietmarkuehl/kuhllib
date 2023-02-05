@@ -226,10 +226,12 @@ list(APPEND kuhllib_functional_components
 )
 
 list(APPEND kuhllib_hidden_components
+    src/nstd/hidden_names/boolean_socket_option
     src/nstd/hidden_names/completion_signature
     src/nstd/hidden_names/compl_sig
     src/nstd/hidden_names/decayed_tuple
     src/nstd/hidden_names/filter_completions
+    src/nstd/hidden_names/integer_socket_option
     src/nstd/hidden_names/is_instance_of
     src/nstd/hidden_names/log_completion
     src/nstd/hidden_names/merge_completion_signatures
@@ -237,14 +239,15 @@ list(APPEND kuhllib_hidden_components
     src/nstd/hidden_names/movable_value
     src/nstd/hidden_names/print_completion_signatures
     src/nstd/hidden_names/sender_base
+    src/nstd/hidden_names/shutdown_type
     src/nstd/hidden_names/unique_completion_signatures
     src/nstd/hidden_names/valid_completion_for
     src/nstd/hidden_names/valid_completion_signatures
     src/nstd/hidden_names/variant_or_empty
+    src/nstd/hidden_names/wait_type
 )
 list(APPEND kuhllib_xhidden_components
     src/nstd/hidden_names/add_signatures
-    src/nstd/hidden_names/boolean_socket_option
     src/nstd/hidden_names/callable
     src/nstd/hidden_names/check_type_alias_exists
     src/nstd/hidden_names/constexpr_expression

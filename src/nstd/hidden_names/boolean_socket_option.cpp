@@ -27,4 +27,6 @@
 
 // ----------------------------------------------------------------------------
 
-int nstd_hidden_names_boolean_socket_option_dummy = 0;
+namespace nstd::hidden_names {
+    int names_boolean_socket_option_dummy{};
+}

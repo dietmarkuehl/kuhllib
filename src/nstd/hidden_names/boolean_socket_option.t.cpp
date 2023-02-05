@@ -26,38 +26,60 @@
 #include "nstd/hidden_names/boolean_socket_option.hpp"
 #include "kuhl/test.hpp"
 
+namespace test_declarations {}
+namespace TD = ::test_declarations;
 namespace KT = ::kuhl::test;
 namespace HN = ::nstd::hidden_names;
 
 // ----------------------------------------------------------------------------
 
+namespace test_declarations {
+    namespace {
+        struct option {
+            option() noexcept = default;
+            option(bool) noexcept {}
+
+            auto value() const noexcept -> bool { return {}; }
+            explicit operator bool() const noexcept { return {}; }
+            auto operator not() const noexcept -> bool { return {}; }
+        };
+    }
+}
+
+// ----------------------------------------------------------------------------
+
 static KT::testcase const tests[] = {
+    KT::expect_success("boolean_socket_option", []{
+            return not HN::boolean_socket_option<int>
+                && HN::boolean_socket_option<TD::option>
+                ;
+        }),
     KT::expect_success("default ctor", []{
-            HN::boolean_socket_option<SO_REUSEADDR> const option;
+            HN::boolean_socket_option_t<SO_REUSEADDR> const option;
             return not option.value()
                 && not static_cast<bool>(option)
                 && not option
-                && noexcept(HN::boolean_socket_option<SO_REUSEADDR>())
+                && noexcept(HN::boolean_socket_option_t<SO_REUSEADDR>())
                 ;
         }),
     KT::expect_success("ctor from false", []{
-            HN::boolean_socket_option<SO_REUSEADDR> const option(false);
+            HN::boolean_socket_option_t<SO_REUSEADDR> const option(false);
             return not option.value()
                 && not static_cast<bool>(option)
                 && not option
-                && noexcept(HN::boolean_socket_option<SO_REUSEADDR>(false))
+                && noexcept(HN::boolean_socket_option_t<SO_REUSEADDR>(false))
                 ;
         }),
     KT::expect_success("ctor from true", []{
-            HN::boolean_socket_option<SO_REUSEADDR> const option(true);
+            HN::boolean_socket_option_t<SO_REUSEADDR> const option(true);
             return option.value()
                 && static_cast<bool>(option)
                 && not not option
-                && noexcept(HN::boolean_socket_option<SO_REUSEADDR>(true))
+                && noexcept(HN::boolean_socket_option_t<SO_REUSEADDR>(true))
                 ;
         }),
     KT::expect_success("assignment from bool", []{
-            HN::boolean_socket_option<SO_REUSEADDR> option;
+            HN::boolean_socket_option_t<SO_REUSEADDR> option;
             decltype(option)& ref = option = true;
             return KT::use(ref)
                 && option.value()
@@ -67,7 +89,7 @@ static KT::testcase const tests[] = {
                 ;
         }),
     KT::expect_success("accessors", []{
-            HN::boolean_socket_option<SO_REUSEADDR> const option;
+            HN::boolean_socket_option_t<SO_REUSEADDR> const option;
             int const protocol{};
             return KT::use(option)
                 && noexcept(option.level(protocol))
