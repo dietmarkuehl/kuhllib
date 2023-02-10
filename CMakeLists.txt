@@ -174,7 +174,7 @@ list(APPEND kuhllib_execution_todo
     src/nstd/execution/transfer_just
 )
 
-list(APPEND kuhllib_xexecutor_components
+list(APPEND kuhllib_executor_components
     src/nstd/executor/associated_allocator
     src/nstd/executor/associated_executor
     src/nstd/executor/async_completion
@@ -297,7 +297,9 @@ list(APPEND kuhllib_net_components
     src/nstd/net/ip/tcp
     src/nstd/net/ip/types
     src/nstd/net/ip/udp
+    src/nstd/net/net
     src/nstd/net/netfwd
+    src/nstd/net/sender
     src/nstd/net/scope
     src/nstd/net/socket
     src/nstd/net/socket_base
@@ -335,6 +337,12 @@ list(APPEND kuhllib_stop_token_components
     src/nstd/stop_token/stoppable_token
     src/nstd/stop_token/stoppable_token_for
     src/nstd/stop_token/unstoppable_token
+)
+
+list(APPEND kuhllib_timer
+    src/nstd/timer/basic_waitable_timer
+    src/nstd/timer/timer
+    src/nstd/timer/wait_traits
 )
 
 list(APPEND kuhllib_thread_todo
@@ -407,6 +415,7 @@ list(APPEND kuhllib_components
     ${kuhllib_cursor_components}
     ${kuhllib_endian_components}
     ${kuhllib_execution_components}
+    ${kuhllib_executor_components}
     ${kuhllib_file_components}
     ${kuhllib_functional_components}
     ${kuhllib_hidden_components}
@@ -417,6 +426,7 @@ list(APPEND kuhllib_components
     ${kuhllib_operators_components}
     ${kuhllib_projection_components}
     ${kuhllib_stop_token_components}
+    ${kuhllib_timer}
     ${kuhllib_thread_components}
     ${kuhllib_type_traits_components}
     ${kuhllib_utility_components}

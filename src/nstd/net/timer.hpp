@@ -45,13 +45,6 @@
 // ----------------------------------------------------------------------------
 
 namespace nstd::net {
-    template <typename> struct wait_traits;
-    template <typename, typename> class basic_waitable_timer;
-
-    using system_timer = ::nstd::net::basic_waitable_timer<::std::chrono::system_clock>;
-    using steady_timer = ::nstd::net::basic_waitable_timer<::std::chrono::steady_clock>;
-    using high_resolution_timer = ::nstd::net::basic_waitable_timer<::std::chrono::high_resolution_clock>;
-
     inline constexpr struct async_wait_t {
         template <::nstd::execution::receiver, typename, typename> struct state;
         template <typename, typename> struct sender;
@@ -67,22 +60,6 @@ namespace nstd::net {
 
     } async_wait;
 }
-
-// ----------------------------------------------------------------------------
-
-template <typename Clock>
-struct nstd::net::wait_traits
-{
-    static auto to_wait_duration(typename Clock::duration const& d)
-        -> typename Clock::duration {
-            return d;
-    }
-    static auto to_wait_duration(typename Clock::time_point const& t)
-        -> typename Clock::duration {
-            //-dk:TODO deal with boundary cases
-            return t - Clock::now();
-    }
-};
 
 // ----------------------------------------------------------------------------
 

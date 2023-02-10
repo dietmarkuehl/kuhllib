@@ -1,6 +1,6 @@
-// nstd/net.hpp                                                       -*-C++-*-
+// nstd/timer/basic_waitable_timer.hpp                                -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2022 Dietmar Kuehl http://www.dietmar-kuehl.de
+//  Copyright (C) 2023 Dietmar Kuehl http://www.dietmar-kuehl.de
 //
 //  Permission is hereby granted, free of charge, to any person
 //  obtaining a copy of this software and associated documentation
@@ -23,10 +23,21 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_NET
-#define INCLUDED_NSTD_NET
+#ifndef INCLUDED_NSTD_TIMER_BASIC_WAITABLE_TIMER
+#define INCLUDED_NSTD_TIMER_BASIC_WAITABLE_TIMER
 
-#include "nstd/net/net.hpp"
+#include "nstd/net/netfwd.hpp"
+#include <chrono>
+
+// ----------------------------------------------------------------------------
+
+namespace nstd::net {
+    template <typename, typename> class basic_waitable_timer;
+
+    using system_timer = ::nstd::net::basic_waitable_timer<::std::chrono::system_clock>;
+    using steady_timer = ::nstd::net::basic_waitable_timer<::std::chrono::steady_clock>;
+    using high_resolution_timer = ::nstd::net::basic_waitable_timer<::std::chrono::high_resolution_clock>;
+}
 
 // ----------------------------------------------------------------------------
 

@@ -1,6 +1,6 @@
-// nstd/net.hpp                                                       -*-C++-*-
+// nstd/timer/timer.t.cpp                                             -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2022 Dietmar Kuehl http://www.dietmar-kuehl.de
+//  Copyright (C) 2023 Dietmar Kuehl http://www.dietmar-kuehl.de
 //
 //  Permission is hereby granted, free of charge, to any person
 //  obtaining a copy of this software and associated documentation
@@ -23,11 +23,26 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_NET
-#define INCLUDED_NSTD_NET
+#include "nstd/timer/timer.hpp"
+#include "kuhl/test.hpp"
 
-#include "nstd/net/net.hpp"
+namespace test_declaration {}
+namespace TD = ::test_declaration;
+namespace KT = ::kuhl::test;
 
 // ----------------------------------------------------------------------------
 
-#endif
+namespace test_declaration {
+    namespace {
+    }
+}
+
+// ----------------------------------------------------------------------------
+
+static KT::testcase const tests[] = {
+    KT::expect_success("placeholder", []{
+            return true; //-dk:TODO
+        }),
+};
+
+static KT::add_tests suite("nstd/timer/timer", ::tests);
