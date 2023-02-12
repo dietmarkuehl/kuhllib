@@ -26,6 +26,8 @@
 #ifndef INCLUDED_NSTD_TIMER_WAIT_TRAITS
 #define INCLUDED_NSTD_TIMER_WAIT_TRAITS
 
+#include "nstd/timer/timer.hpp"
+
 // ----------------------------------------------------------------------------
 
 namespace nstd::net {
