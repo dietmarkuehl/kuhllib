@@ -137,7 +137,10 @@ namespace nstd::hidden_names::sync_wait {
                 ::std::optional<Type>*      res;
                 ::std::exception_ptr*       ex;
                 void complete() const {
-                    (::std::lock_guard<::std::mutex>(*bottleneck)), (*done = true);
+                    {
+                        ::std::lock_guard<::std::mutex> kerberos(*bottleneck);
+                        *done = true;
+                    }
                     condition->notify_one();
                 }
 
