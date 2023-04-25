@@ -305,10 +305,6 @@ list(APPEND kuhllib_net_components
     src/nstd/net/socket_base
 )
 
-list(APPEND kuhllib_xnet_components
-    src/nstd/net/timer
-)
-
 list(APPEND kuhllib_new_components
     src/nstd/new/new
 )
@@ -343,6 +339,7 @@ list(APPEND kuhllib_timer
     src/nstd/timer/basic_waitable_timer
     src/nstd/timer/timer
     src/nstd/timer/wait_traits
+    src/nstd/timer/async_wait
 )
 
 list(APPEND kuhllib_thread_todo

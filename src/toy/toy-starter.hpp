@@ -26,6 +26,7 @@
 #ifndef INCLUDED_TOY_STARTER
 #define INCLUDED_TOY_STARTER
 
+#include "toy-stop_token.hpp"
 #include "toy-utility.hpp"
 #include <utility>
 
@@ -48,8 +49,9 @@ class starter
     struct receiver {
         job_base* job;
         friend Scheduler get_scheduler(receiver const& self) { return self.job->sched; }
-        friend void set_value(receiver& self, auto) { delete self.job; }
-        friend void set_error(receiver& self, auto) { delete self.job; }
+        friend auto get_stop_token(receiver const&) { return toy::never_stop_token{}; }
+        friend void set_value(receiver const& self, auto) { delete self.job; }
+        friend void set_error(receiver const& self, auto) { delete self.job; }
     };
 
     template <typename S>

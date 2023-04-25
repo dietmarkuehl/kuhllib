@@ -18,6 +18,7 @@ endif()
 list(APPEND TOY_DEMOS
     toy-cancel
     toy-client
+    toy-coro
     toy-echo
     toy-sender
     toy-udp-client
