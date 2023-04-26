@@ -69,7 +69,7 @@ private:
     ::std::vector<::pollfd>            d_poll;
     ::std::vector<::pollfd>::iterator  d_next_poll;
     ::std::list<operation>             d_outstanding;
-    ::std::priority_queue<timer_event> d_timers;
+::std::priority_queue<timer_event> d_timers;
     int                                d_pipe[2];
 
     auto handle_scheduled() -> count_type;

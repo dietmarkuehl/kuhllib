@@ -46,7 +46,7 @@ namespace test_declarations {
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
-    KT::expect_success("async_wait", []{
+    KT::expect_success("timer", []{
             try {
                 using namespace std::chrono_literals;
                 using clock = ::std::chrono::system_clock;
@@ -70,4 +70,4 @@ static KT::testcase const tests[] = {
             
 };
 
-static KT::add_tests suite("timer", ::tests);
+static KT::add_tests suite("async_wait", ::tests);
