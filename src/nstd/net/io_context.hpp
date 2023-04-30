@@ -36,6 +36,7 @@
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/start.hpp"
 #include "nstd/execution/receiver.hpp"
+#include "nstd/executor/execution_context.hpp"
 #include "nstd/file/context.hpp"
 #include "nstd/file/ring_context.hpp"
 #include "nstd/utility/forward.hpp"
@@ -51,6 +52,7 @@ namespace nstd::net {
 // ----------------------------------------------------------------------------
 
 class nstd::net::io_context
+    : public ::nstd::net::execution_context
 {
 private:
     ::std::unique_ptr<::nstd::file::context> d_manager;
@@ -58,6 +60,7 @@ private:
 
 public:
     using count_type = ::nstd::file::context::count_type;
+    class executor_type {};
     class scheduler_type;
     template <::nstd::execution::receiver> struct state;
     struct sender;
@@ -75,6 +78,7 @@ public:
 
     auto hidden_context() -> ::nstd::file::context* { return this->d_context; }
 
+    auto get_executor() noexcept -> executor_type;
     auto scheduler() noexcept -> ::nstd::net::io_context::scheduler_type;
 
     auto run_one() -> count_type;

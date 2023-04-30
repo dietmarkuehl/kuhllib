@@ -111,6 +111,16 @@ auto NF::poll_context::submit(int fd, short events, Fun&& fun, io_base* id) -> v
 // ----------------------------------------------------------------------------
 
 auto NF::poll_context::handle_timer() -> NF::context::count_type {
+    if (this->d_timers.empty()) {
+        return 0u;
+    }
+    auto now = ::std::chrono::steady_clock::now();
+    if (this->d_timers.top().d_expiry <= now) {
+        auto cont = this->d_timers.top().d_continuation;
+        this->d_timers.pop();
+        cont->result(0u, 0);
+        return 1u;
+    }
     return 0u;
 }
 
@@ -160,13 +170,21 @@ auto NF::poll_context::poll() -> bool
         short events = operation.d_events;
         this->d_poll.push_back(::pollfd{ operation.d_fd, events, 0 });
     }
-    if (1u == this->d_poll.size()) {
-        return 0u;
+    if (1u == this->d_poll.size() && this->d_timers.empty()) {
+        return false;
     }
     while (true)
     {
         errno = 0;
-        int rc{::poll(this->d_poll.data(), this->d_poll.size(), -1)};
+        int sleep = -1;
+        if (!this->d_timers.empty()) {
+            auto now = ::std::chrono::steady_clock::now();
+            sleep = this->d_timers.top().d_expiry <= now
+                ? 0
+                : std::chrono::duration_cast<std::chrono::milliseconds>(this->d_timers.top().d_expiry - now).count()
+                ;
+        }
+        int rc{::poll(this->d_poll.data(), this->d_poll.size(), sleep)};
         if (0 <= rc) {
             this->d_next_poll = this->d_poll.begin();
             return true;

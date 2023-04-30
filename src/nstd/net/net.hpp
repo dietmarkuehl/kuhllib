@@ -1,6 +1,6 @@
-// nstd/net.hpp                                                       -*-C++-*-
+// nstd/net/net.hpp                                                   -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2022 Dietmar Kuehl http://www.dietmar-kuehl.de
+//  Copyright (C) 2023 Dietmar Kuehl http://www.dietmar-kuehl.de
 //
 //  Permission is hereby granted, free of charge, to any person
 //  obtaining a copy of this software and associated documentation
@@ -23,10 +23,29 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_NET
-#define INCLUDED_NSTD_NET
+#ifndef INCLUDED_NSTD_NET_NET
+#define INCLUDED_NSTD_NET_NET
 
-#include "nstd/net/net.hpp"
+// ----------------------------------------------------------------------------
+// NetworkingTS [convenience.hdr.synop]
+
+#include "nstd/executor.hpp"
+#include "nstd/net/io_context.hpp"
+#include "nstd/timer.hpp"
+#include "nstd/buffer.hpp"
+#include "nstd/socket.hpp"
+#include "nstd/internet.hpp"
+
+#include "nstd/net/sender.hpp"
+
+#include "nstd/net/basic_datagram_socket.hpp"
+#include "nstd/net/basic_socket.hpp"
+
+#include "nstd/net/ip/make_address_v4.hpp"
+#include "nstd/net/ip/tcp.hpp"
+#include "nstd/net/ip/udp.hpp"
+#include "nstd/net/ip/types.hpp"
+#include "nstd/net/ip/v4_mapped.hpp"
 
 // ----------------------------------------------------------------------------
 

@@ -1,4 +1,4 @@
-// nstd/net/timer.cpp                                                 -*-C++-*-
+// nstd/timer/async_wait.cpp                                          -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,11 +23,11 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#include "nstd/net/timer.hpp"
+#include "nstd/timer/async_wait.hpp"
 
 // ----------------------------------------------------------------------------
 
 namespace nstd::net
 {
-    int timer_dummy = 0;
+    int async_wait_dummy = 0;
 }

@@ -1,6 +1,6 @@
-// toy-starter.hpp                                                    -*-C++-*-
+// nstd/hidden_names/integer_socket_option.hpp                        -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2022 Dietmar Kuehl http://www.dietmar-kuehl.de
+//  Copyright (C) 2023 Dietmar Kuehl http://www.dietmar-kuehl.de
 //
 //  Permission is hereby granted, free of charge, to any person
 //  obtaining a copy of this software and associated documentation
@@ -23,58 +23,49 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_TOY_STARTER
-#define INCLUDED_TOY_STARTER
+#ifndef INCLUDED_NSTD_HIDDEN_NAMES_INTEGER_SOCKET_OPTION
+#define INCLUDED_NSTD_HIDDEN_NAMES_INTEGER_SOCKET_OPTION
 
-#include "toy-stop_token.hpp"
-#include "toy-utility.hpp"
-#include <utility>
-
-namespace toy
-{
+#include "nstd/concepts/same_as.hpp"
+#include "nstd/file/socket.hpp"
+#include <cstdlib>
 
 // ----------------------------------------------------------------------------
 
-template <typename Scheduler>
-class starter
-    : immovable
-{
-    struct job_base
-        : immovable {
-        Scheduler sched;
-        job_base(Scheduler sched) : sched(sched) {}
-        virtual ~job_base() = default;
-    };
-
-    struct receiver {
-        job_base* job;
-        friend Scheduler get_scheduler(receiver const& self) { return self.job->sched; }
-        friend auto get_stop_token(receiver const&) { return toy::never_stop_token{}; }
-        friend void set_value(receiver const& self, auto) { delete self.job; }
-        friend void set_error(receiver const& self, auto) { delete self.job; }
-    };
-
-    template <typename S>
-    struct job
-        : job_base {
-        decltype(connect(std::declval<S>(), std::declval<receiver>())) state;
-        job(Scheduler sched, S&& s)
-            : job_base(sched)
-            , state(connect(std::move(s), receiver{this}))
-        {
-            start(state);
+namespace nstd::hidden_names {
+    template <typename T>
+    concept integer_socket_option
+        = requires(T t) {
+            { T() } noexcept;
+            { T(0) } noexcept;
+            { t.value() } noexcept -> ::nstd::concepts::same_as<int>;
         }
-    };
+        ;
+    
+    template <int Name> class integer_socket_option_t;
+}
 
-    Scheduler sched;
+template <int Name>
+class nstd::hidden_names::integer_socket_option_t
+{
+private:
+    int d_value;
 
 public:
-    starter(Scheduler sched): sched(sched) {}
-    void spawn(auto s) { new job<decltype(s)>(sched, std::move(s)); }
+    using type = int;
+
+    integer_socket_option_t() noexcept = default;
+    integer_socket_option_t(int value) noexcept: d_value(value) {}
+
+    constexpr auto level(auto) const noexcept -> int { return SOL_SOCKET; }
+    constexpr auto name(auto) const noexcept -> int { return Name; }
+    constexpr auto data(auto) noexcept -> void* { return &this->d_value; }
+    constexpr auto data(auto) const noexcept -> void const* { return &this->d_value; }
+    constexpr auto size(auto) const noexcept -> ::std::size_t { return sizeof this->d_value; }
+
+    auto value() const  noexcept-> int { return this->d_value; };
 };
 
 // ----------------------------------------------------------------------------
-
-}
 
 #endif

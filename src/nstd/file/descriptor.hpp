@@ -38,26 +38,28 @@ namespace nstd::file {
 
 class nstd::file::descriptor
 {
+public:
+    using native_handle_type = int;
 private:
-    int d_fd;
+    native_handle_type d_fd;
     int close();
 
 public:
-    explicit descriptor(int = -1);
+    explicit descriptor(native_handle_type = -1);
     descriptor(descriptor const&) = delete;
     descriptor(descriptor&&) noexcept;
     auto operator=(descriptor const&) -> descriptor& = delete;
     auto operator=(descriptor&&) noexcept -> descriptor&;
     ~descriptor();
 
-    auto get() const -> int;
+    auto get() const -> native_handle_type;
     explicit operator bool() const;
     auto is_open() const noexcept -> bool;
 };
 
 // ----------------------------------------------------------------------------
 
-inline nstd::file::descriptor::descriptor(int fd)
+inline nstd::file::descriptor::descriptor(native_handle_type fd)
     : d_fd(fd)
 {
 }
@@ -84,7 +86,7 @@ inline nstd::file::descriptor::~descriptor()
 
 // ----------------------------------------------------------------------------
 
-inline auto nstd::file::descriptor::get() const -> int
+inline auto nstd::file::descriptor::get() const -> native_handle_type
 {
     return this->d_fd;
 }

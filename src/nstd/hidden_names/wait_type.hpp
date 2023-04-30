@@ -1,6 +1,6 @@
-// nstd/net.hpp                                                       -*-C++-*-
+// nstd/hidden_names/wait_type.hpp                                    -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2022 Dietmar Kuehl http://www.dietmar-kuehl.de
+//  Copyright (C) 2023 Dietmar Kuehl http://www.dietmar-kuehl.de
 //
 //  Permission is hereby granted, free of charge, to any person
 //  obtaining a copy of this software and associated documentation
@@ -23,10 +23,18 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_NET
-#define INCLUDED_NSTD_NET
+#ifndef INCLUDED_NSTD_HIDDEN_NAMES_WAIT_TYPE
+#define INCLUDED_NSTD_HIDDEN_NAMES_WAIT_TYPE
 
-#include "nstd/net/net.hpp"
+// ----------------------------------------------------------------------------
+
+namespace nstd::hidden_names {
+    enum class wait_type {
+        read,
+        write,
+        error
+    };
+}
 
 // ----------------------------------------------------------------------------
 

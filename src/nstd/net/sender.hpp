@@ -1,6 +1,6 @@
-// nstd/net.hpp                                                       -*-C++-*-
+// nstd/net/sender.hpp                                                -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2022 Dietmar Kuehl http://www.dietmar-kuehl.de
+//  Copyright (C) 2023 Dietmar Kuehl http://www.dietmar-kuehl.de
 //
 //  Permission is hereby granted, free of charge, to any person
 //  obtaining a copy of this software and associated documentation
@@ -23,10 +23,22 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_NET
-#define INCLUDED_NSTD_NET
+#ifndef INCLUDED_NSTD_NET_SENDER
+#define INCLUDED_NSTD_NET_SENDER
 
-#include "nstd/net/net.hpp"
+// ----------------------------------------------------------------------------
+// Convenience header for the various networking sender algorithms
+
+#include "nstd/net/async_accept.hpp"
+#include "nstd/net/async_connect.hpp"
+#include "nstd/net/async_read_some.hpp"
+#include "nstd/net/async_receive.hpp"
+#include "nstd/net/async_receive_from.hpp"
+#include "nstd/net/async_send.hpp"
+#include "nstd/net/async_send_to.hpp"
+#include "nstd/net/async_write.hpp"
+#include "nstd/net/async_write_some.hpp"
+#include "nstd/net/scope.hpp"
 
 // ----------------------------------------------------------------------------
 
