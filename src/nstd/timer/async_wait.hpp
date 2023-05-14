@@ -1,4 +1,4 @@
-// nstd/net/timer.hpp                                                 -*-C++-*-
+// nstd/timer/async_wait.hpp                                          -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -23,9 +23,11 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_NET_TIMER
-#define INCLUDED_NSTD_NET_TIMER
+#ifndef INCLUDED_NSTD_TIMER_ASYNC_WAIT
+#define INCLUDED_NSTD_TIMER_ASYNC_WAIT
 
+#include "nstd/timer/basic_waitable_timer.hpp"
+#include "nstd/timer/wait_traits.hpp"
 #include "nstd/net/netfwd.hpp"
 #include "nstd/net/io_context.hpp"
 #include "nstd/execution/completion_signatures.hpp"
@@ -45,13 +47,6 @@
 // ----------------------------------------------------------------------------
 
 namespace nstd::net {
-    template <typename> struct wait_traits;
-    template <typename, typename> class basic_waitable_timer;
-
-    using system_timer = ::nstd::net::basic_waitable_timer<::std::chrono::system_clock>;
-    using steady_timer = ::nstd::net::basic_waitable_timer<::std::chrono::steady_clock>;
-    using high_resolution_timer = ::nstd::net::basic_waitable_timer<::std::chrono::high_resolution_clock>;
-
     inline constexpr struct async_wait_t {
         template <::nstd::execution::receiver, typename, typename> struct state;
         template <typename, typename> struct sender;
@@ -66,101 +61,6 @@ namespace nstd::net {
         }
 
     } async_wait;
-}
-
-// ----------------------------------------------------------------------------
-
-template <typename Clock>
-struct nstd::net::wait_traits
-{
-    static auto to_wait_duration(typename Clock::duration const& d)
-        -> typename Clock::duration {
-            return d;
-    }
-    static auto to_wait_duration(typename Clock::time_point const& t)
-        -> typename Clock::duration {
-            //-dk:TODO deal with boundary cases
-            return t - Clock::now();
-    }
-};
-
-// ----------------------------------------------------------------------------
-
-template <typename Clock, typename Traits>
-class nstd::net::basic_waitable_timer
-{
-public:
-    using scheduler_type = ::nstd::net::io_context::scheduler_type;
-    using clock_type = Clock;
-    using duration = typename Clock::duration;
-    using time_point = typename Clock::time_point;
-    using traits_type = Traits;
-
-private:
-    scheduler_type  d_scheduler;
-    time_point      d_time_point;
-
-public:
-    explicit basic_waitable_timer(::nstd::net::io_context&);
-    basic_waitable_timer(::nstd::net::io_context&, time_point const&);
-    basic_waitable_timer(::nstd::net::io_context&, duration const&);
-    basic_waitable_timer(basic_waitable_timer const&) = delete;
-    basic_waitable_timer(basic_waitable_timer&&);
-    ~basic_waitable_timer();
-
-    auto operator=(basic_waitable_timer const&) -> basic_waitable_timer& = delete;
-    auto operator=(basic_waitable_timer&&) -> basic_waitable_timer&;
-
-    auto get_scheduler() const noexcept -> scheduler_type;
-
-    auto cancel() -> ::std::size_t;
-    auto cancel_one() -> ::std::size_t;
-
-    auto expiry() const -> time_point;
-    auto expires_at(time_point const&) -> ::std::size_t;
-    auto expires_after(duration const&) -> ::std::size_t;
-};
-
-// ----------------------------------------------------------------------------
-
-template <typename Clock, typename Traits>
-nstd::net::basic_waitable_timer<Clock, Traits>::basic_waitable_timer(::nstd::net::io_context& context)
-    : basic_waitable_timer(context, time_point())
-{
-}
-template <typename Clock, typename Traits>
-nstd::net::basic_waitable_timer<Clock, Traits>::basic_waitable_timer(::nstd::net::io_context& context, time_point const& t)
-    : d_scheduler(context.scheduler())
-    , d_time_point(t)
-{
-}
-template <typename Clock, typename Traits>
-nstd::net::basic_waitable_timer<Clock, Traits>::basic_waitable_timer(::nstd::net::io_context& context, duration const& d)
-    : basic_waitable_timer(context, Clock::now() + d)
-{
-}
-template <typename Clock, typename Traits>
-nstd::net::basic_waitable_timer<Clock, Traits>::basic_waitable_timer(basic_waitable_timer&&) = default;
-
-template <typename Clock, typename Traits>
-nstd::net::basic_waitable_timer<Clock, Traits>::~basic_waitable_timer()
-{
-}
-
-// ----------------------------------------------------------------------------
-
-template <typename Clock, typename Traits>
-auto nstd::net::basic_waitable_timer<Clock, Traits>::get_scheduler() const noexcept
-    -> scheduler_type
-{
-    return this->d_scheduler;
-}
-
-template <typename Clock, typename Traits>
-auto nstd::net::basic_waitable_timer<Clock, Traits>::expiry() const
-    -> time_point
-{
-    return this->d_time_point;
 }
 
 // ----------------------------------------------------------------------------

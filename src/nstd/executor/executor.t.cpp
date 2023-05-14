@@ -88,15 +88,15 @@ static KT::testcase const tests[] = {
                && KT::type<TD::concrete_service&> == KT::type<decltype(NET::make_service<TD::concrete_service>(TT::declval<NET::execution_context&>()))>
                && KT::type<bool> == KT::type<decltype(NET::has_service<TD::concrete_service>(TT::declval<NET::execution_context&>()))>
                && KT::assert_template_exists<NET::is_executor, int>
-               //-dk:TODO && KT::type<bool const> == KT::type<decltype(NET::is_executor_v<int>)>
+               && KT::type<bool const> == KT::type<decltype(NET::is_executor_v<int>)>
                && KT::assert_type_exists<NET::executor_arg_t>
                && KT::type<NET::executor_arg_t> == KT::type<decltype(NET::executor_arg_t())>
                && KT::type<NET::executor_arg_t const> == KT::type<decltype(NET::executor_arg)>
                && KT::assert_template_exists<NET::uses_executor, int, TD::executor>
-                //-dk:TODO && KT::type bool const == KT::type<decltype(NET::uses_executor, int, TD::executor)
+               && KT::type<bool const> == KT::type<decltype(NET::uses_executor_v<int, TD::executor>)>
                && KT::assert_template_exists<NET::associated_executor, int, TD::executor>
                 //-dk:TODO verify the default argument
-                //-dk:TODO && KT::assert_template_exists<NET::associated_executor_t, int, TD::executor>
+               && KT::assert_template_exists<NET::associated_executor_t, int, TD::executor>
                && noexcept(NET::get_associated_executor(TT::declval<TD::example_type const&>()))
                && KT::type<TD::executor> == KT::type<decltype(NET::get_associated_executor(TT::declval<TD::example_type const&>()))>
                && noexcept(NET::get_associated_executor(TT::declval<TD::example_type const&>(),

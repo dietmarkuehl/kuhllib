@@ -1,6 +1,6 @@
-// nstd/net.hpp                                                       -*-C++-*-
+// nstd/hidden_names/integer_socket_option.t.cpp                      -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2022 Dietmar Kuehl http://www.dietmar-kuehl.de
+//  Copyright (C) 2023 Dietmar Kuehl http://www.dietmar-kuehl.de
 //
 //  Permission is hereby granted, free of charge, to any person
 //  obtaining a copy of this software and associated documentation
@@ -23,11 +23,43 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_NET
-#define INCLUDED_NSTD_NET
+#include "nstd/hidden_names/integer_socket_option.hpp"
+#include "kuhl/test.hpp"
 
-#include "nstd/net/net.hpp"
+namespace test_declaration {}
+namespace TD = ::test_declaration;
+namespace KT = ::kuhl::test;
+namespace HN = ::nstd::hidden_names;
 
 // ----------------------------------------------------------------------------
 
-#endif
+namespace test_declaration {
+    namespace {
+        struct option {
+            option() noexcept = default;
+            option(int) noexcept {}
+            auto value() const noexcept -> int { return {}; }
+        };
+    }
+}
+
+// ----------------------------------------------------------------------------
+
+static KT::testcase const tests[] = {
+    KT::expect_success("concept", []{
+            return not HN::integer_socket_option<int>
+                && HN::integer_socket_option<TD::option>
+                && HN::integer_socket_option<HN::integer_socket_option_t<3>>
+                ;
+        }),
+    KT::expect_success("breathing", []{
+            return HN::integer_socket_option_t<0>().value() == int()
+                ;
+        }),
+    KT::expect_success("ctor", []{
+            return HN::integer_socket_option_t<0>(5).value() == 5
+                ;
+        }),
+};
+
+static KT::add_tests suite("nstd/hidden_names/integer_socket_option", ::tests);

@@ -46,8 +46,9 @@ static KT::testcase const tests[] = {
     //        return ::TT::is_base_of_v<NN::execution_context, NN::io_context>;
     //    }),
     KT::expect_success("io_context member types", []{
-            return true // KT::assert_type_exists<NN::io_context::executor_type>
-                && KT::assert_type_exists<NN::io_context::count_type>
+            return KT::assert_type_exists<NN::io_context::count_type>
+                && KT::assert_type_exists<NN::io_context::executor_type>
+                && KT::assert_type_exists<NN::io_context::scheduler_type>
                 ;
         }),
     KT::expect_success("io_context structors", []{
@@ -57,6 +58,13 @@ static KT::testcase const tests[] = {
                 && !TT::is_move_constructible_v<NN::io_context>
                 && !TT::is_copy_assignable_v<NN::io_context>
                 && !TT::is_move_assignable_v<NN::io_context>
+                ;
+        }),
+    KT::expect_success("io_context::get_executor", []{
+            NN::io_context* ctxt{nullptr};
+            return KT::type<NN::io_context::executor_type>
+                    == KT::type<decltype(ctxt->get_executor())>
+                && noexcept(ctxt->get_executor())
                 ;
         }),
     KT::expect_success("io_context operators", []{

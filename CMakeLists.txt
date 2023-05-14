@@ -174,7 +174,7 @@ list(APPEND kuhllib_execution_todo
     src/nstd/execution/transfer_just
 )
 
-list(APPEND kuhllib_xexecutor_components
+list(APPEND kuhllib_executor_components
     src/nstd/executor/associated_allocator
     src/nstd/executor/associated_executor
     src/nstd/executor/async_completion
@@ -226,10 +226,12 @@ list(APPEND kuhllib_functional_components
 )
 
 list(APPEND kuhllib_hidden_components
+    src/nstd/hidden_names/boolean_socket_option
     src/nstd/hidden_names/completion_signature
     src/nstd/hidden_names/compl_sig
     src/nstd/hidden_names/decayed_tuple
     src/nstd/hidden_names/filter_completions
+    src/nstd/hidden_names/integer_socket_option
     src/nstd/hidden_names/is_instance_of
     src/nstd/hidden_names/log_completion
     src/nstd/hidden_names/merge_completion_signatures
@@ -237,14 +239,15 @@ list(APPEND kuhllib_hidden_components
     src/nstd/hidden_names/movable_value
     src/nstd/hidden_names/print_completion_signatures
     src/nstd/hidden_names/sender_base
+    src/nstd/hidden_names/shutdown_type
     src/nstd/hidden_names/unique_completion_signatures
     src/nstd/hidden_names/valid_completion_for
     src/nstd/hidden_names/valid_completion_signatures
     src/nstd/hidden_names/variant_or_empty
+    src/nstd/hidden_names/wait_type
 )
 list(APPEND kuhllib_xhidden_components
     src/nstd/hidden_names/add_signatures
-    src/nstd/hidden_names/boolean_socket_option
     src/nstd/hidden_names/callable
     src/nstd/hidden_names/check_type_alias_exists
     src/nstd/hidden_names/constexpr_expression
@@ -294,14 +297,12 @@ list(APPEND kuhllib_net_components
     src/nstd/net/ip/tcp
     src/nstd/net/ip/types
     src/nstd/net/ip/udp
+    src/nstd/net/net
     src/nstd/net/netfwd
+    src/nstd/net/sender
     src/nstd/net/scope
     src/nstd/net/socket
     src/nstd/net/socket_base
-)
-
-list(APPEND kuhllib_xnet_components
-    src/nstd/net/timer
 )
 
 list(APPEND kuhllib_new_components
@@ -332,6 +333,13 @@ list(APPEND kuhllib_stop_token_components
     src/nstd/stop_token/stoppable_token
     src/nstd/stop_token/stoppable_token_for
     src/nstd/stop_token/unstoppable_token
+)
+
+list(APPEND kuhllib_timer
+    src/nstd/timer/basic_waitable_timer
+    src/nstd/timer/timer
+    src/nstd/timer/wait_traits
+    src/nstd/timer/async_wait
 )
 
 list(APPEND kuhllib_thread_todo
@@ -404,6 +412,7 @@ list(APPEND kuhllib_components
     ${kuhllib_cursor_components}
     ${kuhllib_endian_components}
     ${kuhllib_execution_components}
+    ${kuhllib_executor_components}
     ${kuhllib_file_components}
     ${kuhllib_functional_components}
     ${kuhllib_hidden_components}
@@ -414,6 +423,7 @@ list(APPEND kuhllib_components
     ${kuhllib_operators_components}
     ${kuhllib_projection_components}
     ${kuhllib_stop_token_components}
+    ${kuhllib_timer}
     ${kuhllib_thread_components}
     ${kuhllib_type_traits_components}
     ${kuhllib_utility_components}

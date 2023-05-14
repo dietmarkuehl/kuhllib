@@ -1,6 +1,6 @@
-// nstd/net.hpp                                                       -*-C++-*-
+// nstd/timer/wait_traits.hpp                                         -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2022 Dietmar Kuehl http://www.dietmar-kuehl.de
+//  Copyright (C) 2023 Dietmar Kuehl http://www.dietmar-kuehl.de
 //
 //  Permission is hereby granted, free of charge, to any person
 //  obtaining a copy of this software and associated documentation
@@ -23,10 +23,32 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_NSTD_NET
-#define INCLUDED_NSTD_NET
+#ifndef INCLUDED_NSTD_TIMER_WAIT_TRAITS
+#define INCLUDED_NSTD_TIMER_WAIT_TRAITS
 
-#include "nstd/net/net.hpp"
+#include "nstd/timer/timer.hpp"
+
+// ----------------------------------------------------------------------------
+
+namespace nstd::net {
+    template <typename> struct wait_traits;
+}
+
+// ----------------------------------------------------------------------------
+
+template <typename Clock>
+struct nstd::net::wait_traits
+{
+    static auto to_wait_duration(typename Clock::duration const& d)
+        -> typename Clock::duration {
+            return d;
+    }
+    static auto to_wait_duration(typename Clock::time_point const& t)
+        -> typename Clock::duration {
+            //-dk:TODO deal with boundary cases
+            return t - Clock::now();
+    }
+};
 
 // ----------------------------------------------------------------------------
 

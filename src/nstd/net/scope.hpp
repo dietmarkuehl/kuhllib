@@ -84,7 +84,7 @@ public:
         }
 
         friend auto tag_invoke(::nstd::execution::set_value_t, receiver&& self, auto&&...) noexcept
-            -> void
+        -> void
         {
             delete self.d_job;
         }

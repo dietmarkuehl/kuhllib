@@ -26,40 +26,55 @@
 #ifndef INCLUDED_NSTD_HIDDEN_NAMES_BOOLEAN_SOCKET_OPTION
 #define INCLUDED_NSTD_HIDDEN_NAMES_BOOLEAN_SOCKET_OPTION
 
-#include <cstddef>
 #include "nstd/file/socket.hpp"
+#include "nstd/concepts/same_as.hpp"
+#include <cstddef>
 
 // ----------------------------------------------------------------------------
 
 namespace nstd::hidden_names {
-    template <int> class boolean_socket_option;
+    template <typename T>
+    concept boolean_socket_option 
+        = requires(T t) {
+            { T() } noexcept;
+            { T(true) } noexcept;
+            { t.value() } noexcept -> ::nstd::concepts::same_as<bool>;
+            { static_cast<bool>(t) } noexcept;
+            { !t } noexcept -> nstd::concepts::same_as<bool>;
+        }
+        ;
+
+    template <int> class boolean_socket_option_t;
 }
 
 // ----------------------------------------------------------------------------
 
 template <int Name>
-class nstd::hidden_names::boolean_socket_option
+class nstd::hidden_names::boolean_socket_option_t
 {
 private:
     int d_value{};
 
 public:
-    boolean_socket_option() noexcept = default;
-    explicit boolean_socket_option(bool value) noexcept: d_value(value) {}
+    using type = int;
 
-    auto operator= (bool value) noexcept -> boolean_socket_option& {
+    constexpr boolean_socket_option_t() noexcept = default;
+    explicit constexpr boolean_socket_option_t(bool value) noexcept: d_value(value) {}
+
+    constexpr auto operator= (bool value) noexcept -> boolean_socket_option_t& {
         this->d_value = value;
         return *this;
     }
 
-    auto level(auto) const noexcept -> int { return SOL_SOCKET; }
-    auto name(auto) const noexcept -> int { return Name; }
-    auto data(auto) const noexcept -> void const* { return &this->d_value; }
-    auto size(auto) const noexcept -> ::std::size_t { return sizeof this->d_value; }
+    constexpr auto level(auto) const noexcept -> int { return SOL_SOCKET; }
+    constexpr auto name(auto) const noexcept -> int { return Name; }
+    constexpr auto data(auto) noexcept -> void* { return &this->d_value; }
+    constexpr auto data(auto) const noexcept -> void const* { return &this->d_value; }
+    constexpr auto size(auto) const noexcept -> ::std::size_t { return sizeof this->d_value; }
 
-    auto value() const noexcept -> bool { return this->d_value; }
-    auto operator not() const noexcept -> bool { return not this->value(); }
-    explicit operator bool() const noexcept { return this->value(); }
+    constexpr auto value() const noexcept -> bool { return this->d_value; }
+    constexpr auto operator not() const noexcept -> bool { return not this->value(); }
+    explicit constexpr operator bool() const noexcept { return this->value(); }
 };
 
     // ----------------------------------------------------------------------------

@@ -33,8 +33,6 @@
 
 namespace nstd::net
 {
-#if 0
-    //-dk:TODO remove declarations
     class execution_context;
     template<typename T, typename Executor>
         class executor_binder;
@@ -44,7 +42,7 @@ namespace nstd::net
     class executor;
     template<typename Executor>
         class strand;
-#endif
+
     class io_context;
 
     template<typename Clock>

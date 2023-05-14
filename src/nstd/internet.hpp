@@ -1,4 +1,4 @@
-// src/nstd/internet.hpp                                              -*-C++-*-
+// nstd/internet.hpp                                                  -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2022 Dietmar Kuehl http://www.dietmar-kuehl.de
 //
@@ -23,8 +23,8 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#ifndef INCLUDED_SRC_NSTD_INTERNET
-#define INCLUDED_SRC_NSTD_INTERNET
+#ifndef INCLUDED_NSTD_INTERNET
+#define INCLUDED_NSTD_INTERNET
 
 // ----------------------------------------------------------------------------
 
