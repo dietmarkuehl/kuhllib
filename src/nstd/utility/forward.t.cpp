@@ -42,7 +42,8 @@ namespace
 
 static KT::testcase const tests[] = {
     KT::expect_success("forward(rvalue)", [](KT::context& c)->bool{
-            foo&& reference(NU::forward<foo&&>(foo()));
+            foo f{};
+            foo&& reference(NU::forward<foo&&>(f));
             KT::use(reference);
             return KT::assert_type<foo&&, decltype(NU::forward<foo&&>(foo()))>(c, "foo()");
                 ;
