@@ -27,14 +27,23 @@
 #define INCLUDED_NSTD_HIDDEN_NAMES_SHUTDOWN_TYPE
 
 #include "nstd/file/socket.hpp"
+#ifdef _MSC_VER
+#    include <winsock2.h>
+#endif
 
 // ----------------------------------------------------------------------------
 
 namespace nstd::hidden_names {
     enum class shutdown_type {
+#ifdef _MSC_VER
+        receive = SD_RECEIVE,
+        send    = SD_SEND,
+        both    = SD_BOTH
+#else
         receive = SHUT_RD,
         send    = SHUT_WR,
         both    = SHUT_RDWR
+#endif
     };
 }
 

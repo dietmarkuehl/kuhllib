@@ -256,5 +256,5 @@ Auto sender
   ;
 #endif
 
-    ::nstd::this_thread::sync_wait(::std::move(sender));
+    //::nstd::this_thread::sync_wait(::std::move(sender));
 }

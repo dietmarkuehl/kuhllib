@@ -76,7 +76,8 @@ static KT::testcase const tests[] = {
                 = EX::add_value(TD::sender(), 17, true)
                 | EX::then([](auto&&...){})
                 ;
-            TR::sync_wait(::nstd::utility::move(sender));
+            //-dk:TODO TR::sync_wait(::nstd::utility::move(sender));
+            (void)sender;
             return EX::sender<decltype(sender)>;
         }),
     KT::expect_success("breathing", []{

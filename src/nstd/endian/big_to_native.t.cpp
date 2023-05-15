@@ -298,6 +298,10 @@ static KT::testcase const tests[] = {
             uint16_t u16;
             uint32_t u32;
             uint64_t u64;
+            (void)u8;
+            (void)u16;
+            (void)u32;
+            (void)u64;
             return KT::assert_type<unsigned char const*,
                 decltype(NE::big_to_native<8_eu, 16_eu, 32_eu, 64_eu>(array, array + sizeof(array), u8, u16, u32, u64))>(c, "type")
                          ;

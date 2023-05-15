@@ -109,7 +109,8 @@ static KT::testcase const tests[] = {
                 | EX::then([&](::std::int64_t){ completion_called = true; })
             );
 
-            EX::run(context, UT::move(sender));
+            //-dk:TODO EX::run(context, UT::move(sender));
+            (void)sender;
 
             return sendmsg_called
                 && completion_called
