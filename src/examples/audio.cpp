@@ -241,9 +241,10 @@ int main()
                 ;
         })
         ;
+    (void)sender;
 
 #if 0
-Auto sender
+auto sender
    = Schedule(s)
    | let_value([entity = AudioState()](start_description const& d) {
          entity.setup(d);
