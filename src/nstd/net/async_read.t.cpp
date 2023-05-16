@@ -1,6 +1,6 @@
-// nstd/net/async_write.t.cpp                                         -*-C++-*-
+// nstd/net/async_read.t.cpp                                          -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2022 Dietmar Kuehl http://www.dietmar-kuehl.de
+//  Copyright (C) 2023 Dietmar Kuehl http://www.dietmar-kuehl.de
 //
 //  Permission is hereby granted, free of charge, to any person
 //  obtaining a copy of this software and associated documentation
@@ -23,10 +23,16 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "nstd/net/async_write.hpp"
+#include "nstd/net/async_read.hpp"
+#include "nstd/execution/get_completion_signatures.hpp"
+#include "nstd/net/basic_stream_socket.hpp"
+#include "nstd/net/ip/tcp.hpp"
 #include "kuhl/test.hpp"
 
 namespace test_declaration {}
+namespace EX = ::nstd::execution;
+namespace HN = ::nstd::hidden_names;
+namespace NN = ::nstd::net;
 namespace TD = ::test_declaration;
 namespace KT = ::kuhl::test;
 
@@ -41,9 +47,14 @@ namespace test_declaration {
 
 static KT::testcase const tests[] = {
     KT::expect_success("breathing", []{
-            //-dk:TODO add actual tests for async_write functionality
-            return true;
+            NN::basic_stream_socket<NN::ip::tcp> socket(NN::ip::tcp::v4());
+            char buffer[10];
+            auto sender = NN::async_read(socket, NN::buffer(buffer));
+            return KT::use(sender)
+                && HN::is_completion_signatures<decltype(EX::get_completion_signatures(sender))>
+                ;
         }),
+    //-dk:TODO add thorough tests
 };
 
-static KT::add_tests suite("nstd/net/async_write", ::tests);
+static KT::add_tests suite("nstd/net/async_read", ::tests);

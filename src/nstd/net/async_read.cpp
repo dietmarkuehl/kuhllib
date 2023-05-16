@@ -1,6 +1,6 @@
-// nstd/net/async_write.t.cpp                                         -*-C++-*-
+// nstd/net/async_read.cpp                                            -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2022 Dietmar Kuehl http://www.dietmar-kuehl.de
+//  Copyright (C) 2023 Dietmar Kuehl http://www.dietmar-kuehl.de
 //
 //  Permission is hereby granted, free of charge, to any person
 //  obtaining a copy of this software and associated documentation
@@ -23,27 +23,10 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "nstd/net/async_write.hpp"
-#include "kuhl/test.hpp"
-
-namespace test_declaration {}
-namespace TD = ::test_declaration;
-namespace KT = ::kuhl::test;
+#include <nstd/net/async_read.hpp>
 
 // ----------------------------------------------------------------------------
 
-namespace test_declaration {
-    namespace {
-    }
+namespace nstd::net {
+    int async_read_dummy{};
 }
-
-// ----------------------------------------------------------------------------
-
-static KT::testcase const tests[] = {
-    KT::expect_success("breathing", []{
-            //-dk:TODO add actual tests for async_write functionality
-            return true;
-        }),
-};
-
-static KT::add_tests suite("nstd/net/async_write", ::tests);
