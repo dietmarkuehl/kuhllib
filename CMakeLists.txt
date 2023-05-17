@@ -37,9 +37,12 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DNOMINMAX")
 endif()
 
-CHECK_INCLUDE_FILES(linux/io_uring.h NSTD_HAS_LINUX_IO_URING)
-CHECK_INCLUDE_FILES(linux/time_types.h NSTD_HAS_LINUX_TIME_TYPES)
+CHECK_INCLUDE_FILES("poll.h" NSTD_HAS_POSIX_POLL)
+CHECK_INCLUDE_FILES("linux/io_uring.h" NSTD_HAS_LINUX_IO_URING)
+CHECK_INCLUDE_FILES("linux/time_types.h" NSTD_HAS_LINUX_TIME_TYPES)
 CHECK_SYMBOL_EXISTS("unistd.h;sys/mman.h" MAP_POPULATE NSTD_HAS_MAP_POPULATE)
+CHECK_INCLUDE_FILES("unistd.h;sys/fcntl.h" NSTD_HAS_FCNTL)
+CHECK_INCLUDE_FILES("winsock2.h" NSTD_HAS_WINSOCK2)
 CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/src/nstd/nstd-config.hpp.in ${CMAKE_BINARY_DIR}/include/nstd/nstd-config.hpp)
 
 include_directories(${CMAKE_BINARY_DIR}/include ${CMAKE_SOURCE_DIR}/src)
@@ -105,10 +108,22 @@ list(APPEND kuhllib_endian_components
     src/nstd/endian/type
 )
 
-list(APPEND kuhllib_execution_components
+list(APPEND xkuhllib_execution_components
+    src/nstd/execution/add_value
+    src/nstd/execution/inject_cancel
+    src/nstd/execution/let
+    src/nstd/execution/repeat_effect_until
+    src/nstd/execution/run
+    src/nstd/execution/start_detached
+    src/nstd/execution/task
+    src/nstd/execution/then
+    src/nstd/execution/timeout
+    src/nstd/execution/when_all
     src/nstd/execution
     src/nstd/execution/execution
-    src/nstd/execution/add_value
+)
+
+list(APPEND kuhllib_execution_components
     src/nstd/execution/async_scope
     src/nstd/execution/completion_signatures
     src/nstd/execution/completion_signatures_of_t
@@ -123,10 +138,8 @@ list(APPEND kuhllib_execution_components
     src/nstd/execution/get_env
     src/nstd/execution/get_scheduler
     src/nstd/execution/get_stop_token
-    src/nstd/execution/inject_cancel
     src/nstd/execution/is_execution_policy
     src/nstd/execution/just
-    src/nstd/execution/let
     src/nstd/execution/make_completion_signatures
     src/nstd/execution/no_env
     src/nstd/execution/on
@@ -136,8 +149,6 @@ list(APPEND kuhllib_execution_components
     src/nstd/execution/receiver
     src/nstd/execution/receiver_of
     src/nstd/execution/repeat_effect
-    src/nstd/execution/repeat_effect_until
-    src/nstd/execution/run
     src/nstd/execution/run_loop
     src/nstd/execution/schedule
     src/nstd/execution/scheduler
@@ -151,13 +162,8 @@ list(APPEND kuhllib_execution_components
     src/nstd/execution/set_stopped
     src/nstd/execution/set_value
     src/nstd/execution/start
-    src/nstd/execution/start_detached
     src/nstd/execution/stop_token_of_t
-    src/nstd/execution/task
-    src/nstd/execution/then
-    src/nstd/execution/timeout
     src/nstd/execution/value_types_of_t
-    src/nstd/execution/when_all
 )
 
 list(APPEND kuhllib_xexecution_components
@@ -176,7 +182,7 @@ list(APPEND kuhllib_execution_todo
     src/nstd/execution/transfer_just
 )
 
-list(APPEND kuhllib_executor_components
+list(APPEND kuhllib_executor_components_x
     src/nstd/executor/associated_allocator
     src/nstd/executor/associated_executor
     src/nstd/executor/async_completion
@@ -187,6 +193,11 @@ list(APPEND kuhllib_executor_components
     src/nstd/executor/fork_event
     src/nstd/executor/service_already_exists
     src/nstd/executor/system_executor
+)
+
+
+list(APPEND xkuhllib_file_components
+    src/nstd/file/stream
 )
 
 list(APPEND kuhllib_file_components
@@ -204,7 +215,6 @@ list(APPEND kuhllib_file_components
     src/nstd/file/read
     src/nstd/file/ring
     src/nstd/file/ring_context
-    src/nstd/file/stream
     src/nstd/file/test_context
 )
 
@@ -227,6 +237,11 @@ list(APPEND kuhllib_functional_components
     src/nstd/functional/tuple_invoke
 )
 
+list(APPEND xkuhllib_hidden_components
+    src/nstd/hidden_names/log_completion
+    src/nstd/hidden_names/shutdown_type
+)
+
 list(APPEND kuhllib_hidden_components
     src/nstd/hidden_names/boolean_socket_option
     src/nstd/hidden_names/completion_signature
@@ -235,13 +250,11 @@ list(APPEND kuhllib_hidden_components
     src/nstd/hidden_names/filter_completions
     src/nstd/hidden_names/integer_socket_option
     src/nstd/hidden_names/is_instance_of
-    src/nstd/hidden_names/log_completion
     src/nstd/hidden_names/merge_completion_signatures
     src/nstd/hidden_names/message_flags
     src/nstd/hidden_names/movable_value
     src/nstd/hidden_names/print_completion_signatures
     src/nstd/hidden_names/sender_base
-    src/nstd/hidden_names/shutdown_type
     src/nstd/hidden_names/unique_completion_signatures
     src/nstd/hidden_names/valid_completion_for
     src/nstd/hidden_names/valid_completion_signatures
@@ -273,23 +286,23 @@ list(APPEND kuhllib_memory_components
 )
 
 list(APPEND xkuhllib_net_components
+    src/nstd/net/async_accept
+    src/nstd/net/async_read_some
+    src/nstd/net/async_write_some
+    src/nstd/net/basic_socket_acceptor
+    src/nstd/net/basic_socket
+    src/nstd/net/get_iovec
 )
 
 list(APPEND kuhllib_net_components
-    src/nstd/net/async_accept
     src/nstd/net/async_connect
-    src/nstd/net/async_read_some
     src/nstd/net/async_receive
     src/nstd/net/async_receive_from
     src/nstd/net/async_send
     src/nstd/net/async_send_to
     src/nstd/net/async_write
-    src/nstd/net/async_write_some
     src/nstd/net/basic_datagram_socket
-    src/nstd/net/basic_socket
-    src/nstd/net/basic_socket_acceptor
     src/nstd/net/basic_stream_socket
-    src/nstd/net/get_iovec
     src/nstd/net/io_context
     src/nstd/net/ip/address
     src/nstd/net/ip/address_v4
@@ -337,18 +350,21 @@ list(APPEND kuhllib_stop_token_components
     src/nstd/stop_token/unstoppable_token
 )
 
+list(APPEND xkuhllib_timer
+    src/nstd/timer/async_wait
+)
+
 list(APPEND kuhllib_timer
     src/nstd/timer/basic_waitable_timer
     src/nstd/timer/timer
     src/nstd/timer/wait_traits
-    src/nstd/timer/async_wait
 )
 
 list(APPEND kuhllib_thread_todo
     src/nstd/thread/may_block_caller
 )
 
-list(APPEND kuhllib_thread_components
+list(APPEND xkuhllib_thread_components
     src/nstd/thread/sync_wait
 )
 

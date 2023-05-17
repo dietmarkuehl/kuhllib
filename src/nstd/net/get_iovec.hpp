@@ -71,13 +71,14 @@ namespace nstd::hidden_names::get_iovec {
     struct array_iovec;
     template <::std::size_t N, ::std::size_t... I>
     struct array_iovec<N, ::std::index_sequence<I...>> {
-        using transform = decltype(
-            [](auto&& buffer){
+        struct transform {
+            auto operator()(auto&& buffer) const noexcept -> ::iovec {
                 ::iovec rc;
                 rc.iov_base = const_cast<void*>(buffer.data());
                 rc.iov_len  = buffer.size();
                 return rc;
-            });
+            }
+        };
         ::std::array<::iovec, N> d_seq;
 
         array_iovec(array_iovec&&) = delete;

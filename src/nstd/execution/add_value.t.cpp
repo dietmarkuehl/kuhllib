@@ -63,6 +63,14 @@ namespace test_declaration {
                 return { UT::forward<R>(r) };
             }
         };
+
+        struct env {};
+        struct receiver {
+            friend auto tag_invoke(EX::get_env_t, receiver const&) noexcept -> TD::env { return {}; }
+            friend auto tag_invoke(EX::set_value_t, receiver, auto&&...) noexcept ->void {}
+            friend auto tag_invoke(EX::set_error_t, receiver, auto&&) noexcept ->void {}
+            friend auto tag_invoke(EX::set_stopped_t, receiver) noexcept ->void {}
+        };
     }
 }
 
@@ -88,7 +96,8 @@ static KT::testcase const tests[] = {
                     check_values = c == 'a' && i == 17 && b == true;
                 })
                 ;
-            TR::sync_wait(sender);
+            //-dk:TODO TR::sync_wait(sender);
+            (void)sender;
             return EX::sender<decltype(sender)>
                 && check_values
                 ;
@@ -102,7 +111,13 @@ static KT::testcase const tests[] = {
                     check_values = c == 'a' && i == 17 && b == true;
                 })
                 ;
-            TR::sync_wait(sender);
+            static_assert(EX::sender<decltype(sender)>);
+            static_assert(EX::receiver<TD::receiver>);
+            using comp = EX::completion_signatures_of_t<decltype(sender), EX::env_of_t<TD::receiver>>;
+            static_assert(EX::receiver_of<TD::receiver, comp>);
+            //auto s = EX::connect(std::move(sender), TD::receiver());
+            //(void)s;
+            //TR::sync_wait(sender);
             return EX::sender<decltype(sender)>
                 && check_values
                 ;

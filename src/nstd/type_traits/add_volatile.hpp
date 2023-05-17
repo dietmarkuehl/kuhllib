@@ -32,6 +32,8 @@
 namespace nstd::type_traits {
     template <typename T>
     struct add_volatile;
+    template <typename RC, typename... A>
+    struct nstd::type_traits::add_volatile<RC(A...)>;
     template <typename T>
     using add_volatile_t = typename ::nstd::type_traits::add_volatile<T>::type;
 }
@@ -42,6 +44,11 @@ template <typename T>
 struct nstd::type_traits::add_volatile {
     using type = T volatile;
 };
+template <typename RC, typename... A>
+struct nstd::type_traits::add_volatile<RC(A...)> {
+    using type = RC(A...);
+};
+
 
 // ----------------------------------------------------------------------------
 

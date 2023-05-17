@@ -33,9 +33,15 @@ namespace HN = ::nstd::hidden_names;
 
 static KT::testcase const tests[] = {
     KT::expect_success("breathing", []{
+#ifdef _MSC_VER
             return static_cast<int>(HN::shutdown_type::receive) == SHUT_RD
                 && static_cast<int>(HN::shutdown_type::send)    == SHUT_WR
                 && static_cast<int>(HN::shutdown_type::both)    == SHUT_RDWR
+#else
+            return static_cast<int>(HN::shutdown_type::receive) == SD_RECEIVE
+                && static_cast<int>(HN::shutdown_type::send)    == SD_SEND
+                && static_cast<int>(HN::shutdown_type::both)    == SD_BOTH
+#endif
                 ;
         }),
 };

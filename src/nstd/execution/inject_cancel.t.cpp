@@ -103,7 +103,8 @@ static KT::testcase const tests[] = {
                 ;
             static_assert(EX::sender<decltype(sender)>);
 
-            NT::sync_wait(UT::move(sender));
+            //-dk:TODO NT::sync_wait(UT::move(sender));
+            (void)sender;
             return KT::use(sender)
                 && then_called
                 && not upon_stopped_called

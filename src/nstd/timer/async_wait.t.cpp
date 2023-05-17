@@ -58,7 +58,7 @@ static KT::testcase const tests[] = {
                 NN::system_timer timer(context, d);
                EX::run(context, NN::async_wait(timer) | EX::then([before, &count](auto&&...){
                     auto dur = clock::now() - before;
-                    count = ::std::chrono::duration_cast<::std::chrono::milliseconds>(dur).count();
+                    count = int(::std::chrono::duration_cast<::std::chrono::milliseconds>(dur).count());
                 }));
                 return KT::use(before)
                     && 13 <= count;

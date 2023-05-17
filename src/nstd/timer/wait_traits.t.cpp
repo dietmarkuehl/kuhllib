@@ -83,7 +83,7 @@ static KT::testcase const tests[] = {
                 && timer.expiry() == clock::time_point()
                 ;
             }
-            catch (std::exception const& ex) {
+            catch (std::exception const&) {
                 return false;
             }
         }),
@@ -97,7 +97,7 @@ static KT::testcase const tests[] = {
                 && timer.expiry() == now
                 ;
             }
-            catch (std::exception const& ex) {
+            catch (std::exception const&) {
                 return false;
             }
         }),
@@ -113,7 +113,7 @@ static KT::testcase const tests[] = {
                 && (before + d <= timer.expiry()) && (timer.expiry() <= after + d)
                 ;
             }
-            catch (std::exception const& ex) {
+            catch (std::exception const&) {
                 return false;
             }
         }),

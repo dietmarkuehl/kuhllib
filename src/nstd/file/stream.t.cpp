@@ -42,7 +42,7 @@ namespace test_declaration {
 
 static KT::testcase const tests[] = {
     KT::expect_success("breathing", []{
-            NF::stream stdin(0);
+            NF::stream stdin(NF::stream::native_handle_type());
             return true;
         }),
 };

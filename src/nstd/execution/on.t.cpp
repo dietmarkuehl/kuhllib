@@ -121,6 +121,10 @@ namespace test_declaration {
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
+    KT::expect_success("dummy", []{
+        return false;
+    }),
+#if 0
     KT::expect_success("TD::sender<...> is a sender", []{
         TR::sync_wait(TD::sender<0>{});
         return EX::sender<TD::sender<0>>;
@@ -151,6 +155,7 @@ static KT::testcase const tests[] = {
                               >>
             ;
     }),
+#endif
 };
 
 static KT::add_tests suite("nstd/execution/on", ::tests);

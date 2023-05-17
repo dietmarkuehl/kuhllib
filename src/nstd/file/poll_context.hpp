@@ -32,14 +32,14 @@
 #include <functional>
 #include <list>
 #include <vector>
-#ifndef _MSC_VER
+#ifdef NSTD_HAS_POSIX_POLL
 #    include <poll.h>
 #endif
 
 // ----------------------------------------------------------------------------
 
 namespace nstd::file {
-    class poll_context; // I/O context based on [e]poll()
+    class poll_context; // I/O context based on poll()
 }
 
 // ----------------------------------------------------------------------------
@@ -69,7 +69,7 @@ private:
     ::std::vector<::pollfd>            d_poll;
     ::std::vector<::pollfd>::iterator  d_next_poll;
     ::std::list<operation>             d_outstanding;
-::std::priority_queue<timer_event> d_timers;
+    ::std::priority_queue<timer_event> d_timers;
     int                                d_pipe[2];
 
     auto handle_scheduled() -> count_type;

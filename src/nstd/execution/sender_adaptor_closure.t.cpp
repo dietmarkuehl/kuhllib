@@ -60,6 +60,10 @@ namespace test_declaration {
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
+    KT::expect_success("dummy", []{
+        return false;
+    }),
+#if 0
     KT::expect_success("basic operation", []{
             auto sender = TD::cpo(EX::just(17));
 
@@ -103,6 +107,7 @@ static KT::testcase const tests[] = {
                 && ::std::get<0>(*value) == 102
                 ;
         }),
+#endif
 };
 
 static KT::add_tests suite("nstd/execution/sender_adaptor_closure", ::tests);

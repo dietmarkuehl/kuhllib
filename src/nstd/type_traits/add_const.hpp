@@ -32,6 +32,8 @@
 namespace nstd::type_traits {
     template <typename T>
     struct add_const;
+    template <typename RC, typename... A>
+    struct add_const<RC(A...)>;
     template <typename T>
     using add_const_t = typename ::nstd::type_traits::add_const<T>::type;
 }
@@ -40,6 +42,11 @@ template <typename T>
 struct nstd::type_traits::add_const
 {
     using type = T const;
+};
+template <typename RC, typename... A>
+struct nstd::type_traits::add_const<RC(A...)>
+{
+    using type = RC(A...);
 };
 
 // ----------------------------------------------------------------------------

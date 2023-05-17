@@ -31,6 +31,8 @@ namespace TD = ::test_declarations;
 namespace KT = ::kuhl::test;
 namespace NF = ::nstd::file;
 
+#ifdef NSTD_HAS_POSIX_POLL
+
 // ----------------------------------------------------------------------------
 
 namespace test_declarations {
@@ -47,5 +49,15 @@ static KT::testcase const tests[] = {
                 ;
         }),
 };
+
+#else
+
+static KT::testcase const tests[] = {
+    KT::expect_success("dummy", []{
+            return true;
+        }),
+};
+
+#endif
 
 static KT::add_tests suite("poll_context", ::tests);

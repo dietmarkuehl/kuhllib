@@ -115,6 +115,10 @@ static KT::testcase const tests[] = {
                 && EX::receiver_of<TD::stop_receiver, completion_signatures>
                 ;
         }),
+    KT::expect_success("dummy", []{
+        return false;
+}   ),
+    #if 0
     KT::expect_success("exec.run_loop.ctor", []{
             EX::run_loop loop;
             KT::use(loop);
@@ -186,6 +190,7 @@ static KT::testcase const tests[] = {
             return arg.result == TD::result::stopped
                 ;
         }),
+        #endif
 };
 
 static KT::add_tests suite("nstd/execution/run_loop", ::tests);

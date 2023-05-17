@@ -4,6 +4,9 @@
         "/Users/kuehl/src/kuhllib/build/Coverage-gcc-12.2.0"
     ],
     "files.associations": {
-        "system_error": "cpp"
+        "system_error": "cpp",
+        "chrono": "cpp",
+        "mutex": "cpp",
+        "thread": "cpp"
     }
 }

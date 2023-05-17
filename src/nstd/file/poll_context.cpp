@@ -1,4 +1,3 @@
-// nstd/file/poll_context.cpp                                         -*-C++-*-
 // ----------------------------------------------------------------------------
 //  Copyright (C) 2021 Dietmar Kuehl http://www.dietmar-kuehl.de         
 //                                                                       
@@ -30,10 +29,11 @@
 #include <exception>
 #include <cassert>
 #include <cerrno>
-#ifndef _MSC_VER
+#ifdef NSTD_HAS_FCNTL
 #    include <fcntl.h>
 #    include <unistd.h>
-#else
+#endif
+#ifdef NSTD_HAS_WINSOCK2
 #    include <winsock2.h>
 #endif
 #include <system_error>
@@ -45,11 +45,15 @@ namespace UT = ::nstd::utility;
 
 // ----------------------------------------------------------------------------
 
+#ifdef NSTD_HAS_POSIX_POLL
+
 NF::poll_context::timer_event::timer_event(::std::chrono::steady_clock::time_point const& expiry,
                                            io_base*                                       continuation)
     : d_expiry(expiry)
     , d_continuation(continuation) {
 }
+#endif
+
 
 auto NF::poll_context::timer_event::operator< (timer_event const& other) const
     -> bool
@@ -170,9 +174,9 @@ auto NF::poll_context::handle_io() -> NF::context::count_type {
 
 // ----------------------------------------------------------------------------
 
-#ifndef _MSC_VER
 auto NF::poll_context::poll() -> bool
 {
+#ifdef NSTD_HAS_POSIX_POLL
     this->d_poll.clear();
     for (auto const& operation: this->d_outstanding) {
         if (operation.d_fd < 0) {
@@ -204,12 +208,16 @@ auto NF::poll_context::poll() -> bool
             return false;
         }
     }
+#else
+    return false;
+#endif
 }
 
 // ----------------------------------------------------------------------------
 
 auto NF::poll_context::do_run_one() -> NF::context::count_type
 {
+#ifdef NSTD_HAS_POSIX_POLL
     while (true) {
         if (this->handle_timer() || this->handle_scheduled() || this->handle_io()) {
             return 1u;
@@ -218,12 +226,16 @@ auto NF::poll_context::do_run_one() -> NF::context::count_type
             return 0u;
         }
     }
+#else
+    return 0u;
+#endif
 }
 
 // ----------------------------------------------------------------------------
 
 auto NF::poll_context::do_cancel(NF::context::io_base* to_cancel, NF::context::io_base* completion) -> void
 {
+#ifdef NSTD_HAS_POSIX_POLL
     this->submit_io(-1, 0, [completion, to_cancel, this]{
         auto it = ::std::find_if(this->d_outstanding.begin(), this->d_outstanding.end(),
                                  [to_cancel](operation const& op){ return op.d_id == to_cancel; });
@@ -235,22 +247,27 @@ auto NF::poll_context::do_cancel(NF::context::io_base* to_cancel, NF::context::i
         return true;
     },
     completion);
+#endif
 }
 
 auto NF::poll_context::do_nop(NF::context::io_base* continuation) -> void
 {
+#ifdef NSTD_HAS_POSIX_POLL
     this->submit_io(-1, 0, [continuation]{
         continuation->result(0, 0);
         return true;
     },
     continuation);
+#endif
 }
 
 auto NF::poll_context::do_timer(NF::context::time_spec* ts, NF::context::io_base* continuation) -> void
 {
+#ifdef NSTD_HAS_POSIX_POLL
     ::std::chrono::duration<::std::uint64_t, ::std::nano> offset(::std::uint64_t(ts->sec) * 1000000000 + ts->nsec);
     this->d_timers.emplace(::std::chrono::steady_clock::now() + offset, continuation);
     //-dk:TODO possible retrigger poll
+#endif
 }
 
 auto NF::poll_context::do_accept(NF::context::native_handle_type fd,
@@ -259,6 +276,7 @@ auto NF::poll_context::do_accept(NF::context::native_handle_type fd,
                                  int                             /*flags*/,
                                  NF::context::io_base*           continuation) -> void
 {
+#ifdef NSTD_HAS_POSIX_POLL
     this->submit_io(fd, POLLIN, [fd, address, length, continuation]{
         int rc{::accept(fd, address, length)};
         if (0 <= rc) {
@@ -287,11 +305,13 @@ auto NF::poll_context::do_accept(NF::context::native_handle_type fd,
         }
     },
     continuation);
+#endif
 }
 
 auto NF::poll_context::do_connect(NF::context::native_handle_type fd, ::sockaddr const* address, ::socklen_t length, NF::context::io_base* continuation)
     -> void
 {
+#ifdef NSTD_HAS_POSIX_POLL
     fcntl(fd, F_SETFL, O_NONBLOCK);
         auto rc = ::connect(fd, address, length);
     if (0 == rc) {
@@ -314,6 +334,7 @@ auto NF::poll_context::do_connect(NF::context::native_handle_type fd, ::sockaddr
         },
         continuation);
     }
+#endif
 }
 
 auto NF::poll_context::do_sendmsg(NF::context::native_handle_type fd,
@@ -321,6 +342,7 @@ auto NF::poll_context::do_sendmsg(NF::context::native_handle_type fd,
                                   int                             flags,
                                   NF::context::io_base*           continuation) -> void
 {
+#ifdef NSTD_HAS_POSIX_POLL
     this->submit(fd, POLLOUT, [fd, msg, flags, continuation]{
         auto rc{::sendmsg(fd, msg, flags | MSG_DONTWAIT | MSG_NOSIGNAL)};
         if (0 <= rc) {
@@ -339,6 +361,7 @@ auto NF::poll_context::do_sendmsg(NF::context::native_handle_type fd,
         }
     },
     continuation);
+#endif
 }
 
 auto NF::poll_context::do_recvmsg(NF::context::native_handle_type fd,
@@ -346,6 +369,7 @@ auto NF::poll_context::do_recvmsg(NF::context::native_handle_type fd,
                                   int                             flags,
                                   NF::context::io_base*           continuation) -> void
 {
+#ifdef NSTD_HAS_POSIX_POLL
     this->submit(fd, POLLIN, [fd, msg, flags, continuation]{
         auto rc{::recvmsg(fd, msg, flags | MSG_DONTWAIT)};
         if (0 <= rc) {
@@ -363,10 +387,12 @@ auto NF::poll_context::do_recvmsg(NF::context::native_handle_type fd,
         }
     },
     continuation);
+#endif
 }
 
 auto NF::poll_context::do_read(int fd, ::iovec* vec, ::std::size_t length, NF::context::io_base* continuation) -> void
 {
+#ifdef NSTD_HAS_POSIX_POLL
     this->submit(fd, POLLIN, [fd, vec, length, continuation]{
         auto rc{::readv(fd, vec, length)};
         if (0 <= rc) {
@@ -384,10 +410,12 @@ auto NF::poll_context::do_read(int fd, ::iovec* vec, ::std::size_t length, NF::c
         }
     },
     continuation);
+#endif
 }
 
 auto NF::poll_context::do_write(int fd, ::iovec* vec, ::std::size_t length, NF::context::io_base* continuation) -> void
 {
+#ifdef NSTD_HAS_POSIX_POLL
     this->submit(fd, POLLOUT, [fd, vec, length, continuation]{
         auto rc{::writev(fd, vec, length)};
         if (0 <= rc) {
@@ -405,13 +433,16 @@ auto NF::poll_context::do_write(int fd, ::iovec* vec, ::std::size_t length, NF::
         }
     },
     continuation);
+#endif
 }
 
 auto NF::poll_context::do_open_at(int fd, char const* name, int flags, NF::context::io_base* continuation)
     -> void
 {
+#ifdef NSTD_HAS_POSIX_POLL
     int rc(::openat(fd, name, flags));
     continuation->result(rc < 0? -errno: rc, 0);
+#endif
 }
 
 // ----------------------------------------------------------------------------
@@ -419,5 +450,3 @@ auto NF::poll_context::do_open_at(int fd, char const* name, int flags, NF::conte
 namespace nstd::file {
     int poll_context_dummy = 0;
 }
-
-#endif

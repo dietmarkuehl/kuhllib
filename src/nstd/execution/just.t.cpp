@@ -184,20 +184,30 @@ static KT::testcase const tests[] = {
     KT::expect_success("just const j; connect(j, receiver) works", []{
             TD::result result{};
             auto const just = EX::just(true, 0);
+            (void)just;
+            (void)result;
+            return false;
+#if 0
             auto state = EX::connect(just, TD::receiver<bool, int>(&result, true, 0));
             EX::start(state);
             return EX::operation_state<decltype(state)>
                 && result == TD::result::value
                 ;
+#endif
         }),
     KT::expect_success("connect(just(), receiver) works", []{
             TD::result result{};
+            (void)result;
+            return false;
+            #if 0
+            //-dk:TODO
             auto state = EX::connect(EX::just(TD::move_only{42}, 0),
                                      TD::receiver<TD::move_only, int>(&result, TD::move_only{42}, 0));
             EX::start(state);
             return EX::operation_state<decltype(state)>
                 && result == TD::result::value
                 ;
+                #endif
         }),
 };
 

@@ -36,7 +36,7 @@
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/start.hpp"
 #include "nstd/execution/receiver.hpp"
-#include "nstd/executor/execution_context.hpp"
+//#include "nstd/executor/execution_context.hpp"
 #include "nstd/file/context.hpp"
 #include "nstd/file/ring_context.hpp"
 #include "nstd/utility/forward.hpp"
@@ -52,7 +52,7 @@ namespace nstd::net {
 // ----------------------------------------------------------------------------
 
 class nstd::net::io_context
-    : public ::nstd::net::execution_context
+    //-dk:TODO transfer interface? : public ::nstd::net::execution_context
 {
 private:
     ::std::unique_ptr<::nstd::file::context> d_manager;

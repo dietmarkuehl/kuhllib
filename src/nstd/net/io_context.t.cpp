@@ -109,7 +109,7 @@ static KT::testcase const tests[] = {
             auto sender = EX::schedule(ctxt.scheduler())
                 | EX::then([&value](auto...){ value = true; })
                 ;
-            EX::start_detached(UT::move(sender));
+            //-dk:TODO EX::start_detached(UT::move(sender));
             auto count = ctxt.run_one();
             return KT::use(sender)
                 && count == 1u

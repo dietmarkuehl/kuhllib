@@ -111,7 +111,7 @@ static KT::testcase const tests[] = {
             constexpr NU::pair<int, bool> p0;
             NU::pair<foo, bar>            p1;
             return KT::assert_equal(c, "value of p0.first",   0, p0.first)
-                && KT::assert_equal(c, "value of p0.second",  0, p0.second)
+                && KT::assert_equal(c, "value of p0.second",  false, p0.second)
                 && KT::assert_equal(c, "value of p1.first",  17, p1.first.value)
                 && KT::assert_equal(c, "value of p1.second", 43, p1.second.value)
                 ;

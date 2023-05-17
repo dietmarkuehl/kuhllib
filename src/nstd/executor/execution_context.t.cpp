@@ -99,8 +99,8 @@ static KT::testcase const tests[] = {
 
                 }
                 using NET::execution_context::service::context;
-                auto shutdown() noexcept -> void override {}
-                auto notify_fork(NET::fork_event) -> void override {}
+                auto shutdown() noexcept -> void {}
+                auto notify_fork(NET::fork_event) -> void {}
             };
             NET::execution_context ctxt;
             service                svc(ctxt);

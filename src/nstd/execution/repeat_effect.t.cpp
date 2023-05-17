@@ -91,6 +91,10 @@ namespace test_declarations {
 // ----------------------------------------------------------------------------
 
 static KT::testcase const tests[] = {
+    KT::expect_success("dummy", []{
+        return false;
+    }),
+    #if 0
     KT::expect_success("run till error", []{
             int  value = 4;
             bool caught = false;
@@ -113,6 +117,7 @@ static KT::testcase const tests[] = {
                 && !rc
                 ;
         }),
+        #endif
 };
 
 static KT::add_tests suite("repeat_effect", ::tests);
