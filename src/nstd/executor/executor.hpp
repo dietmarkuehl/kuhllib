@@ -37,18 +37,19 @@
 #include "nstd/executor/executor_binder.hpp"
 #include "nstd/executor/service_already_exists.hpp"
 #include "nstd/executor/system_executor.hpp"
+#include "nstd/type_traits/integral_constant.hpp"
 
 // ----------------------------------------------------------------------------
 
 namespace nstd::net {
-    template <typename> struct is_executor;
+    template <typename> struct is_executor: std::false_type {};
     template <typename T>
     inline constexpr bool is_executor_v = ::nstd::net::is_executor<T>::value;
 
     struct executor_arg_t { explicit executor_arg_t() = default; };
     inline constexpr executor_arg_t executor_arg{};
 
-    template <typename, typename> struct uses_executor;
+    template <typename, typename> struct uses_executor: std::false_type {};
     template <typename T, typename Executor>
     inline constexpr bool uses_executor_v = ::nstd::net::uses_executor<T, Executor>::value;
 
