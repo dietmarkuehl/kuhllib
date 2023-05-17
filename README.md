@@ -9,6 +9,8 @@ exist, many of them aren't in the repository.
 
 ## Build
 
+![Linux build status](https://github.com/dietmarkuehl/kuhllib/actions/workflows/c-cpp.yml/badge.svg)
+
 You can just use `make` in the current directory. It will invoke `cmake`,
 build the code, and run tests. To have more control over the build-process
 you can use `cmake` with the `CMakeLists.txt` in the `src` directory.
