@@ -44,6 +44,10 @@ cmake:
 build: cmake
 	cd $(BUILDDIR); $(MAKE)
 
+.PHONY: toy-default toy-clean toy-distclean
+toy-default toy-clean toy-distclean:
+	cd src/toy; $(MAKE) $(@:toy-%=%)
+
 .PHONY: verbose
 verbose: cmake
 	cd $(BUILDDIR); $(MAKE) VERBOSE=1

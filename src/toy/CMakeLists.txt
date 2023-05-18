@@ -15,10 +15,10 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
 endif()
 
 
+# doesn't compile with gcc: toy-coro
 list(APPEND TOY_DEMOS
     toy-cancel
     toy-client
-    toy-coro
     toy-echo
     toy-sender
     toy-udp-client

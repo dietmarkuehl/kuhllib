@@ -25,7 +25,6 @@
 
 NAME     = toy-sender
 TECH     = poll
-CXX      = g++
 CC       = $(CXX)
 CPPFLAGS = -DTOY_NETWORKING_HPP='"toy-networking-$(TECH).hpp"'
 CXXFLAGS = -W -Wall -std=c++20 -Wno-missing-field-initializers

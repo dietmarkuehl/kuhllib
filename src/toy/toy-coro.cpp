@@ -37,7 +37,7 @@ namespace toy {
         void* memory;
     };
     template <std::size_t S>
-    auto memory(char (&array)[S]) { return memory_handle<S>{array}; }
+    auto memory(char (&array)[S]) -> memory_handle<S> { return memory_handle<S>{array}; }
 
     template <typename Scheduler>
     struct coro {
@@ -110,6 +110,7 @@ namespace toy {
                 assert(size < Size);
                 return mem.memory;
             }
+            void operator delete(void*) {}
         };
 
         template <typename R>
@@ -157,7 +158,7 @@ namespace toy::hidden_then_async {
                 state* s;
                 friend void set_value(receiver&& self, auto&& value) {
                     std::cout << "state->set_value()\n";
-                    self.s->coroutine.emplace(Coro()(toy::memory(self.s->memory), value), self.s->final_receiver);
+                    self.s->coroutine.emplace(self.s->coro(toy::memory(self.s->memory), value), self.s->final_receiver);
                     start(*self.s->coroutine);
                 }
                 friend void set_error(receiver&& self, auto&& error) {
@@ -171,12 +172,14 @@ namespace toy::hidden_then_async {
             using upstream_state = decltype(connect(std::declval<S>(), std::declval<receiver>()));
             using coroutine_state = decltype(connect(std::declval<coro_type>(), std::declval<FinalReceiver>()));
             FinalReceiver                                  final_receiver;
+            Coro                                           coro;
             upstream_state                                 upstream;
             std::optional<toy::connector<coroutine_state>> coroutine{};
             char                                           memory[128];
 
-            state(auto sender, FinalReceiver fr)
+            state(auto sender, Coro coro, FinalReceiver fr)
                 : final_receiver(fr)
+                , coro(coro)
                 , upstream(connect(sender, receiver{this}))
             {
             }
@@ -186,18 +189,19 @@ namespace toy::hidden_then_async {
             }
         };
 
-        std::remove_cvref_t<S> sender;
+        std::remove_cvref_t<S>    sender;
+        std::remove_cvref_t<Coro> coro;
         template <typename R>
         friend auto connect(then_async_sender const& self, R&& final_receiver) {
-            return state<R>(self.sender, std::forward<R>(final_receiver));
+            return state<R>(self.sender, self.coro, std::forward<R>(final_receiver));
         }
     };
 }
 
 namespace toy {
     template <typename S, typename Coro>
-    auto then_async(S sender, Coro) {
-        return hidden_then_async::then_async_sender<S, Coro>{{}, std::forward<S>(sender)};
+    auto then_async(S sender, Coro coro) {
+        return hidden_then_async::then_async_sender<S, Coro>{{}, std::forward<S>(sender), coro};
     }
     template <typename Coro>
     auto then_async(Coro fun) {
