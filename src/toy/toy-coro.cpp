@@ -25,13 +25,14 @@
 
 #include "toy-sender.hpp"
 #include <iostream>
-#include <coroutine>
+#include "toy-coroutine.hpp"
 #include <new>
 #include <cassert>
 
 // ----------------------------------------------------------------------------
 
 namespace toy {
+
     template <std::size_t S>
     struct memory_handle {
         void* memory;
@@ -66,14 +67,14 @@ namespace toy {
             using state_t = decltype(connect(std::declval<S>(), std::declval<receiver>()));
 
             Scheduler                   sched{ nullptr };
-            std::coroutine_handle<void> handle;
+            toy::coroutine_handle<void> handle;
             state_t                     state;
             std::optional<type>         value;
             std::exception_ptr          error;
 
             awaiter(Scheduler sched, S s): sched(sched), state(connect(std::move(s), receiver{this})) {}
             bool await_ready() { return false; }
-            void await_suspend(std::coroutine_handle<void> handle) {
+            void await_suspend(toy::coroutine_handle<void> handle) {
                 this->handle = handle;
                 start(state);
             }
@@ -95,7 +96,7 @@ namespace toy {
             : immovable {
             state_base* state = nullptr;
 
-            coro get_return_object() { return { std::coroutine_handle<promise_type>::from_promise(*this) }; }
+            coro get_return_object() { return { toy::coroutine_handle<promise_type>::from_promise(*this) }; }
             std::suspend_always initial_suspend() { return {}; }
             std::suspend_never final_suspend() noexcept {
                 if (state) state->complete();
@@ -115,7 +116,7 @@ namespace toy {
 
         template <typename R>
         struct state: state_base {
-            std::coroutine_handle<void> handle;
+            toy::coroutine_handle<void> handle;
             R                           receiver;
 
             state(auto&& handle, R receiver)
@@ -133,7 +134,7 @@ namespace toy {
             }
         };
 
-        std::coroutine_handle<promise_type> handle;
+        toy::coroutine_handle<promise_type> handle;
 
         template <typename R>
         friend state<R> connect(coro&& self, R receiver) {

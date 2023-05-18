@@ -28,7 +28,7 @@
 
 #include "toy-stop_token.hpp"
 #include "toy-utility.hpp"
-#include <coroutine>
+#include "toy-coroutine.hpp"
 #include <exception>
 #include <optional>
 #include <type_traits>
@@ -68,14 +68,14 @@ namespace hidden_task {
             using state_t = decltype(connect(std::declval<S>(), std::declval<receiver>()));
 
             Scheduler                   sched{ nullptr };
-            std::coroutine_handle<void> handle;
+            toy::coroutine_handle<void> handle;
             state_t                     state;
             std::optional<type>         value;
             std::exception_ptr          error;
 
             awaiter(Scheduler sched, S s): sched(sched), state(connect(std::move(s), receiver{this})) {}
             bool await_ready() { return false; }
-            void await_suspend(std::coroutine_handle<void> handle) {
+            void await_suspend(toy::coroutine_handle<void> handle) {
                 this->handle = handle;
                 start(state);
             }
@@ -97,9 +97,9 @@ namespace hidden_task {
             : immovable {
             state_base* state = nullptr;
 
-            task get_return_object() { return { std::coroutine_handle<promise_type>::from_promise(*this) }; }
-            std::suspend_always initial_suspend() { return {}; }
-            std::suspend_never final_suspend() noexcept {
+            task get_return_object() { return { toy::coroutine_handle<promise_type>::from_promise(*this) }; }
+            toy::suspend_always initial_suspend() { return {}; }
+            toy::suspend_never final_suspend() noexcept {
                 if (state) state->complete();
                 return {};
             }
@@ -111,7 +111,7 @@ namespace hidden_task {
 
         template <typename R>
         struct state: state_base {
-            std::coroutine_handle<void> handle;
+            toy::coroutine_handle<void> handle;
             R                           receiver;
 
             state(auto&& handle, R receiver)
@@ -128,7 +128,7 @@ namespace hidden_task {
             }
         };
 
-        std::coroutine_handle<promise_type> handle;
+        toy::coroutine_handle<promise_type> handle;
 
         template <typename R>
         friend state<R> connect(task&& self, R receiver) {
