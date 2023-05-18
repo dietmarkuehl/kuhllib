@@ -83,3 +83,6 @@ clean-all:
 	$(MAKE) COMPILER=gcc clean
 	$(MAKE) COMPILER=intel clean
 
+.PHONY: distclean
+distclean:
+	$(RM) -r $(BUILDDIR)

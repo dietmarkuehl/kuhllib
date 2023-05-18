@@ -1,4 +1,4 @@
-name: Linux Build
+name: Windows Toy
 
 on:
   push:
