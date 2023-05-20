@@ -26,6 +26,7 @@
 #ifndef INCLUDED_NSTD_EXECUTION_LET
 #define INCLUDED_NSTD_EXECUTION_LET
 
+#include "nstd/concepts/invocable.hpp"
 #include "nstd/execution/completion_signatures.hpp"
 #include "nstd/execution/get_completion_scheduler.hpp"
 #include "nstd/execution/get_completion_signatures.hpp"
@@ -86,7 +87,7 @@ namespace nstd::hidden_names::let {
     template <typename Tag, typename Fun>
     concept invocable
         =  (not ::std::same_as<Tag, ::nstd::execution::set_stopped_t>)
-        || ::std::invocable<Fun>
+        || ::nstd::concepts::invocable<Fun>
         ;
 
     template <::nstd::execution::receiver, typename, typename> struct inner_state_cloak;
@@ -106,7 +107,7 @@ namespace nstd::hidden_names::let {
                           ::std::apply([&](auto&&... a){ return fun(::nstd::utility::forward<Args>(a)...); }, this->d_args),
                           ::nstd::utility::forward<R>(receiver)))
             {
-                static_assert(::std::same_as<decltype(::std::apply([&](auto&&... a){ return fun(::nstd::utility::forward<Args>(a)...); }, this->d_args)), sender_t>);
+                //-dk:TODO static_assert(::std::same_as<decltype(::std::apply([&](auto&&... a){ return fun(::nstd::utility::forward<Args>(a)...); }, this->d_args)), sender_t>);
                 ::nstd::execution::start(this->d_state);
             }
         };

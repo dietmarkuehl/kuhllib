@@ -24,6 +24,9 @@
 // ----------------------------------------------------------------------------
 
 #include "nstd/stop_token/stop_callback.hpp"
+#include "nstd/concepts/invocable.hpp"
+#include "nstd/concepts/destructible.hpp"
+#include "nstd/concepts/copy_constructible.hpp"
 #include "nstd/stop_token/stop_source.hpp"
 #include "nstd/utility/move.hpp"
 #include "kuhl/test.hpp"
@@ -54,10 +57,10 @@ namespace test_declaration {
 
 static KT::testcase const tests[] = {
     KT::expect_success("test callback", []{
-            return ::std::invocable<TD::callback<true>>
-                && ::std::destructible<TD::callback<true>>
-                && ::std::invocable<TD::callback<false>>
-                && ::std::destructible<TD::callback<false>>
+            return ::nstd::concepts::invocable<TD::callback<true>>
+                && ::nstd::concepts::destructible<TD::callback<true>>
+                && ::nstd::concepts::invocable<TD::callback<false>>
+                && ::nstd::concepts::destructible<TD::callback<false>>
                 ;
         }),
     KT::expect_success("test callback ctor", []{
@@ -73,10 +76,10 @@ static KT::testcase const tests[] = {
                 ;
         }),
     KT::expect_success("copy ctor", []{
-            return not ::std::copy_constructible<ST::stop_callback<TD::callback<true>>>;
+            return not ::nstd::concepts::copy_constructible<ST::stop_callback<TD::callback<true>>>;
         }),
     KT::expect_success("move ctor", []{
-            return not ::std::move_constructible<ST::stop_callback<TD::callback<true>>>;
+            return not ::nstd::concepts::move_constructible<ST::stop_callback<TD::callback<true>>>;
         }),
     KT::expect_success("copy assign", []{
             return not ::std::is_copy_assignable_v<ST::stop_callback<TD::callback<true>>>;

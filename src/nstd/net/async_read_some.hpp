@@ -59,10 +59,12 @@ namespace nstd::hidden_names::async_read_some {
                 this->d_msg.msg_iov    = this->d_iovec.data();
                 this->d_msg.msg_iovlen = this->d_iovec.size();
             }
+            template <::nstd::file::io_object Object>
             auto start(
-                ::nstd::file::io_object auto& object,
+                Object& object,
                 auto&& scheduler,
                 ::nstd::file::io_base* cont) noexcept -> void
+                requires (not ::nstd::net::socket<Object>)
             {
                 scheduler.read(object.native_handle(), this->d_iovec.data(), this->d_iovec.size(), cont);
             }

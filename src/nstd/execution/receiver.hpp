@@ -26,6 +26,8 @@
 #ifndef INCLUDED_NSTD_EXECUTION_RECEIVER
 #define INCLUDED_NSTD_EXECUTION_RECEIVER
 
+#include "nstd/concepts/move_constructible.hpp"
+#include "nstd/concepts/constructible_from.hpp"
 #include "nstd/execution/get_env.hpp"
 #include "nstd/execution/set_error.hpp"
 #include "nstd/execution/set_stopped.hpp"
@@ -40,8 +42,8 @@
 namespace nstd::execution {
     template <typename Receiver>
     concept receiver
-        =  ::std::move_constructible<::nstd::type_traits::remove_cvref_t<Receiver>>
-        && ::std::constructible_from<::nstd::type_traits::remove_cvref_t<Receiver>, Receiver>
+        =  ::nstd::concepts::move_constructible<::nstd::type_traits::remove_cvref_t<Receiver>>
+        && ::nstd::concepts::constructible_from<::nstd::type_traits::remove_cvref_t<Receiver>, Receiver>
         && requires(const ::nstd::type_traits::remove_cvref_t<Receiver>& rec) {
             ::nstd::execution::get_env(rec);
         }

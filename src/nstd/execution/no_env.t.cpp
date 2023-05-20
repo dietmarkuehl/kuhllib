@@ -23,6 +23,7 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "nstd/concepts/invocable.hpp"
 #include "nstd/execution/no_env.hpp"
 #include "nstd/functional/tag_invoke.hpp"
 #include "kuhl/test.hpp"
@@ -49,12 +50,12 @@ namespace test_declarations
 
 static KT::testcase const tests[] = {
     KT::expect_success("test classes", []{
-            return ::std::invocable<decltype(::nstd::tag_invoke), TD::cpo_t, int>
-                && ::std::invocable<decltype(::nstd::tag_invoke), TD::cpo_t, TD::type>
+            return ::nstd::concepts::invocable<decltype(::nstd::tag_invoke), TD::cpo_t, int>
+                && ::nstd::concepts::invocable<decltype(::nstd::tag_invoke), TD::cpo_t, TD::type>
                 ;
         }),
     KT::expect_success("no_env doesn't tag_invoke", []{
-            return not ::std::invocable<decltype(::nstd::tag_invoke), TD::cpo_t, ::nstd::hidden_names::exec_envs::no_env>
+            return not ::nstd::concepts::invocable<decltype(::nstd::tag_invoke), TD::cpo_t, ::nstd::hidden_names::exec_envs::no_env>
                 ;
         }),
 };

@@ -24,7 +24,7 @@
 // ----------------------------------------------------------------------------
 
 #include <algorithm>
-#include <coroutine>
+#include "toy-coroutine.hpp"
 #include <iostream>
 #include <optional>
 #include <stdexcept>
@@ -68,14 +68,14 @@ struct task {
 
         using state_t = decltype(connect(std::declval<S>(), std::declval<receiver>()));
 
-        std::coroutine_handle<void> handle;
+        toy::coroutine_handle<void> handle;
         state_t                     state;
         std::optional<type>         value;
         std::exception_ptr          error;
 
         awaiter(S s): state(connect(s, receiver{this})) {}
         bool await_ready() { return false; }
-        void await_suspend(std::coroutine_handle<void> handle) {
+        void await_suspend(toy::coroutine_handle<void> handle) {
             this->handle = handle;
             start(state);
         }
@@ -93,9 +93,9 @@ struct task {
     };
     struct promise_type: immovable {
         state_base* state = nullptr;
-        task get_return_object() { return { std::coroutine_handle<promise_type>::from_promise(*this) }; }
-        std::suspend_always initial_suspend() { return {}; }
-        std::suspend_never final_suspend() noexcept {
+        task get_return_object() { return { toy::coroutine_handle<promise_type>::from_promise(*this) }; }
+        toy::suspend_always initial_suspend() { return {}; }
+        toy::suspend_never final_suspend() noexcept {
             if (state) state->complete();
             return {};
         }
@@ -107,7 +107,7 @@ struct task {
 
     template <typename R>
     struct state: state_base {
-        std::coroutine_handle<void> handle;
+        toy::coroutine_handle<void> handle;
         R                           receiver;
 
         state(auto&& handle, R receiver): handle(handle), receiver(receiver) {
@@ -121,7 +121,7 @@ struct task {
         }
     };
 
-    std::coroutine_handle<promise_type> handle;
+    toy::coroutine_handle<promise_type> handle;
 
     template <typename R>
     friend state<R> connect(task&& self, R receiver) {

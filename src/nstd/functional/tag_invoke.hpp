@@ -56,9 +56,16 @@ namespace nstd {
     template <auto& Tag>
     using tag_t = ::nstd::type_traits::decay_t<decltype(Tag)>;
 
+    template <typename Fun, typename... Args>
+    concept invocable
+        = requires(Fun fun, Args&&... args) {
+            fun(::nstd::utility::forward<Args>(args)...);
+        }
+        ;
+
     template <typename Tag, typename... Args>
     concept tag_invocable
-        = ::std::invocable<decltype(::nstd::tag_invoke), Tag, Args...>
+        = ::nstd::invocable<decltype(::nstd::tag_invoke), Tag, Args...>
         ;
 
     template <typename Tag, typename... Args>

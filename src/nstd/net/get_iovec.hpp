@@ -63,23 +63,26 @@ namespace nstd::hidden_names::get_iovec {
         auto size() noexcept -> int      { return this->d_seq.size(); }
     };
 
+    struct array_iovec_transform {
+        template <typename T>
+        auto operator()(T&& buffer) const {
+            ::iovec rc;
+            rc.iov_base = const_cast<void*>(buffer.data());
+            rc.iov_len  = buffer.size();
+            return rc;
+        }
+    };
+
     template <::std::size_t N, typename = ::std::make_index_sequence<N>>
     struct array_iovec;
     template <::std::size_t N, ::std::size_t... I>
     struct array_iovec<N, ::std::index_sequence<I...>> {
-        using transform = decltype(
-            [](auto&& buffer){
-                ::iovec rc;
-                rc.iov_base = const_cast<void*>(buffer.data());
-                rc.iov_len  = buffer.size();
-                return rc;
-            });
         ::std::array<::iovec, N> d_seq;
 
         array_iovec(array_iovec&&) = delete;
         template <typename BufferSequence>
         array_iovec(BufferSequence const& bseq)
-            : d_seq{transform()(buffer_sequence_begin(bseq)[I])...}
+            : d_seq{array_iovec_transform()(buffer_sequence_begin(bseq)[I])...}
         {
         }
         auto data() noexcept -> ::iovec* { return this->d_seq.data(); }

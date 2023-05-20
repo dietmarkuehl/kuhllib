@@ -26,6 +26,8 @@
 #ifndef INCLUDED_NSTD_HIDDEN_NAMES_MOVABLE_VALUE
 #define INCLUDED_NSTD_HIDDEN_NAMES_MOVABLE_VALUE
 
+#include "nstd/concepts/move_constructible.hpp"
+#include "nstd/concepts/constructible_from.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
 #include <concepts>
 
@@ -34,8 +36,8 @@
 namespace nstd::hidden_names {
     template <typename T>
     concept movable_value
-        =  ::std::move_constructible<::nstd::type_traits::remove_cvref_t<T>>
-        && ::std::constructible_from<::nstd::type_traits::remove_cvref_t<T>, T>
+        =  ::nstd::concepts::move_constructible<::nstd::type_traits::remove_cvref_t<T>>
+        && ::nstd::concepts::constructible_from<::nstd::type_traits::remove_cvref_t<T>, T>
         ;
 }
 

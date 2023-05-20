@@ -27,6 +27,9 @@
 #define INCLUDED_NSTD_STOP_TOKEN_STOPPABLE_TOKEN
 
 #include "nstd/concepts/boolean_testable.hpp"
+#include "nstd/concepts/copy_constructible.hpp"
+#include "nstd/concepts/move_constructible.hpp"
+#include "nstd/concepts/equality_comparable.hpp"
 #include "nstd/hidden_names/check_type_alias_exists.hpp"
 #include <concepts>
 #include <type_traits>
@@ -36,11 +39,11 @@
 namespace nstd::stop_token_ns {
     template <typename StopToken>
     concept stoppable_token
-        =  ::std::copy_constructible<StopToken>
-        && ::std::move_constructible<StopToken>
+        =  ::nstd::concepts::copy_constructible<StopToken>
+        && ::nstd::concepts::move_constructible<StopToken>
         && ::std::is_nothrow_copy_constructible_v<StopToken>
         && ::std::is_nothrow_move_constructible_v<StopToken>
-        && ::std::equality_comparable<StopToken>
+        && ::nstd::concepts::equality_comparable<StopToken>
         && requires(StopToken const& st) {
                 { st.stop_requested() } noexcept -> nstd::concepts::boolean_testable;
                 { st.stop_possible() } noexcept -> nstd::concepts::boolean_testable;

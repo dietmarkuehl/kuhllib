@@ -23,6 +23,7 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "nstd/concepts/invocable.hpp"
 #include "nstd/execution/get_env.hpp"
 #include "nstd/execution/no_env.hpp"
 #include "nstd/functional/tag_invoke.hpp"
@@ -108,28 +109,28 @@ static KT::testcase const tests[] = {
         }),
     KT::expect_success("basic", []{
             return KT::type<TD::env> == KT::type<decltype(EX::get_env(TD::context{42}))>
-                && ::std::invocable<EX::get_env_t, TD::context>
+                && ::nstd::invocable<EX::get_env_t, TD::context>
                 && EX::get_env(TD::context{42}).value == 42
                 && KT::type<TD::env> == KT::type<decltype(EC::get_env(TD::context{42}))>
-                && ::std::invocable<EC::get_env_t, TD::context>
+                && ::nstd::invocable<EC::get_env_t, TD::context>
                 && EC::get_env(TD::context{42}).value == 42
                 && KT::type<TD::env> == KT::type<decltype(EX::get_env(TD::context2{42}))>
-                && ::std::invocable<EX::get_env_t, TD::context2>
+                && ::nstd::invocable<EX::get_env_t, TD::context2>
                 && EX::get_env(TD::context2{42}).value == 42
                 && KT::type<TD::env> == KT::type<decltype(EC::get_env(TD::context2{42}))>
-                && ::std::invocable<EC::get_env_t, TD::context2>
+                && ::nstd::invocable<EC::get_env_t, TD::context2>
                 && EC::get_env(TD::context2{42}).value == 42
                 ;
         }),
     KT::expect_success("result isn't no_env", []{
             using no_env = nstd::hidden_names::exec_envs::no_env;
-            return not ::std::invocable<EX::get_env_t, TD::no_env_context<no_env>>
-                && not ::std::invocable<EX::get_env_t, TD::no_env_context<no_env const&> const&>
-                && not ::std::invocable<EX::get_env_t, TD::no_env_context<no_env&>&>
+            return not ::nstd::invocable<EX::get_env_t, TD::no_env_context<no_env>>
+                && not ::nstd::invocable<EX::get_env_t, TD::no_env_context<no_env const&> const&>
+                && not ::nstd::invocable<EX::get_env_t, TD::no_env_context<no_env&>&>
                 ;
         }),
     KT::expect_success("non-context", []{
-            return not ::std::invocable<EX::get_env_t, TD::non_context>
+            return not ::nstd::invocable<EX::get_env_t, TD::non_context>
                 ;
         }),
 };

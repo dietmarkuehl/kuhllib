@@ -24,6 +24,8 @@
 // ----------------------------------------------------------------------------
 
 #include "nstd/stop_token/stoppable_token_for.hpp"
+#include "nstd/concepts/constructible_from.hpp"
+#include "nstd/concepts/invocable.hpp"
 #include <concepts>
 #include "kuhl/test.hpp"
 
@@ -81,13 +83,13 @@ namespace test_declarations {
 
 static KT::testcase const tests[] = {
     KT::expect_success("TD::callback is invokable", []{
-            return ::std::invocable<TD::callback>;
+            return ::nstd::concepts::invocable<TD::callback>;
         }),
     KT::expect_success("TD::callback can be constructed from initializer", []{
-            return ::std::constructible_from<TD::callback, TD::initializer>;
+            return ::nstd::concepts::constructible_from<TD::callback, TD::initializer>;
         }),
     KT::expect_success("TD::callback can be constructed from callback", []{
-            return ::std::constructible_from<TD::callback, TD::callback>;
+            return ::nstd::concepts::constructible_from<TD::callback, TD::callback>;
         }),
     KT::expect_success("TD::stop_token is a stoppable_token", []{
             return ST::stoppable_token<TD::stop_token>;
