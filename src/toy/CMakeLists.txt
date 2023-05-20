@@ -34,6 +34,9 @@ CHECK_INCLUDE_FILE("poll.h" TOY_HAS_POLL)
 CHECK_INCLUDE_FILE("sys/socket.h" TOY_HAS_SYS_SOCKET)
 CHECK_INCLUDE_FILE("unistd.h" TOY_HAS_UNISTD)
 CHECK_INCLUDE_FILE("winsock2.h" TOY_HAS_WINSOCK2)
+if (TOY_HAS_WINSOCK2)
+    add_compile_definitions(TOY_HAS_WINSOCK2)
+endif()
 
 # try to use the POSIX interface
 CHECK_INCLUDE_FILE(unistd.h TOY_HAS_UNISTD)
@@ -43,7 +46,7 @@ if(TOY_HAS_UNISTD)
     endforeach()
 
     add_executable(toy-cppcon-2022-${CMAKE_CXX_COMPILER_ID} toy-cppcon-2022.cpp)
-ENDIF()
+endif()
 
 # try to use liburing.h
 CHECK_INCLUDE_FILE(liburing.h TOY_HAS_LIBURING)

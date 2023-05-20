@@ -9,7 +9,8 @@ exist, many of them aren't in the repository.
 
 ## Build
 
-|| Library || Linux || MacOS || Windows ||
+| Library | Linux | MacOS | Windows |
+| ------- | ----- | ----- | ------- |
 | kuhllib | ![Linux build status](https://github.com/dietmarkuehl/kuhllib/actions/workflows/linux-build.yml/badge.svg) | ![MacOS build status](https://github.com/dietmarkuehl/kuhllib/actions/workflows/macos-build.yml/badge.svg) | |
 | toy | ![Linux toy status](https://github.com/dietmarkuehl/kuhllib/actions/workflows/linux-toy.yml/badge.svg) | ![MacOS toy status](https://github.com/dietmarkuehl/kuhllib/actions/workflows/macos-toy.yml/badge.svg) | ![Windows toy status](https://github.com/dietmarkuehl/kuhllib/actions/workflows/windows-toy.yml/badge.svg) |
 

@@ -59,6 +59,29 @@ using socklen_t = std::size_t;
 namespace toy {
 
 // ----------------------------------------------------------------------------
+// deal with different iovec definitions
+
+#ifdef TOY_HAS_WINSOCK2
+    using iovec = ::WSABUF;
+#else
+    using iovec = ::iovec;
+#endif
+
+toy::iovec make_iovec(::std::byte* buffer, ::std::size_t len) {
+#ifdef TOY_HAS_WINSOCK2
+    return toy::iovec{
+            .len = static_cast<ULONG>(len),
+            .buf = const_cast<char*>(reinterpret_cast<char const*>(buffer))
+        };
+#else
+    return ::iovec{
+            .iov_base = const_cast<char*>(reinterpret_cast<char const*>(buffer)),
+            .iov_len = len
+        }
+#endif
+}
+
+// ----------------------------------------------------------------------------
 
 enum class message_flags {
 };
@@ -108,22 +131,14 @@ concept byte_array
     ;
 
 template <toy::byte_array... B>
-std::array<::iovec, sizeof...(B)> buffer(B&&... b) {
-    return std::array<::iovec, sizeof...(B)>{
-        ::iovec{
-            .iov_base = const_cast<char*>(reinterpret_cast<char const*>(b)),
-            .iov_len = ::std::extent_v<std::remove_cvref_t<B>>
-        }...
+std::array<toy::iovec, sizeof...(B)> buffer(B&&... b) {
+    return std::array<toy::iovec, sizeof...(B)>{
+        toy::make_iovec(b, ::std::extent_v<std::remove_cvref_t<B>>)...
     };
 }
 template <toy::byte_type B>
-std::array<::iovec, 1> buffer(B* b, std::size_t n) {
-    return std::array<::iovec, 1>{
-        ::iovec{
-            .iov_base = const_cast<char*>(reinterpret_cast<char const*>(b)),
-            .iov_len  = n
-        }
-    };
+std::array<toy::iovec, 1> buffer(B* b, std::size_t n) {
+    return std::array<toy::iovec, 1>{ toy::make_iovec(b, n) };
 }
 
 // ----------------------------------------------------------------------------
@@ -224,7 +239,7 @@ namespace hidden::io_operation {
 
         toy::message_flags flags;
         MBS                buffer;
-        ::ssize_t operator()(auto& state) {
+        std::ssize_t operator()(auto& state) {
             msghdr msg{
                 .msg_name = nullptr,
                 .msg_namelen = 0,
