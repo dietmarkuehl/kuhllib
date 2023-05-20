@@ -26,6 +26,7 @@
 #ifndef INCLUDED_TOY_NETWORKING_IOCP
 #define INCLUDED_TOY_NETWORKING_IOCP
 
+#include "toy-networking-common.hpp"
 #include "toy-starter.hpp"
 #include "toy-utility.hpp"
 #include <iostream>
@@ -105,12 +106,45 @@ struct acceptor {
 
 // ----------------------------------------------------------------------------
 
+struct socket {
+    SOCKET fd;
+    socket(int domain, int type, int protocol)
+        : fd(WSASocketW(domain, type, protocol, nullptr, 0, WSA_FLAG_OVERLAPPED)) {
+        if (fd == INVALID_SOCKET) {
+            throw std::system_error(WSAGetLastError(),
+                                    std::system_category(), //-dk:TODO use custom category
+                                    "failed to create socket");
+
+        }
+    }
+    socket(socket&& other): fd(std::exchange(other.fd, INVALID_SOCKET)) {}
+    ~socket() {
+        if (fd != INVALID_SOCKET) {
+            closesocket(fd);
+        }
+    }
+};
+// ----------------------------------------------------------------------------
+
 struct async_sleep_for {
     using result_t = none;
     struct state {
         friend void start(state&) {}
     };
     friend state connect(async_sleep_for, auto) {
+        return {};
+    }
+};
+
+// ----------------------------------------------------------------------------
+
+struct async_write_some {
+    using result_t = int;
+    struct state {
+        friend void start(state&) {}
+    };
+    async_write_some(toy::socket&, char const*, std::size_t) {}
+    friend state connect(async_write_some, auto) {
         return {};
     }
 };

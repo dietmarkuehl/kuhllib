@@ -31,10 +31,28 @@
 #include <iostream> //-dk:TODO remove
 #include <optional>
 #include <cstddef>
+#ifdef TOY_HAS_SYS_SOCKET
 #include <sys/socket.h>
+#endif
+#ifdef TOY_HAS_NETINET_IN
 #include <netinet/in.h>
+#endif
+#ifdef TOY_HAS_UNISTD
 #include <unistd.h>
+#endif
+#ifdef TOY_HAS_POLL
 #include <poll.h>
+#endif
+//#ifdef TOY_HAS_WINSOCK2
+#include <winsock2.h>
+#include <ws2ipdef.h>
+//#endif
+
+#ifdef _MSC_VER
+using sa_family_t = unsigned short;
+using in_port_t = unsigned short;
+using socklen_t = std::size_t;
+#endif
 
 // ----------------------------------------------------------------------------
 

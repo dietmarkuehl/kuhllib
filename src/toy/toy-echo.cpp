@@ -30,7 +30,9 @@
 #include <iostream>
 #include <cstring>
 #include <cstdlib>
+#ifdef TOY_HAS_ARPA_INET
 #include <arpa/inet.h>
+#endif
 
 // ----------------------------------------------------------------------------
 
@@ -38,7 +40,7 @@ int main()
 {
     toy::io_context  io;
 
-    toy::socket server{ ::socket(PF_INET, SOCK_STREAM, 0) };
+    toy::socket server(PF_INET, SOCK_STREAM, 0);
     toy::address addr(AF_INET, htons(12345), INADDR_ANY);
     if (::bind(server.fd, &addr.as_addr(), addr.size()) < 0
         || ::listen(server.fd, 1) < 0) {
