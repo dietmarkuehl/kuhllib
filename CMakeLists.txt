@@ -19,6 +19,19 @@ if(CMAKE_COMPILER_IS_GNUCXX)
         add_link_options("--coverage")
     endif()
 endif()
+if(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -W -Wall -Werror -stdlib=libc++")
+
+    add_compile_options(-DNSTD_EXPERIMENTAL_COROUTINES)
+    add_compile_options(${SANITIZE})
+    add_compile_options(${SANITIZE_RECOVER})
+    add_link_options(${SANITIZE})
+
+    if("${COVERAGE}" STREQUAL "ON")
+        add_compile_options("-fprofile-instr-generate -fcoverage-mapping")
+        add_link_options("-fprofile-instr-generate -fcoverage-mapping")
+    endif()
+endif()
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -W -Wall -Werror -stdlib=libc++")
 
@@ -83,6 +96,13 @@ list(APPEND kuhllib_buffer_components
 list(APPEND kuhllib_concepts_components
     src/nstd/concepts/boolean_testable
     src/nstd/concepts/same_as
+    src/nstd/concepts/constructible_from
+    src/nstd/concepts/copy_constructible
+    src/nstd/concepts/derived_from
+    src/nstd/concepts/destructible
+    src/nstd/concepts/equality_comparable
+    src/nstd/concepts/invocable
+    src/nstd/concepts/move_constructible
 )
 
 list(APPEND kuhllib_container_components
@@ -379,6 +399,7 @@ list(APPEND kuhllib_type_traits_components
     src/nstd/type_traits/is_member_pointer
     src/nstd/type_traits/is_move_assignable
     src/nstd/type_traits/is_nothrow_constructible
+    src/nstd/type_traits/is_nothrow_destructible
     src/nstd/type_traits/is_nothrow_move_assignable
     src/nstd/type_traits/is_nothrow_move_constructible
     src/nstd/type_traits/is_rvalue_reference
@@ -411,6 +432,7 @@ list(APPEND kuhllib_components
     ${kuhllib_buffer_components}
     ${kuhllib_concepts_components}
     ${kuhllib_cursor_components}
+    src/nstd/coroutine
     ${kuhllib_endian_components}
     ${kuhllib_execution_components}
     ${kuhllib_executor_components}
@@ -444,13 +466,16 @@ add_executable(kuhllib_test ${kuhllib_tstfiles})
 target_link_libraries(kuhllib_test PUBLIC kuhllib kuhltest pthread)
 add_test(NAME kuhllib_test COMMAND $<TARGET_FILE:kuhllib_test>)
 
-list(APPEND kuhllib_examples
+list(APPEND xkuhllib_examples
     audio
+    es
+)
+
+list(APPEND kuhllib_examples
     coroutine_echo_server
     simple_echo_server
     chat_server
     cs2
-    es
     echo_server
     udp-client
     udp-es

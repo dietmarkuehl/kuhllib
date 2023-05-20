@@ -32,12 +32,21 @@
 // [exec.recv]
 
 namespace nstd::hidden_names {
+    template <typename T>
+    struct valid_completion_for_helper {
+        template <typename Tag, typename...A>
+            requires ::nstd::nothrow_tag_invocable<Tag, T, A...>
+        void operator()(Tag(*)(A...))
+        {}
+    };
+
     template <typename Signature, typename T>
     concept valid_completion_for
-        = requires(Signature* sig) {
-            []<typename Tag, typename...A>(Tag(*)(A...))
-                requires ::nstd::nothrow_tag_invocable<Tag, T, A...>
-            {}(sig);
+        = requires(Signature* sig, valid_completion_for_helper<T> helper) {
+            helper(sig);
+            //-dk:TODO remove []<typename Tag, typename...A>(Tag(*)(A...))
+            //    requires ::nstd::nothrow_tag_invocable<Tag, T, A...>
+            //{}(sig);
         }
         ;
 }

@@ -66,10 +66,12 @@ namespace nstd::hidden_names::async_write_some {
             {
                 scheduler.sendmsg(socket.native_handle(), &this->d_msg, int(), cont);
             }
+            template <::nstd::file::io_object IOObject>
             auto start(
-                ::nstd::file::io_object auto& object,
+                IOObject& object,
                 auto&& scheduler,
                 ::nstd::file::io_base* cont) noexcept -> void
+                requires (not ::nstd::net::socket<IOObject>)
             {
                 scheduler.write(object.native_handle(), this->d_iovec.data(), this->d_iovec.size(), cont);
             }

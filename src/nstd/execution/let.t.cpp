@@ -164,38 +164,38 @@ static KT::testcase const tests[] = {
                 ;
         }),
     KT::expect_success("let_value with sender and fun exists", []{
-            return ::std::invocable<EX::let_value_t const, TD::sender, TD::fun>
-                && ::std::invocable<decltype(EX::let_value), TD::sender, TD::fun>
+            return ::nstd::invocable<EX::let_value_t const, TD::sender, TD::fun>
+                && ::nstd::invocable<decltype(EX::let_value), TD::sender, TD::fun>
                 ;
         }),
     //KT::expect_success("let_value with non-sender and fun does not exist", []{
-    //        return not ::std::invocable<EX::let_value_t const, TD::non_sender, TD::fun>
-    //            && not ::std::invocable<decltype(EX::let_value), TD::non_sender, TD::fun>
+    //        return not ::nstd::invocable<EX::let_value_t const, TD::non_sender, TD::fun>
+    //            && not ::nstd::invocable<decltype(EX::let_value), TD::non_sender, TD::fun>
     //            ;
     //    }),
     KT::expect_success("let_error with sender and fun exists", []{
-            return ::std::invocable<EX::let_error_t const, TD::sender, TD::fun>
-                && ::std::invocable<decltype(EX::let_error), TD::sender, TD::fun>
+            return ::nstd::invocable<EX::let_error_t const, TD::sender, TD::fun>
+                && ::nstd::invocable<decltype(EX::let_error), TD::sender, TD::fun>
                 ;
         }),
     //KT::expect_success("let_error with non-sender and fun does not exist", []{
-    //        return not ::std::invocable<EX::let_error_t const, TD::non_sender, TD::fun>
-    //            && not ::std::invocable<decltype(EX::let_error), TD::non_sender, TD::fun>
+    //        return not ::nstd::invocable<EX::let_error_t const, TD::non_sender, TD::fun>
+    //            && not ::nstd::invocable<decltype(EX::let_error), TD::non_sender, TD::fun>
     //            ;
     //    }),
     KT::expect_success("let_stopped with sender and fun exists", []{
-            return ::std::invocable<EX::let_stopped_t const, TD::sender, TD::fun>
-                && ::std::invocable<decltype(EX::let_stopped), TD::sender, TD::fun>
+            return ::nstd::invocable<EX::let_stopped_t const, TD::sender, TD::fun>
+                && ::nstd::invocable<decltype(EX::let_stopped), TD::sender, TD::fun>
                 ;
         }),
     //KT::expect_success("let_stopped with non-sender and fun does not exist", []{
-    //        return not ::std::invocable<EX::let_stopped_t const, TD::non_sender, TD::fun>
-    //            && not ::std::invocable<decltype(EX::let_stopped), TD::non_sender, TD::fun>
+    //        return not ::nstd::invocable<EX::let_stopped_t const, TD::non_sender, TD::fun>
+    //            && not ::nstd::invocable<decltype(EX::let_stopped), TD::non_sender, TD::fun>
     //            ;
     //    }),
     // KT::expect_success("let_stopped with sender and non-fun does not exist", []{
-    //         return not ::std::invocable<EX::let_stopped_t const, TD::sender, TD::non_fun>
-    //             && not ::std::invocable<decltype(EX::let_stopped), TD::sender, TD::non_fun>
+    //         return not ::nstd::invocable<EX::let_stopped_t const, TD::sender, TD::non_fun>
+    //             && not ::nstd::invocable<decltype(EX::let_stopped), TD::sender, TD::non_fun>
     //             ;
     //     }),
     KT::expect_success("custom let_value based on completion_scheduler", []{

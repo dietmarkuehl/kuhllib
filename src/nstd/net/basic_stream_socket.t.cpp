@@ -35,6 +35,7 @@
 #include "nstd/net/ip/tcp.hpp"
 #include "nstd/utility/move.hpp"
 #include "kuhl/test.hpp"
+#include "nstd/concepts/derived_from.hpp"
 #include <concepts>
 
 namespace test_declarations {}
@@ -57,7 +58,7 @@ namespace test_declarations {
 
 static KT::testcase const tests[] = {
     KT::expect_success("base class", []{
-            return ::std::derived_from<NN::basic_stream_socket<NI::tcp>,
+            return ::nstd::concepts::derived_from<NN::basic_stream_socket<NI::tcp>,
                                        NN::basic_stream_socket<NI::tcp>>
                 ;
         }),

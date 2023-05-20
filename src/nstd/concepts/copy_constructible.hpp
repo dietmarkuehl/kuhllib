@@ -1,6 +1,6 @@
-// src/nstd/execution/no_env.t.cpp                                    -*-C++-*-
+// nstd/concepts/copy_constructible.hpp                               -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2022 Dietmar Kuehl http://www.dietmar-kuehl.de
+//  Copyright (C) 2023 Dietmar Kuehl http://www.dietmar-kuehl.de
 //
 //  Permission is hereby granted, free of charge, to any person
 //  obtaining a copy of this software and associated documentation
@@ -23,41 +23,27 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "nstd/concepts/invocable.hpp"
-#include "nstd/execution/no_env.hpp"
-#include "nstd/functional/tag_invoke.hpp"
-#include "kuhl/test.hpp"
-#include <functional>
+#ifndef INCLUDED_NSTD_CONCEPTS_COPY_CONSTRUCTIBLE
+#define INCLUDED_NSTD_CONCEPTS_COPY_CONSTRUCTIBLE
 
-namespace KT = ::kuhl::test;
-namespace test_declarations {};
-namespace TD = test_declarations;
+#include "nstd/concepts/constructible_from.hpp"
+#include "nstd/concepts/move_constructible.hpp"
 
 // ----------------------------------------------------------------------------
 
-namespace test_declarations
-{
-    namespace {
-        struct type {};
-        struct cpo_t {};
-
-        template <typename Arg>
-        auto tag_invoke(cpo_t, Arg&&) -> bool { return true; }
-    }
+namespace nstd::concepts {
+    template <typename T>
+    concept copy_constructible
+        =  ::nstd::concepts::move_constructible<T>
+        && ::nstd::concepts::constructible_from<T, T&>
+        //&& ::nstd::concepts::convertible_to<T&, T>
+        && ::nstd::concepts::constructible_from<T, T const&>
+        //&& ::nstd::concepts::convertible_to<T const&, T>
+        && ::nstd::concepts::constructible_from<T, T const>
+        //&& ::nstd::concepts::convertible_to<T const, T>
+        ;
 }
 
 // ----------------------------------------------------------------------------
 
-static KT::testcase const tests[] = {
-    KT::expect_success("test classes", []{
-            return ::nstd::concepts::invocable<decltype(::nstd::tag_invoke), TD::cpo_t, int>
-                && ::nstd::concepts::invocable<decltype(::nstd::tag_invoke), TD::cpo_t, TD::type>
-                ;
-        }),
-    KT::expect_success("no_env doesn't tag_invoke", []{
-            return not ::nstd::concepts::invocable<decltype(::nstd::tag_invoke), TD::cpo_t, ::nstd::hidden_names::exec_envs::no_env>
-                ;
-        }),
-};
-
-static KT::add_tests suite("no_env", ::tests);
+#endif

@@ -23,6 +23,7 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
+#include "nstd/concepts/invocable.hpp"
 #include "nstd/execution/when_all.hpp"
 #include "nstd/execution/sender.hpp"
 #include "nstd/execution/just.hpp"
@@ -135,7 +136,7 @@ static KT::testcase const tests[] = {
                 ;
         }),
     KT::expect_success("when_all without arguments is ill-formed", []{
-            return not ::std::invocable<EX::when_all_t>;
+            return not ::nstd::concepts::invocable<EX::when_all_t>;
         }),
     KT::expect_success("when_all is a CPO", []{
             auto sender = EX::when_all(TD::static_just<1>(), TD::static_just<2, 3>());

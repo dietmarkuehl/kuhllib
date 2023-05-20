@@ -27,6 +27,8 @@
 #define INCLUDED_NSTD_STOP_TOKEN_STOP_TOKEN
 
 #include "nstd/stop_token/stop_state.hpp"
+#include "nstd/concepts/invocable.hpp"
+#include "nstd/concepts/destructible.hpp"
 #include <concepts>
 #include <memory>
 
@@ -37,7 +39,7 @@ namespace nstd::stop_token_ns {
     class stop_source;
     class stop_token;
     template <typename Callback>
-        requires ::std::invocable<Callback> && ::std::destructible<Callback>
+        requires ::nstd::concepts::invocable<Callback> && ::nstd::concepts::destructible<Callback>
     class stop_callback;
 }
 
@@ -48,7 +50,7 @@ class nstd::stop_token_ns::stop_token
 {
     friend class ::nstd::stop_token_ns::stop_source;
     template <typename Callback>
-        requires ::std::invocable<Callback> && ::std::destructible<Callback>
+        requires ::nstd::concepts::invocable<Callback> && ::nstd::concepts::destructible<Callback>
     friend class ::nstd::stop_token_ns::stop_callback;
 
 private:

@@ -26,6 +26,9 @@
 #ifndef INCLUDED_NSTD_STOP_TOKEN_STOP_CALLBACK
 #define INCLUDED_NSTD_STOP_TOKEN_STOP_CALLBACK
 
+#include "nstd/concepts/invocable.hpp"
+#include "nstd/concepts/constructible_from.hpp"
+#include "nstd/concepts/destructible.hpp"
 #include "nstd/stop_token/stop_callback_base.hpp"
 #include "nstd/stop_token/stop_token.hpp"
 #include "nstd/stop_token/stop_state.hpp"
@@ -41,7 +44,7 @@
 
 namespace nstd::stop_token_ns {
     template <typename Callback>
-        requires ::std::invocable<Callback> && ::std::destructible<Callback>
+        requires ::nstd::concepts::invocable<Callback> && ::nstd::concepts::destructible<Callback>
     class stop_callback;
 
     template <typename Callback>
@@ -52,7 +55,7 @@ namespace nstd::stop_token_ns {
 // ----------------------------------------------------------------------------
 
 template <typename Callback>
-    requires ::std::invocable<Callback> && ::std::destructible<Callback>
+    requires ::nstd::concepts::invocable<Callback> && ::nstd::concepts::destructible<Callback>
 class nstd::stop_token_ns::stop_callback
     : public ::nstd::stop_token_ns::hidden_names::stop_callback_base
 {
@@ -77,7 +80,7 @@ public:
     using callback_type = Callback;
 
     template <typename C>
-        requires ::std::constructible_from<Callback, C>
+        requires ::nstd::concepts::constructible_from<Callback, C>
     stop_callback(::nstd::stop_token_ns::stop_token const& token, C&& c)
         noexcept(::std::is_nothrow_constructible_v<Callback, C>)
         : d_state(token.d_state)
@@ -86,7 +89,7 @@ public:
         this->register_callback();
     }
     template <typename C>
-        requires ::std::constructible_from<Callback, C>
+        requires ::nstd::concepts::constructible_from<Callback, C>
     stop_callback(::nstd::stop_token_ns::stop_token&& token, C&& c)
         noexcept(::std::is_nothrow_constructible_v<Callback, C>)
         : d_state(::nstd::utility::move(token.d_state))

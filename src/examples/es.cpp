@@ -24,10 +24,10 @@
 // ----------------------------------------------------------------------------
 
 #include "nstd/execution.hpp"
+#include "nstd/coroutine.hpp"
 #include "nstd/net.hpp"
 
 #include <iostream>
-#include <coroutine>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -293,15 +293,15 @@ struct task {
     struct promise_type {
         state_base* completion{nullptr};
 
-        auto initial_suspend() { return std::suspend_always(); }
-        auto final_suspend() noexcept { return std::suspend_always(); }
+        auto initial_suspend() { return nstd::suspend_always(); }
+        auto final_suspend() noexcept { return nstd::suspend_always(); }
         void return_void() {
             std::cout << "return_void\n";
             this->completion->complete();
         }
         auto get_return_object() {
             std::cout << "get_return_object()\n";
-            return task{std::coroutine_handle<promise_type>::from_promise(*this)};
+            return task{nstd::coroutine_handle<promise_type>::from_promise(*this)};
         }
         void unhandled_exception() {
             std::cout << "unhandled_exception()\n";
@@ -322,7 +322,7 @@ struct task {
             //awaitable(awaitable const&) = delete;
             struct receiver {
                 std::optional<result_type>*  result;
-                std::coroutine_handle<void>* handle;
+                nstd::coroutine_handle<void>* handle;
 
                 friend auto tag_invoke(EX::get_env_t, receiver const&) noexcept { return 0; }
                 template <typename... Args>
@@ -342,10 +342,10 @@ struct task {
             struct state {
                 using op_state = decltype(EX::connect(std::declval<Sender>(), std::declval<receiver>()));
 
-                std::coroutine_handle<void> handle;
+                nstd::coroutine_handle<void> handle;
                 std::optional<result_type>  result;
                 op_state                    d_op_state;
-                state(std::coroutine_handle<void> handle,
+                state(nstd::coroutine_handle<void> handle,
                       Sender&&                    sender)
                     : handle(std::move(handle))
                     , d_op_state(EX::connect(std::move(sender), receiver{&this->result, &this->handle}))
@@ -366,7 +366,7 @@ struct task {
             awaitable(S&& s): d_sender(std::forward<S>(s)) {}
 
             bool await_ready() { std::cout << "awaitable::await_ready()\n"; return false; }
-            void await_suspend(std::coroutine_handle<void> handle){
+            void await_suspend(nstd::coroutine_handle<void> handle){
                 std::cout << "awaitable::await_suspend\n";
                 this->d_state = std::make_shared<state>(std::move(handle), std::move(this->d_sender));
                 EX::start(this->d_state->d_op_state);
@@ -388,10 +388,10 @@ struct task {
     struct state
         : state_base
     {
-        std::coroutine_handle<promise_type> handle;
+        nstd::coroutine_handle<promise_type> handle;
         std::remove_cvref_t<Receiver>       receiver;
         template <EX::receiver R>
-        state(std::coroutine_handle<promise_type>&& handle, R&& r)
+        state(nstd::coroutine_handle<promise_type>&& handle, R&& r)
             : handle(std::move(handle))
             , receiver(std::forward<R>(r)) {
         }
@@ -413,7 +413,7 @@ struct task {
     EX::set_stopped_t()
     >;
 
-    std::coroutine_handle<promise_type> handle;
+    nstd::coroutine_handle<promise_type> handle;
 
     template <EX::receiver Receiver>
     friend auto tag_invoke(EX::connect_t, task&& self, Receiver&& receiver) {

@@ -24,6 +24,8 @@
 // ----------------------------------------------------------------------------
 
 #include "nstd/net/get_iovec.hpp"
+#include "nstd/concepts/copy_constructible.hpp"
+#include "nstd/concepts/move_constructible.hpp"
 #include "nstd/buffer/const_buffer.hpp"
 #include "nstd/buffer/mutable_buffer.hpp"
 #include "kuhl/test.hpp"
@@ -56,8 +58,8 @@ static KT::testcase const tests[] = {
             return iov.size() == 1
                 && iov.data()[0].iov_base == buf
                 && iov.data()[0].iov_len  == sizeof(buf)
-                && not ::std::copy_constructible<decltype(iov)>
-                && not ::std::move_constructible<decltype(iov)>
+                && not ::nstd::concepts::copy_constructible<decltype(iov)>
+                && not ::nstd::concepts::move_constructible<decltype(iov)>
                 && ::std::same_as<HN::get_iovec::array_iovec<1u>, decltype(iov)>
                 ;
         }),
@@ -69,8 +71,8 @@ static KT::testcase const tests[] = {
             return iov.size() == 1
                 && iov.data()[0].iov_base == buf
                 && iov.data()[0].iov_len  == sizeof(buf)
-                && not ::std::copy_constructible<decltype(iov)>
-                && not ::std::move_constructible<decltype(iov)>
+                && not ::nstd::concepts::copy_constructible<decltype(iov)>
+                && not ::nstd::concepts::move_constructible<decltype(iov)>
                 && ::std::same_as<HN::get_iovec::array_iovec<1u>, decltype(iov)>
                 ;
         }),
@@ -97,8 +99,8 @@ static KT::testcase const tests[] = {
                 && iov.data()[2].iov_len  == sizeof(buf2)
                 && iov.data()[3].iov_base == buf3
                 && iov.data()[3].iov_len  == sizeof(buf3)
-                && not ::std::copy_constructible<decltype(iov)>
-                && not ::std::move_constructible<decltype(iov)>
+                && not ::nstd::concepts::copy_constructible<decltype(iov)>
+                && not ::nstd::concepts::move_constructible<decltype(iov)>
                 && ::std::same_as<HN::get_iovec::array_iovec<4u>, decltype(iov)>
                 ;
         }),
@@ -125,8 +127,8 @@ static KT::testcase const tests[] = {
                 && iov.data()[2].iov_len  == sizeof(buf2)
                 && iov.data()[3].iov_base == buf3
                 && iov.data()[3].iov_len  == sizeof(buf3)
-                && not ::std::copy_constructible<decltype(iov)>
-                && not ::std::move_constructible<decltype(iov)>
+                && not ::nstd::concepts::copy_constructible<decltype(iov)>
+                && not ::nstd::concepts::move_constructible<decltype(iov)>
                 && ::std::same_as<HN::get_iovec::array_iovec<4u>, decltype(iov)>
                 ;
         }),
@@ -153,8 +155,8 @@ static KT::testcase const tests[] = {
                 && iov.data()[2].iov_len  == sizeof(buf2)
                 && iov.data()[3].iov_base == buf3
                 && iov.data()[3].iov_len  == sizeof(buf3)
-                && not ::std::copy_constructible<decltype(iov)>
-                && not ::std::move_constructible<decltype(iov)>
+                && not ::nstd::concepts::copy_constructible<decltype(iov)>
+                && not ::nstd::concepts::move_constructible<decltype(iov)>
                 && ::std::same_as<HN::get_iovec::array_iovec<4u>, decltype(iov)>
                 ;
         }),
@@ -181,8 +183,8 @@ static KT::testcase const tests[] = {
                 && iov.data()[2].iov_len  == sizeof(buf2)
                 && iov.data()[3].iov_base == buf3
                 && iov.data()[3].iov_len  == sizeof(buf3)
-                && not ::std::copy_constructible<decltype(iov)>
-                && not ::std::move_constructible<decltype(iov)>
+                && not ::nstd::concepts::copy_constructible<decltype(iov)>
+                && not ::nstd::concepts::move_constructible<decltype(iov)>
                 && ::std::same_as<HN::get_iovec::array_iovec<4u>, decltype(iov)>
                 ;
         }),
@@ -209,8 +211,8 @@ static KT::testcase const tests[] = {
                 && iov.data()[2].iov_len  == sizeof(buf2)
                 && iov.data()[3].iov_base == buf3
                 && iov.data()[3].iov_len  == sizeof(buf3)
-                && not ::std::copy_constructible<decltype(iov)>
-                && not ::std::move_constructible<decltype(iov)>
+                && not ::nstd::concepts::copy_constructible<decltype(iov)>
+                && not ::nstd::concepts::move_constructible<decltype(iov)>
                 ;
         }),
     KT::expect_success("const buffer std::vector", []{
@@ -236,8 +238,8 @@ static KT::testcase const tests[] = {
                 && iov.data()[2].iov_len  == sizeof(buf2)
                 && iov.data()[3].iov_base == buf3
                 && iov.data()[3].iov_len  == sizeof(buf3)
-                && not ::std::copy_constructible<decltype(iov)>
-                && not ::std::move_constructible<decltype(iov)>
+                && not ::nstd::concepts::copy_constructible<decltype(iov)>
+                && not ::nstd::concepts::move_constructible<decltype(iov)>
                 ;
         }),
 };

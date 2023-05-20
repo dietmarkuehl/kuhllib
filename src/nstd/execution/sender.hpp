@@ -27,6 +27,7 @@
 #define INCLUDED_NSTD_EXECUTION_SENDER
 
 #include "nstd/hidden_names/sender_base.hpp"
+#include "nstd/concepts/move_constructible.hpp"
 #include "nstd/execution/no_env.hpp"
 #include "nstd/utility/forward.hpp"
 #include "nstd/type_traits/remove_cvref.hpp"
@@ -41,7 +42,7 @@ namespace nstd::execution {
     concept sender
         =  ::nstd::hidden_names::sender_base<Sender, Env>
         && ::nstd::hidden_names::sender_base<Sender, ::nstd::hidden_names::exec_envs::no_env>
-        && ::std::move_constructible<::nstd::type_traits::remove_cvref_t<Sender>>
+        && ::nstd::concepts::move_constructible<::nstd::type_traits::remove_cvref_t<Sender>>
         ;
     
     struct sender_tag {

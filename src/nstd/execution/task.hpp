@@ -36,7 +36,7 @@
 #include "nstd/execution/set_value.hpp"
 #include "nstd/execution/start.hpp"
 
-#include <coroutine>
+#include "nstd/coroutine.hpp"
 #include <exception>
 #include <memory>
 #include <optional>
@@ -72,11 +72,11 @@ template <typename Type, typename Promise, ::nstd::execution::receiver Receiver>
 struct nstd::execution::task_state
     : nstd::execution::task_state_base<Type>
 {
-    std::coroutine_handle<Promise> handle;
+    ::nstd::coroutine_handle<Promise> handle;
     std::remove_cvref_t<Receiver>  receiver;
 
     template <::nstd::execution::receiver R>
-    task_state(std::coroutine_handle<Promise>&& handle, R&& r)
+    task_state(::nstd::coroutine_handle<Promise>&& handle, R&& r)
         : handle(std::move(handle))
         , receiver(std::forward<R>(r)) {
     }
@@ -107,11 +107,11 @@ template <typename Promise, ::nstd::execution::receiver Receiver>
 struct nstd::execution::task_state<void, Promise, Receiver>
     : nstd::execution::task_state_base<void>
 {
-    std::coroutine_handle<Promise> handle;
+    ::nstd::coroutine_handle<Promise> handle;
     std::remove_cvref_t<Receiver>  receiver;
 
     template <::nstd::execution::receiver R>
-    task_state(std::coroutine_handle<Promise>&& handle, R&& r)
+    task_state(::nstd::coroutine_handle<Promise>&& handle, R&& r)
         : handle(std::move(handle))
         , receiver(std::forward<R>(r)) {
     }
@@ -164,10 +164,10 @@ struct nstd::execution::task {
     struct promise_type
         : task_promise_base<Type>
     {
-        auto initial_suspend() { return std::suspend_always(); }
-        auto final_suspend() noexcept { return std::suspend_always(); }
+        auto initial_suspend() { return ::nstd::suspend_always(); }
+        auto final_suspend() noexcept { return ::nstd::suspend_always(); }
         auto get_return_object() {
-            return task{std::coroutine_handle<promise_type>::from_promise(*this)};
+            return task{::nstd::coroutine_handle<promise_type>::from_promise(*this)};
         }
         void unhandled_exception() {
             std::terminate();
@@ -183,7 +183,7 @@ struct nstd::execution::task {
             struct env {};
             struct receiver {
                 std::optional<result_type>*  result;
-                std::coroutine_handle<void>* handle;
+                ::nstd::coroutine_handle<void>* handle;
 
                 friend auto tag_invoke(::nstd::execution::get_env_t, receiver const&) noexcept -> env { return {}; }
                 template <typename... Args>
@@ -203,10 +203,10 @@ struct nstd::execution::task {
             struct state {
                 using op_state = decltype(::nstd::execution::connect(std::declval<Sender>(), std::declval<receiver>()));
 
-                std::coroutine_handle<void> handle;
+                ::nstd::coroutine_handle<void> handle;
                 std::optional<result_type>  result;
                 op_state                    d_op_state;
-                state(std::coroutine_handle<void> handle,
+                state(::nstd::coroutine_handle<void> handle,
                       Sender&&                    sender)
                     : handle(std::move(handle))
                     , d_op_state(::nstd::execution::connect(std::move(sender), receiver{&this->result, &this->handle}))
@@ -223,7 +223,7 @@ struct nstd::execution::task {
             awaitable(S&& s): d_sender(std::forward<S>(s)) {}
 
             bool await_ready() { return false; }
-            void await_suspend(std::coroutine_handle<void> handle){
+            void await_suspend(::nstd::coroutine_handle<void> handle){
                 this->d_state = std::make_shared<state>(std::move(handle), std::move(this->d_sender));
                 ::nstd::execution::start(this->d_state->d_op_state);
             }
@@ -240,7 +240,7 @@ struct nstd::execution::task {
 
     using completion_signatures = typename task_promise_base<Type>::completion_signatures;
 
-    std::coroutine_handle<promise_type> handle;
+    ::nstd::coroutine_handle<promise_type> handle;
 
     template <::nstd::execution::receiver Receiver>
     friend auto tag_invoke(::nstd::execution::connect_t, task&& self, Receiver&& receiver) {

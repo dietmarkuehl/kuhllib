@@ -9,7 +9,9 @@ exist, many of them aren't in the repository.
 
 ## Build
 
-![Linux build status](https://github.com/dietmarkuehl/kuhllib/actions/workflows/linux-build.yml/badge.svg)
+|| Library || Linux || MacOS || Windows ||
+| kuhllib | ![Linux build status](https://github.com/dietmarkuehl/kuhllib/actions/workflows/linux-build.yml/badge.svg) | ![MacOS build status](https://github.com/dietmarkuehl/kuhllib/actions/workflows/macos-build.yml/badge.svg) | |
+| toy | ![Linux toy status](https://github.com/dietmarkuehl/kuhllib/actions/workflows/linux-toy.yml/badge.svg) | ![MacOS toy status](https://github.com/dietmarkuehl/kuhllib/actions/workflows/macos-toy.yml/badge.svg) | ![Windows toy status](https://github.com/dietmarkuehl/kuhllib/actions/workflows/windows-toy.yml/badge.svg) |
 
 You can just use `make` in the current directory. It will invoke `cmake`,
 build the code, and run tests. To have more control over the build-process

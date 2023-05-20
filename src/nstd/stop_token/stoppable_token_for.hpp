@@ -27,6 +27,8 @@
 #define INCLUDED_NSTD_STOP_TOKEN_STOPPABLE_TOKEN_FOR
 
 #include "nstd/stop_token/stoppable_token.hpp"
+#include "nstd/concepts/invocable.hpp"
+#include "nstd/concepts/constructible_from.hpp"
 #include <concepts>
 
 // ----------------------------------------------------------------------------
@@ -35,15 +37,15 @@ namespace nstd::stop_token_ns {
     template<typename Token, typename Callback, typename Initializer = Callback>
     concept stoppable_token_for
         =  ::nstd::stop_token_ns::stoppable_token<Token>
-        && ::std::invocable<Callback>
+        && ::nstd::concepts::invocable<Callback>
         && requires {
             typename Token::template callback_type<Callback>;
         }
-        && ::std::constructible_from<Callback, Initializer>
-        && ::std::constructible_from<typename Token::template callback_type<Callback>, Token, Initializer>
-        && ::std::constructible_from<typename Token::template callback_type<Callback>, Token&, Initializer>
-        && ::std::constructible_from<typename Token::template callback_type<Callback>, Token const, Initializer>
-        && ::std::constructible_from<typename Token::template callback_type<Callback>, Token const&, Initializer>
+        && ::nstd::concepts::constructible_from<Callback, Initializer>
+        && ::nstd::concepts::constructible_from<typename Token::template callback_type<Callback>, Token, Initializer>
+        && ::nstd::concepts::constructible_from<typename Token::template callback_type<Callback>, Token&, Initializer>
+        && ::nstd::concepts::constructible_from<typename Token::template callback_type<Callback>, Token const, Initializer>
+        && ::nstd::concepts::constructible_from<typename Token::template callback_type<Callback>, Token const&, Initializer>
         ;
 }
 

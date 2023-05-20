@@ -33,13 +33,21 @@
 // ----------------------------------------------------------------------------
 
 namespace nstd::execution {
+    namespace hidden {
+        template <typename Receiver>
+        struct receiver_of_helper {
+            template <::nstd::hidden_names::valid_completion_for<Receiver>... Signatures>
+            void operator()(::nstd::execution::completion_signatures<Signatures...>*) {}
+        };
+    }
     template <typename Receiver, typename Completions>
     concept receiver_of
         =  ::nstd::execution::receiver<Receiver>
-        && requires(Completions* completions) {
-            []<::nstd::hidden_names::valid_completion_for<Receiver>... Signatures>(
-                ::nstd::execution::completion_signatures<Signatures...>*)
-            {}(completions);
+        && requires(Completions* completions, ::nstd::execution::hidden::receiver_of_helper<Receiver> helper) {
+            helper(completions);
+            //-dk:TODO remove []<::nstd::hidden_names::valid_completion_for<Receiver>... Signatures>(
+            //    ::nstd::execution::completion_signatures<Signatures...>*)
+            //{}(completions);
         }
         ;
 

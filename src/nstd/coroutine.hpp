@@ -1,6 +1,6 @@
-// src/nstd/execution/no_env.t.cpp                                    -*-C++-*-
+// nstd/coroutine.hpp                                                 -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2022 Dietmar Kuehl http://www.dietmar-kuehl.de
+//  Copyright (C) 2023 Dietmar Kuehl http://www.dietmar-kuehl.de
 //
 //  Permission is hereby granted, free of charge, to any person
 //  obtaining a copy of this software and associated documentation
@@ -23,41 +23,31 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "nstd/concepts/invocable.hpp"
-#include "nstd/execution/no_env.hpp"
-#include "nstd/functional/tag_invoke.hpp"
-#include "kuhl/test.hpp"
-#include <functional>
+#ifndef INCLUDED_NSTD_COROUTINE
+#define INCLUDED_NSTD_COROUTINE
 
-namespace KT = ::kuhl::test;
-namespace test_declarations {};
-namespace TD = test_declarations;
+#ifdef NSTD_EXPERIMENTAL_COROUTINES
+#    include <experimental/coroutine>
+#else
+#    include <coroutine>
+#endif
 
 // ----------------------------------------------------------------------------
 
-namespace test_declarations
-{
-    namespace {
-        struct type {};
-        struct cpo_t {};
-
-        template <typename Arg>
-        auto tag_invoke(cpo_t, Arg&&) -> bool { return true; }
-    }
+namespace nstd {
+#ifdef NSTD_EXPERIMENTAL_COROUTINES
+    template <typename T>
+    using coroutine_handle = ::std::experimental::coroutine_handle<T>;
+    using suspend_always = ::std::experimental::suspend_always;
+    using suspend_never = ::std::experimental::suspend_never;
+#else
+    template <typename T>
+    using coroutine_handle = ::std::coroutine_handle<T>;
+    using suspend_always = ::std::suspend_always;
+    using suspend_never = ::std::suspend_never;
+#endif
 }
 
 // ----------------------------------------------------------------------------
 
-static KT::testcase const tests[] = {
-    KT::expect_success("test classes", []{
-            return ::nstd::concepts::invocable<decltype(::nstd::tag_invoke), TD::cpo_t, int>
-                && ::nstd::concepts::invocable<decltype(::nstd::tag_invoke), TD::cpo_t, TD::type>
-                ;
-        }),
-    KT::expect_success("no_env doesn't tag_invoke", []{
-            return not ::nstd::concepts::invocable<decltype(::nstd::tag_invoke), TD::cpo_t, ::nstd::hidden_names::exec_envs::no_env>
-                ;
-        }),
-};
-
-static KT::add_tests suite("no_env", ::tests);
+#endif

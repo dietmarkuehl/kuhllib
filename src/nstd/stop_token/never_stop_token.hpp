@@ -26,6 +26,7 @@
 #ifndef INCLUDED_NSTD_STOP_TOKEN_NEVER_STOP_TOKEN
 #define INCLUDED_NSTD_STOP_TOKEN_NEVER_STOP_TOKEN
 
+#include "nstd/concepts/invocable.hpp"
 #include <concepts>
 
 // ----------------------------------------------------------------------------
@@ -34,7 +35,7 @@ namespace nstd::stop_token_ns {
     class never_stop_token
     {
     public:
-        template <::std::invocable C>
+        template <::nstd::concepts::invocable C>
         struct callback_type{
             template<typename I>
             constexpr explicit callback_type(never_stop_token, I&&) noexcept {}
