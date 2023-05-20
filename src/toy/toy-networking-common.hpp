@@ -43,10 +43,10 @@
 #ifdef TOY_HAS_POLL
 #include <poll.h>
 #endif
-//#ifdef TOY_HAS_WINSOCK2
+#ifdef TOY_HAS_WINSOCK2
 #include <winsock2.h>
 #include <ws2ipdef.h>
-//#endif
+#endif
 
 #ifdef _MSC_VER
 using sa_family_t = unsigned short;
@@ -57,29 +57,6 @@ using socklen_t = std::size_t;
 // ----------------------------------------------------------------------------
 
 namespace toy {
-
-// ----------------------------------------------------------------------------
-// deal with different iovec definitions
-
-#ifdef TOY_HAS_WINSOCK2
-    using iovec = ::WSABUF;
-#else
-    using iovec = ::iovec;
-#endif
-
-toy::iovec make_iovec(::std::byte* buffer, ::std::size_t len) {
-#ifdef TOY_HAS_WINSOCK2
-    return toy::iovec{
-            .len = static_cast<ULONG>(len),
-            .buf = const_cast<char*>(reinterpret_cast<char const*>(buffer))
-        };
-#else
-    return ::iovec{
-            .iov_base = const_cast<char*>(reinterpret_cast<char const*>(buffer)),
-            .iov_len = len
-        }
-#endif
-}
 
 // ----------------------------------------------------------------------------
 
@@ -124,6 +101,30 @@ concept byte_type
     ||  std::same_as<std::remove_cv_t<B>, unsigned char>
     ||  std::same_as<std::remove_cv_t<B>, std::byte>
     ;
+
+// ----------------------------------------------------------------------------
+// deal with different iovec definitions
+
+#ifdef TOY_HAS_WINSOCK2
+    using iovec = ::WSABUF;
+#else
+    using iovec = ::iovec;
+#endif
+
+toy::iovec make_iovec(toy::byte_type auto* buffer, ::std::size_t len) {
+#ifdef TOY_HAS_WINSOCK2
+    return toy::iovec{
+            .len = static_cast<ULONG>(len),
+            .buf = const_cast<char*>(reinterpret_cast<char const*>(buffer))
+        };
+#else
+    return toy::iovec{
+            .iov_base = const_cast<char*>(reinterpret_cast<char const*>(buffer)),
+            .iov_len = len
+        };
+#endif
+}
+
 template <typename B>
 concept byte_array
     =   std::is_bounded_array_v<std::remove_cvref_t<B>>
@@ -139,191 +140,6 @@ std::array<toy::iovec, sizeof...(B)> buffer(B&&... b) {
 template <toy::byte_type B>
 std::array<toy::iovec, 1> buffer(B* b, std::size_t n) {
     return std::array<toy::iovec, 1>{ toy::make_iovec(b, n) };
-}
-
-// ----------------------------------------------------------------------------
-
-struct socket;
-
-namespace hidden::io_operation {
-    template <typename State, typename Receiver, bool Timer = false>
-    struct stop_callback {
-        struct callback {
-            State& state;
-            void operator()() {
-                if constexpr (Timer)
-                    state.c.erase_timer(&state);
-                else
-                    state.c.erase(&state);
-                state.cb.disengage();
-                set_stopped(std::move(state.receiver));
-            }
-        };
-        using stop_token = decltype(get_stop_token(std::declval<Receiver>()));
-        using token_callback = typename stop_token::template callback_type<callback>; 
-            
-        std::optional<token_callback> cb;
-        void engage(State& state) {
-            cb.emplace(get_stop_token(state.receiver), callback{state});
-        }
-        void disengage() {
-            cb.reset();
-        }
-    };
-
-    enum class event_kind { read, write };
-
-    struct connect_op {
-        using result_t = int;
-        static constexpr event_kind event = event_kind::write;
-        static constexpr char const* name = "connect";
-
-        //toy::address address;
-        sockaddr const*  addr;
-        socklen_t        len;
-
-        int start(auto& state) {
-            return ::connect(state.fd, addr, len);
-            //return ::connect(state.fd, state.address.as_addr(), state.address.len());
-        }
-        int operator()(auto& state) {
-            int         rc{};
-            ::socklen_t len{sizeof rc};
-            return (::getsockopt(state.fd, SOL_SOCKET, SO_ERROR, &rc, &len) || rc)? -1: rc;
-        }
-    };
-
-    struct accept_op {
-        using result_t = toy::socket;
-        static constexpr event_kind event = event_kind::read;
-        static constexpr char const* name = "accept";
-
-        int operator()(auto& state) {
-            ::sockaddr  addr{};
-            ::socklen_t len{sizeof(addr)};
-            return ::accept(state.fd, &addr, &len);
-        }
-    };
-
-    struct read_some_op {
-        using result_t = int;
-        static constexpr event_kind event = event_kind::read;
-        static constexpr char const* name = "read_some";
-
-        char*       buffer;
-        std::size_t len;
-
-        int operator()(auto& state) {
-            return ::read(state.fd, buffer, len);
-        }
-    };
-
-    struct write_some_op {
-        using result_t = int;
-        static constexpr event_kind event = event_kind::write;
-        static constexpr char const* name = "write_some";
-
-        char const* buffer;
-        std::size_t len;
-
-        int operator()(auto& state) {
-            return ::write(state.fd, buffer, len);
-        }
-    };
-
-    template <typename MBS>
-    struct receive_op {
-        using result_t = std::size_t;
-        static constexpr event_kind event = event_kind::read;
-        static constexpr char const* name = "receive";
-
-        toy::message_flags flags;
-        MBS                buffer;
-        std::ssize_t operator()(auto& state) {
-            msghdr msg{
-                .msg_name = nullptr,
-                .msg_namelen = 0,
-                .msg_iov = buffer.data(),
-                .msg_iovlen = decltype(std::declval<msghdr>().msg_iovlen)(buffer.size()),
-                .msg_control = nullptr,
-                .msg_controllen = 0,
-                .msg_flags = 0
-            };
-            return recvmsg(state.fd, &msg, int(flags));
-        }
-    };
-
-    template <typename MBS>
-    struct receive_from_op {
-        using result_t = std::size_t;
-        static constexpr event_kind event = event_kind::read;
-        static constexpr char const* name = "receive_from";
-
-        MBS                buffer;
-        toy::address&      addr;
-        toy::message_flags flags;
-        ::ssize_t operator()(auto& state) {
-            msghdr msg{
-                .msg_name = &addr.as_addr(),
-                .msg_namelen = addr.capacity(),
-                .msg_iov = buffer.data(),
-                .msg_iovlen = decltype(std::declval<msghdr>().msg_iovlen)(buffer.size()),
-                .msg_control = nullptr,
-                .msg_controllen = 0,
-                .msg_flags = 0
-            };
-            ::ssize_t rc{recvmsg(state.fd, &msg, int(flags))};
-            if (0 <= rc) {
-                addr.resize(msg.msg_namelen);
-            }
-            return rc;
-        }
-    };
-
-    template <typename MBS>
-    struct send_op {
-        using result_t = std::size_t;
-        static constexpr event_kind event = event_kind::write;
-        static constexpr char const* name = "send";
-
-        toy::message_flags flags;
-        MBS                buffer;
-        ::ssize_t operator()(auto& state) {
-            msghdr msg{
-                .msg_name = nullptr,
-                .msg_namelen = 0,
-                .msg_iov = buffer.data(),
-                .msg_iovlen = decltype(std::declval<msghdr>().msg_iovlen)(buffer.size()),
-                .msg_control = nullptr,
-                .msg_controllen = 0,
-                .msg_flags = 0
-            };
-            return sendmsg(state.fd, &msg, int(flags));
-        }
-    };
-
-    template <typename MBS>
-    struct send_to_op {
-        using result_t = std::size_t;
-        static constexpr event_kind event = event_kind::write;
-        static constexpr char const* name = "send_to";
-
-        MBS                buffer;
-        toy::address       address;
-        toy::message_flags flags;
-        ::ssize_t operator()(auto& state) {
-            msghdr msg{
-                .msg_name = &address.as_addr(),
-                .msg_namelen = address.size(),
-                .msg_iov = buffer.data(),
-                .msg_iovlen = decltype(std::declval<msghdr>().msg_iovlen)(buffer.size()),
-                .msg_control = nullptr,
-                .msg_controllen = 0,
-                .msg_flags = 0
-            };
-            return sendmsg(state.fd, &msg, int(flags));
-        }
-    };
 }
 
 // ----------------------------------------------------------------------------

@@ -27,6 +27,7 @@
 #define INCLUDED_TOY_NETWORKING_KQUEUE
 
 #include "toy-networking-common.hpp"
+#include "toy-networking-posix.hpp"
 #include "toy-starter.hpp"
 #include "toy-utility.hpp"
 #include <chrono>
@@ -46,7 +47,6 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/event.h>
-#include <sys/fcntl.h>
 #include <sys/time.h>
 #include <arpa/inet.h>
 #include <netdb.h>
@@ -56,19 +56,6 @@ namespace toy
 {
 
 // ----------------------------------------------------------------------------
-
-struct socket
-{
-    int fd = -1;
-    socket(int fd)
-        : fd(fd) {
-        if (::fcntl(fd, F_SETFL, O_NONBLOCK) < 0) {
-            throw std::runtime_error("fcntl");
-        }
-    }
-    socket(socket&& other): fd(std::exchange(other.fd, -1)) {}
-    ~socket() { if (fd != -1) ::close(fd); }
-};
 
 class io_context;
 struct io_scheduler {

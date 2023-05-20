@@ -34,7 +34,7 @@ int main() {
     toy::io_context context;
     
     context.spawn([]()->toy::task<toy::io_context::scheduler> {
-        toy::socket client{ ::socket(PF_INET, SOCK_STREAM, 0) };
+        toy::socket client(PF_INET, SOCK_STREAM, 0);
 
         ::sockaddr_in addr{
             .sin_family = AF_INET,

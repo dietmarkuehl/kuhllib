@@ -67,7 +67,7 @@ using never_sender = hidden_never_sender::never_sender;
 int main() {
     std::cout << std::unitbuf;
     toy::io_context context;
-    toy::socket     server{ ::socket(PF_INET, SOCK_STREAM, 0) };
+    toy::socket     server(PF_INET, SOCK_STREAM, 0);
     ::sockaddr_in addr{ .sin_family = AF_INET,
         .sin_port = htons(12345),
         .sin_addr = { .s_addr = INADDR_ANY }

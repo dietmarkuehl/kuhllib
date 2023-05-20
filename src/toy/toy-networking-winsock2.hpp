@@ -1,6 +1,6 @@
-// toy-udp-client.cpp                                                 -*-C++-*-
+// toy-winsock2.hpp                                                   -*-C++-*-
 // ----------------------------------------------------------------------------
-//  Copyright (C) 2022 Dietmar Kuehl http://www.dietmar-kuehl.de
+//  Copyright (C) 2023 Dietmar Kuehl http://www.dietmar-kuehl.de
 //
 //  Permission is hereby granted, free of charge, to any person
 //  obtaining a copy of this software and associated documentation
@@ -23,38 +23,16 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "toy-networking.hpp"
-#include "toy-task.hpp"
-#include <utility>
-#include <cerrno>
-#include <cstring>
+#ifndef INCLUDED_TOY_WINSOCK2
+#define INCLUDED_TOY_WINSOCK2
 
 // ----------------------------------------------------------------------------
 
-int main() {
-    toy::io_context context;
-
-    toy::socket client(PF_INET, SOCK_DGRAM, 0);
-    toy::address addr(AF_INET, htons(12345), INADDR_ANY);
-
-    context.spawn([](toy::socket& client, auto const& addr)->toy::task<toy::io_context::scheduler> {
-        while (true) {
-            toy::address tmp{addr};
-            char         buffer[16];
-            std::size_t  n = co_await toy::async_receive_from(client, toy::buffer(buffer), tmp);
-            (std::cout << "received='").write(buffer, n) << "'\n";
-        }
-    }(client, addr));
-
-    context.spawn([](toy::socket& client, auto const& addr)->toy::task<toy::io_context::scheduler> {
-        toy::socket stdin{0};
-        while (true) {
-            char buffer[16];
-            std::size_t n = co_await toy::async_read_some(stdin, buffer, sizeof(buffer));
-            std::size_t r = co_await toy::async_send_to(client, toy::buffer(buffer, n), addr);
-            (std::cout << "sent='").write(buffer, r) << "'\n";
-        }
-    }(client, addr));
-
-    context.run();
+namespace nstd {
+    namespace xxx {
+    }
 }
+
+// ----------------------------------------------------------------------------
+
+#endif

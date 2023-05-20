@@ -27,6 +27,11 @@
 #define INCLUDED_TOY_NETWORKING_POLL
 
 #include "toy-networking-common.hpp"
+#ifdef TOY_HAS_WINSOCK2
+#    include "toy-networking-winsock2.hpp"
+#else
+#    include "toy-networking-posix.hpp"
+#endif
 #include "toy-starter.hpp"
 #include "toy-utility.hpp"
 
@@ -47,8 +52,6 @@
 #include <string.h>
 
 #include <unistd.h>
-#include <sys/fcntl.h>
-#include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <poll.h>
@@ -57,18 +60,6 @@ namespace toy
 {
 
 // ----------------------------------------------------------------------------
-
-struct socket
-{
-    int fd = -1;
-    socket(int fd): fd(fd) {
-        if (::fcntl(fd, F_SETFL, O_NONBLOCK) < 0) {
-            throw std::runtime_error("fcntl");
-        }
-    }
-    socket(socket&& other): fd(std::exchange(other.fd, -1)) {}
-    ~socket() { if (fd != -1) ::close(fd); }
-};
 
 class io_context;
 struct io_scheduler {
