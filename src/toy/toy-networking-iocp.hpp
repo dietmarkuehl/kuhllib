@@ -41,6 +41,7 @@
 #include <stddef.h>
 #include <string.h>
 
+#include <mswsock.h>
 #include <winsock2.h>
 #pragma comment(lib, "ws2_32.lib")
 
@@ -68,12 +69,27 @@ struct winsock {
     winsock() { static winsock_setup setup; }
 };
 
+struct io_context;
+struct io_scheduler {
+    io_context* context;
+};
+
+struct socket;
+
 struct io_context
-    : winsock {
+    : winsock
+    , starter<io_scheduler> {
     static constexpr bool has_timer = false; //-dk:TODO remove - used while adding timers to contexts
+    using scheduler = io_scheduler;
+    scheduler get_scheduler() { return { this }; }
+    void run() { /*-dk:TODO */}
+
+    void accept(toy::socket& socket);
+
     HANDLE port;
     io_context()
-        : port(CreateIoCompletionPort(INVALID_HANDLE_VALUE, nullptr, 0, 0)) {
+        : port(CreateIoCompletionPort(INVALID_HANDLE_VALUE, nullptr, 0, 0))
+        , starter<io_scheduler>(get_scheduler()) {
         if (!port) {
             throw std::system_error(WSAGetLastError(),
                                     std::system_category(), //-dk:TODO use custom category
@@ -81,49 +97,57 @@ struct io_context
         }
     }
     io_context(io_context&&) = delete;
-};
-
-// ----------------------------------------------------------------------------
-
-struct acceptor {
-    SOCKET fd;
-    acceptor()
-        : fd(WSASocketW(AF_INET, SOCK_STREAM, 0, nullptr, 0, WSA_FLAG_OVERLAPPED)) {
-        if (fd == INVALID_SOCKET) {
-            throw std::system_error(WSAGetLastError(),
-                                    std::system_category(), //-dk:TODO use custom category
-                                    "failed to create socket");
-
-        }
-    }
-    acceptor(acceptor&& other): fd(std::exchange(other.fd, INVALID_SOCKET)) {}
-    ~acceptor() {
-        if (fd != INVALID_SOCKET) {
-            closesocket(fd);
-        }
-    }
+    ~io_context() { /*-dk:TODO */ }
 };
 
 // ----------------------------------------------------------------------------
 
 struct socket {
+    struct data {};
     SOCKET fd;
-    socket(int domain, int type, int protocol)
-        : fd(WSASocketW(domain, type, protocol, nullptr, 0, WSA_FLAG_OVERLAPPED)) {
+    std::unique_ptr<data> continuation;
+    socket(toy::io_context& io, int domain, int type, int protocol)
+        : fd(WSASocketW(domain, type, protocol, nullptr, 0, WSA_FLAG_OVERLAPPED))
+        , continuation(new data()) {
         if (fd == INVALID_SOCKET) {
             throw std::system_error(WSAGetLastError(),
                                     std::system_category(), //-dk:TODO use custom category
                                     "failed to create socket");
 
         }
+        if (CreateIoCompletionPort(reinterpret_cast<HANDLE>(fd), io.port, reinterpret_cast<ULONG_PTR>(continuation.get()), 0) != io.port) {
+            throw std::system_error(WSAGetLastError(),
+                                    std::system_category(), //-dk:TODO use custom category
+                                    "failed to set iocp");
+        }
     }
-    socket(socket&& other): fd(std::exchange(other.fd, INVALID_SOCKET)) {}
+    socket(socket&& other)
+        : fd(std::exchange(other.fd, INVALID_SOCKET))
+        , continuation(std::move(other.continuation)) {}
     ~socket() {
         if (fd != INVALID_SOCKET) {
             closesocket(fd);
         }
     }
 };
+
+void io_context::accept(toy::socket& socket) {
+        static LPFN_ACCEPTEX accept_ex{};
+        static bool const dummy = [&socket]{
+            DWORD bytes{};
+            GUID  guidAcceptEx = WSAID_ACCEPTEX;
+            if (SOCKET_ERROR == WSAIoctl(socket.fd,
+                                         SIO_GET_EXTENSION_FUNCTION_POINTER,
+                                         &guidAcceptEx, sizeof(guidAcceptEx),
+                                         &accept_ex, sizeof(accept_ex),
+                                         &bytes, nullptr, nullptr)) {
+                throw std::runtime_error("failed to get accept_ex");
+            }
+            std::cout << "successfully got accept_ex\n";
+            return true;
+        }();
+        std::cout << "accept done\n";
+    }
 // ----------------------------------------------------------------------------
 
 struct async_sleep_for {
@@ -132,6 +156,55 @@ struct async_sleep_for {
         friend void start(state&) {}
     };
     friend state connect(async_sleep_for, auto) {
+        return {};
+    }
+};
+
+// ----------------------------------------------------------------------------
+
+struct async_accept {
+    using result_t = toy::socket;
+
+    template <typename Receiver>
+    struct state {
+        Receiver      receiver;
+        toy::socket&  socket;
+        WSAOVERLAPPED overlapped{};
+        friend void start(state& self) {
+            toy::io_context& context(*get_scheduler(self.receiver).context);
+            (void)context;
+        }
+    };
+    toy::socket& socket;
+    async_accept(toy::socket& socket): socket(socket) {}
+    template <typename Receiver>
+    friend state<Receiver> connect(async_accept const& self, Receiver receiver) {
+        return { receiver, self.socket };
+    }
+};
+
+// ----------------------------------------------------------------------------
+
+struct async_receive {
+    using result_t = int;
+    struct state {
+        friend void start(state&) {}
+    };
+    async_receive(toy::socket&, auto&&) {}
+    friend state connect(async_receive, auto) {
+        return {};
+    }
+};
+
+// ----------------------------------------------------------------------------
+
+struct async_send {
+    using result_t = int;
+    struct state {
+        friend void start(state&) {}
+    };
+    async_send(toy::socket&, auto&&) {}
+    friend state connect(async_send, auto) {
         return {};
     }
 };

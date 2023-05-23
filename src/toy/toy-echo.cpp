@@ -38,13 +38,17 @@
 
 int main()
 {
+    try
+    {
+        std::cout << std::unitbuf << "start\n";
+    
     toy::io_context  io;
 
-    toy::socket server(PF_INET, SOCK_STREAM, 0);
+    toy::socket server(io, PF_INET, SOCK_STREAM, IPPROTO_TCP);
     toy::address addr(AF_INET, htons(12345), INADDR_ANY);
-    if (::bind(server.fd, &addr.as_addr(), addr.size()) < 0
+    if (::bind(server.fd, &addr.as_addr(), int(addr.size())) < 0
         || ::listen(server.fd, 1) < 0) {
-        std::cout << "can't bind socket: " << std::strerror(errno) << "\n";
+        std::cout << "can't bind socket: " << toy::strerror(errno) << "\n";
         return EXIT_FAILURE;
     };
 
@@ -65,4 +69,9 @@ int main()
     }(io, server));
 
     io.run();
+    std::cout << "done\n";
+    }
+    catch (std::exception const& ex) {
+        std::cout << "ERROR: " << ex.what() << "\n";
+    }
 }

@@ -46,12 +46,12 @@
 #ifdef TOY_HAS_WINSOCK2
 #include <winsock2.h>
 #include <ws2ipdef.h>
+#include <ws2tcpip.h>
 #endif
 
 #ifdef _MSC_VER
 using sa_family_t = unsigned short;
 using in_port_t = unsigned short;
-using socklen_t = std::size_t;
 #endif
 
 // ----------------------------------------------------------------------------
@@ -81,7 +81,7 @@ struct address {
 
     ::socklen_t size() const { return len; }
     ::socklen_t capacity() const { return sizeof(::sockaddr_storage); }
-    void        resize(std::size_t s) { len = s; }
+    void        resize(std::size_t s) { len = socklen_t(s); }
 
     ::sockaddr const&     as_addr()     const { return reinterpret_cast<::sockaddr const&>(addr); }
     ::sockaddr_in const&  as_addr_in()  const { return reinterpret_cast<::sockaddr_in const&>(addr); }
