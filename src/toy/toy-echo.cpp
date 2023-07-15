@@ -54,17 +54,22 @@ int main()
 
     io.spawn([](auto& io, auto& server)->toy::task<toy::io_context::scheduler> {
         for (int i{}; i != 2; ++i) {
-            auto c = co_await toy::async_accept(server);
+            try {
+                auto c = co_await toy::async_accept(server);
 
-            io.spawn([](auto socket)->toy::task<toy::io_context::scheduler> {
-                char   buf[4];
-                // while (std::size_t n = co_await toy::async_read_some(socket, buf, sizeof buf)) {
-                //    co_await toy::async_write(socket, buf, n);
-                //}
-                while (std::size_t n = co_await toy::async_receive(socket, toy::buffer(buf))) {
-                    co_await toy::async_send(socket, toy::buffer(buf, n));
-                }
-            }(std::move(c)));
+                io.spawn(std::invoke([](auto socket)->toy::task<toy::io_context::scheduler> {
+                    char   buf[4];
+                    // while (std::size_t n = co_await toy::async_read_some(socket, buf, sizeof buf)) {
+                    //    co_await toy::async_write(socket, buf, n);
+                    //}
+                    while (std::size_t n = co_await toy::async_receive(socket, toy::buffer(buf))) {
+                        co_await toy::async_send(socket, toy::buffer(buf, n));
+                    }
+                }, std::move(c)));
+            }
+            catch (std::exception const& ex) {
+                std::cout << "ERROR: " << ex.what() << "\n";
+            }
         }
     }(io, server));
 

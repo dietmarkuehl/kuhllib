@@ -84,7 +84,7 @@ struct io_context
     scheduler get_scheduler() { return { this }; }
     void run() { /*-dk:TODO */}
 
-    void accept(toy::socket& socket);
+    void accept(toy::socket& server, toy::socket& client, void* buffer, DWORD* dummy, LPOVERLAPPED overlapped);
 
     HANDLE port;
     io_context()
@@ -131,12 +131,24 @@ struct socket {
     }
 };
 
-void io_context::accept(toy::socket& socket) {
+std::string wsa_to_string(int error) {
+    WCHAR source[] = L"%1";
+    static constexpr int size{1024};
+    char buffer[size];
+    DWORD_PTR args[] = { (DWORD_PTR)0 };
+    if (!FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                       nullptr, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&buffer, size, (va_list*)args)) {
+        return "failed to format message";
+    }
+    return std::string(buffer);
+}
+
+void io_context::accept(toy::socket& server, toy::socket& client, void* buffer, DWORD* word, LPOVERLAPPED overlapped) {
         static LPFN_ACCEPTEX accept_ex{};
-        static bool const dummy = [&socket]{
+        static bool const dummy = std::invoke([&server]{
             DWORD bytes{};
             GUID  guidAcceptEx = WSAID_ACCEPTEX;
-            if (SOCKET_ERROR == WSAIoctl(socket.fd,
+            if (SOCKET_ERROR == WSAIoctl(server.fd,
                                          SIO_GET_EXTENSION_FUNCTION_POINTER,
                                          &guidAcceptEx, sizeof(guidAcceptEx),
                                          &accept_ex, sizeof(accept_ex),
@@ -145,8 +157,19 @@ void io_context::accept(toy::socket& socket) {
             }
             std::cout << "successfully got accept_ex\n";
             return true;
-        }();
+        });
+
+        std::cout << "about to accept\n";
+        if (not accept_ex(server.fd, client.fd, buffer, 0, sizeof(sockaddr_storage) + 16, sizeof(sockaddr_storage) + 16, word, overlapped)) {
+            int err = WSAGetLastError();
+            std::cout << "accept error: err=" << err << "(" << wsa_to_string(err) << ")\n";
+            if (err != ERROR_IO_PENDING) {
+                std::cout << "accept error: err=" << err << "\n";
+                throw std::runtime_error("failed to run accept_ex");
+            }
+        }
         std::cout << "accept done\n";
+        (void)client;
     }
 // ----------------------------------------------------------------------------
 
@@ -169,9 +192,14 @@ struct async_accept {
     struct state {
         Receiver      receiver;
         toy::socket&  socket;
+        std::optional<toy::socket> client;
+        char buffer[2 * (sizeof(sockaddr_storage) + 16)];
+        DWORD dummy;
         WSAOVERLAPPED overlapped{};
         friend void start(state& self) {
             toy::io_context& context(*get_scheduler(self.receiver).context);
+            self.client.emplace(context, PF_INET, SOCK_STREAM, IPPROTO_TCP);
+            context.accept(self.socket, *self.client, self.buffer, &self.dummy, &self.overlapped);
             (void)context;
         }
     };
