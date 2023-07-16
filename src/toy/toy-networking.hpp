@@ -31,6 +31,12 @@
 #endif
 #include TOY_NETWORKING_HPP
 
+#if defined(TOY_HAS_WINSOCK2)
+#    include "toy-networking-winsock2.hpp"
+#else
+#    include "toy-netowrking-posix.hpp"
+#endif
+
 // ----------------------------------------------------------------------------
 
 #endif

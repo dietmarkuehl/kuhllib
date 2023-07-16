@@ -38,31 +38,45 @@
 
 int main()
 {
+    try
+    {
+        std::cout << std::unitbuf << "start\n";
+    
     toy::io_context  io;
 
-    toy::socket server(PF_INET, SOCK_STREAM, 0);
+    toy::socket server(io, PF_INET, SOCK_STREAM, IPPROTO_TCP);
     toy::address addr(AF_INET, htons(12345), INADDR_ANY);
-    if (::bind(server.fd, &addr.as_addr(), addr.size()) < 0
+    if (::bind(server.fd, &addr.as_addr(), int(addr.size())) < 0
         || ::listen(server.fd, 1) < 0) {
-        std::cout << "can't bind socket: " << std::strerror(errno) << "\n";
+        std::cout << "can't bind socket: " << toy::strerror(errno) << "\n";
         return EXIT_FAILURE;
     };
 
     io.spawn([](auto& io, auto& server)->toy::task<toy::io_context::scheduler> {
         for (int i{}; i != 2; ++i) {
-            auto c = co_await toy::async_accept(server);
+            try {
+                auto c = co_await toy::async_accept(server);
 
-            io.spawn([](auto socket)->toy::task<toy::io_context::scheduler> {
-                char   buf[4];
-                // while (std::size_t n = co_await toy::async_read_some(socket, buf, sizeof buf)) {
-                //    co_await toy::async_write(socket, buf, n);
-                //}
-                while (std::size_t n = co_await toy::async_receive(socket, toy::buffer(buf))) {
-                    co_await toy::async_send(socket, toy::buffer(buf, n));
-                }
-            }(std::move(c)));
+                io.spawn(std::invoke([](auto socket)->toy::task<toy::io_context::scheduler> {
+                    char   buf[4];
+                    // while (std::size_t n = co_await toy::async_read_some(socket, buf, sizeof buf)) {
+                    //    co_await toy::async_write(socket, buf, n);
+                    //}
+                    while (std::size_t n = co_await toy::async_receive(socket, toy::buffer(buf))) {
+                        co_await toy::async_send(socket, toy::buffer(buf, n));
+                    }
+                }, std::move(c)));
+            }
+            catch (std::exception const& ex) {
+                std::cout << "ERROR: " << ex.what() << "\n";
+            }
         }
     }(io, server));
 
     io.run();
+    std::cout << "done\n";
+    }
+    catch (std::exception const& ex) {
+        std::cout << "ERROR: " << ex.what() << "\n";
+    }
 }

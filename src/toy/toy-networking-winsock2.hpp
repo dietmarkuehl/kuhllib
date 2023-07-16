@@ -26,10 +26,16 @@
 #ifndef INCLUDED_TOY_WINSOCK2
 #define INCLUDED_TOY_WINSOCK2
 
+#include <cstring>
+#include <string>
+
 // ----------------------------------------------------------------------------
 
-namespace nstd {
-    namespace xxx {
+namespace toy {
+    std::string strerror(int error) {
+        char buffer[1024];
+        strerror_s(buffer, sizeof(buffer), error);
+        return buffer;
     }
 }
 
