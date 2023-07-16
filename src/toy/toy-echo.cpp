@@ -45,8 +45,10 @@ int main()
     
     toy::io_context  io;
 
+    unsigned short port(12345);
     toy::socket server(io, PF_INET, SOCK_STREAM, IPPROTO_TCP);
-    toy::address addr(AF_INET, htons(12345), INADDR_ANY);
+    toy::address addr(AF_INET, htons(port), INADDR_ANY);
+    std::cout << "listening on part " << port << "\n";
     if (::bind(server.fd, &addr.as_addr(), int(addr.size())) < 0
         || ::listen(server.fd, 1) < 0) {
         std::cout << "can't bind socket: " << toy::strerror(errno) << "\n";
@@ -57,6 +59,7 @@ int main()
         for (int i{}; i != 2; ++i) {
             try {
                 auto c = co_await toy::async_accept(server);
+                std::cout << "accepted a client\n";
 
                 io.spawn(std::invoke([](auto socket)->toy::task<toy::io_context::scheduler> {
                     char   buf[4];
