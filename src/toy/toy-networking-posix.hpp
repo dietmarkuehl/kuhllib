@@ -91,7 +91,6 @@ namespace hidden::io_operation {
         socklen_t        len;
 
         int start(auto& state) {
-            return ::connect(state.fd, addr, len);
             return ::connect(state.fd, state.address.as_addr(), state.address.len());
         }
         int operator()(auto& state) {
