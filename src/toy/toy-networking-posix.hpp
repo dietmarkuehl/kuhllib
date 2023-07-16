@@ -29,16 +29,24 @@
 #include "toy-stop_token.hpp"
 #include <sys/fcntl.h>
 #include <sys/socket.h>
+#include <string>
+#include <cstring>
 #include <utility>
 
 namespace toy {
 
 // ----------------------------------------------------------------------------
 
+std::string strerror(int error) {
+    return std::strerror(error);
+}
+
+// ----------------------------------------------------------------------------
+
 struct socket
 {
     int fd = -1;
-    socket(int domain, int type, int protocol)
+    socket(auto&&, int domain, int type, int protocol)
         : socket(::socket(domain, type, protocol)) {
     }
     socket(int fd)

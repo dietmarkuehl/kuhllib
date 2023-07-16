@@ -34,7 +34,7 @@
 int main() {
     toy::io_context context;
 
-    toy::socket server(PF_INET, SOCK_DGRAM, 0);
+    toy::socket server(context, PF_INET, SOCK_DGRAM, 0);
     toy::address addr(AF_INET, htons(12345), INADDR_ANY);
     if (::bind(server.fd, &addr.as_addr(), addr.size()) < 0) {
         std::cout << "can't bind socket: " << std::strerror(errno) << "\n";

@@ -27,6 +27,7 @@
 #include "toy-networking.hpp"
 #include "toy-sender.hpp"
 #include <chrono>
+#include <functional>
 #include <iostream>
 #include <cstring>
 #include <cstdlib>

@@ -34,7 +34,7 @@
 int main() {
     toy::io_context context;
 
-    toy::socket client(PF_INET, SOCK_DGRAM, 0);
+    toy::socket client(context, PF_INET, SOCK_DGRAM, 0);
     toy::address addr(AF_INET, htons(12345), INADDR_ANY);
 
     context.spawn([](toy::socket& client, auto const& addr)->toy::task<toy::io_context::scheduler> {
