@@ -113,6 +113,7 @@ struct io_context
     }
 
     void accept(toy::socket& server, toy::socket& client, void* buffer, DWORD* dummy, LPOVERLAPPED overlapped);
+    void connect(toy::socket& server, ::sockaddr* name, ::socklen_t namelen, LPOVERLAPPED overlapped);
 
     HANDLE port;
     io_context()
@@ -169,29 +170,65 @@ std::string wsa_to_string(int error) {
 }
 
 void io_context::accept(toy::socket& server, toy::socket& client, void* buffer, DWORD* word, LPOVERLAPPED overlapped) {
-        static LPFN_ACCEPTEX accept_ex{};
-        static bool const dummy = std::invoke([&server]{
-            DWORD bytes{};
-            GUID  guidAcceptEx = WSAID_ACCEPTEX;
-            if (SOCKET_ERROR == WSAIoctl(server.fd,
-                                         SIO_GET_EXTENSION_FUNCTION_POINTER,
-                                         &guidAcceptEx, sizeof(guidAcceptEx),
-                                         &accept_ex, sizeof(accept_ex),
-                                         &bytes, nullptr, nullptr)) {
-                throw std::runtime_error("failed to get accept_ex");
-            }
-            return true;
-        });
-
-        if (not accept_ex(server.fd, client.fd, buffer, 0, sizeof(sockaddr_storage) + 16, sizeof(sockaddr_storage) + 16, word, overlapped)) {
-            int err = WSAGetLastError();
-            if (err != ERROR_IO_PENDING) {
-                std::cout << "accept error: err=" << err << "(" << wsa_to_string(err) << ")\n";
-                throw std::system_error(err, this->category(), "failed to accept_ex");
-            }
+    static LPFN_ACCEPTEX accept_ex{};
+    static bool const dummy = std::invoke([&server]{
+        DWORD bytes{};
+        GUID  guidAcceptEx = WSAID_ACCEPTEX;
+        if (SOCKET_ERROR == WSAIoctl(server.fd,
+                                     SIO_GET_EXTENSION_FUNCTION_POINTER,
+                                     &guidAcceptEx, sizeof(guidAcceptEx),
+                                     &accept_ex, sizeof(accept_ex),
+                                     &bytes, nullptr, nullptr)) {
+            throw std::runtime_error("failed to get accept_ex");
         }
-        std::cout << "accept done\n";
+        return true;
+    });
+
+    if (not accept_ex(server.fd, client.fd, buffer, 0, sizeof(sockaddr_storage) + 16, sizeof(sockaddr_storage) + 16, word, overlapped)) {
+        int err = WSAGetLastError();
+        if (err != ERROR_IO_PENDING) {
+            std::cout << "accept error: err=" << err << "(" << wsa_to_string(err) << ")\n";
+            throw std::system_error(err, this->category(), "failed to accept_ex");
+        }
     }
+    std::cout << "accept done\n";
+}
+
+void io_context::connect(toy::socket& client, ::sockaddr* name, ::socklen_t namelen, LPOVERLAPPED overlapped)
+{
+    static LPFN_CONNECTEX connect_ex{};
+    static bool const dummy = std::invoke([&client]{
+        DWORD bytes{};
+        GUID  guidAcceptEx = WSAID_CONNECTEX;
+        if (SOCKET_ERROR == WSAIoctl(client.fd,
+                                     SIO_GET_EXTENSION_FUNCTION_POINTER,
+                                     &guidAcceptEx, sizeof(guidAcceptEx),
+                                     &connect_ex, sizeof(connect_ex),
+                                     &bytes, nullptr, nullptr)) {
+            throw std::runtime_error("failed to get connect_ex");
+        }
+        return true;
+    });
+
+    ::sockaddr_in addr{
+        .sin_family = AF_INET,
+        .sin_port = htons(0)
+        };
+    addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    if (bind(client.fd, reinterpret_cast<SOCKADDR*>(&addr), sizeof(addr))) {
+        throw std::system_error(WSAGetLastError(), this->category(), "failed to bind before connect_ex");
+    }
+
+    if (not connect_ex(client.fd, name, namelen, nullptr, 0, nullptr, overlapped)) {
+        int err = WSAGetLastError();
+        if (err != ERROR_IO_PENDING) {
+            std::cout << "connect error: err=" << err << "(" << wsa_to_string(err) << ")\n";
+            throw std::system_error(err, this->category(), "failed to connect_ex");
+        }
+    }
+    std::cout << "connect done\n";
+}
+
 // ----------------------------------------------------------------------------
 
 struct async_sleep_for {
@@ -228,7 +265,6 @@ struct async_accept {
             toy::io_context& context(*get_scheduler(self.receiver).context);
             self.client.emplace(context, PF_INET, SOCK_STREAM, IPPROTO_TCP);
             context.accept(self.socket, *self.client, self.buffer, &self.dummy, &self);
-            (void)context;
         }
         void complete(std::size_t) override {
             std::cout << "async_accept completed\n";
@@ -240,6 +276,46 @@ struct async_accept {
     template <typename Receiver>
     friend state<Receiver> connect(async_accept const& self, Receiver receiver) {
         return state<Receiver>(receiver, self.socket);
+    }
+};
+
+// ----------------------------------------------------------------------------
+
+struct async_connect {
+    using result_t = int;
+
+    template <typename Receiver>
+    struct state
+        : io_context::io_base
+    {
+        Receiver      receiver;
+        toy::socket&  socket;
+        ::sockaddr*   name;
+        ::socklen_t   namelen;
+
+        state(Receiver receiver, toy::socket& socket, ::sockaddr* name, ::socklen_t namelen)
+            : receiver(receiver)
+            , socket(socket)
+            , name(name)
+            , namelen(namelen)
+        {
+        }
+        friend void start(state& self) {
+            toy::io_context& context(*get_scheduler(self.receiver).context);
+            context.connect(self.socket, self.name, self.namelen, &self);
+        }
+        void complete(std::size_t) override {
+            std::cout << "async_connect completed\n";
+            set_value(this->receiver, 0);
+        }
+    };
+    toy::socket& socket;
+    ::sockaddr*   name;
+    ::socklen_t  namelen;
+    async_connect(toy::socket& socket, void* name, ::socklen_t namelen): socket(socket), name(reinterpret_cast<::sockaddr*>(name)), namelen(namelen) {}
+    template <typename Receiver>
+    friend state<Receiver> connect(async_connect const& self, Receiver receiver) {
+        return state<Receiver>(receiver, self.socket, self.name, self.namelen);
     }
 };
 
