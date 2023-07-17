@@ -275,7 +275,7 @@ namespace hidden_async_connect {
         ::sockaddr const* addr;
         ::socklen_t       len;
 
-        async_connect(socket& sock, ::sockaddr const* addr, ::socklen_t len): fd(sock.fd), addr(addr), len(len) {}
+        async_connect(socket& sock, void const* addr, ::socklen_t len): fd(sock.fd), addr(reinterpret_cast<::sockaddr const*>(addr)), len(len) {}
 
         template <typename R>
         struct state
