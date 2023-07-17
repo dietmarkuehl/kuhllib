@@ -30,6 +30,7 @@
 #include <concepts>
 #include <iostream> //-dk:TODO remove
 #include <optional>
+#include <string>
 #include <cstddef>
 #ifdef TOY_HAS_SYS_SOCKET
 #include <sys/socket.h>
@@ -141,6 +142,11 @@ template <toy::byte_type B>
 std::array<toy::iovec, 1> buffer(B* b, std::size_t n) {
     return std::array<toy::iovec, 1>{ toy::make_iovec(b, n) };
 }
+template <toy::byte_type B>
+std::array<toy::iovec, 1> buffer(std::basic_string<B>& s) {
+    return std::array<toy::iovec, 1>{ toy::make_iovec(s.data(), s.size()) };
+}
+
 
 // ----------------------------------------------------------------------------
 

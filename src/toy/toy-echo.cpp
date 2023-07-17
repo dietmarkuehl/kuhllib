@@ -48,7 +48,7 @@ int main()
     unsigned short port(12345);
     toy::socket server(io, PF_INET, SOCK_STREAM, IPPROTO_TCP);
     toy::address addr(AF_INET, htons(port), INADDR_ANY);
-    std::cout << "listening on part " << port << "\n";
+    std::cout << "listening on port " << port << "\n";
     if (::bind(server.fd, &addr.as_addr(), int(addr.size())) < 0
         || ::listen(server.fd, 1) < 0) {
         std::cout << "can't bind socket: " << toy::strerror(errno) << "\n";
@@ -66,7 +66,12 @@ int main()
                     // while (std::size_t n = co_await toy::async_read_some(socket, buf, sizeof buf)) {
                     //    co_await toy::async_write(socket, buf, n);
                     //}
-                    while (std::size_t n = co_await toy::async_receive(socket, toy::buffer(buf))) {
+                    while (int n = co_await toy::async_receive(socket, toy::buffer(buf))) {
+                        if (n < 0) {
+                            std::cout << "client done\n";
+                            co_return;
+                        }
+                        std::cout << "received '" << std::string_view(buf, n) << "'\n";
                         co_await toy::async_send(socket, toy::buffer(buf, n));
                     }
                 }, std::move(c)));

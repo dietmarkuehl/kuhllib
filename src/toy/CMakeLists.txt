@@ -26,6 +26,7 @@ list(APPEND TOY_DEMOS
     toy-sender
     toy-udp-client
     toy-udp-server
+    toy-http-client
 )
 
 CHECK_INCLUDE_FILE("arpa/inet.h" TOY_HAS_ARPA_INET)

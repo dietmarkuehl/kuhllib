@@ -31,7 +31,6 @@
 // ----------------------------------------------------------------------------
 
 int main() {
-    std::cout << std::unitbuf;
     toy::io_context context;
     
     context.spawn([&context]()->toy::task<toy::io_context::scheduler> {
@@ -39,32 +38,34 @@ int main() {
 
         ::sockaddr_in addr{
             .sin_family = AF_INET,
-            .sin_port = htons(12345),
-            .sin_addr = { .s_addr = htonl(INADDR_LOOPBACK) }
+            .sin_port = htons(80),
+            .sin_addr = { .s_addr = htonl(0x53f33a19) }
             };
 
-        std::cout << "connecting\n";
         if (co_await toy::async_connect(client, reinterpret_cast<::sockaddr const*>(&addr), sizeof addr) < 0) {
             std::cout << "ERROR: failed to connect: " << ::strerror(errno) << "\n";
             co_return;
         }
         std::cout << "connected\n";
-        for (std::string line; std::getline(std::cin, line); ) {
-            int n = co_await toy::async_send(client, toy::buffer(line));
-            if (n < 0) {
-                std::cout << "ERROR: failed to write request: " << ::strerror(errno) << "\n";
-                co_return;
-            }
-            std::cout << "wrote request: '" << line.substr(0, std::min(int(line.size()), n)) << "'\n";
-        
-            char buffer[65536];
-            int result = co_await toy::async_receive(client, toy::buffer(buffer));
-            if (result < 0) {
-                std::cout << "ERROR: failed to read response: " << ::strerror(errno) << "\n";
-                co_return;
-            }
-            std::cout << "received result: '" << std::string_view(buffer, result) << "'\n";
+        char const request[] = {
+            "GET /index.html HTTP/1.0\r\n"
+            "Host: dietmar-kuehl.de\r\n"
+            "\r\n"
+        };
+        int const size = ::strlen(request);
+        if (co_await toy::async_write_some(client, request, size) < 0) {
+            std::cout << "ERROR: failed to write request: " << ::strerror(errno) << "\n";
+            co_return;
         }
+        std::cout << "wrote request\n";
+        char buffer[65536];
+        int result = co_await toy::async_read_some(client, buffer, sizeof buffer);
+        if (result < 0) {
+            std::cout << "ERROR: failed to read response: " << ::strerror(errno) << "\n";
+            co_return;
+        }
+        std::cout << "received result\n";
+        std::cout.write(buffer, result);
     }());
 
     context.run();

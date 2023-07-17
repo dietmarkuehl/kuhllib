@@ -148,7 +148,7 @@ namespace hidden::io_operation {
 
     template <typename MBS>
     struct receive_op {
-        using result_t = std::size_t;
+        using result_t = int;
         static constexpr event_kind event = event_kind::read;
         static constexpr char const* name = "receive";
 
