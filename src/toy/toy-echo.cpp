@@ -67,12 +67,13 @@ int main()
                     //    co_await toy::async_write(socket, buf, n);
                     //}
                     while (int n = co_await toy::async_receive(socket, toy::buffer(buf))) {
-                        if (n < 0) {
+                        if (n <= 0) {
                             std::cout << "client done\n";
                             co_return;
                         }
                         std::cout << "received '" << std::string_view(buf, n) << "'\n";
-                        co_await toy::async_send(socket, toy::buffer(buf, n));
+                        int out = co_await toy::async_send(socket, toy::buffer(buf, n));
+                        std::cout << "sent(" << out << ", " << std::string_view(buf, out) << ")\n";
                     }
                 }, std::move(c)));
             }

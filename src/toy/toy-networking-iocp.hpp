@@ -51,6 +51,20 @@ namespace toy
 
 // ----------------------------------------------------------------------------
 
+std::string wsa_to_string(int error) {
+    WCHAR source[] = L"%1";
+    static constexpr int size{1024};
+    char buffer[size];
+    DWORD_PTR args[] = { (DWORD_PTR)0 };
+    if (!FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                       nullptr, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&buffer, size, (va_list*)args)) {
+        return "failed to format message";
+    }
+    return std::string(buffer);
+}
+
+// ----------------------------------------------------------------------------
+
 struct winsock_setup {
     WSADATA wsaData;
     winsock_setup() {
@@ -104,7 +118,7 @@ struct io_context
         ULONG_PTR   key{};
         OVERLAPPED* overlapped{};
         if (FALSE == GetQueuedCompletionStatus(port, &transferred, &key, &overlapped, 60000 /* INFINITE /*-dk:TODO use more sensible time*/)) {
-            std::cout << "run_one(): failure(" << GetLastError() << "): " << toy::strerror(GetLastError()) << "\n" << std::flush;
+            std::cout << "run_one(): failure(" << GetLastError() << "): " << toy::wsa_to_string(GetLastError()) << "\n" << std::flush;
             return 0;
         }
         std::cout << "run_one() success\n";
@@ -156,18 +170,6 @@ struct socket {
         }
     }
 };
-
-std::string wsa_to_string(int error) {
-    WCHAR source[] = L"%1";
-    static constexpr int size{1024};
-    char buffer[size];
-    DWORD_PTR args[] = { (DWORD_PTR)0 };
-    if (!FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-                       nullptr, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&buffer, size, (va_list*)args)) {
-        return "failed to format message";
-    }
-    return std::string(buffer);
-}
 
 void io_context::accept(toy::socket& server, toy::socket& client, void* buffer, DWORD* word, LPOVERLAPPED overlapped) {
     static LPFN_ACCEPTEX accept_ex{};

@@ -124,7 +124,7 @@ namespace hidden_task {
                 self.handle.resume();
             }
             void complete() override final {
-                set_value(receiver, none{});
+                set_value(std::move(receiver), none{});
             }
         };
 

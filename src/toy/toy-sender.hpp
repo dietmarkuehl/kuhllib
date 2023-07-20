@@ -261,6 +261,9 @@ namespace hidden_when_all {
             std::exception_ptr     error;
             std::size_t            outstanding{sizeof...(S)};
 
+            auto get_scheduler_() { return get_scheduler(this->final_receiver); }
+            auto get_stop_token_() { return get_stop_token(this->final_receiver); }
+
             template <typename R>
             state_base(R&& final_receiver)
                 : final_receiver(std::forward<R>(final_receiver))
@@ -279,11 +282,11 @@ namespace hidden_when_all {
             state_base<FR>&   result;
             std::optional<R>& value;
 
-            friend decltype(std::declval<state_base<FR>&>().get_scheduler()) get_scheduler(receiver const& self) {
-                self.result.get_scheduler();
+            friend decltype(std::declval<state_base<FR>&>().get_scheduler_()) get_scheduler(receiver const& self) {
+                return self.result.get_scheduler_();
             }
-            friend decltype(std::declval<state_base<FR>&>().get_stop_token()) get_stop_token(receiver const& self) {
-                self.result.get_stop_token();
+            friend decltype(std::declval<state_base<FR>&>().get_stop_token_()) get_stop_token(receiver const& self) {
+                return self.result.get_stop_token_();
             }
             template <typename T>
             friend void set_value(receiver&& self, T&& value) {
