@@ -63,6 +63,12 @@ using file = socket;
 
 // ----------------------------------------------------------------------------
 
+toy::file std_in() {
+    return toy::file(0);
+}
+
+// ----------------------------------------------------------------------------
+
 namespace hidden::io_operation {
     template <typename State, typename Receiver, bool Timer = false>
     struct stop_callback {

@@ -34,7 +34,7 @@
 int main() {
     std::cout << std::unitbuf;
     toy::io_context context;
-    toy::file       std_in(0);
+    auto            std_in = toy::std_in();
     
     context.spawn([&context, &std_in]()->toy::task<toy::io_context::scheduler> {
         try {
