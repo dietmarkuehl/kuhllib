@@ -65,8 +65,8 @@ struct io_scheduler {
 
 struct io {
     int                              fd;
-    hidden::io_operation::event_kind event;
-    io(int fd, hidden::io_operation::event_kind event): fd(fd), event(event) {}
+    toy::hidden::io_operation::event_kind event;
+    io(int fd, toy::hidden::io_operation::event_kind event): fd(fd), event(event) {}
     io(io&& other): fd(std::exchange(other.fd, -1)), event(other.event) {}
     ~io() = default;
     virtual int complete(short int events) = 0;
@@ -173,11 +173,11 @@ struct socket final
         }
     }
     void erase(io* i) {
-        if (i->event == hidden::io_operation::event_kind::read) {
+        if (i->event == toy::hidden::io_operation::event_kind::read) {
             op[int(kind::input)] = nullptr;
             c->decrement();
         }
-        if (i->event == hidden::io_operation::event_kind::write) {
+        if (i->event == toy::hidden::io_operation::event_kind::write) {
             op[int(kind::output)] = nullptr;
             c->decrement();
         }

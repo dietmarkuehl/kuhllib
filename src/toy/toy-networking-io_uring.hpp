@@ -27,6 +27,7 @@
 #define INCLUDED_TOY_NETWORKING_IO_URING
 
 #include "toy-networking-common.hpp"
+#include "toy-networking-posix.hpp"
 #include "toy-starter.hpp"
 #include "toy-utility.hpp"
 
@@ -90,6 +91,8 @@ struct io_context
     }
 };
 
+#if 0
+//-dk:TODO remove
 struct socket {
     int fd;
 
@@ -97,6 +100,7 @@ struct socket {
     socket(socket&& other): fd(std::exchange(other.fd, -1)) {}
     ~socket() { if (0 <= fd) ::close(fd); }
 };
+#endif
 
 // ----------------------------------------------------------------------------
 
@@ -186,12 +190,12 @@ namespace hidden_io_op {
 }
 
 using async_accept_op = decltype([](auto sqe, int fd, auto& state){
-    ::io_uring_prep_accept(sqe, fd, reinterpret_cast<sockaddr*>(&std::get<0>(state)), &std::get<1>(state), 0);
+    ::io_uring_prep_accept(sqe, fd, reinterpret_cast<::sockaddr*>(&std::get<0>(state)), &std::get<1>(state), 0);
 });
 using async_accept = hidden_io_op::io_op<socket, async_accept_op, ::sockaddr_in, ::socklen_t>;
 
 using async_connect_op = decltype([](auto sqe, int fd, auto& state){
-    ::io_uring_prep_connect(sqe, fd, std::get<0>(state), std::get<1>(state));
+    ::io_uring_prep_connect(sqe, fd, reinterpret_cast<::sockaddr const*>(std::get<0>(state)), std::get<1>(state));
 });
 using async_connect = hidden_io_op::io_op<int, async_connect_op, ::sockaddr const*, ::socklen_t>;
 

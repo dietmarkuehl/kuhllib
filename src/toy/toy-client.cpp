@@ -26,6 +26,7 @@
 #include "toy-networking.hpp"
 #include "toy-sender.hpp"
 #include "toy-task.hpp"
+#include <functional>
 #include <iostream>
 #include <string.h>
 
@@ -47,7 +48,7 @@ int main() {
             addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
             std::cout << "connecting\n";
-            if (co_await toy::async_connect(client, &addr, sizeof addr) < 0) {
+            if (co_await toy::async_connect(client, reinterpret_cast<::sockaddr*>(&addr), sizeof addr) < 0) {
                 std::cout << "ERROR: failed to connect: " << toy::strerror(errno) << "\n";
                 co_return;
             }
