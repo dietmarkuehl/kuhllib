@@ -48,7 +48,9 @@ namespace hidden_task {
             using type = sender_result_t<S>;
             struct receiver {
                 awaiter* a;
-                friend toy::never_stop_token get_stop_token(receiver) { return {}; }
+                friend toy::in_place_stop_source::stop_token get_stop_token(receiver self) {
+                    return self.a->token();
+                }
                 friend void set_value(receiver self, auto v) {
                     self.a->value.emplace(std::move(v));
                     self.a->handle.resume();
@@ -57,7 +59,8 @@ namespace hidden_task {
                     self.a->error = e;
                     self.a->handle.resume();
                 } 
-                friend void set_stopped(receiver&&) {
+                friend void set_stopped(receiver&& self) {
+                    self.a->stop();
                     //-dk:TODO get rid of the handle?
                 }
                 friend Scheduler get_scheduler(receiver const& self) {
@@ -83,6 +86,8 @@ namespace hidden_task {
                 if (error) std::rethrow_exception(error);
                 return std::move(*value);
             }
+            void stop();
+            toy::in_place_stop_source::stop_token token();
         };
 
         struct none {};
@@ -90,7 +95,9 @@ namespace hidden_task {
 
         struct state_base: immovable {
             virtual void complete() = 0;
+            virtual void stop() = 0;
             Scheduler sched;
+            toy::in_place_stop_source stop_source;
             state_base(Scheduler sched): sched(sched) {}
         };
         struct promise_type
@@ -111,8 +118,16 @@ namespace hidden_task {
 
         template <typename R>
         struct state: state_base {
-            toy::coroutine_handle<void> handle;
-            R                           receiver;
+            struct callback {
+                state_base* state;
+                void operator()() const { state->stop_source.stop(); }
+            };
+            using stop_token = decltype(get_stop_token(std::declval<R>()));
+            using token_callback = typename stop_token::template callback_type<callback>; 
+
+            toy::coroutine_handle<void>   handle;
+            R                             receiver;
+            std::optional<token_callback> cb;
 
             state(auto&& handle, R receiver)
                 : state_base(get_scheduler(receiver))
@@ -122,9 +137,13 @@ namespace hidden_task {
             }
             friend void start(state& self) {
                 self.handle.resume();
+                self.cb.emplace(get_stop_token(self.receiver), callback{&self});
             }
             void complete() override final {
                 set_value(std::move(receiver), none{});
+            }
+            void stop() override final {
+                set_stopped(std::move(receiver));
             }
         };
 
@@ -135,6 +154,18 @@ namespace hidden_task {
             return state<R>(std::move(self.handle), receiver);
         }
     };
+    template <typename Scheduler>
+        template <typename S>
+    void task<Scheduler>::awaiter<S>::stop() {
+        auto h = toy::coroutine_handle<promise_type>::from_address(this->handle.address());
+        h.promise().state->stop();
+    }
+    template <typename Scheduler>
+        template <typename S>
+    toy::in_place_stop_source::stop_token task<Scheduler>::awaiter<S>::token() {
+        auto h = toy::coroutine_handle<promise_type>::from_address(this->handle.address());
+        return h.promise().state->stop_source.token();
+    }
 }
 
 template <typename Scheduler>

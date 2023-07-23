@@ -260,14 +260,16 @@ namespace hidden_when_all {
             std::tuple<std::optional<toy::sender_result_t<S>>...> result;
             std::exception_ptr     error;
             std::size_t            outstanding{sizeof...(S)};
+            toy::in_place_stop_source stop_source;
 
             auto get_scheduler_() { return get_scheduler(this->final_receiver); }
-            auto get_stop_token_() { return get_stop_token(this->final_receiver); }
+            auto get_stop_token_() { return this->stop_source.token(); }
 
             template <typename R>
             state_base(R&& final_receiver)
                 : final_receiver(std::forward<R>(final_receiver))
             {
+            //auto get_stop_token_() { return get_stop_token(this->final_receiver); }
             }
             virtual void complete() = 0;
             void done() {
@@ -299,6 +301,7 @@ namespace hidden_when_all {
                 self.result.done();
             }
             friend void set_stopped(receiver&& self) {
+                self.result.stop_source.stop();
                 self.result.done();
             }
         };
@@ -665,6 +668,23 @@ auto async_write(toy::socket& socket, char const* buffer, std::size_t n) {
         );
     });
 }
+
+// ----------------------------------------------------------------------------
+
+struct cancel {
+    using result_t = toy::none;
+    template <typename Receiver>
+    struct state {
+        Receiver receiver;
+        friend void start(state& self) {
+            set_stopped(std::move(self.receiver));
+        }
+    };
+    template <typename Receiver>
+    friend state<Receiver> connect(cancel const&, Receiver receiver) {
+        return state<Receiver>{ receiver };
+    }
+};
 
 // ----------------------------------------------------------------------------
 

@@ -52,6 +52,7 @@ class starter
         friend auto get_stop_token(receiver const&) { return toy::never_stop_token{}; }
         friend void set_value(receiver const& self, auto) { delete self.job; }
         friend void set_error(receiver const& self, auto) { delete self.job; }
+        friend void set_stopped(receiver const& self) { delete self.job; }
     };
 
     template <typename S>

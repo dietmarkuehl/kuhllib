@@ -59,6 +59,8 @@ struct socket
     ~socket() { if (fd != -1) ::close(fd); }
 };
 
+using file = socket;
+
 // ----------------------------------------------------------------------------
 
 namespace hidden::io_operation {
