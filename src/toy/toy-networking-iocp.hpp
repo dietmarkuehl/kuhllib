@@ -42,6 +42,7 @@
 #include <stddef.h>
 #include <string.h>
 
+#include <windows.h>
 #include <mswsock.h>
 #include <winsock2.h>
 #pragma comment(lib, "ws2_32.lib")
@@ -435,6 +436,91 @@ struct async_write_some {
         return {};
     }
 };
+
+// ----------------------------------------------------------------------------
+
+struct file {
+    struct data {};
+    HANDLE handle;
+    std::unique_ptr<data> continuation;
+    file(HANDLE handle)
+        : handle(handle)
+        , continuation(new data)
+    {
+    }
+    file(file&&) = delete;
+};
+
+struct async_read_some {
+    using result_t = int;
+
+    template <typename Receiver>
+    struct state
+        : toy::io_context::io_base
+    {
+        Receiver    receiver;
+        toy::file&  file;
+        char*       buffer;
+        std::size_t size;
+        state(Receiver receiver, toy::file& file, char* buffer, std::size_t size)
+            : receiver(receiver)
+            , file(file)
+            , buffer(buffer)
+            , size(size)
+        {
+        }
+        friend void start(state& self)
+        {
+            std::cout << "starting async_read_some\n" << std::flush;
+            auto& port = get_scheduler(self.receiver).context->port;
+
+            if (CreateIoCompletionPort(self.file.handle, port, reinterpret_cast<ULONG_PTR>(self.file.continuation.get()), 0) != port) {
+                std::cout << "async_read_some: CreateIoCompletionPort failed(" << GetLastError() << "): " << toy::wsa_to_string(GetLastError()) << "\n";
+            }
+            if (ReadFile(self.file.handle, self.buffer, DWORD(self.size), nullptr, &self)) {
+                int error = WSAGetLastError();
+                if (error != WSA_IO_PENDING) {
+                    //-dk:TODO deal with error
+                    std::cout << "async_read_some error: " << toy::wsa_to_string(error) << "\n";
+                }
+                else {
+                    std::cout << "async_read_some started\n";
+                }
+            }
+            else {
+                std::cout << "send immediately completed\n" << std::flush;
+            }
+
+        }
+        void complete(std::size_t size) override
+        {
+            std::cout << "async_read_some done: " << size << "\n" << std::flush;
+            set_value(this->receiver, int(size));
+        }
+    };
+
+    toy::file&  file;
+    char*       buffer;
+    std::size_t size;
+
+    async_read_some(toy::file& f, char* buffer, std::size_t size)
+        : file(f), buffer(buffer), size(size)
+    {
+    }
+    template <typename Receiver>
+    friend state<Receiver> connect(async_read_some const& self, Receiver receiver) {
+        return state<Receiver>(receiver, self.file, self.buffer, self.size);
+    }
+};
+
+toy::file& std_in() {
+    static toy::file rc(CreateFile("CONIN$", FILE_GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, 0));
+    // static toy::file rc(GetStdHandle(STD_INPUT_HANDLE));
+    if (rc.handle == INVALID_HANDLE_VALUE) {
+        std::cout << "failed to get STD_INPUT HANDLE\n";
+    }
+    return rc;
+}
 
 // ----------------------------------------------------------------------------
 

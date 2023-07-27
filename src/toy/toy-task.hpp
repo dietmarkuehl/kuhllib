@@ -119,8 +119,8 @@ namespace hidden_task {
         template <typename R>
         struct state: state_base {
             struct callback {
-                state_base* state;
-                void operator()() const { state->stop_source.stop(); }
+                state_base* s;
+                void operator()() const { this->s->stop_source.stop(); }
             };
             using stop_token = decltype(get_stop_token(std::declval<R>()));
             using token_callback = typename stop_token::template callback_type<callback>; 

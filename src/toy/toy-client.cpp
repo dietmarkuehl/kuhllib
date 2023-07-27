@@ -35,9 +35,8 @@
 int main() {
     std::cout << std::unitbuf;
     toy::io_context context;
-    auto            std_in = toy::std_in();
     
-    context.spawn([&context, &std_in]()->toy::task<toy::io_context::scheduler> {
+    context.spawn([&context]()->toy::task<toy::io_context::scheduler> {
         try {
             toy::socket client(context, PF_INET, SOCK_STREAM, 0);
 
@@ -55,11 +54,11 @@ int main() {
             std::cout << "connected\n";
 
             co_await toy::when_all(
-                std::invoke([&client, &std_in]()->toy::task<toy::io_context::scheduler>{
+                std::invoke([&client]()->toy::task<toy::io_context::scheduler>{
                     std::cout << "writer started\n";
                     char line[1024];
                     int r{};
-                    while (0 < (r = co_await toy::async_read_some(std_in, line, sizeof(line)))) {
+                    while (0 < (r = co_await toy::async_read_some(toy::std_in(), line, sizeof(line)))) {
                         int n = co_await toy::async_send(client, toy::buffer(line, r));
                         if (n < 0) {
                             std::cout << "ERROR: failed to write: " << toy::strerror(errno) << "\n";
