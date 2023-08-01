@@ -46,7 +46,6 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
-#include <iostream> //-dk:TODO remove
 
 #include <stddef.h>
 #include <string.h>
@@ -80,6 +79,7 @@ struct io
 
 class io_context
     : public starter<toy::io_scheduler>
+    , public toy::io_context_base
 {
 public:
     using scheduler = toy::io_scheduler;
@@ -95,7 +95,7 @@ public:
     static constexpr bool has_timer = true; //-dk:TODO remove - used while adding timers to contexts
 
     io_context()
-        : starter(get_scheduler()) {
+        : starter(scheduler(this)) {
     }
     void add(io* i) {
         ios.push_back(i);
@@ -115,7 +115,7 @@ public:
         times.erase(i);
     }
     void run() {
-        while ( (!ios.empty() || not times.empty())) { 
+        while ( (!ios.empty() || not times.empty())) {
             auto now{std::chrono::system_clock::now()};
 
             bool timed{false};
@@ -158,7 +158,7 @@ namespace hidden_async_connect {
         ::sockaddr const*  addr;
         ::socklen_t        len;
 
-        async_connect(socket& s, auto addr, auto len): fd(s.fd), addr(reinterpret_cast<::sockaddr const*>(addr)), len(len) {}
+        async_connect(socket& s, auto addr, auto len): fd(s.fd()), addr(reinterpret_cast<::sockaddr const*>(addr)), len(len) {}
 
         template <typename R>
         struct state: io {
@@ -220,11 +220,12 @@ namespace hidden::io_operation {
         {
             R                       receiver;
             Operation               op;
+            toy::io_context_base*   context;
             stop_callback<state, R> cb;
 
-            state(R         receiver,
-                  int       fd,
-                  Operation op)
+            state(R                receiver,
+                  int              fd,
+                  Operation        op)
                 : io(*get_scheduler(receiver).context, fd, Operation::event == event_kind::read? POLLIN: POLLOUT)
                 , receiver(receiver)
                 , op(op)
@@ -236,18 +237,26 @@ namespace hidden::io_operation {
                 self.c.add(&self);
             }
             void complete() override final {
+                using result_t = typename Operation::result_t;
                 cb.disengage();
                 auto res{op(*this)};
-                if (0 <= res)
-                    set_value(std::move(receiver), typename Operation::result_t(res));
+                if (0 <= res) {
+                    if constexpr (requires(io_context_base& context, decltype(res) res){ result_t(context, res); }) {
+                        auto& context(*get_scheduler(receiver).context);
+                        set_value(std::move(receiver), result_t(context, res));
+                    }
+                    else {
+                        set_value(std::move(receiver), result_t(res));
+                    }
+                }
                 else {
                     set_error(std::move(receiver), std::make_exception_ptr(std::system_error(errno, std::system_category())));
-                }  
+                }
             }
         };
         template <typename R>
         friend state<R> connect(sender const& self, R receiver) {
-            return state<R>(receiver, self.socket.fd, self.op);
+            return state<R>(receiver, self.socket.fd(), self.op);
         }
     };
 }

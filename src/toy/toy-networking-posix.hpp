@@ -43,28 +43,72 @@ std::string strerror(int error) {
 
 // ----------------------------------------------------------------------------
 
-struct socket
-{
-    int fd = -1;
-    socket(auto&&, int domain, int type, int protocol)
-        : socket(::socket(domain, type, protocol)) {
+struct io_context_base {
+    io_context_base() = default;
+    io_context_base(io_context_base&&) = delete;
+    ~io_context_base() = default;
+    virtual int make_socket(int domain, int type, int protocol)
+    {
+        return ::socket(domain, type, protocol);
     }
-    socket(int fd)
-        : fd(fd) {
-        if (::fcntl(fd, F_SETFL, O_NONBLOCK) < 0) {
+    virtual int make_fd(int fd) { return fd; }
+    virtual int close(int fd)   { return ::close(fd); }
+    virtual void fcntl(int fd, int cmd, int flag)
+    {
+        if (::fcntl(fd, cmd, flag) < 0) {
             throw std::runtime_error("fcntl");
         }
     }
-    socket(socket&& other): fd(std::exchange(other.fd, -1)) {}
-    ~socket() { if (fd != -1) ::close(fd); }
+    virtual int fd(int id) { return id; }
+};
+
+// ----------------------------------------------------------------------------
+
+struct socket
+{
+private:
+    enum class tag {};
+    io_context_base* d_context;
+    int              id;
+
+    socket(io_context_base& context, int id, tag)
+        : d_context(&context)
+        , id(id)
+    {
+        context.fcntl(id, F_SETFL, O_NONBLOCK);
+    }
+public:
+    socket(io_context_base& context, int domain, int type, int protocol)
+        : socket(context, context.make_socket(domain, type, protocol), tag{})
+    {
+    }
+    socket(io_context_base& context, int fd)
+        : socket(context, context.make_fd(fd), tag{})
+    {
+    }
+    socket(socket&& other)
+        : d_context(std::exchange(other.d_context, nullptr))
+        , id(std::exchange(other.id, -1))
+    {
+    }
+    ~socket()
+    {
+        if (id != -1) {
+            d_context->close(id);
+        }
+    }
+    int                   fd() const { return d_context->fd(id); }
+    toy::io_context_base* context() const { return d_context; }
 };
 
 using file = socket;
 
 // ----------------------------------------------------------------------------
 
+struct std_context: io_context_base {};
 toy::file& std_in() {
-    static toy::file rc(0);
+    static std_context context;
+    static toy::file rc(context, 0);
     return rc;
 }
 

@@ -72,8 +72,8 @@ int main() {
         .sin_port = htons(12345),
         .sin_addr = { .s_addr = INADDR_ANY }
         };
-    if (::bind(server.fd, (::sockaddr*)&addr, sizeof(addr)) < 0
-        || ::listen(server.fd, 1) < 0) {
+    if (::bind(server.fd(), (::sockaddr*)&addr, sizeof(addr)) < 0
+        || ::listen(server.fd(), 1) < 0) {
         std::cout << "can't bind socket: " << std::strerror(errno) << "\n";
         return EXIT_FAILURE;
     }

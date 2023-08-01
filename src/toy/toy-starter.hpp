@@ -37,10 +37,10 @@ namespace toy
 
 template <typename Scheduler>
 class starter
-    : immovable
+    : toy::immovable
 {
     struct job_base
-        : immovable {
+        : toy::immovable {
         Scheduler sched;
         job_base(Scheduler sched) : sched(sched) {}
         virtual ~job_base() = default;

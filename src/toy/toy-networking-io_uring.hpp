@@ -59,6 +59,7 @@ struct io_scheduler {
 
 struct io_context
     : starter<io_scheduler>
+    , toy::io_context_base
 {
     using scheduler = toy::io_scheduler;
     scheduler get_scheduler() { return { this }; }
@@ -70,7 +71,7 @@ struct io_context
     std::size_t outstanding{};
 
     io_context()
-        : starter(get_scheduler()) {
+        : starter(scheduler{this}) {
         ::io_uring_queue_init(entries, &ring, 0);
     }
     ~io_context() { ::io_uring_queue_exit(&ring); }
@@ -164,7 +165,12 @@ namespace hidden_io_op {
                     if constexpr (requires(Submit const& op, state& s) { op.finalize(s); }) {
                         submit.finalize(args);
                     }
-                    set_value(std::move(receiver), result_t(res));
+                    if constexpr (requires(io_context_base& context, decltype(res) res){ result_t(context, res); }) {
+                        set_value(std::move(receiver), result_t(context, res));
+                    }
+                    else {
+                        set_value(std::move(receiver), result_t(res));
+                    }
                 }
                 else  {
                     set_error(std::move(receiver), std::make_exception_ptr(std::system_error(-res, std::system_category())));
@@ -178,7 +184,7 @@ namespace hidden_io_op {
 
         template <typename... A>
         io_op(socket& sock, A&&... args)
-            : fd(sock.fd)
+            : fd(sock.fd())
             , args(args...) {
         }
 

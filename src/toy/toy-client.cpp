@@ -46,16 +46,13 @@ int main() {
                 };
             addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
-            std::cout << "connecting\n";
             if (co_await toy::async_connect(client, reinterpret_cast<::sockaddr*>(&addr), sizeof addr) < 0) {
                 std::cout << "ERROR: failed to connect: " << toy::strerror(errno) << "\n";
                 co_return;
             }
-            std::cout << "connected\n";
 
             co_await toy::when_all(
-                std::invoke([&client]()->toy::task<toy::io_context::scheduler>{
-                    std::cout << "writer started\n";
+                std::invoke([&context, &client]()->toy::task<toy::io_context::scheduler>{
                     char line[1024];
                     int r{};
                     while (0 < (r = co_await toy::async_read_some(toy::std_in(), line, sizeof(line)))) {
@@ -64,13 +61,10 @@ int main() {
                             std::cout << "ERROR: failed to write: " << toy::strerror(errno) << "\n";
                             co_return;
                         }
-                        std::cout << "wrote: '" << std::string_view(line, n) << "'\n";
                     }
-                    std::cout << "writer done\n";
                     co_await toy::cancel();
                 }),
                 std::invoke([&client]()->toy::task<toy::io_context::scheduler>{
-                    std::cout << "reader started\n";
                     char buffer[65536];
                     while (int result = co_await toy::async_receive(client, toy::buffer(buffer))) {
                         if (result < 0) {

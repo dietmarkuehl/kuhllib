@@ -49,8 +49,8 @@ int main()
     toy::socket server(io, PF_INET, SOCK_STREAM, IPPROTO_TCP);
     toy::address addr(AF_INET, htons(port), INADDR_ANY);
     std::cout << "listening on port " << port << "\n";
-    if (::bind(server.fd, &addr.as_addr(), int(addr.size())) < 0
-        || ::listen(server.fd, 1) < 0) {
+    if (::bind(server.fd(), &addr.as_addr(), int(addr.size())) < 0
+        || ::listen(server.fd(), 1) < 0) {
         std::cout << "can't bind socket: " << toy::strerror(errno) << "\n";
         return EXIT_FAILURE;
     };

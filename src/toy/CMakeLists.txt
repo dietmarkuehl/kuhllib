@@ -76,7 +76,7 @@ IF(TOY_HAS_LIBURING)
 ENDIF()
 
 # try to use sys/epoll.h
-CHECK_INCLUDE_FILE(xsys/epoll.h TOY_HAS_EPOLL)
+CHECK_INCLUDE_FILE(sys/epoll.h TOY_HAS_EPOLL)
 IF(TOY_HAS_EPOLL)
     foreach(demo ${TOY_DEMOS})
         set(demo_executable ${demo}-${CMAKE_CXX_COMPILER_ID}-epoll)

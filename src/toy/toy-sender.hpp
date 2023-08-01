@@ -55,15 +55,30 @@ using toy::chain::sender_base;
 
 // ----------------------------------------------------------------------------
 
+struct inline_scheduler {
+    struct sender {
+        using result_t = toy::none;
+        template <typename Receiver>
+        struct state {
+            Receiver receiver;
+            friend void start(state& self) {
+                set_state(self.receiver, toy::none{});
+            }
+        };
+        template <typename Receiver>
+        friend state<Receiver> connect(sender, Receiver receiver) {
+            return state<Receiver>(receiver);
+        }
+    };
+    friend std::ostream& operator<< (std::ostream& out, inline_scheduler) {
+        return out << "inline scheduler\n";
+    }
+
+    friend sender schedule(inline_scheduler) { return sender{}; }
+};
+
 template <typename R>
 struct sync_wait_receiver {
-    struct inline_scheduler {
-        friend std::ostream& operator<< (std::ostream& out, inline_scheduler) {
-            return out << "inline scheduler\n";
-        }
-
-    }; //-dk:TODO
-
     R& result;
     friend inline_scheduler get_scheduler(sync_wait_receiver const&) { return {}; }
     friend never_stop_token get_stop_token(sync_wait_receiver const&) { return {}; }

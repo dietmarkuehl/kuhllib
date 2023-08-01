@@ -46,8 +46,8 @@ int main() {
         }
     }(client, addr));
 
-    context.spawn([](toy::socket& client, auto const& addr)->toy::task<toy::io_context::scheduler> {
-        toy::socket stdin{0};
+    context.spawn([&context](toy::socket& client, auto const& addr)->toy::task<toy::io_context::scheduler> {
+        toy::file& stdin = toy::std_in();
         while (true) {
             char buffer[16];
             std::size_t n = co_await toy::async_read_some(stdin, buffer, sizeof(buffer));

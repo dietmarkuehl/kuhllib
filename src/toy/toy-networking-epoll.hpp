@@ -29,6 +29,7 @@
 // ----------------------------------------------------------------------------
 
 #include "toy-networking-common.hpp"
+#include "toy-networking-posix.hpp"
 #include "toy-starter.hpp"
 #include "toy-utility.hpp"
 
@@ -73,7 +74,9 @@ struct io {
 };
 
 class io_context
-    : public starter<toy::io_scheduler> {
+    : public starter<toy::io_scheduler>
+    , public toy::io_context_base
+{
     static constexpr std::size_t size{4};
     using time_point_t = std::chrono::system_clock::time_point;
 
@@ -143,20 +146,20 @@ public:
 
 // ----------------------------------------------------------------------------
 
-struct socket final
+struct epoll_socket final
     : io
 {
     enum class kind { input = 0, output = 1 };
     int events{0};
     io_context* c = nullptr;
     io* op[2]{ nullptr, nullptr };
-    socket(int fd): io(fd, {}) {
+    epoll_socket(int fd): io(fd, {}) {
         if (::fcntl(fd, F_SETFL, O_NONBLOCK) < 0) {
             throw std::runtime_error("fcntl");
         }
     }
-    socket(socket&&) = default;
-    ~socket() { if (fd != -1) ::close(fd); }
+    epoll_socket(epoll_socket&&) = default;
+    ~epoll_socket() { if (fd != -1) ::close(fd); }
 
     void add(io_context& context, io* i, std::uint32_t events) {
         c = &context;
@@ -209,21 +212,26 @@ namespace hidden::io_operation {
             socket&                        c;
             Operation                      op;
             Receiver                       receiver;
-            stop_callback<state, Receiver> cb;
+            //stop_callback<state, Receiver> cb;
 
-            state(socket& sock, auto op, Receiver r): io(sock.fd, op.event), c(sock), op(op), receiver(r) {}
+            state(socket& sock, auto op, Receiver r): io(sock.fd(), op.event), c(sock), op(op), receiver(r) {}
             friend void start(state& self) {
+                (void)self;
+#if 0
                 if constexpr (requires(state& self, Operation op){ op.start(self); }) {
                     self.try_operation([&]{ return self.op.start(self); });
                 }
                 else {
                     self.try_operation([&]{ return self.op(self); });
                 }
+#endif
             }
             template <typename Fun>
             void try_operation(Fun fun) {
                 auto rc{fun()};
+                auto& context = *get_scheduler(receiver).context;
                 if (rc < 0) {
+#if 0
                     if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINPROGRESS) {
                         cb.engage(*this);
                         auto& context = *get_scheduler(receiver).context;
@@ -233,13 +241,19 @@ namespace hidden::io_operation {
                     else {
                         set_error(std::move(receiver), std::make_exception_ptr(std::system_error(errno, std::system_category())));
                     }
+#endif
                 }
                 else {
-                    set_value(std::move(receiver), result_t(rc));
+                    if constexpr (requires(io_context_base& context, decltype(rc) rc){ result_t(context, rc); }) {
+                        set_value(std::move(receiver), result_t(context, rc));
+                    }
+                    else {
+                        set_value(std::move(receiver), result_t(rc));
+                    }
                 }
             }
             int complete(short int) override final {
-                cb.disengage();
+                //cb.disengage();
                 try_operation([&]{ return op(*this); });
                 return 0;
             }
@@ -255,8 +269,15 @@ namespace hidden::io_operation {
 // ----------------------------------------------------------------------------
 
 hidden::io_operation::sender<hidden::io_operation::connect_op>
-async_connect(toy::socket& s, sockaddr const* addr, socklen_t len) {
-    return {s, {addr, len}};
+async_connect(toy::socket& s, sockaddr const* addr, socklen_t len)
+{
+    (void)addr;
+    (void)len;
+#if 0
+    return hidden::io_operation::sender<hidden::io_operation::connect_op>{s, {addr, len}};
+#else
+    return hidden::io_operation::sender<hidden::io_operation::connect_op>{s, toy::address()};
+#endif
 }
 
 hidden::io_operation::sender<hidden::io_operation::accept_op>

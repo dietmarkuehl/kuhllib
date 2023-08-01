@@ -43,6 +43,15 @@ namespace hidden_task {
     template <typename Scheduler>
     struct task
     {
+        task() {}
+        task(auto&& handle): handle(std::move(handle)) {}
+        task(task&& other): handle(std::exchange(other.handle, std::coroutine_handle<promise_type>())) {}
+        ~task() {
+            if (handle) {
+                handle.destroy();
+            }
+        }
+
         template <typename S>
         struct awaiter {
             using type = sender_result_t<S>;
@@ -104,16 +113,16 @@ namespace hidden_task {
             : immovable {
             state_base* state = nullptr;
 
-            task get_return_object() { return { toy::coroutine_handle<promise_type>::from_promise(*this) }; }
+            task get_return_object() { return task(toy::coroutine_handle<promise_type>::from_promise(*this)); }
             toy::suspend_always initial_suspend() { return {}; }
-            toy::suspend_never final_suspend() noexcept {
+            toy::suspend_always final_suspend() noexcept {
                 if (state) state->complete();
                 return {};
             }
             void return_void() {}
             void unhandled_exception() { std::terminate() ; }
             template <typename S>
-            awaiter<S> await_transform(S s) { return awaiter<S>(state->sched, s); }
+            awaiter<S> await_transform(S s) { return awaiter<S>(state->sched, std::move(s)); }
         };
 
         template <typename R>
@@ -151,7 +160,7 @@ namespace hidden_task {
 
         template <typename R>
         friend state<R> connect(task&& self, R receiver) {
-            return state<R>(std::move(self.handle), receiver);
+            return state<R>(std::exchange(self.handle, std::coroutine_handle<promise_type>()), receiver);
         }
     };
     template <typename Scheduler>
