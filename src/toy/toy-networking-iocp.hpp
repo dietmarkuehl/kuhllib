@@ -100,7 +100,6 @@ struct io_context
         io_base(): WSAOVERLAPPED() {}
         virtual void complete(std::size_t) = 0;
     };
-    static constexpr bool has_timer = false; //-dk:TODO remove - used while adding timers to contexts
     static std::error_category const& category() { return std::system_category(); } //-dk:TODO use custom category
     using scheduler = io_scheduler;
     scheduler get_scheduler() { return { this }; }

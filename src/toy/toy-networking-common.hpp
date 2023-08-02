@@ -31,6 +31,7 @@
 #include <iostream> //-dk:TODO remove
 #include <optional>
 #include <string>
+#include <cstring>
 #include <cstddef>
 #ifdef TOY_HAS_SYS_SOCKET
 #include <sys/socket.h>
@@ -69,10 +70,16 @@ enum class message_flags {
 struct address {
     address()
         : len(sizeof(::sockaddr_storage))
-        , addr{} {
+    {
     }
-    address(sa_family_t family, in_port_t port, uint32_t addr) {
-        len = sizeof(::sockaddr_in);
+    address(auto const& addr, ::socklen_t len)
+        : len(len)
+    {
+        std::memcpy(&this->addr, addr, len);
+    }
+    address(sa_family_t family, in_port_t port, uint32_t addr)
+        : len(sizeof(::sockaddr_in))
+    {
         as_addr_in().sin_family      = family;
         as_addr_in().sin_port        = port;
         as_addr_in().sin_addr.s_addr = addr;

@@ -20,8 +20,10 @@ endif()
 
 # doesn't compile with gcc: toy-coro
 list(APPEND TOY_DEMOS
-    toy-cancel
     toy-client
+)
+list(APPEND xTOY_DEMOS
+    toy-cancel
     toy-echo
     toy-sender
     toy-udp-client

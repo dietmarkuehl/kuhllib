@@ -92,8 +92,6 @@ private:
     toy::timer_queue<io*> times;
 
 public:
-    static constexpr bool has_timer = true; //-dk:TODO remove - used while adding timers to contexts
-
     io_context()
         : starter(scheduler(this)) {
     }

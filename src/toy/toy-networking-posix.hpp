@@ -52,6 +52,8 @@ struct io_context_base {
         return ::socket(domain, type, protocol);
     }
     virtual int make_fd(int fd) { return fd; }
+    virtual int fd(int id) { return id; }
+
     virtual int close(int fd)   { return ::close(fd); }
     virtual void fcntl(int fd, int cmd, int flag)
     {
@@ -59,7 +61,6 @@ struct io_context_base {
             throw std::runtime_error("fcntl");
         }
     }
-    virtual int fd(int id) { return id; }
 };
 
 // ----------------------------------------------------------------------------
@@ -69,13 +70,13 @@ struct socket
 private:
     enum class tag {};
     io_context_base* d_context;
-    int              id;
+    int              d_id;
 
     socket(io_context_base& context, int id, tag)
         : d_context(&context)
-        , id(id)
+        , d_id(id)
     {
-        context.fcntl(id, F_SETFL, O_NONBLOCK);
+        context.fcntl(fd(), F_SETFL, O_NONBLOCK);
     }
 public:
     socket(io_context_base& context, int domain, int type, int protocol)
@@ -88,16 +89,17 @@ public:
     }
     socket(socket&& other)
         : d_context(std::exchange(other.d_context, nullptr))
-        , id(std::exchange(other.id, -1))
+        , d_id(std::exchange(other.d_id, -1))
     {
     }
     ~socket()
     {
-        if (id != -1) {
-            d_context->close(id);
+        if (d_id != -1) {
+            d_context->close(d_id);
         }
     }
-    int                   fd() const { return d_context->fd(id); }
+    int                   fd() const { return d_context->fd(d_id); }
+    int                   id() const { return d_id; }
     toy::io_context_base* context() const { return d_context; }
 };
 
@@ -148,11 +150,9 @@ namespace hidden::io_operation {
         static constexpr char const* name = "connect";
 
         toy::address address;
-        sockaddr const*  addr;
-        socklen_t        len;
 
         int start(auto& state) {
-            return ::connect(state.fd, state.address.as_addr(), state.address.len());
+            return ::connect(state.fd, &state.op.address.as_addr(), state.op.address.size());
         }
         int operator()(auto& state) {
             int         rc{};
@@ -182,6 +182,7 @@ namespace hidden::io_operation {
         std::size_t len;
 
         int operator()(auto& state) {
+            std::cout << "read(" << state.fd << ", " << static_cast<void*>(buffer) << ", " << len << ")\n";
             return ::read(state.fd, buffer, len);
         }
     };
@@ -217,7 +218,10 @@ namespace hidden::io_operation {
                 .msg_controllen = 0,
                 .msg_flags = 0
             };
-            return recvmsg(state.fd, &msg, int(flags));
+            std::cout << "receiving on " << state.fd << "\n";
+            int rc = recvmsg(state.fd, &msg, int(flags));
+            std::cout << "receiving done: " << rc << "\n";
+            return rc;
         }
     };
 

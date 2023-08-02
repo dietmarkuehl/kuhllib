@@ -65,10 +65,10 @@ struct io_scheduler {
 };
 
 struct io {
-    int                              fd;
+    int                                   id;
     toy::hidden::io_operation::event_kind event;
-    io(int fd, toy::hidden::io_operation::event_kind event): fd(fd), event(event) {}
-    io(io&& other): fd(std::exchange(other.fd, -1)), event(other.event) {}
+    io(int id, toy::hidden::io_operation::event_kind event): id(id), event(event) {}
+    io(io&& other): id(std::exchange(other.id, -1)), event(other.event) {}
     ~io() = default;
     virtual int complete(short int events) = 0;
 };
@@ -77,22 +77,110 @@ class io_context
     : public starter<toy::io_scheduler>
     , public toy::io_context_base
 {
-    static constexpr std::size_t size{4};
     using time_point_t = std::chrono::system_clock::time_point;
 
+    struct filedesc {
+        enum class kind { input = 0, output = 1 };
+        int fd{};
+        int events{0};
+        io* op[2]{ nullptr, nullptr };
+    };
+
+    std::vector<filedesc> files;
+    std::size_t           free_filedesc{};
     int                   poll;
     std::size_t           outstanding{};
     toy::timer_queue<io*> times;
 
-public:
-    static constexpr bool has_timer = false; //-dk:TODO remove - used while adding timers to contexts
+    void resize()
+    {
+        if (files.size() == free_filedesc) {
+            files.resize(files.empty()? 16u: files.size() * 2u);
+            for (std::size_t i{free_filedesc}; i != free_filedesc; ++i) {
+                files[i].fd = i + 1;
+            }
+        }
+    }
+protected:
+    int make_socket(int domain, int type, int protocol) override
+    {
+        return make_fd(::socket(domain, type, protocol));
+    }
+    int make_fd(int fd) override {
+        resize();
+        int id = free_filedesc;
+        free_filedesc = files[id].fd;
+        files[id] = filedesc{fd};
+        return id;
+    }
+    int close(int id) override {
+        int rc{::close(files[id].fd)};
+        files[id].fd = std::exchange(free_filedesc, id);
+        return rc;
+    }
+    int fd(int id) override { return files[id].fd; }
 
+public:
+    void add(io* i, std::uint32_t events) {
+        filedesc& desc{files[i->id]};
+        if ((events & desc.events) != events) {
+            auto op{desc.events? EPOLL_CTL_MOD: EPOLL_CTL_ADD};
+            desc.events |= events;
+            modify(i, op, desc.events);
+        }
+        if (events & EPOLLIN) {
+            desc.op[int(filedesc::kind::input)] = i;
+        }
+        if (events & EPOLLOUT) {
+            desc.op[int(filedesc::kind::output)] = i;
+        }
+    }
+    void erase(io* i) {
+        filedesc& desc{files[i->id]};
+        if (i->event == toy::hidden::io_operation::event_kind::read) {
+            desc.op[int(filedesc::kind::input)] = nullptr;
+            decrement();
+        }
+        if (i->event == toy::hidden::io_operation::event_kind::write) {
+            desc.op[int(filedesc::kind::output)] = nullptr;
+            decrement();
+        }
+    }
+    int complete(io* i, short int events) {
+        std::cout << "completing(" << fd(i->id) << ") in context\n";
+        filedesc& desc{files[i->id]};
+        int rc{};
+        if (events & EPOLLIN && desc.op[int(filedesc::kind::input)]) {
+            std::exchange(desc.op[int(filedesc::kind::input)], nullptr)->complete(events);
+            ++rc;
+        }
+        if (events & EPOLLOUT && desc.op[int(filedesc::kind::output)]) {
+            std::exchange(desc.op[int(filedesc::kind::output)], nullptr)->complete(events);
+            ++rc;
+        }
+        this->erase(i);
+        return rc;
+    }
+
+    void modify(io* i, auto op, std::uint32_t events) {
+        ::epoll_event ev{events | EPOLLONESHOT, { static_cast<void*>(i) } };
+        if (::epoll_ctl(poll, op, files[i->id].fd, &ev) < 0) {
+            throw std::system_error(errno, std::system_category());
+        }
+    }
+    void add(time_point_t time, io* op) {
+        times.push(time, op);
+    }
+    void remove(io* i) {
+        close(files[i->id].fd);
+    }
+public:
     using scheduler = toy::io_scheduler;
     scheduler get_scheduler() { return { this }; }
 
     io_context()
-        : starter(get_scheduler())
-        , poll(::epoll_create(size)) {
+        : starter(scheduler(this))
+        , poll(::epoll_create(1)) {
         if (poll < 0) {
             throw std::runtime_error("can't create epoll");
         }
@@ -102,23 +190,12 @@ public:
     }
     void increment() { ++outstanding; }
     void decrement() { --outstanding; }
-    void modify(io* i, auto op, std::uint32_t events) {
-        ::epoll_event ev{events, { static_cast<void*>(i) } };
-        if (::epoll_ctl(poll, op, i->fd, &ev) < 0) {
-            throw std::system_error(errno, std::system_category());
-        }
-    }
-    void add(time_point_t time, io* op) {
-        times.push(time, op);
-    }
     void erase_timer(io* i) {
         times.erase(i);
     }
-    void remove(io* i) {
-        close(i->fd);
-    }
     void run() {
-        ::epoll_event ev[1];
+        constexpr std::size_t max(16);
+        ::epoll_event ev[max];
         while (0 < outstanding || !times.empty()) {
             auto now{std::chrono::system_clock::now()};
 
@@ -126,7 +203,7 @@ public:
             while (!times.empty() && times.top().first <= now) {
                 io* op{times.top().second};
                 times.pop();
-                op->complete(0);
+                complete(op, 0);
                 timed = true;
             }
             if (timed) {
@@ -135,10 +212,16 @@ public:
             auto time{times.empty()
                      ? -1
                 : std::chrono::duration_cast<std::chrono::milliseconds>(times.top().first - now).count()};
-            int n = ::epoll_wait(poll, ev, 1, time);
+            std::cout << "about to poll\n";
+            int n = ::epoll_wait(poll, ev, max, time);
+            std::cout << "    polled=" << n << "\n";
             while (0 < n) {
                 --n;
-                outstanding -= static_cast<io*>(ev[n].data.ptr)->complete(ev[n].events);
+                std::cout << "    "
+                          << "complete fd=" << fd(static_cast<io*>(ev[n].data.ptr)->id) << " "
+                          << "events=" << (ev[n].events & EPOLLIN? " in": "") << (ev[n].events & EPOLLOUT? " out": "")
+                          << "\n";
+                outstanding -= this->complete(static_cast<io*>(ev[n].data.ptr), ev[n].events);
             }
         }
     }
@@ -146,106 +229,60 @@ public:
 
 // ----------------------------------------------------------------------------
 
-struct epoll_socket final
-    : io
-{
-    enum class kind { input = 0, output = 1 };
-    int events{0};
-    io_context* c = nullptr;
-    io* op[2]{ nullptr, nullptr };
-    epoll_socket(int fd): io(fd, {}) {
-        if (::fcntl(fd, F_SETFL, O_NONBLOCK) < 0) {
-            throw std::runtime_error("fcntl");
-        }
-    }
-    epoll_socket(epoll_socket&&) = default;
-    ~epoll_socket() { if (fd != -1) ::close(fd); }
-
-    void add(io_context& context, io* i, std::uint32_t events) {
-        c = &context;
-        if ((events & this->events) != events) {
-            auto op{this->events? EPOLL_CTL_MOD: EPOLL_CTL_ADD};
-            this->events |= events;
-            context.modify(this, op, this->events);
-        }
-        if (events & EPOLLIN) {
-            op[int(kind::input)] = i;
-        }
-        if (events & EPOLLOUT) {
-            op[int(kind::output)] = i;
-        }
-    }
-    void erase(io* i) {
-        if (i->event == toy::hidden::io_operation::event_kind::read) {
-            op[int(kind::input)] = nullptr;
-            c->decrement();
-        }
-        if (i->event == toy::hidden::io_operation::event_kind::write) {
-            op[int(kind::output)] = nullptr;
-            c->decrement();
-        }
-    }
-    int complete(short int events) override {
-        int rc{};
-        if (events & EPOLLIN && op[int(kind::input)]) {
-            std::exchange(op[int(kind::input)], nullptr)->complete(events);
-            ++rc;
-        }
-        if (events & EPOLLOUT && op[int(kind::output)]) {
-            std::exchange(op[int(kind::output)], nullptr)->complete(events);
-            ++rc;
-        }
-        return rc;
-    }
-};
-
 namespace hidden::io_operation {
     template <typename Operation>
     struct sender {
         using result_t = typename Operation::result_t;
 
-        socket&    sock;
-        Operation  op;
+        toy::socket& sock;
+        Operation    op;
 
         template <typename Receiver>
         struct state: io {
-            socket&                        c;
+            io_context& c;
+            socket&                        sock;
+            int                            fd;
             Operation                      op;
             Receiver                       receiver;
-            //stop_callback<state, Receiver> cb;
+            stop_callback<state, Receiver> cb;
 
-            state(socket& sock, auto op, Receiver r): io(sock.fd(), op.event), c(sock), op(op), receiver(r) {}
+            state(socket& sock, auto op, Receiver r)
+                : io(sock.id(), op.event)
+                , c(*get_scheduler(r).context)
+                , sock(sock)
+                , fd(sock.fd())
+                , op(op)
+                , receiver(r) {
+            }
             friend void start(state& self) {
-                (void)self;
-#if 0
+                std::cout << "start(" << self.op.name << ", " << self.fd << ")\n";
                 if constexpr (requires(state& self, Operation op){ op.start(self); }) {
                     self.try_operation([&]{ return self.op.start(self); });
                 }
                 else {
                     self.try_operation([&]{ return self.op(self); });
                 }
-#endif
             }
             template <typename Fun>
             void try_operation(Fun fun) {
+                errno = 0;
                 auto rc{fun()};
-                auto& context = *get_scheduler(receiver).context;
+                std::cout << "try_op:" << rc << " -> " << std::strerror(errno) << "\n";
                 if (rc < 0) {
-#if 0
                     if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINPROGRESS) {
+                        std::cout << "setting up waiting (" << EAGAIN << "/" << errno << "\n";
                         cb.engage(*this);
-                        auto& context = *get_scheduler(receiver).context;
-                        c.add(context, this, op.event == event_kind::read? EPOLLIN: EPOLLOUT);
-                        context.increment();
+                        c.add(this, op.event == event_kind::read? EPOLLIN: EPOLLOUT);
+                        c.increment();
                     }
                     else {
+                        std::cout << "failing operation\n";
                         set_error(std::move(receiver), std::make_exception_ptr(std::system_error(errno, std::system_category())));
                     }
-#endif
                 }
                 else {
                     if constexpr (requires(io_context_base& context, decltype(rc) rc){ result_t(context, rc); }) {
-                        set_value(std::move(receiver), result_t(context, rc));
+                        set_value(std::move(receiver), result_t(c, rc));
                     }
                     else {
                         set_value(std::move(receiver), result_t(rc));
@@ -253,7 +290,8 @@ namespace hidden::io_operation {
                 }
             }
             int complete(short int) override final {
-                //cb.disengage();
+                std::cout << "completing(" << fd << "\n";
+                cb.disengage();
                 try_operation([&]{ return op(*this); });
                 return 0;
             }
@@ -271,13 +309,7 @@ namespace hidden::io_operation {
 hidden::io_operation::sender<hidden::io_operation::connect_op>
 async_connect(toy::socket& s, sockaddr const* addr, socklen_t len)
 {
-    (void)addr;
-    (void)len;
-#if 0
-    return hidden::io_operation::sender<hidden::io_operation::connect_op>{s, {addr, len}};
-#else
-    return hidden::io_operation::sender<hidden::io_operation::connect_op>{s, toy::address()};
-#endif
+    return hidden::io_operation::sender<hidden::io_operation::connect_op>{s, toy::address(addr, len)};
 }
 
 hidden::io_operation::sender<hidden::io_operation::accept_op>

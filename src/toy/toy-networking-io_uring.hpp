@@ -64,7 +64,6 @@ struct io_context
     using scheduler = toy::io_scheduler;
     scheduler get_scheduler() { return { this }; }
 
-    static constexpr bool has_timer = false; //-dk:TODO remove - used while adding timers to contexts
     static constexpr std::size_t entries{256};
 
     ::io_uring  ring;

@@ -57,6 +57,7 @@ namespace hidden_task {
             using type = sender_result_t<S>;
             struct receiver {
                 awaiter* a;
+                receiver(awaiter* a): a(a) {}
                 friend toy::in_place_stop_source::stop_token get_stop_token(receiver self) {
                     return self.a->token();
                 }
@@ -85,7 +86,7 @@ namespace hidden_task {
             std::optional<type>         value;
             std::exception_ptr          error;
 
-            awaiter(Scheduler sched, S s): sched(sched), state(connect(std::move(s), receiver{this})) {}
+            awaiter(Scheduler sched, S s): sched(sched), state(connect(std::move(s), receiver(this))) {}
             bool await_ready() { return false; }
             void await_suspend(toy::coroutine_handle<void> handle) {
                 this->handle = handle;
