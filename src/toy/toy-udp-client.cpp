@@ -46,7 +46,7 @@ int main() {
         }
     }(client, addr));
 
-    context.spawn([&context](toy::socket& client, auto const& addr)->toy::task<toy::io_context::scheduler> {
+    context.spawn([](toy::socket& client, auto const& addr)->toy::task<toy::io_context::scheduler> {
         toy::file& stdin = toy::std_in();
         while (true) {
             char buffer[16];

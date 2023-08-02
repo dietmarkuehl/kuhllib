@@ -22,7 +22,7 @@ endif()
 list(APPEND TOY_DEMOS
     toy-client
 )
-list(APPEND xTOY_DEMOS
+list(APPEND TOY_DEMOS
     toy-cancel
     toy-echo
     toy-sender

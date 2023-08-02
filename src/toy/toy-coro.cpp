@@ -185,7 +185,7 @@ namespace toy::hidden_then_async {
             {
             }
             friend void start(state& self) {
-                std::cout << "start\n";
+                std::cout << "coro start\n";
                 start(self.upstream);
             }
         };

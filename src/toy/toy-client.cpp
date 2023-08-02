@@ -52,7 +52,7 @@ int main() {
             }
 
             co_await toy::when_all(
-                std::invoke([&context, &client]()->toy::task<toy::io_context::scheduler>{
+                std::invoke([&client]()->toy::task<toy::io_context::scheduler>{
                     char line[1024];
                     int r{};
                     while (0 < (r = co_await toy::async_read_some(toy::std_in(), line, sizeof(line)))) {

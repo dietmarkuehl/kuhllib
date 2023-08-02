@@ -182,7 +182,6 @@ namespace hidden::io_operation {
         std::size_t len;
 
         int operator()(auto& state) {
-            std::cout << "read(" << state.fd << ", " << static_cast<void*>(buffer) << ", " << len << ")\n";
             return ::read(state.fd, buffer, len);
         }
     };
@@ -218,10 +217,7 @@ namespace hidden::io_operation {
                 .msg_controllen = 0,
                 .msg_flags = 0
             };
-            std::cout << "receiving on " << state.fd << "\n";
-            int rc = recvmsg(state.fd, &msg, int(flags));
-            std::cout << "receiving done: " << rc << "\n";
-            return rc;
+            return recvmsg(state.fd, &msg, int(flags));
         }
     };
 

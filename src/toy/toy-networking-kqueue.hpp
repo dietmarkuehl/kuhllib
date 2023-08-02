@@ -73,7 +73,8 @@ struct io
 };
 
 class io_context
-    : public starter<io_scheduler> {
+    : public starter<io_scheduler>
+    , public toy::io_context_base {
 public:
     using scheduler = toy::io_scheduler;
     scheduler get_scheduler() { return { this }; }
@@ -191,7 +192,13 @@ namespace hidden::io_operation {
                 cb.disengage();
                 auto res{op(*this)};
                 if (0 <= res)
-                    set_value(std::move(receiver), typename Operation::result_t(res));
+                    if constexpr (requires(io_context_base& context, decltype(res) res){ result_t(context, res); }) {
+                        auto& context(*get_scheduler(receiver).context);
+                        set_value(std::move(receiver), result_t(context, res));
+                    }
+                    else {
+                        set_value(std::move(receiver), result_t(res));
+                    }
                 else if (errno == EAGAIN) {
                     start(*this);
                 }
@@ -202,7 +209,7 @@ namespace hidden::io_operation {
         };
         template <typename R>
         friend state<R> connect(sender const& self, R receiver) {
-            return state<R>(receiver, self.socket.fd, self.op);
+            return state<R>(receiver, self.socket.fd(), self.op);
         }
     };
 }
@@ -274,7 +281,7 @@ namespace hidden_async_connect {
         ::sockaddr const* addr;
         ::socklen_t       len;
 
-        async_connect(socket& sock, void const* addr, ::socklen_t len): fd(sock.fd), addr(reinterpret_cast<::sockaddr const*>(addr)), len(len) {}
+        async_connect(socket& sock, void const* addr, ::socklen_t len): fd(sock.fd()), addr(reinterpret_cast<::sockaddr const*>(addr)), len(len) {}
 
         template <typename R>
         struct state
