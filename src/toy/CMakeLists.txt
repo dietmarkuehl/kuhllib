@@ -31,6 +31,16 @@ list(APPEND TOY_DEMOS
     toy-http-client
 )
 
+set(CMAKE_REQUIRED_INCLUDES "/usr/local/include")
+CHECK_INCLUDE_FILE("ares.h" TOY_HAS_ARES)
+if (TOY_HAS_ARES)
+    include_directories("/usr/local/include")
+    link_directories("/usr/local/lib")
+
+    list(APPEND TOY_DEMOS toy-resolve)
+    add_compile_definitions(TOY_HAS_ARES)
+endif()
+
 CHECK_INCLUDE_FILE("arpa/inet.h" TOY_HAS_ARPA_INET)
 if (TOY_HAS_APRA_INET)
     add_compile_definitions(TOY_HAS_APRA_INET)
@@ -60,7 +70,9 @@ endif()
 CHECK_INCLUDE_FILE(unistd.h TOY_HAS_UNISTD)
 if(TOY_HAS_UNISTD)
     foreach(demo ${TOY_DEMOS})
-        add_executable(${demo}-${CMAKE_CXX_COMPILER_ID}-poll ${demo}.cpp)
+        set(demo_executable ${demo}-${CMAKE_CXX_COMPILER_ID}-poll)
+        add_executable(${demo_executable} ${demo}.cpp)
+        target_link_libraries(${demo_executable} cares)
     endforeach()
 
     add_executable(toy-cppcon-2022-${CMAKE_CXX_COMPILER_ID} toy-cppcon-2022.cpp)
@@ -94,6 +106,7 @@ IF(TOY_HAS_KQUEUE)
         set(demo_executable ${demo}-${CMAKE_CXX_COMPILER_ID}-kqueue)
         add_executable(${demo_executable} ${demo}.cpp)
         target_compile_definitions(${demo_executable} PRIVATE TOY_NETWORKING_HPP="toy-networking-kqueue.hpp")
+        target_link_libraries(${demo_executable} cares)
     endforeach()
 ENDIF()
 

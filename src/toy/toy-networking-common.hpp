@@ -28,7 +28,7 @@
 
 #include <array>
 #include <concepts>
-#include <iostream> //-dk:TODO remove
+#include <ostream>
 #include <optional>
 #include <string>
 #include <cstring>
@@ -50,6 +50,7 @@
 #include <ws2ipdef.h>
 #include <ws2tcpip.h>
 #endif
+#include <arpa/inet.h>
 
 #ifdef _MSC_VER
 using sa_family_t = unsigned short;
@@ -98,6 +99,25 @@ struct address {
     ::sockaddr&     as_addr()     { return reinterpret_cast<::sockaddr&>(addr); }
     ::sockaddr_in&  as_addr_in()  { return reinterpret_cast<::sockaddr_in&>(addr); }
     ::sockaddr_in6& as_addr_in6() { return reinterpret_cast<::sockaddr_in6&>(addr); }
+
+    friend std::ostream& operator<< (std::ostream& out, address const& addr) {
+        switch (addr.addr.ss_family) {
+        case AF_INET: {
+                sockaddr_in const& saddr(reinterpret_cast<sockaddr_in const&>(addr.addr));
+                char buffer[INET_ADDRSTRLEN];
+                inet_ntop(AF_INET, &saddr.sin_addr.s_addr, buffer, sizeof(buffer));
+                return out << buffer << ":" << saddr.sin_port;
+            }
+        case AF_INET6: {
+
+                sockaddr_in6 const& saddr(reinterpret_cast<sockaddr_in6 const&>(addr.addr));
+                char buffer[INET6_ADDRSTRLEN];
+                inet_ntop(AF_INET6, &saddr.sin6_addr, buffer, sizeof(buffer));
+                return out << "[" << buffer << "]:" << saddr.sin6_port;
+            }
+        }
+        return out << "address";
+    }
 };
 
 // ----------------------------------------------------------------------------

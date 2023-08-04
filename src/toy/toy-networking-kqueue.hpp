@@ -178,7 +178,7 @@ namespace hidden::io_operation {
             state(R         receiver,
                   int       fd,
                   Operation op)
-                : io(*get_scheduler(receiver).context, fd, Operation::event == event_kind::read? EVFILT_READ: EVFILT_WRITE)
+                : io(*get_scheduler(receiver).context, fd, op.event == event_kind::read? EVFILT_READ: EVFILT_WRITE)
                 , receiver(receiver)
                 , op(op)
                 , cb() {
@@ -190,7 +190,7 @@ namespace hidden::io_operation {
             }
             void complete() override final {
                 cb.disengage();
-                auto res{op(*this)};
+                auto res{op(*this, 0)};
                 if (0 <= res)
                     if constexpr (requires(io_context_base& context, decltype(res) res){ result_t(context, res); }) {
                         auto& context(*get_scheduler(receiver).context);
@@ -212,6 +212,11 @@ namespace hidden::io_operation {
             return state<R>(receiver, self.socket.fd(), self.op);
         }
     };
+}
+
+hidden::io_operation::sender<hidden::io_operation::poll_op>
+async_poll(toy::socket& s, toy::hidden::io_operation::event_kind events) {
+    return {s, { events }};
 }
 
 hidden::io_operation::sender<hidden::io_operation::accept_op>

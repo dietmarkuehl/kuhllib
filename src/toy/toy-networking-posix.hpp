@@ -142,7 +142,34 @@ namespace hidden::io_operation {
         }
     };
 
-    enum class event_kind { read, write };
+    enum class event_kind { none = 0x0, read = 0x1, write = 0x2, both = 0x3 };
+    event_kind operator| (event_kind a, event_kind b) {
+        return event_kind(int(a) | int(b));
+    }
+    event_kind operator& (event_kind a, event_kind b) {
+        return event_kind(int(a) & int(b));
+    }
+    std::ostream& operator<<(std::ostream& out, event_kind event) {
+        switch (event) {
+            case event_kind::none:  return out << "none";
+            case event_kind::read:  return out << "read";
+            case event_kind::write: return out << "write";
+            case event_kind::both:  return out << "both";
+        }
+    }
+
+    struct poll_op {
+        using result_t = int;
+        event_kind event{};
+        static constexpr char const* name = "poll";
+
+        int start(auto&) {
+            return EAGAIN;
+        }
+        int operator()(auto&, int revents) {
+            return revents;
+        }
+    };
 
     struct connect_op {
         using result_t = int;
@@ -154,7 +181,7 @@ namespace hidden::io_operation {
         int start(auto& state) {
             return ::connect(state.fd, &state.op.address.as_addr(), state.op.address.size());
         }
-        int operator()(auto& state) {
+        int operator()(auto& state, int) {
             int         rc{};
             ::socklen_t len{sizeof rc};
             return (::getsockopt(state.fd, SOL_SOCKET, SO_ERROR, &rc, &len) || rc)? -1: rc;
@@ -166,7 +193,7 @@ namespace hidden::io_operation {
         static constexpr event_kind event = event_kind::read;
         static constexpr char const* name = "accept";
 
-        int operator()(auto& state) {
+        int operator()(auto& state, int) {
             ::sockaddr  addr{};
             ::socklen_t len{sizeof(addr)};
             return ::accept(state.fd, &addr, &len);
@@ -181,7 +208,7 @@ namespace hidden::io_operation {
         char*       buffer;
         std::size_t len;
 
-        int operator()(auto& state) {
+        int operator()(auto& state, int) {
             return ::read(state.fd, buffer, len);
         }
     };
@@ -194,7 +221,7 @@ namespace hidden::io_operation {
         char const* buffer;
         std::size_t len;
 
-        int operator()(auto& state) {
+        int operator()(auto& state, int) {
             return ::write(state.fd, buffer, len);
         }
     };
@@ -207,7 +234,7 @@ namespace hidden::io_operation {
 
         toy::message_flags flags;
         MBS                buffer;
-        ssize_t operator()(auto& state) {
+        ssize_t operator()(auto& state, int) {
             msghdr msg{
                 .msg_name = nullptr,
                 .msg_namelen = 0,
@@ -230,7 +257,7 @@ namespace hidden::io_operation {
         MBS                buffer;
         toy::address&      addr;
         toy::message_flags flags;
-        ::ssize_t operator()(auto& state) {
+        ::ssize_t operator()(auto& state, int) {
             msghdr msg{
                 .msg_name = &addr.as_addr(),
                 .msg_namelen = addr.capacity(),
@@ -256,7 +283,7 @@ namespace hidden::io_operation {
 
         toy::message_flags flags;
         MBS                buffer;
-        ::ssize_t operator()(auto& state) {
+        ::ssize_t operator()(auto& state, int) {
             msghdr msg{
                 .msg_name = nullptr,
                 .msg_namelen = 0,
@@ -279,7 +306,7 @@ namespace hidden::io_operation {
         MBS                buffer;
         toy::address       address;
         toy::message_flags flags;
-        ::ssize_t operator()(auto& state) {
+        ::ssize_t operator()(auto& state, int) {
             msghdr msg{
                 .msg_name = &address.as_addr(),
                 .msg_namelen = address.size(),

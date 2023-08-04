@@ -73,7 +73,7 @@ struct io
     io_context& c;
     int         fd;
     short int   events;
-    virtual void complete() = 0;
+    virtual void complete(int) = 0;
     io(io_context& c, int fd, short int events): c(c), fd(fd), events(events)  {}
 };
 
@@ -120,7 +120,7 @@ public:
             while (!times.empty() && times.top().first <= now) {
                 io* op{times.top().second};
                 times.pop();
-                op->complete();
+                op->complete(0);
                 timed = true;
             }
             if (timed) {
@@ -135,11 +135,12 @@ public:
                     // cause elements to get canceled and be removed from the
                     // list.
                     if (i < fds.size() && fds[i].events & fds[i].revents) {
+                        int revents(fds[i].revents);
                         fds[i] = fds.back();
                         fds.pop_back();
                         auto c = std::exchange(ios[i], ios.back());
                         ios.pop_back();
-                        c->complete();
+                        c->complete(revents);
                     }
             }
         }
@@ -178,7 +179,7 @@ namespace hidden_async_connect {
                 else
                     set_error(self.receiver, std::make_exception_ptr(std::runtime_error(std::string("connect: ") + ::strerror(errno))));
             }
-            void complete() override final {
+            void complete(int) override final {
                 cb.disengage();
                 int         rc{};
                 ::socklen_t len{sizeof rc};
@@ -217,16 +218,16 @@ namespace hidden::io_operation {
             : toy::io
         {
             R                       receiver;
-            Operation               op;
+            Operation               d_op;
             toy::io_context_base*   context;
             stop_callback<state, R> cb;
 
             state(R                receiver,
                   int              fd,
                   Operation        op)
-                : io(*get_scheduler(receiver).context, fd, Operation::event == event_kind::read? POLLIN: POLLOUT)
+                : io(*get_scheduler(receiver).context, fd, op.event == event_kind::read? POLLIN: POLLOUT)
                 , receiver(receiver)
-                , op(op)
+                , d_op(op)
                 , cb() {
             }
 
@@ -234,10 +235,10 @@ namespace hidden::io_operation {
                 self.cb.engage(self);
                 self.c.add(&self);
             }
-            void complete() override final {
+            void complete(int revents) override final {
                 using result_t = typename Operation::result_t;
                 cb.disengage();
-                auto res{op(*this)};
+                auto res{d_op(*this, revents)};
                 if (0 <= res) {
                     if constexpr (requires(io_context_base& context, decltype(res) res){ result_t(context, res); }) {
                         auto& context(*get_scheduler(receiver).context);
@@ -257,6 +258,11 @@ namespace hidden::io_operation {
             return state<R>(receiver, self.socket.fd(), self.op);
         }
     };
+}
+
+hidden::io_operation::sender<hidden::io_operation::poll_op>
+async_poll(toy::socket& s, toy::hidden::io_operation::event_kind events) {
+    return {s, { events }};
 }
 
 hidden::io_operation::sender<hidden::io_operation::accept_op>
@@ -343,7 +349,7 @@ namespace hidden_async_sleep_for {
                 self.cb.engage(self);
                 self.c.add(std::chrono::system_clock::now() + self.duration, &self);;
             }
-            void complete() override {
+            void complete(int) override {
                 cb.disengage();
                 set_value(receiver, result_t{});
             }
