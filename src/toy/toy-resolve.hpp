@@ -34,6 +34,7 @@
 #include <exception>
 #include <stdexcept>
 #include <utility>
+#include <netdb.h>
 
 // ----------------------------------------------------------------------------
 
@@ -65,12 +66,9 @@ namespace toy {
                     ares_socket_t socks[ARES_GETSOCK_MAXNUM];
                     do {
                         int rc = co_await toy::async_poll(sock, events);
-                        (void)rc;
                         ares_process_fd(res.channel,
-                                        //rc & POLL_IN? fd: ARES_SOCKET_BAD,
-                                        //rc & POLL_OUT? fd: ARES_SOCKET_BAD);
-                                        bool(events & event_kind::read)? fd: ARES_SOCKET_BAD,
-                                        bool(events & event_kind::write)? fd: ARES_SOCKET_BAD);
+                                        rc & POLLIN? fd: ARES_SOCKET_BAD,
+                                        rc & POLLOUT? fd: ARES_SOCKET_BAD);
 
                         int bits = ares_getsock(res.channel, socks, ARES_GETSOCK_MAXNUM);
                         events = event_kind::none;
@@ -134,16 +132,14 @@ namespace toy {
                     if (hosts->h_addrtype == AF_INET) {
                         sockaddr_in addr{};
                         addr.sin_family = AF_INET;
-                        addr.sin_len = sizeof(sockaddr_in);
                         std::memcpy(&addr.sin_addr.s_addr, hosts->h_addr_list[0], sizeof(addr.sin_addr.s_addr));
-                        set_value(self.receiver, toy::address(&addr, addr.sin_len));
+                        set_value(self.receiver, toy::address(&addr, sizeof(addr)));
                     }
                     else if (hosts->h_addrtype == AF_INET6) {
                         sockaddr_in6 addr{};
                         addr.sin6_family = AF_INET6;
-                        addr.sin6_len = sizeof(sockaddr_in);
                         std::memcpy(&addr.sin6_addr, hosts->h_addr_list[0], sizeof(addr.sin6_addr));
-                        set_value(self.receiver, toy::address(&addr, addr.sin6_len));
+                        set_value(self.receiver, toy::address(&addr, sizeof(addr)));
                     }
                     else {
                         set_error(self.receiver, std::make_exception_ptr(std::runtime_error("unsupported address family")));

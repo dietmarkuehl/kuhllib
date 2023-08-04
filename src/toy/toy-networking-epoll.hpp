@@ -260,7 +260,7 @@ namespace hidden::io_operation {
                     self.try_operation([&]{ return self.op.start(self); });
                 }
                 else {
-                    self.try_operation([&]{ return self.op(self); });
+                    self.try_operation([&]{ return self.op(self, 0); });
                 }
             }
             template <typename Fun>
@@ -292,7 +292,7 @@ namespace hidden::io_operation {
             int complete(short int) override final {
                 std::cout << "completing(" << fd << "\n";
                 cb.disengage();
-                try_operation([&]{ return op(*this); });
+                try_operation([&]{ return op(*this, 0); });
                 return 0;
             }
         };
@@ -310,6 +310,11 @@ hidden::io_operation::sender<hidden::io_operation::connect_op>
 async_connect(toy::socket& s, sockaddr const* addr, socklen_t len)
 {
     return hidden::io_operation::sender<hidden::io_operation::connect_op>{s, toy::address(addr, len)};
+}
+
+hidden::io_operation::sender<hidden::io_operation::poll_op>
+async_poll(toy::socket& s, toy::hidden::io_operation::event_kind mask) {
+    return {s, { mask }};
 }
 
 hidden::io_operation::sender<hidden::io_operation::accept_op>

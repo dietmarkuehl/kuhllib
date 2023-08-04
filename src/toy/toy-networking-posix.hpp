@@ -151,6 +151,7 @@ namespace hidden::io_operation {
     }
     std::ostream& operator<<(std::ostream& out, event_kind event) {
         switch (event) {
+            default: return out << "unknown";
             case event_kind::none:  return out << "none";
             case event_kind::read:  return out << "read";
             case event_kind::write: return out << "write";
