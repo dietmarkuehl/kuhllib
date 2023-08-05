@@ -67,7 +67,7 @@ struct io
     io_context& c;
     int         fd;
     short int   events;
-    virtual void complete() = 0;
+    virtual void complete(toy::hidden::io_operation::event_kind) = 0;
     io(io_context& c, int fd, short int events): c(c), fd(fd), events(events)  {
     }
 };
@@ -133,7 +133,7 @@ public:
             while (!times.empty() && times.top().first <= now) {
                 io* op{times.top().second};
                 times.pop();
-                op->complete();
+                op->complete(toy::hidden::io_operation::event_kind::none);
                 timed = true;
             }
             if (timed) {
@@ -150,7 +150,16 @@ public:
             int n = ::kevent(queue, change, changes, result, 1, times.empty()? nullptr: &timeout);
             changes = 0u;
             while (0 < n) {
-                static_cast<io*>(result[--n].udata)->complete();
+                --n;
+                using event_kind = toy::hidden::io_operation::event_kind;
+                event_kind event(std::invoke([filter = result[n].filter]{
+                    switch (filter) {
+                        default: return event_kind::none;
+                        case EVFILT_READ: return event_kind::read;
+                        case EVFILT_WRITE: return event_kind::write;
+                    }
+                }));
+                static_cast<io*>(result[n].udata)->complete(event);
                 --outstanding;
             }
         }
@@ -188,10 +197,13 @@ namespace hidden::io_operation {
                 self.cb.engage(self);
                 self.c.add(&self);
             }
-            void complete() override final {
+            void complete(event_kind event) override final {
                 cb.disengage();
-                auto res{op(*this, 0)};
-                if (0 <= res)
+                auto res{op(*this, event)};
+                if constexpr (std::same_as<event_kind, decltype(res)>) {
+                    set_value(std::move(receiver), result_t(res));
+                }
+                else if (0 <= res)
                     if constexpr (requires(io_context_base& context, decltype(res) res){ result_t(context, res); }) {
                         auto& context(*get_scheduler(receiver).context);
                         set_value(std::move(receiver), result_t(context, res));
@@ -313,7 +325,7 @@ namespace hidden_async_connect {
                     break;
                 }
             }
-            void complete() override final {
+            void complete(toy::hidden::io_operation::event_kind) override final {
                 cb.disengage();
                 int         rc{};
                 ::socklen_t len{sizeof rc};
@@ -355,7 +367,7 @@ namespace hidden::async_sleep_for {
                 self.cb.engage(self);
                 self.c.add(std::chrono::system_clock::now() + self.duration, &self);
             }
-            void complete() override {
+            void complete(toy::hidden::io_operation::event_kind) override {
                 cb.disengage();
                 set_value(receiver, result_t{});
             }

@@ -160,14 +160,14 @@ namespace hidden::io_operation {
     }
 
     struct poll_op {
-        using result_t = int;
+        using result_t = event_kind;
         event_kind event{};
         static constexpr char const* name = "poll";
 
         int start(auto&) {
             return EAGAIN;
         }
-        int operator()(auto&, int revents) {
+        event_kind operator()(auto&, event_kind revents) {
             return revents;
         }
     };
@@ -182,7 +182,7 @@ namespace hidden::io_operation {
         int start(auto& state) {
             return ::connect(state.fd, &state.op.address.as_addr(), state.op.address.size());
         }
-        int operator()(auto& state, int) {
+        int operator()(auto& state, event_kind) {
             int         rc{};
             ::socklen_t len{sizeof rc};
             return (::getsockopt(state.fd, SOL_SOCKET, SO_ERROR, &rc, &len) || rc)? -1: rc;
@@ -194,7 +194,7 @@ namespace hidden::io_operation {
         static constexpr event_kind event = event_kind::read;
         static constexpr char const* name = "accept";
 
-        int operator()(auto& state, int) {
+        int operator()(auto& state, event_kind) {
             ::sockaddr  addr{};
             ::socklen_t len{sizeof(addr)};
             return ::accept(state.fd, &addr, &len);
@@ -209,7 +209,7 @@ namespace hidden::io_operation {
         char*       buffer;
         std::size_t len;
 
-        int operator()(auto& state, int) {
+        int operator()(auto& state, event_kind) {
             return ::read(state.fd, buffer, len);
         }
     };
@@ -222,7 +222,7 @@ namespace hidden::io_operation {
         char const* buffer;
         std::size_t len;
 
-        int operator()(auto& state, int) {
+        int operator()(auto& state, event_kind) {
             return ::write(state.fd, buffer, len);
         }
     };
@@ -235,7 +235,7 @@ namespace hidden::io_operation {
 
         toy::message_flags flags;
         MBS                buffer;
-        ssize_t operator()(auto& state, int) {
+        ssize_t operator()(auto& state, event_kind) {
             msghdr msg{
                 .msg_name = nullptr,
                 .msg_namelen = 0,
@@ -258,7 +258,7 @@ namespace hidden::io_operation {
         MBS                buffer;
         toy::address&      addr;
         toy::message_flags flags;
-        ::ssize_t operator()(auto& state, int) {
+        ::ssize_t operator()(auto& state, event_kind) {
             msghdr msg{
                 .msg_name = &addr.as_addr(),
                 .msg_namelen = addr.capacity(),
@@ -284,7 +284,7 @@ namespace hidden::io_operation {
 
         toy::message_flags flags;
         MBS                buffer;
-        ::ssize_t operator()(auto& state, int) {
+        ::ssize_t operator()(auto& state, event_kind) {
             msghdr msg{
                 .msg_name = nullptr,
                 .msg_namelen = 0,
@@ -307,7 +307,7 @@ namespace hidden::io_operation {
         MBS                buffer;
         toy::address       address;
         toy::message_flags flags;
-        ::ssize_t operator()(auto& state, int) {
+        ::ssize_t operator()(auto& state, event_kind) {
             msghdr msg{
                 .msg_name = &address.as_addr(),
                 .msg_namelen = address.size(),

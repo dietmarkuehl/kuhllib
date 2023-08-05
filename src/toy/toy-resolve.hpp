@@ -61,10 +61,10 @@ namespace toy {
             toy::socket sock(*res.context, fd);
             ares_socket_t socks[ARES_GETSOCK_MAXNUM];
             do {
-                int rc = co_await toy::async_poll(sock, events);
+                event_kind rc = co_await toy::async_poll(sock, events);
                 ares_process_fd(res.channel,
-                                rc & POLLIN? fd: ARES_SOCKET_BAD,
-                                rc & POLLOUT? fd: ARES_SOCKET_BAD);
+                                bool(rc & event_kind::read)? fd: ARES_SOCKET_BAD,
+                                bool(rc & event_kind::write)? fd: ARES_SOCKET_BAD);
 
                 int bits = ares_getsock(res.channel, socks, ARES_GETSOCK_MAXNUM);
                 events = event_kind::none;

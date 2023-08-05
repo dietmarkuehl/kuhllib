@@ -238,8 +238,19 @@ namespace hidden::io_operation {
             void complete(int revents) override final {
                 using result_t = typename Operation::result_t;
                 cb.disengage();
-                auto res{d_op(*this, revents)};
-                if (0 <= res) {
+                event_kind event(std::invoke([revents]{
+                    switch (revents & (POLLIN | POLLOUT)) {
+                        default: return event_kind::none;
+                        case POLLIN: return event_kind::read;
+                        case POLLOUT: return event_kind::write;
+                        case POLLIN | POLLOUT: return event_kind::both;
+                    }
+                }));
+                auto res{d_op(*this, event)};
+                if constexpr (std::same_as<event_kind, decltype(res)>) {
+                    set_value(std::move(receiver), result_t(res));
+                }
+                else if (0 <= res) {
                     if constexpr (requires(io_context_base& context, decltype(res) res){ result_t(context, res); }) {
                         auto& context(*get_scheduler(receiver).context);
                         set_value(std::move(receiver), result_t(context, res));
