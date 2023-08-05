@@ -88,6 +88,7 @@ int main() {
                 else {
                     std::cout << "accept timed out\n" << std::flush;
                 }
+                std::cout << "\n";
             }
         }
         catch (std::exception const& ex) {

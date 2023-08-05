@@ -475,9 +475,12 @@ auto timeout(S&& sender, D duration) {
         result_t operator()(typename S::result_t r) const { return result_t(std::move(r)); }
         result_t operator()(toy::none) const { return result_t(); }
     };
-    return toy::then(toy::when_any(std::forward<S>(sender), toy::async_sleep_for{duration}),
-                     [](auto v) { return std::visit(visitor(), std::move(v)); }
-                    );
+    return toy::then(toy::when_any(
+        std::forward<S>(sender),
+        toy::then(toy::async_sleep_for{duration}, [](auto v){ std::cout << "timer expired\n"; return v; })
+        ),
+        [](auto v) { return std::visit(visitor(), std::move(v)); }
+        );
 }
 
 // ----------------------------------------------------------------------------

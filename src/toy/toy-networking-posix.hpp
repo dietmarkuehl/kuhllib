@@ -27,6 +27,7 @@
 #define INCLUDED_TOY_POSIX
 
 #include "toy-stop_token.hpp"
+#include <unistd.h>
 #include <sys/fcntl.h>
 #include <sys/socket.h>
 #include <string>

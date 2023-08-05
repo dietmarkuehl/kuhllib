@@ -363,7 +363,7 @@ namespace hidden_async_sleep_for {
             }
             void complete(int) override {
                 cb.disengage();
-                set_value(receiver, result_t{});
+                set_value(std::move(receiver), result_t{});
             }
         };
         template <typename R>

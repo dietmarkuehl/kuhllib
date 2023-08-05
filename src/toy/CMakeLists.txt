@@ -43,8 +43,8 @@ if (TOY_HAS_ARES)
 endif()
 
 CHECK_INCLUDE_FILE("arpa/inet.h" TOY_HAS_ARPA_INET)
-if (TOY_HAS_APRA_INET)
-    add_compile_definitions(TOY_HAS_APRA_INET)
+if (TOY_HAS_ARPA_INET)
+    add_compile_definitions(TOY_HAS_ARPA_INET)
 endif()
 CHECK_INCLUDE_FILE("netinet/in.h" TOY_HAS_NETINET_IN)
 if (TOY_HAS_NETINET_IN)
@@ -68,7 +68,6 @@ if (TOY_HAS_WINSOCK2)
 endif()
 
 # try to use the POSIX interface
-CHECK_INCLUDE_FILE(unistd.h TOY_HAS_UNISTD)
 if(TOY_HAS_UNISTD)
     foreach(demo ${TOY_DEMOS})
         set(demo_executable ${demo}-${CMAKE_CXX_COMPILER_ID}-poll)

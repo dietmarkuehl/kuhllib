@@ -422,7 +422,7 @@ namespace hidden::async_sleep_for {
             }
             int complete(short int) override final {
                 cb.disengage();
-                set_value(receiver, result_t{});
+                set_value(std::move(receiver), result_t{});
                 return 0;
             }
         };

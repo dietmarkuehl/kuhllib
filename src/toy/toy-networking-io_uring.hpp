@@ -109,8 +109,13 @@ namespace hidden_io_op {
     struct cancel_state: io {
         io*  completion{nullptr};
         int  res{};
-        std::size_t complete(int) override final {
-            return 1u + std::exchange(completion, nullptr)->complete(0);
+        std::size_t complete(int res) override final {
+            std::cout << "cancel completed: " << res << "\n";
+            if (completion) {
+                auto rc = 1u + std::exchange(completion, nullptr)->complete(0);
+            }
+            std::cout << "done cancel completion\n";
+            return rc;
         }
     };
 
@@ -135,6 +140,7 @@ namespace hidden_io_op {
                     io_uring_prep_cancel(sqe, &s, unsigned());
                     sqe->user_data = reinterpret_cast<std::uint64_t>(&s.cancel);
                     context.submit();
+                    std::cout << "cancel submitted\n";
                 }
             };
             using stop_token = decltype(get_stop_token(std::declval<Receiver>()));
@@ -154,10 +160,13 @@ namespace hidden_io_op {
                 self.submit(sqe, self.fd, self.args);
                 sqe->user_data = reinterpret_cast<std::uint64_t>(&self);
                 self.context.submit();
+                std::cout << "submitted op" << &self << "\n";
             }
             std::size_t complete(int res) override {
+                std::cout << "completing op" << this << ": res=" << res << "\n";
                 cb.reset();
                 if (cancel.completion) {
+                    std::cout << "completing once cancellation completes\n";
                     cancel.res = res;
                     return 0u;
                 }
@@ -185,6 +194,7 @@ namespace hidden_io_op {
                     }
                 }
                 else  {
+                    std::cout << "setting error: " << std::strerror(-res) << "\n";
                     set_error(std::move(receiver), std::make_exception_ptr(std::system_error(-res, std::system_category())));
                 }
                 return true;
@@ -325,7 +335,7 @@ namespace hidden_async_sleep_for {
             struct callback {
                 state& s;
                 void operator()() {
-                    s.cancel.completion = &s;
+                    //-dk:TODO remove s.cancel.completion = &s;
                     auto& context = *get_scheduler(s.receiver).context;
                     ::io_uring_sqe* sqe{ context.get_sqe() };
                     io_uring_prep_timeout_remove(sqe, reinterpret_cast<std::uint64_t>(&s), unsigned());
