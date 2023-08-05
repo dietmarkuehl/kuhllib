@@ -37,6 +37,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <functional>
 #include <optional>
 #include <queue>
 #include <stdexcept>

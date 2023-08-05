@@ -164,8 +164,8 @@ namespace hidden::io_operation {
         event_kind event{};
         static constexpr char const* name = "poll";
 
-        int start(auto&) {
-            return EAGAIN;
+        event_kind start(auto&) {
+            return event_kind::none;
         }
         event_kind operator()(auto&, event_kind revents) {
             return revents;

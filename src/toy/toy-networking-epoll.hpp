@@ -36,6 +36,7 @@
 #include <algorithm>
 #include <cassert>
 #include <chrono>
+#include <functional>
 #include <stdexcept>
 #include <string>
 #include <tuple>
@@ -260,7 +261,7 @@ namespace hidden::io_operation {
                     self.try_operation([&]{ return self.op.start(self); });
                 }
                 else {
-                    self.try_operation([&]{ return self.op(self, 0); });
+                    self.try_operation([&]{ return self.op(self, event_kind::none); });
                 }
             }
             template <typename Fun>
@@ -268,7 +269,14 @@ namespace hidden::io_operation {
                 errno = 0;
                 auto rc{fun()};
                 std::cout << "try_op:" << rc << " -> " << std::strerror(errno) << "\n";
-                if (rc < 0) {
+                if (std::invoke([rc]()->bool{
+                    if constexpr (std::same_as<result_t, event_kind>) {
+                        return rc == event_kind::none;
+                    }
+                    else {
+                        return rc < 0;
+                    }
+                    })) {
                     if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINPROGRESS) {
                         std::cout << "setting up waiting (" << EAGAIN << "/" << errno << "\n";
                         cb.engage(*this);
@@ -289,10 +297,18 @@ namespace hidden::io_operation {
                     }
                 }
             }
-            int complete(short int) override final {
+            int complete(short int flags) override final {
                 std::cout << "completing(" << fd << "\n";
                 cb.disengage();
-                try_operation([&]{ return op(*this, 0); });
+                event_kind event(std::invoke([flags]{
+                    switch (flags & (POLLIN | POLLOUT)) {
+                        default: return event_kind::none;
+                        case POLLIN: return event_kind::read;
+                        case POLLOUT: return event_kind::write;
+                        case POLLIN | POLLOUT: return event_kind::both;
+                    }
+                }));
+                try_operation([&]{ return op(*this, event); });
                 return 0;
             }
         };

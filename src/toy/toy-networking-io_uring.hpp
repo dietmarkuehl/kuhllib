@@ -32,6 +32,7 @@
 #include "toy-utility.hpp"
 
 #include <chrono>
+#include <functional>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -161,10 +162,22 @@ namespace hidden_io_op {
                     return 0u;
                 }
                 else if (0 <= res) {
+                    using event_kind = toy::hidden::io_operation::event_kind;
                     if constexpr (requires(Submit const& op, state& s) { op.finalize(s); }) {
                         submit.finalize(args);
                     }
-                    if constexpr (requires(io_context_base& context, decltype(res) res){ result_t(context, res); }) {
+                    if constexpr (std::same_as<event_kind, result_t>) {
+                        event_kind event(std::invoke([res]{
+                            switch (res & (POLLIN | POLLOUT)) {
+                                default: return event_kind::none;
+                                case POLLIN: return event_kind::read;
+                                case POLLOUT: return event_kind::write;
+                                case POLLIN | POLLOUT: return event_kind::both;
+                            }
+                        }));
+                        set_value(std::move(receiver), event);
+                    }
+                    else if constexpr (requires(io_context_base& context, decltype(res) res){ result_t(context, res); }) {
                         set_value(std::move(receiver), result_t(context, res));
                     }
                     else {
@@ -199,7 +212,7 @@ using async_poll_op = decltype([](auto sqe, int fd, auto& state){
     ek mask(std::get<0>(state));
     ::io_uring_prep_poll_add(sqe, fd, (bool(mask & ek::read)? POLLIN: 0) | (bool(mask & ek::write)? POLLOUT: 0));
 });
-using async_poll = toy::hidden_io_op::io_op<int, toy::async_poll_op, toy::hidden::io_operation::event_kind>;
+using async_poll = toy::hidden_io_op::io_op<toy::hidden::io_operation::event_kind, toy::async_poll_op, toy::hidden::io_operation::event_kind>;
 
 using async_accept_op = decltype([](auto sqe, int fd, auto& state){
     ::io_uring_prep_accept(sqe, fd, reinterpret_cast<::sockaddr*>(&std::get<0>(state)), &std::get<1>(state), 0);
