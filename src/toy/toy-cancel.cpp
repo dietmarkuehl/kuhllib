@@ -69,7 +69,10 @@ int main() {
     std::cout << std::unitbuf;
     toy::io_context context;
     toy::socket     server(context, PF_INET, SOCK_STREAM, 0);
-    ::sockaddr_in addr{ AF_INET, htons(12345), { INADDR_ANY } };
+    ::sockaddr_in addr{};
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(12345);
+    addr.sin_addr.s_addr = INADDR_ANY;
     if (::bind(server.fd(), (::sockaddr*)&addr, sizeof(addr)) < 0
         || ::listen(server.fd(), 1) < 0) {
         std::cout << "can't bind socket: " << toy::strerror(errno) << "\n";
