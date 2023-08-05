@@ -30,6 +30,7 @@
 #include "toy-networking-winsock2.hpp"
 #include "toy-starter.hpp"
 #include "toy-utility.hpp"
+#include <chrono>
 #include <iostream>
 #include <stdexcept>
 #include <string>
@@ -236,11 +237,19 @@ void io_context::connect(toy::socket& client, ::sockaddr* name, ::socklen_t name
 
 struct async_sleep_for {
     using result_t = none;
+    using duration_t = std::chrono::milliseconds;
+    duration_t duration;
+    template <typename Receiver>
     struct state {
-        friend void start(state&) {}
+        Receiver receiver;
+        friend void start(state& self) {
+            std::cout << "start(async_sleep_for)\n";
+            set_error(std::move(self.receiver), std::make_exception_ptr(std::runtime_error("async_sleep_for is not, yet, implemented")));
+        }
     };
-    friend state connect(async_sleep_for, auto) {
-        return {};
+    template <typename Receiver>
+    friend state<Receiver> connect(async_sleep_for, Receiver receiver) {
+        return { receiver };
     }
 };
 
