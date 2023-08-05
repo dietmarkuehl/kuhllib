@@ -50,7 +50,9 @@
 #include <ws2ipdef.h>
 #include <ws2tcpip.h>
 #endif
+#if TOY_HAS_ARPA_INET
 #include <arpa/inet.h>
+#endif
 
 #ifdef _MSC_VER
 using sa_family_t = unsigned short;

@@ -146,27 +146,28 @@ struct io_context
 
 struct socket {
     struct data {};
-    SOCKET fd;
+    SOCKET d_fd;
+    SOCKET fd() const { return d_fd; }
     std::unique_ptr<data> continuation;
     socket(toy::io_context& io, int domain, int type, int protocol)
-        : fd(WSASocketW(domain, type, protocol, nullptr, 0, WSA_FLAG_OVERLAPPED))
+        : d_fd(WSASocketW(domain, type, protocol, nullptr, 0, WSA_FLAG_OVERLAPPED))
         , continuation(new data()) {
-        if (fd == INVALID_SOCKET) {
+        if (d_fd == INVALID_SOCKET) {
             throw std::system_error(WSAGetLastError(), io.category(),
                                     "failed to create socket");
 
         }
-        if (CreateIoCompletionPort(reinterpret_cast<HANDLE>(fd), io.port, reinterpret_cast<ULONG_PTR>(continuation.get()), 0) != io.port) {
+        if (CreateIoCompletionPort(reinterpret_cast<HANDLE>(d_fd), io.port, reinterpret_cast<ULONG_PTR>(continuation.get()), 0) != io.port) {
             throw std::system_error(WSAGetLastError(), io.category(),
                                     "failed to set iocp");
         }
     }
     socket(socket&& other)
-        : fd(std::exchange(other.fd, INVALID_SOCKET))
+        : d_fd(std::exchange(other.d_fd, INVALID_SOCKET))
         , continuation(std::move(other.continuation)) {}
     ~socket() {
-        if (fd != INVALID_SOCKET) {
-            closesocket(fd);
+        if (d_fd != INVALID_SOCKET) {
+            closesocket(d_fd);
         }
     }
 };
@@ -176,7 +177,7 @@ void io_context::accept(toy::socket& server, toy::socket& client, void* buffer, 
     static bool const dummy = std::invoke([&server]{
         DWORD bytes{};
         GUID  guidAcceptEx = WSAID_ACCEPTEX;
-        if (SOCKET_ERROR == WSAIoctl(server.fd,
+        if (SOCKET_ERROR == WSAIoctl(server.fd(),
                                      SIO_GET_EXTENSION_FUNCTION_POINTER,
                                      &guidAcceptEx, sizeof(guidAcceptEx),
                                      &accept_ex, sizeof(accept_ex),
@@ -186,7 +187,7 @@ void io_context::accept(toy::socket& server, toy::socket& client, void* buffer, 
         return true;
     });
 
-    if (not accept_ex(server.fd, client.fd, buffer, 0, sizeof(sockaddr_storage) + 16, sizeof(sockaddr_storage) + 16, word, overlapped)) {
+    if (not accept_ex(server.fd(), client.fd(), buffer, 0, sizeof(sockaddr_storage) + 16, sizeof(sockaddr_storage) + 16, word, overlapped)) {
         int err = WSAGetLastError();
         if (err != ERROR_IO_PENDING) {
             std::cout << "accept error: err=" << err << "(" << wsa_to_string(err) << ")\n";
@@ -202,7 +203,7 @@ void io_context::connect(toy::socket& client, ::sockaddr* name, ::socklen_t name
     static bool const dummy = std::invoke([&client]{
         DWORD bytes{};
         GUID  guidAcceptEx = WSAID_CONNECTEX;
-        if (SOCKET_ERROR == WSAIoctl(client.fd,
+        if (SOCKET_ERROR == WSAIoctl(client.fd(),
                                      SIO_GET_EXTENSION_FUNCTION_POINTER,
                                      &guidAcceptEx, sizeof(guidAcceptEx),
                                      &connect_ex, sizeof(connect_ex),
@@ -217,11 +218,11 @@ void io_context::connect(toy::socket& client, ::sockaddr* name, ::socklen_t name
         .sin_port = htons(0)
         };
     addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    if (bind(client.fd, reinterpret_cast<SOCKADDR*>(&addr), sizeof(addr))) {
+    if (bind(client.fd(), reinterpret_cast<SOCKADDR*>(&addr), sizeof(addr))) {
         throw std::system_error(WSAGetLastError(), this->category(), "failed to bind before connect_ex");
     }
 
-    if (not connect_ex(client.fd, name, namelen, nullptr, 0, nullptr, overlapped)) {
+    if (not connect_ex(client.fd(), name, namelen, nullptr, 0, nullptr, overlapped)) {
         int err = WSAGetLastError();
         if (err != ERROR_IO_PENDING) {
             std::cout << "connect error: err=" << err << "(" << wsa_to_string(err) << ")\n";
@@ -343,7 +344,7 @@ struct async_receive {
             std::cout << "starting receive\n" << std::flush;
             DWORD bytes{};
             DWORD flags{};
-            if (WSARecv(self.socket.fd, self.buffer.data(), DWORD(self.buffer.size()), &bytes, &flags, &self, nullptr)) {
+            if (WSARecv(self.socket.fd(), self.buffer.data(), DWORD(self.buffer.size()), &bytes, &flags, &self, nullptr)) {
                 int error = WSAGetLastError();
                 if (error != WSA_IO_PENDING) {
                     //-dk:TODO deal with error
@@ -392,7 +393,7 @@ struct async_send {
             std::cout << "starting send\n" << std::flush;
             DWORD bytes{};
             DWORD flags{};
-            if (WSASend(self.socket.fd, self.buffer.data(), DWORD(self.buffer.size()), &bytes, flags, &self, nullptr)) {
+            if (WSASend(self.socket.fd(), self.buffer.data(), DWORD(self.buffer.size()), &bytes, flags, &self, nullptr)) {
                 int error = WSAGetLastError();
                 if (error != WSA_IO_PENDING) {
                     //-dk:TODO deal with error
