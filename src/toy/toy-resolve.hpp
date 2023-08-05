@@ -54,37 +54,40 @@ namespace toy {
                 ares_library_cleanup();
             }
         };
+        static toy::task<toy::io_context::scheduler> poll_callback(void* data, int fd, toy::hidden::io_operation::event_kind events)
+        {
+            using event_kind = toy::hidden::io_operation::event_kind;
+            resolver& res(*static_cast<resolver*>(data));
+            toy::socket sock(*res.context, fd);
+            ares_socket_t socks[ARES_GETSOCK_MAXNUM];
+            do {
+                int rc = co_await toy::async_poll(sock, events);
+                ares_process_fd(res.channel,
+                                rc & POLLIN? fd: ARES_SOCKET_BAD,
+                                rc & POLLOUT? fd: ARES_SOCKET_BAD);
+
+                int bits = ares_getsock(res.channel, socks, ARES_GETSOCK_MAXNUM);
+                events = event_kind::none;
+                if (bits) {
+                    for (int i{}; i != ARES_GETSOCK_MAXNUM; ++i) {
+                        if ((ARES_GETSOCK_READABLE(bits, i) || ARES_GETSOCK_WRITABLE(bits, i))
+                            && socks[i] == fd) {
+                            events = (ARES_GETSOCK_READABLE(bits, i)? event_kind::read: event_kind::none)
+                                   | (ARES_GETSOCK_WRITABLE(bits, i)? event_kind::write: event_kind::none)
+                                   ;
+                        }
+                    }
+                }
+            }
+            while (events != event_kind::none);
+        }
         static void state_callback(void* data, int fd, int in, int out)
         {
             using event_kind = toy::hidden::io_operation::event_kind;
             event_kind events((in? event_kind::read: event_kind::none) | (out? event_kind::write: event_kind::none));
             if (bool(events)) {
                 resolver& res(*static_cast<resolver*>(data));
-                res.context->spawn([](void* data, int fd, event_kind events)->toy::task<toy::io_context::scheduler> {
-                    resolver& res(*static_cast<resolver*>(data));
-                    toy::socket sock(*res.context, fd);
-                    ares_socket_t socks[ARES_GETSOCK_MAXNUM];
-                    do {
-                        int rc = co_await toy::async_poll(sock, events);
-                        ares_process_fd(res.channel,
-                                        rc & POLLIN? fd: ARES_SOCKET_BAD,
-                                        rc & POLLOUT? fd: ARES_SOCKET_BAD);
-
-                        int bits = ares_getsock(res.channel, socks, ARES_GETSOCK_MAXNUM);
-                        events = event_kind::none;
-                        if (bits) {
-                            for (int i{}; i != ARES_GETSOCK_MAXNUM; ++i) {
-                                if ((ARES_GETSOCK_READABLE(bits, i) || ARES_GETSOCK_WRITABLE(bits, i))
-                                    && socks[i] == fd) {
-                                    events = (ARES_GETSOCK_READABLE(bits, i)? event_kind::read: event_kind::none)
-                                           | (ARES_GETSOCK_WRITABLE(bits, i)? event_kind::write: event_kind::none)
-                                           ;
-                                }
-                            }
-                        }
-                    }
-                    while (events != event_kind::none);
-                }(data, fd, events));
+                res.context->spawn(poll_callback(data, fd, events));
             }
         }
         struct resolver {

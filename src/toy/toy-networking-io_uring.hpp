@@ -199,7 +199,7 @@ using async_poll_op = decltype([](auto sqe, int fd, auto& state){
     ek mask(std::get<0>(state));
     ::io_uring_prep_poll_add(sqe, fd, (bool(mask & ek::read)? POLLIN: 0) | (bool(mask & ek::write)? POLLOUT: 0));
 });
-using async_poll = hidden_io_op::io_op<int, async_poll_op, toy::hidden::io_operation::event_kind>;
+using async_poll = toy::hidden_io_op::io_op<int, toy::async_poll_op, toy::hidden::io_operation::event_kind>;
 
 using async_accept_op = decltype([](auto sqe, int fd, auto& state){
     ::io_uring_prep_accept(sqe, fd, reinterpret_cast<::sockaddr*>(&std::get<0>(state)), &std::get<1>(state), 0);

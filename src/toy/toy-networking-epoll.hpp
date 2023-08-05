@@ -312,7 +312,7 @@ async_connect(toy::socket& s, sockaddr const* addr, socklen_t len)
     return hidden::io_operation::sender<hidden::io_operation::connect_op>{s, toy::address(addr, len)};
 }
 
-hidden::io_operation::sender<hidden::io_operation::poll_op>
+toy::hidden::io_operation::sender<toy::hidden::io_operation::poll_op>
 async_poll(toy::socket& s, toy::hidden::io_operation::event_kind mask) {
     return {s, { mask }};
 }
