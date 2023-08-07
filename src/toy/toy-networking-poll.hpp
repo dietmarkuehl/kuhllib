@@ -64,6 +64,7 @@ namespace toy
 class io_context;
 struct io_scheduler {
     io_context* context;
+    io_scheduler(io_context* context): context(context) {}
     friend std::ostream& operator<< (std::ostream& out, io_scheduler const& s) {
         return out << s.context;
     }

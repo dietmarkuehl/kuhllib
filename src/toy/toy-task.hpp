@@ -45,7 +45,7 @@ namespace hidden_task {
     {
         task() {}
         task(auto&& handle): handle(std::move(handle)) {}
-        task(task&& other): handle(std::exchange(other.handle, std::coroutine_handle<promise_type>())) {}
+        task(task&& other): handle(std::exchange(other.handle, toy::coroutine_handle<promise_type>())) {}
         ~task() {
             if (handle) {
                 handle.destroy();
@@ -161,7 +161,7 @@ namespace hidden_task {
 
         template <typename R>
         friend state<R> connect(task&& self, R receiver) {
-            return state<R>(std::exchange(self.handle, std::coroutine_handle<promise_type>()), receiver);
+            return state<R>(std::exchange(self.handle, toy::coroutine_handle<promise_type>()), receiver);
         }
     };
     template <typename Scheduler>
