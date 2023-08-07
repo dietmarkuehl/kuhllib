@@ -51,6 +51,7 @@ namespace toy
 struct io: immovable {
     virtual ~io() = default;
     virtual std::size_t complete(int) = 0;
+    std::size_t nop() { return 0; }
 };
 
 struct io_context;
@@ -92,30 +93,18 @@ struct io_context
     }
 };
 
-#if 0
-//-dk:TODO remove
-struct socket {
-    int fd;
-
-    socket(int fd): fd(fd) {}
-    socket(socket&& other): fd(std::exchange(other.fd, -1)) {}
-    ~socket() { if (0 <= fd) ::close(fd); }
-};
-#endif
-
 // ----------------------------------------------------------------------------
 
 namespace hidden_io_op {
     struct cancel_state: io {
-        io*  completion{nullptr};
-        int  res{};
-        std::size_t complete(int res) override final {
-            std::cout << "cancel completed: " << res << "\n";
-            if (completion) {
-                auto rc = 1u + std::exchange(completion, nullptr)->complete(0);
-            }
-            std::cout << "done cancel completion\n";
-            return rc;
+        io*                state{nullptr};
+        std::optional<int> rc;
+        std::size_t complete(int) override final {
+            rc
+                ? std::exchange(state, nullptr)->complete(*rc)
+                : std::exchange(state, nullptr)->nop()
+                ;
+            return 1;
         }
     };
 
@@ -134,13 +123,12 @@ namespace hidden_io_op {
             struct callback {
                 state& s;
                 void operator()() {
-                    s.cancel.completion = &s;
+                    s.cancel.state = &s;
                     auto& context = *get_scheduler(s.receiver).context;
                     ::io_uring_sqe* sqe{ context.get_sqe() };
                     io_uring_prep_cancel(sqe, &s, unsigned());
                     sqe->user_data = reinterpret_cast<std::uint64_t>(&s.cancel);
                     context.submit();
-                    std::cout << "cancel submitted\n";
                 }
             };
             using stop_token = decltype(get_stop_token(std::declval<Receiver>()));
@@ -160,14 +148,11 @@ namespace hidden_io_op {
                 self.submit(sqe, self.fd, self.args);
                 sqe->user_data = reinterpret_cast<std::uint64_t>(&self);
                 self.context.submit();
-                std::cout << "submitted op" << &self << "\n";
             }
             std::size_t complete(int res) override {
-                std::cout << "completing op" << this << ": res=" << res << "\n";
                 cb.reset();
-                if (cancel.completion) {
-                    std::cout << "completing once cancellation completes\n";
-                    cancel.res = res;
+                if (cancel.state) {
+                    cancel.rc = res;
                     return 0u;
                 }
                 else if (0 <= res) {
@@ -193,11 +178,13 @@ namespace hidden_io_op {
                         set_value(std::move(receiver), result_t(res));
                     }
                 }
+                else if (-res == ECANCELED) {
+                    set_stopped(std::move(receiver));
+                }
                 else  {
-                    std::cout << "setting error: " << std::strerror(-res) << "\n";
                     set_error(std::move(receiver), std::make_exception_ptr(std::system_error(-res, std::system_category())));
                 }
-                return true;
+                return 1;
             }
         };
 
@@ -335,7 +322,7 @@ namespace hidden_async_sleep_for {
             struct callback {
                 state& s;
                 void operator()() {
-                    //-dk:TODO remove s.cancel.completion = &s;
+                    s.cancel.state = &s;
                     auto& context = *get_scheduler(s.receiver).context;
                     ::io_uring_sqe* sqe{ context.get_sqe() };
                     io_uring_prep_timeout_remove(sqe, reinterpret_cast<std::uint64_t>(&s), unsigned());
@@ -361,13 +348,19 @@ namespace hidden_async_sleep_for {
                 sqe->user_data = reinterpret_cast<std::uint64_t>(&self);
                 context.submit();
             }
-            std::size_t complete(int) override {
+            std::size_t complete(int res) override {
                 cb.reset();
-                if (!cancel.completion) {
-                    set_value(std::move(receiver), none{});
-                    return 1u;
+                if (cancel.state) {
+                    cancel.rc = res;
+                    return 0u;
                 }
-                return 0u;
+                else if (-res == ECANCELED) {
+                    set_stopped(std::move(receiver));
+                }
+                else {
+                    set_value(std::move(receiver), none{});
+                }
+                return 1u;
             }
         };
         template <typename R>
