@@ -31,6 +31,7 @@
 #include "toy-starter.hpp"
 #include "toy-utility.hpp"
 #include <chrono>
+#include <functional>
 #include <optional>
 #include <stdexcept>
 #include <string>
