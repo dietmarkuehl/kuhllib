@@ -128,7 +128,7 @@ struct io_context
     }
 
     void accept(toy::socket& server, toy::socket& client, void* buffer, DWORD* dummy, LPOVERLAPPED overlapped);
-    void connect(toy::socket& server, ::sockaddr* name, ::socklen_t namelen, LPOVERLAPPED overlapped);
+    void connect(toy::socket& server, ::sockaddr const* name, ::socklen_t namelen, LPOVERLAPPED overlapped);
 
     HANDLE port;
     io_context()
@@ -198,7 +198,7 @@ void io_context::accept(toy::socket& server, toy::socket& client, void* buffer, 
     std::cout << "accept done\n";
 }
 
-void io_context::connect(toy::socket& client, ::sockaddr* name, ::socklen_t namelen, LPOVERLAPPED overlapped)
+void io_context::connect(toy::socket& client, ::sockaddr const* name, ::socklen_t namelen, LPOVERLAPPED overlapped)
 {
     static LPFN_CONNECTEX connect_ex{};
     static bool const dummy = std::invoke([&client]{
@@ -302,10 +302,10 @@ struct async_connect {
     {
         Receiver      receiver;
         toy::socket&  socket;
-        ::sockaddr*   name;
+        ::sockaddr const*   name;
         ::socklen_t   namelen;
 
-        state(Receiver receiver, toy::socket& socket, ::sockaddr* name, ::socklen_t namelen)
+        state(Receiver receiver, toy::socket& socket, ::sockaddr const* name, ::socklen_t namelen)
             : receiver(receiver)
             , socket(socket)
             , name(name)
@@ -322,9 +322,9 @@ struct async_connect {
         }
     };
     toy::socket& socket;
-    ::sockaddr*   name;
+    ::sockaddr const*   name;
     ::socklen_t  namelen;
-    async_connect(toy::socket& socket, void* name, ::socklen_t namelen): socket(socket), name(reinterpret_cast<::sockaddr*>(name)), namelen(namelen) {}
+    async_connect(toy::socket& socket, void const* name, ::socklen_t namelen): socket(socket), name(reinterpret_cast<::sockaddr const*>(name)), namelen(namelen) {}
     template <typename Receiver>
     friend state<Receiver> connect(async_connect const& self, Receiver receiver) {
         return state<Receiver>(receiver, self.socket, self.name, self.namelen);
@@ -457,7 +457,6 @@ struct file {
         , continuation(new data)
     {
     }
-    file(file&&) = delete;
 };
 
 struct async_read_some {
@@ -522,8 +521,8 @@ struct async_read_some {
     }
 };
 
-toy::file& std_in() {
-    static toy::file rc(CreateFile("CONIN$", FILE_GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, 0));
+toy::file std_in(auto&&) {
+    toy::file rc(CreateFile("CONIN$", FILE_GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, 0));
     // static toy::file rc(GetStdHandle(STD_INPUT_HANDLE));
     if (rc.handle == INVALID_HANDLE_VALUE) {
         std::cout << "failed to get STD_INPUT HANDLE\n";
