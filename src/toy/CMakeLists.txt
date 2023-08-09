@@ -21,8 +21,6 @@ endif()
 # doesn't compile with gcc: toy-coro
 list(APPEND TOY_DEMOS
     toy-client
-)
-list(APPEND TOY_DEMOS
     toy-cancel
     toy-echo
     toy-sender

@@ -170,6 +170,7 @@ namespace hidden::io_operation {
         static constexpr char const* name = "poll";
 
         event_kind start(auto&) {
+            errno = EAGAIN;
             return event_kind::none;
         }
         event_kind operator()(auto&, event_kind revents) {
