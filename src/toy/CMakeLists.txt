@@ -5,7 +5,7 @@ include(CheckIncludeFile)
 set(CMAKE_CXX_STANDARD 20)
 
 if(CMAKE_COMPILER_IS_GNUCXX)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -W -Wall -Werror -Wno-missing-field-initializers -fconcepts-diagnostics-depth=4 -ftemplate-backtrace-limit=0")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -W -Wall -Werror -Wno-error=subobject-linkage -Wno-subobject-linkage -Wno-missing-field-initializers -fconcepts-diagnostics-depth=4 -ftemplate-backtrace-limit=0")
 endif()
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -W -Wall -Werror -stdlib=libc++")
@@ -20,23 +20,63 @@ endif()
 
 # doesn't compile with gcc: toy-coro
 list(APPEND TOY_DEMOS
-    toy-cancel
     toy-client
+)
+list(APPEND TOY_DEMOS
+    toy-cancel
     toy-echo
     toy-sender
     toy-udp-client
     toy-udp-server
+    toy-http-client
 )
 
+set(CMAKE_REQUIRED_INCLUDES "/usr/local/include")
+CHECK_INCLUDE_FILE("ares.h" TOY_HAS_ARES)
+if (TOY_HAS_ARES)
+    include_directories("/usr/local/include")
+    link_directories("/usr/local/lib")
+    set(TOY_LIB_CARES cares)
+
+    list(APPEND TOY_DEMOS toy-resolve)
+    add_compile_definitions(TOY_HAS_ARES)
+endif()
+
+CHECK_INCLUDE_FILE("arpa/inet.h" TOY_HAS_ARPA_INET)
+if (TOY_HAS_ARPA_INET)
+    add_compile_definitions(TOY_HAS_ARPA_INET)
+endif()
+CHECK_INCLUDE_FILE("netinet/in.h" TOY_HAS_NETINET_IN)
+if (TOY_HAS_NETINET_IN)
+    add_compile_definitions(TOY_HAS_NETINET_IN)
+endif()
+CHECK_INCLUDE_FILE("poll.h" TOY_HAS_POLL)
+if (TOY_HAS_POLL)
+    add_compile_definitions(TOY_HAS_POLL)
+endif()
+CHECK_INCLUDE_FILE("sys/socket.h" TOY_HAS_SYS_SOCKET)
+if (TOY_HAS_SYS_SOCKET)
+    add_compile_definitions(TOY_HAS_SYS_SOCKET)
+endif()
+CHECK_INCLUDE_FILE("unistd.h" TOY_HAS_UNISTD)
+if (TOY_HAS_UNISTD)
+    add_compile_definitions(TOY_HAS_UNISTD)
+endif()
+CHECK_INCLUDE_FILE("winsock2.h" TOY_HAS_WINSOCK2)
+if (TOY_HAS_WINSOCK2)
+    add_compile_definitions(TOY_HAS_WINSOCK2)
+endif()
+
 # try to use the POSIX interface
-CHECK_INCLUDE_FILE(unistd.h TOY_HAS_UNISTD)
 if(TOY_HAS_UNISTD)
     foreach(demo ${TOY_DEMOS})
-        add_executable(${demo}-${CMAKE_CXX_COMPILER_ID}-poll ${demo}.cpp)
+        set(demo_executable ${demo}-${CMAKE_CXX_COMPILER_ID}-poll)
+        add_executable(${demo_executable} ${demo}.cpp)
+        target_link_libraries(${demo_executable} ${TOY_LIB_CARES})
     endforeach()
 
     add_executable(toy-cppcon-2022-${CMAKE_CXX_COMPILER_ID} toy-cppcon-2022.cpp)
-ENDIF()
+endif()
 
 # try to use liburing.h
 CHECK_INCLUDE_FILE(liburing.h TOY_HAS_LIBURING)
@@ -45,7 +85,7 @@ IF(TOY_HAS_LIBURING)
         set(demo_executable ${demo}-${CMAKE_CXX_COMPILER_ID}-io_uring)
         add_executable(${demo_executable} ${demo}.cpp)
         target_compile_definitions(${demo_executable} PRIVATE TOY_NETWORKING_HPP="toy-networking-io_uring.hpp")
-        target_link_libraries(${demo_executable} uring)
+        target_link_libraries(${demo_executable} uring ${TOY_LIB_CARES})
     endforeach()
 ENDIF()
 
@@ -56,6 +96,7 @@ IF(TOY_HAS_EPOLL)
         set(demo_executable ${demo}-${CMAKE_CXX_COMPILER_ID}-epoll)
         add_executable(${demo_executable} ${demo}.cpp)
         target_compile_definitions(${demo_executable} PRIVATE TOY_NETWORKING_HPP="toy-networking-epoll.hpp")
+        target_link_libraries(${demo_executable} ${TOY_LIB_CARES})
     endforeach()
 ENDIF()
 
@@ -66,6 +107,7 @@ IF(TOY_HAS_KQUEUE)
         set(demo_executable ${demo}-${CMAKE_CXX_COMPILER_ID}-kqueue)
         add_executable(${demo_executable} ${demo}.cpp)
         target_compile_definitions(${demo_executable} PRIVATE TOY_NETWORKING_HPP="toy-networking-kqueue.hpp")
+        target_link_libraries(${demo_executable} cares)
     endforeach()
 ENDIF()
 
@@ -74,6 +116,10 @@ CHECK_INCLUDE_FILE(winsock2.h TOY_HAS_IOCP)
 IF(TOY_HAS_IOCP)
     add_executable(toy-echo-iocp toy-echo.cpp)
     target_compile_definitions(toy-echo-iocp PRIVATE TOY_NETWORKING_HPP="toy-networking-iocp.hpp")
-    #add_executable(toy-client-iocp toy-client.cpp)
-    #target_compile_definitions(toy-client-iocp PRIVATE TOY_NETWORKING_HPP="toy-networking-iocp.hpp")
+    add_executable(toy-client-iocp toy-client.cpp)
+    target_compile_definitions(toy-client-iocp PRIVATE TOY_NETWORKING_HPP="toy-networking-iocp.hpp")
+    #add_executable(toy-http-client-iocp toy-http-client.cpp)
+    #target_compile_definitions(toy-http-client-iocp PRIVATE TOY_NETWORKING_HPP="toy-networking-iocp.hpp")
+    add_executable(toy-cancel-iocp toy-cancel.cpp)
+    target_compile_definitions(toy-cancel-iocp PRIVATE TOY_NETWORKING_HPP="toy-networking-iocp.hpp")
 ENDIF()

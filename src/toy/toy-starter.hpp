@@ -37,10 +37,10 @@ namespace toy
 
 template <typename Scheduler>
 class starter
-    : immovable
+    : toy::immovable
 {
     struct job_base
-        : immovable {
+        : toy::immovable {
         Scheduler sched;
         job_base(Scheduler sched) : sched(sched) {}
         virtual ~job_base() = default;
@@ -52,15 +52,16 @@ class starter
         friend auto get_stop_token(receiver const&) { return toy::never_stop_token{}; }
         friend void set_value(receiver const& self, auto) { delete self.job; }
         friend void set_error(receiver const& self, auto) { delete self.job; }
+        friend void set_stopped(receiver const& self) { delete self.job; }
     };
 
-    template <typename S>
+    template <typename Sender>
     struct job
         : job_base {
-        decltype(connect(std::declval<S>(), std::declval<receiver>())) state;
-        job(Scheduler sched, S&& s)
+        decltype(connect(std::declval<Sender>(), std::declval<receiver>())) state;
+        job(Scheduler sched, Sender&& sender)
             : job_base(sched)
-            , state(connect(std::move(s), receiver{this}))
+            , state(connect(std::move(sender), receiver{this}))
         {
             start(state);
         }

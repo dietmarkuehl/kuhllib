@@ -27,11 +27,17 @@
 #define INCLUDED_TOY_NETWORKING_POLL
 
 #include "toy-networking-common.hpp"
+#ifdef TOY_HAS_WINSOCK2
+#    include "toy-networking-winsock2.hpp"
+#else
+#    include "toy-networking-posix.hpp"
+#endif
 #include "toy-starter.hpp"
 #include "toy-utility.hpp"
 
 #include <algorithm>
 #include <chrono>
+#include <functional>
 #include <optional>
 #include <queue>
 #include <stdexcept>
@@ -41,14 +47,11 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
-#include <iostream> //-dk:TODO remove
 
 #include <stddef.h>
 #include <string.h>
 
 #include <unistd.h>
-#include <sys/fcntl.h>
-#include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <poll.h>
@@ -58,21 +61,10 @@ namespace toy
 
 // ----------------------------------------------------------------------------
 
-struct socket
-{
-    int fd = -1;
-    socket(int fd): fd(fd) {
-        if (::fcntl(fd, F_SETFL, O_NONBLOCK) < 0) {
-            throw std::runtime_error("fcntl");
-        }
-    }
-    socket(socket&& other): fd(std::exchange(other.fd, -1)) {}
-    ~socket() { if (fd != -1) ::close(fd); }
-};
-
 class io_context;
 struct io_scheduler {
     io_context* context;
+    io_scheduler(io_context* context): context(context) {}
     friend std::ostream& operator<< (std::ostream& out, io_scheduler const& s) {
         return out << s.context;
     }
@@ -83,12 +75,13 @@ struct io
     io_context& c;
     int         fd;
     short int   events;
-    virtual void complete() = 0;
+    virtual void complete(int) = 0;
     io(io_context& c, int fd, short int events): c(c), fd(fd), events(events)  {}
 };
 
 class io_context
     : public starter<toy::io_scheduler>
+    , public toy::io_context_base
 {
 public:
     using scheduler = toy::io_scheduler;
@@ -101,10 +94,8 @@ private:
     toy::timer_queue<io*> times;
 
 public:
-    static constexpr bool has_timer = true; //-dk:TODO remove - used while adding timers to contexts
-
     io_context()
-        : starter(get_scheduler()) {
+        : starter(scheduler(this)) {
     }
     void add(io* i) {
         ios.push_back(i);
@@ -124,14 +115,14 @@ public:
         times.erase(i);
     }
     void run() {
-        while ( (!ios.empty() || not times.empty())) { 
+        while ( (!ios.empty() || not times.empty())) {
             auto now{std::chrono::system_clock::now()};
 
             bool timed{false};
             while (!times.empty() && times.top().first <= now) {
                 io* op{times.top().second};
                 times.pop();
-                op->complete();
+                op->complete(0);
                 timed = true;
             }
             if (timed) {
@@ -140,17 +131,19 @@ public:
             auto time{times.empty()
                      ? -1
                 : std::chrono::duration_cast<std::chrono::milliseconds>(times.top().first - now).count()};
+            
             if (0 < ::poll(fds.data(), fds.size(), time)) {
                 for (size_t i = fds.size(); i--; )
                     // The check for i < fds.size() is added as complete() may
                     // cause elements to get canceled and be removed from the
                     // list.
                     if (i < fds.size() && fds[i].events & fds[i].revents) {
+                        int revents(fds[i].revents);
                         fds[i] = fds.back();
                         fds.pop_back();
                         auto c = std::exchange(ios[i], ios.back());
                         ios.pop_back();
-                        c->complete();
+                        c->complete(revents);
                     }
             }
         }
@@ -167,7 +160,7 @@ namespace hidden_async_connect {
         ::sockaddr const*  addr;
         ::socklen_t        len;
 
-        async_connect(socket& s, auto addr, auto len): fd(s.fd), addr(addr), len(len) {}
+        async_connect(socket& s, auto addr, auto len): fd(s.fd()), addr(reinterpret_cast<::sockaddr const*>(addr)), len(len) {}
 
         template <typename R>
         struct state: io {
@@ -189,7 +182,7 @@ namespace hidden_async_connect {
                 else
                     set_error(self.receiver, std::make_exception_ptr(std::runtime_error(std::string("connect: ") + ::strerror(errno))));
             }
-            void complete() override final {
+            void complete(int) override final {
                 cb.disengage();
                 int         rc{};
                 ::socklen_t len{sizeof rc};
@@ -228,15 +221,16 @@ namespace hidden::io_operation {
             : toy::io
         {
             R                       receiver;
-            Operation               op;
+            Operation               d_op;
+            toy::io_context_base*   context;
             stop_callback<state, R> cb;
 
-            state(R         receiver,
-                  int       fd,
-                  Operation op)
-                : io(*get_scheduler(receiver).context, fd, Operation::event == event_kind::read? POLLIN: POLLOUT)
+            state(R                receiver,
+                  int              fd,
+                  Operation        op)
+                : io(*get_scheduler(receiver).context, fd, op.event == event_kind::read? POLLIN: POLLOUT)
                 , receiver(receiver)
-                , op(op)
+                , d_op(op)
                 , cb() {
             }
 
@@ -244,21 +238,45 @@ namespace hidden::io_operation {
                 self.cb.engage(self);
                 self.c.add(&self);
             }
-            void complete() override final {
+            void complete(int revents) override final {
+                using result_t = typename Operation::result_t;
                 cb.disengage();
-                auto res{op(*this)};
-                if (0 <= res)
-                    set_value(std::move(receiver), typename Operation::result_t(res));
+                event_kind event(std::invoke([revents]{
+                    switch (revents & (POLLIN | POLLOUT)) {
+                        default: return event_kind::none;
+                        case POLLIN: return event_kind::read;
+                        case POLLOUT: return event_kind::write;
+                        case POLLIN | POLLOUT: return event_kind::both;
+                    }
+                }));
+                auto res{d_op(*this, event)};
+                if constexpr (std::same_as<event_kind, decltype(res)>) {
+                    set_value(std::move(receiver), result_t(res));
+                }
+                else if (0 <= res) {
+                    if constexpr (requires(io_context_base& context, decltype(res) res){ result_t(context, res); }) {
+                        auto& context(*get_scheduler(receiver).context);
+                        set_value(std::move(receiver), result_t(context, res));
+                    }
+                    else {
+                        set_value(std::move(receiver), result_t(res));
+                    }
+                }
                 else {
                     set_error(std::move(receiver), std::make_exception_ptr(std::system_error(errno, std::system_category())));
-                }  
+                }
             }
         };
         template <typename R>
         friend state<R> connect(sender const& self, R receiver) {
-            return state<R>(receiver, self.socket.fd, self.op);
+            return state<R>(receiver, self.socket.fd(), self.op);
         }
     };
+}
+
+hidden::io_operation::sender<hidden::io_operation::poll_op>
+async_poll(toy::socket& s, toy::hidden::io_operation::event_kind events) {
+    return {s, { events }};
 }
 
 hidden::io_operation::sender<hidden::io_operation::accept_op>
@@ -345,9 +363,9 @@ namespace hidden_async_sleep_for {
                 self.cb.engage(self);
                 self.c.add(std::chrono::system_clock::now() + self.duration, &self);;
             }
-            void complete() override {
+            void complete(int) override {
                 cb.disengage();
-                set_value(receiver, result_t{});
+                set_value(std::move(receiver), result_t{});
             }
         };
         template <typename R>

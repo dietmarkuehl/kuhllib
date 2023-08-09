@@ -27,10 +27,12 @@
 #define INCLUDED_TOY_NETWORKING_IO_URING
 
 #include "toy-networking-common.hpp"
+#include "toy-networking-posix.hpp"
 #include "toy-starter.hpp"
 #include "toy-utility.hpp"
 
 #include <chrono>
+#include <functional>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -49,6 +51,7 @@ namespace toy
 struct io: immovable {
     virtual ~io() = default;
     virtual std::size_t complete(int) = 0;
+    std::size_t nop() { return 0; }
 };
 
 struct io_context;
@@ -58,18 +61,18 @@ struct io_scheduler {
 
 struct io_context
     : starter<io_scheduler>
+    , toy::io_context_base
 {
     using scheduler = toy::io_scheduler;
     scheduler get_scheduler() { return { this }; }
 
-    static constexpr bool has_timer = false; //-dk:TODO remove - used while adding timers to contexts
     static constexpr std::size_t entries{256};
 
     ::io_uring  ring;
     std::size_t outstanding{};
 
     io_context()
-        : starter(get_scheduler()) {
+        : starter(scheduler{this}) {
         ::io_uring_queue_init(entries, &ring, 0);
     }
     ~io_context() { ::io_uring_queue_exit(&ring); }
@@ -90,22 +93,18 @@ struct io_context
     }
 };
 
-struct socket {
-    int fd;
-
-    socket(int fd): fd(fd) {}
-    socket(socket&& other): fd(std::exchange(other.fd, -1)) {}
-    ~socket() { if (0 <= fd) ::close(fd); }
-};
-
 // ----------------------------------------------------------------------------
 
 namespace hidden_io_op {
     struct cancel_state: io {
-        io*  completion{nullptr};
-        int  res{};
+        io*                state{nullptr};
+        std::optional<int> rc;
         std::size_t complete(int) override final {
-            return 1u + std::exchange(completion, nullptr)->complete(0);
+            rc
+                ? std::exchange(state, nullptr)->complete(*rc)
+                : std::exchange(state, nullptr)->nop()
+                ;
+            return 1;
         }
     };
 
@@ -124,7 +123,7 @@ namespace hidden_io_op {
             struct callback {
                 state& s;
                 void operator()() {
-                    s.cancel.completion = &s;
+                    s.cancel.state = &s;
                     auto& context = *get_scheduler(s.receiver).context;
                     ::io_uring_sqe* sqe{ context.get_sqe() };
                     io_uring_prep_cancel(sqe, &s, unsigned());
@@ -152,20 +151,40 @@ namespace hidden_io_op {
             }
             std::size_t complete(int res) override {
                 cb.reset();
-                if (cancel.completion) {
-                    cancel.res = res;
+                if (cancel.state) {
+                    cancel.rc = res;
                     return 0u;
                 }
                 else if (0 <= res) {
+                    using event_kind = toy::hidden::io_operation::event_kind;
                     if constexpr (requires(Submit const& op, state& s) { op.finalize(s); }) {
                         submit.finalize(args);
                     }
-                    set_value(std::move(receiver), result_t(res));
+                    if constexpr (std::same_as<event_kind, result_t>) {
+                        event_kind event(std::invoke([res]{
+                            switch (res & (POLLIN | POLLOUT)) {
+                                default: return event_kind::none;
+                                case POLLIN: return event_kind::read;
+                                case POLLOUT: return event_kind::write;
+                                case POLLIN | POLLOUT: return event_kind::both;
+                            }
+                        }));
+                        set_value(std::move(receiver), event);
+                    }
+                    else if constexpr (requires(io_context_base& context, decltype(res) res){ result_t(context, res); }) {
+                        set_value(std::move(receiver), result_t(context, res));
+                    }
+                    else {
+                        set_value(std::move(receiver), result_t(res));
+                    }
+                }
+                else if (-res == ECANCELED) {
+                    set_stopped(std::move(receiver));
                 }
                 else  {
                     set_error(std::move(receiver), std::make_exception_ptr(std::system_error(-res, std::system_category())));
                 }
-                return true;
+                return 1;
             }
         };
 
@@ -174,7 +193,7 @@ namespace hidden_io_op {
 
         template <typename... A>
         io_op(socket& sock, A&&... args)
-            : fd(sock.fd)
+            : fd(sock.fd())
             , args(args...) {
         }
 
@@ -185,13 +204,20 @@ namespace hidden_io_op {
     };
 }
 
+using async_poll_op = decltype([](auto sqe, int fd, auto& state){
+    using ek = toy::hidden::io_operation::event_kind;
+    ek mask(std::get<0>(state));
+    ::io_uring_prep_poll_add(sqe, fd, (bool(mask & ek::read)? POLLIN: 0) | (bool(mask & ek::write)? POLLOUT: 0));
+});
+using async_poll = toy::hidden_io_op::io_op<toy::hidden::io_operation::event_kind, toy::async_poll_op, toy::hidden::io_operation::event_kind>;
+
 using async_accept_op = decltype([](auto sqe, int fd, auto& state){
-    ::io_uring_prep_accept(sqe, fd, reinterpret_cast<sockaddr*>(&std::get<0>(state)), &std::get<1>(state), 0);
+    ::io_uring_prep_accept(sqe, fd, reinterpret_cast<::sockaddr*>(&std::get<0>(state)), &std::get<1>(state), 0);
 });
 using async_accept = hidden_io_op::io_op<socket, async_accept_op, ::sockaddr_in, ::socklen_t>;
 
 using async_connect_op = decltype([](auto sqe, int fd, auto& state){
-    ::io_uring_prep_connect(sqe, fd, std::get<0>(state), std::get<1>(state));
+    ::io_uring_prep_connect(sqe, fd, reinterpret_cast<::sockaddr const*>(std::get<0>(state)), std::get<1>(state));
 });
 using async_connect = hidden_io_op::io_op<int, async_connect_op, ::sockaddr const*, ::socklen_t>;
 
@@ -296,7 +322,7 @@ namespace hidden_async_sleep_for {
             struct callback {
                 state& s;
                 void operator()() {
-                    s.cancel.completion = &s;
+                    s.cancel.state = &s;
                     auto& context = *get_scheduler(s.receiver).context;
                     ::io_uring_sqe* sqe{ context.get_sqe() };
                     io_uring_prep_timeout_remove(sqe, reinterpret_cast<std::uint64_t>(&s), unsigned());
@@ -322,13 +348,19 @@ namespace hidden_async_sleep_for {
                 sqe->user_data = reinterpret_cast<std::uint64_t>(&self);
                 context.submit();
             }
-            std::size_t complete(int) override {
+            std::size_t complete(int res) override {
                 cb.reset();
-                if (!cancel.completion) {
-                    set_value(std::move(receiver), none{});
-                    return 1u;
+                if (cancel.state) {
+                    cancel.rc = res;
+                    return 0u;
                 }
-                return 0u;
+                else if (-res == ECANCELED) {
+                    set_stopped(std::move(receiver));
+                }
+                else {
+                    set_value(std::move(receiver), none{});
+                }
+                return 1u;
             }
         };
         template <typename R>

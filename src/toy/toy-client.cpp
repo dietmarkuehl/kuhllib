@@ -24,48 +24,64 @@
 // ----------------------------------------------------------------------------
 
 #include "toy-networking.hpp"
+#include "toy-sender.hpp"
 #include "toy-task.hpp"
+#include <functional>
 #include <iostream>
 #include <string.h>
 
 // ----------------------------------------------------------------------------
 
 int main() {
+    std::cout << std::unitbuf;
     toy::io_context context;
     
-    context.spawn([]()->toy::task<toy::io_context::scheduler> {
-        toy::socket client{ ::socket(PF_INET, SOCK_STREAM, 0) };
+    context.spawn([&context]()->toy::task<toy::io_context::scheduler> {
+        try {
+            toy::socket client(context, PF_INET, SOCK_STREAM, 0);
+            toy::file   std_in(toy::std_in(context));
 
-        ::sockaddr_in addr{
-            .sin_family = AF_INET,
-            .sin_port = htons(80),
-            .sin_addr = { .s_addr = htonl(0x53f33a19) }
-            };
+            ::sockaddr_in addr{
+                .sin_family = AF_INET,
+                .sin_port = htons(12345)
+                };
+            addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
-        if (co_await toy::async_connect(client, reinterpret_cast<::sockaddr const*>(&addr), sizeof addr) < 0) {
-            std::cout << "ERROR: failed to connect: " << ::strerror(errno) << "\n";
-            co_return;
+            if (co_await toy::async_connect(client, reinterpret_cast<::sockaddr*>(&addr), sizeof addr) < 0) {
+                std::cout << "ERROR: failed to connect: " << toy::strerror(errno) << "\n";
+                co_return;
+            }
+
+            std::cout << "connected\n";
+
+            co_await toy::when_all(
+                std::invoke([&client, &std_in]()->toy::task<toy::io_context::scheduler>{
+                    char line[1024];
+                    int r{};
+                    while (0 < (r = co_await toy::async_read_some(std_in, line, sizeof(line)))) {
+                        int n = co_await toy::async_send(client, toy::buffer(line, r));
+                        if (n < 0) {
+                            std::cout << "ERROR: failed to write: " << toy::strerror(errno) << "\n";
+                            co_return;
+                        }
+                    }
+                    co_await toy::cancel();
+                }),
+                std::invoke([&client]()->toy::task<toy::io_context::scheduler>{
+                    char buffer[65536];
+                    while (int result = co_await toy::async_receive(client, toy::buffer(buffer))) {
+                        if (result < 0) {
+                            std::cout << "ERROR: failed to read response: " << toy::strerror(errno) << "\n";
+                            co_return;
+                        }
+                        std::cout << "received result: '" << std::string_view(buffer, result) << "'\n";
+                    }
+                })
+            );
         }
-        std::cout << "connected\n";
-        char const request[] = {
-            "GET /index.html HTTP/1.0\r\n"
-            "Host: dietmar-kuehl.de\r\n"
-            "\r\n"
-        };
-        int const size = ::strlen(request);
-        if (co_await toy::async_write_some(client, request, size) < 0) {
-            std::cout << "ERROR: failed to write request: " << ::strerror(errno) << "\n";
-            co_return;
+        catch (std::exception const& ex) {
+            std::cout << "ERROR: " << ex.what() << "\n";
         }
-        std::cout << "wrote request\n";
-        char buffer[65536];
-        int result = co_await toy::async_read_some(client, buffer, sizeof buffer);
-        if (result < 0) {
-            std::cout << "ERROR: failed to read response: " << ::strerror(errno) << "\n";
-            co_return;
-        }
-        std::cout << "received result\n";
-        std::cout.write(buffer, result);
     }());
 
     context.run();

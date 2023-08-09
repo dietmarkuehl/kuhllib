@@ -27,6 +27,7 @@
 #include "toy-stop_token.hpp"
 #include "toy-networking.hpp"
 #include "toy-task.hpp"
+#include <chrono>
 #include <iostream>
 #include <cerrno>
 #include <cstring>
@@ -67,14 +68,14 @@ using never_sender = hidden_never_sender::never_sender;
 int main() {
     std::cout << std::unitbuf;
     toy::io_context context;
-    toy::socket     server{ ::socket(PF_INET, SOCK_STREAM, 0) };
-    ::sockaddr_in addr{ .sin_family = AF_INET,
-        .sin_port = htons(12345),
-        .sin_addr = { .s_addr = INADDR_ANY }
-        };
-    if (::bind(server.fd, (::sockaddr*)&addr, sizeof(addr)) < 0
-        || ::listen(server.fd, 1) < 0) {
-        std::cout << "can't bind socket: " << std::strerror(errno) << "\n";
+    toy::socket     server(context, PF_INET, SOCK_STREAM, 0);
+    ::sockaddr_in addr{};
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(12345);
+    addr.sin_addr.s_addr = INADDR_ANY;
+    if (::bind(server.fd(), (::sockaddr*)&addr, sizeof(addr)) < 0
+        || ::listen(server.fd(), 1) < 0) {
+        std::cout << "can't bind socket: " << toy::strerror(errno) << "\n";
         return EXIT_FAILURE;
     }
 
@@ -90,6 +91,7 @@ int main() {
                 else {
                     std::cout << "accept timed out\n" << std::flush;
                 }
+                std::cout << "\n";
             }
         }
         catch (std::exception const& ex) {

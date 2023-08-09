@@ -55,15 +55,30 @@ using toy::chain::sender_base;
 
 // ----------------------------------------------------------------------------
 
+struct inline_scheduler {
+    struct sender {
+        using result_t = toy::none;
+        template <typename Receiver>
+        struct state {
+            Receiver receiver;
+            friend void start(state& self) {
+                set_state(self.receiver, toy::none{});
+            }
+        };
+        template <typename Receiver>
+        friend state<Receiver> connect(sender, Receiver receiver) {
+            return state<Receiver>(receiver);
+        }
+    };
+    friend std::ostream& operator<< (std::ostream& out, inline_scheduler) {
+        return out << "inline scheduler\n";
+    }
+
+    friend sender schedule(inline_scheduler) { return sender{}; }
+};
+
 template <typename R>
 struct sync_wait_receiver {
-    struct inline_scheduler {
-        friend std::ostream& operator<< (std::ostream& out, inline_scheduler) {
-            return out << "inline scheduler\n";
-        }
-
-    }; //-dk:TODO
-
     R& result;
     friend inline_scheduler get_scheduler(sync_wait_receiver const&) { return {}; }
     friend never_stop_token get_stop_token(sync_wait_receiver const&) { return {}; }
@@ -260,11 +275,16 @@ namespace hidden_when_all {
             std::tuple<std::optional<toy::sender_result_t<S>>...> result;
             std::exception_ptr     error;
             std::size_t            outstanding{sizeof...(S)};
+            toy::in_place_stop_source stop_source;
+
+            auto get_scheduler_() { return get_scheduler(this->final_receiver); }
+            auto get_stop_token_() { return this->stop_source.token(); }
 
             template <typename R>
             state_base(R&& final_receiver)
                 : final_receiver(std::forward<R>(final_receiver))
             {
+            //auto get_stop_token_() { return get_stop_token(this->final_receiver); }
             }
             virtual void complete() = 0;
             void done() {
@@ -279,11 +299,11 @@ namespace hidden_when_all {
             state_base<FR>&   result;
             std::optional<R>& value;
 
-            friend decltype(std::declval<state_base<FR>&>().get_scheduler()) get_scheduler(receiver const& self) {
-                self.result.get_scheduler();
+            friend decltype(std::declval<state_base<FR>&>().get_scheduler_()) get_scheduler(receiver const& self) {
+                return self.result.get_scheduler_();
             }
-            friend decltype(std::declval<state_base<FR>&>().get_stop_token()) get_stop_token(receiver const& self) {
-                self.result.get_stop_token();
+            friend decltype(std::declval<state_base<FR>&>().get_stop_token_()) get_stop_token(receiver const& self) {
+                return self.result.get_stop_token_();
             }
             template <typename T>
             friend void set_value(receiver&& self, T&& value) {
@@ -296,6 +316,7 @@ namespace hidden_when_all {
                 self.result.done();
             }
             friend void set_stopped(receiver&& self) {
+                self.result.stop_source.stop();
                 self.result.done();
             }
         };
@@ -454,9 +475,12 @@ auto timeout(S&& sender, D duration) {
         result_t operator()(typename S::result_t r) const { return result_t(std::move(r)); }
         result_t operator()(toy::none) const { return result_t(); }
     };
-    return toy::then(toy::when_any(std::forward<S>(sender), toy::async_sleep_for{duration}),
-                     [](auto v) { return std::visit(visitor(), std::move(v)); }
-                    );
+    return toy::then(toy::when_any(
+        std::forward<S>(sender),
+        toy::then(toy::async_sleep_for{duration}, [](auto v){ std::cout << "timer expired\n"; return v; })
+        ),
+        [](auto v) { return std::visit(visitor(), std::move(v)); }
+        );
 }
 
 // ----------------------------------------------------------------------------
@@ -662,6 +686,23 @@ auto async_write(toy::socket& socket, char const* buffer, std::size_t n) {
         );
     });
 }
+
+// ----------------------------------------------------------------------------
+
+struct cancel {
+    using result_t = toy::none;
+    template <typename Receiver>
+    struct state {
+        Receiver receiver;
+        friend void start(state& self) {
+            set_stopped(std::move(self.receiver));
+        }
+    };
+    template <typename Receiver>
+    friend state<Receiver> connect(cancel const&, Receiver receiver) {
+        return state<Receiver>{ receiver };
+    }
+};
 
 // ----------------------------------------------------------------------------
 

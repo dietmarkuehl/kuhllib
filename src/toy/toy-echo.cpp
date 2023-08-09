@@ -27,40 +27,62 @@
 #include "toy-networking.hpp"
 #include "toy-sender.hpp"
 #include <chrono>
+#include <functional>
 #include <iostream>
 #include <cstring>
 #include <cstdlib>
+#ifdef TOY_HAS_ARPA_INET
 #include <arpa/inet.h>
+#endif
 
 // ----------------------------------------------------------------------------
 
 int main()
 {
+    try
+    {
     toy::io_context  io;
 
-    toy::socket server{ ::socket(PF_INET, SOCK_STREAM, 0) };
-    toy::address addr(AF_INET, htons(12345), INADDR_ANY);
-    if (::bind(server.fd, &addr.as_addr(), addr.size()) < 0
-        || ::listen(server.fd, 1) < 0) {
-        std::cout << "can't bind socket: " << std::strerror(errno) << "\n";
+    unsigned short port(12345);
+    toy::socket server(io, PF_INET, SOCK_STREAM, IPPROTO_TCP);
+    toy::address addr(AF_INET, htons(port), INADDR_ANY);
+    std::cout << "listening on port " << port << "\n";
+    if (::bind(server.fd(), &addr.as_addr(), int(addr.size())) < 0
+        || ::listen(server.fd(), 1) < 0) {
+        std::cout << "can't bind socket: " << toy::strerror(errno) << "\n";
         return EXIT_FAILURE;
     };
 
     io.spawn([](auto& io, auto& server)->toy::task<toy::io_context::scheduler> {
-        for (int i{}; i != 2; ++i) {
-            auto c = co_await toy::async_accept(server);
+        for (int i{}; i != 200; ++i) {
+            try {
+                auto c = co_await toy::async_accept(server);
+                std::cout << "accepted a client\n";
 
-            io.spawn([](auto socket)->toy::task<toy::io_context::scheduler> {
-                char   buf[4];
-                // while (std::size_t n = co_await toy::async_read_some(socket, buf, sizeof buf)) {
-                //    co_await toy::async_write(socket, buf, n);
-                //}
-                while (std::size_t n = co_await toy::async_receive(socket, toy::buffer(buf))) {
-                    co_await toy::async_send(socket, toy::buffer(buf, n));
-                }
-            }(std::move(c)));
+                io.spawn(std::invoke([](auto socket)->toy::task<toy::io_context::scheduler> {
+                    char   buf[4];
+                    // while (std::size_t n = co_await toy::async_read_some(socket, buf, sizeof buf)) {
+                    //    co_await toy::async_write(socket, buf, n);
+                    //}
+                    while (int n = co_await toy::async_receive(socket, toy::buffer(buf))) {
+                        if (n <= 0
+                            || co_await toy::async_send(socket, toy::buffer(buf, n)) <= 0) {
+                            co_return;
+                        }
+                    }
+                    std::cout << "client done\n";
+                }, std::move(c)));
+            }
+            catch (std::exception const& ex) {
+                std::cout << "ERROR: " << ex.what() << "\n";
+            }
         }
     }(io, server));
 
     io.run();
+    std::cout << "done\n";
+    }
+    catch (std::exception const& ex) {
+        std::cout << "ERROR: " << ex.what() << "\n";
+    }
 }
