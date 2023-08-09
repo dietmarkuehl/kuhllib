@@ -33,6 +33,7 @@
 
 int main() {
     toy::io_context context;
+    toy::file std_in = toy::std_in(context);
 
     toy::socket client(context, PF_INET, SOCK_DGRAM, 0);
     toy::address addr(AF_INET, htons(12345), INADDR_ANY);
@@ -46,11 +47,10 @@ int main() {
         }
     }(client, addr));
 
-    context.spawn([](toy::socket& client, auto const& addr)->toy::task<toy::io_context::scheduler> {
-        toy::file& stdin = toy::std_in();
+    context.spawn([&std_in](toy::socket& client, auto const& addr)->toy::task<toy::io_context::scheduler> {
         while (true) {
             char buffer[16];
-            std::size_t n = co_await toy::async_read_some(stdin, buffer, sizeof(buffer));
+            std::size_t n = co_await toy::async_read_some(std_in, buffer, sizeof(buffer));
             std::size_t r = co_await toy::async_send_to(client, toy::buffer(buffer, n), addr);
             (std::cout << "sent='").write(buffer, r) << "'\n";
         }

@@ -54,7 +54,7 @@ int main()
     };
 
     io.spawn([](auto& io, auto& server)->toy::task<toy::io_context::scheduler> {
-        for (int i{}; i != 2; ++i) {
+        for (int i{}; i != 200; ++i) {
             try {
                 auto c = co_await toy::async_accept(server);
                 std::cout << "accepted a client\n";
@@ -75,8 +75,8 @@ int main()
             catch (std::exception const& ex) {
                 std::cout << "ERROR: " << ex.what() << "\n";
             }
-            std::cout << "client done\n";
         }
+        std::cout << "client done\n";
     }(io, server));
 
     io.run();

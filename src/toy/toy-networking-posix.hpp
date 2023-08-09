@@ -69,33 +69,36 @@ struct io_context_base {
 struct socket
 {
 private:
-    enum class tag {};
+    enum class tag { normal, special };
     io_context_base* d_context;
     int              d_id;
+    tag              d_kind;
 
-    socket(io_context_base& context, int id, tag)
+    socket(io_context_base& context, int id, tag kind)
         : d_context(&context)
         , d_id(id)
+        , d_kind(kind)
     {
         context.fcntl(fd(), F_SETFL, O_NONBLOCK);
     }
 public:
     socket(io_context_base& context, int domain, int type, int protocol)
-        : socket(context, context.make_socket(domain, type, protocol), tag{})
+        : socket(context, context.make_socket(domain, type, protocol), tag::normal)
     {
     }
     socket(io_context_base& context, int fd)
-        : socket(context, context.make_fd(fd), tag{})
+        : socket(context, context.make_fd(fd), tag::special)
     {
     }
     socket(socket&& other)
         : d_context(std::exchange(other.d_context, nullptr))
         , d_id(std::exchange(other.d_id, -1))
+        , d_kind(std::exchange(other.d_kind, tag::special))
     {
     }
     ~socket()
     {
-        if (d_id != -1) {
+        if (d_kind != tag::special) {
             d_context->close(d_id);
         }
     }
@@ -108,11 +111,8 @@ using file = socket;
 
 // ----------------------------------------------------------------------------
 
-struct std_context: io_context_base {};
-toy::file& std_in() {
-    static std_context context;
-    static toy::file rc(context, 0);
-    return rc;
+toy::file std_in(toy::io_context_base& context) {
+    return toy::file(context, 0);
 }
 
 // ----------------------------------------------------------------------------
@@ -186,7 +186,13 @@ namespace hidden::io_operation {
         int operator()(auto& state, event_kind) {
             int         rc{};
             ::socklen_t len{sizeof rc};
-            return (::getsockopt(state.fd, SOL_SOCKET, SO_ERROR, &rc, &len) || rc)? -1: rc;
+            if (::getsockopt(state.fd, SOL_SOCKET, SO_ERROR, &rc, &len)) {
+                return -1;
+            }
+            else {
+                errno = rc;
+                return -rc;
+            }
         }
     };
 

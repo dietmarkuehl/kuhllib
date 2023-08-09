@@ -85,6 +85,7 @@ class io_context
         int fd{};
         int events{0};
         io* op[2]{ nullptr, nullptr };
+        bool used{false};
     };
 
     std::vector<filedesc> files;
@@ -97,7 +98,7 @@ class io_context
     {
         if (files.size() == free_filedesc) {
             files.resize(files.empty()? 16u: files.size() * 2u);
-            for (std::size_t i{free_filedesc}; i != free_filedesc; ++i) {
+            for (std::size_t i{free_filedesc}; i != files.size(); ++i) {
                 files[i].fd = i + 1;
             }
         }
@@ -124,11 +125,10 @@ protected:
 public:
     void add(io* i, std::uint32_t events) {
         filedesc& desc{files[i->id]};
-        if ((events & desc.events) != events) {
-            auto op{desc.events? EPOLL_CTL_MOD: EPOLL_CTL_ADD};
-            desc.events |= events;
-            modify(i, op, desc.events);
-        }
+        auto op{desc.used? EPOLL_CTL_MOD: EPOLL_CTL_ADD};
+        desc.used = true;
+        desc.events |= events;
+        modify(i, op, desc.events);
         if (events & EPOLLIN) {
             desc.op[int(filedesc::kind::input)] = i;
         }
@@ -148,18 +148,18 @@ public:
         }
     }
     int complete(io* i, short int events) {
-        std::cout << "completing(" << fd(i->id) << ") in context\n";
-        filedesc& desc{files[i->id]};
+        filedesc  desc{files[i->id]};
+        files[i->id].events &= ~(events & (EPOLLIN | EPOLLOUT));
+        this->erase(i);
         int rc{};
         if (events & EPOLLIN && desc.op[int(filedesc::kind::input)]) {
-            std::exchange(desc.op[int(filedesc::kind::input)], nullptr)->complete(events);
+            desc.op[int(filedesc::kind::input)]->complete(events);
             ++rc;
         }
         if (events & EPOLLOUT && desc.op[int(filedesc::kind::output)]) {
-            std::exchange(desc.op[int(filedesc::kind::output)], nullptr)->complete(events);
+            desc.op[int(filedesc::kind::output)]->complete(events);
             ++rc;
         }
-        this->erase(i);
         return rc;
     }
 
@@ -213,16 +213,10 @@ public:
             auto time{times.empty()
                      ? -1
                 : std::chrono::duration_cast<std::chrono::milliseconds>(times.top().first - now).count()};
-            std::cout << "about to poll\n";
             int n = ::epoll_wait(poll, ev, max, time);
-            std::cout << "    polled=" << n << "\n";
             while (0 < n) {
                 --n;
-                std::cout << "    "
-                          << "complete fd=" << fd(static_cast<io*>(ev[n].data.ptr)->id) << " "
-                          << "events=" << (ev[n].events & EPOLLIN? " in": "") << (ev[n].events & EPOLLOUT? " out": "")
-                          << "\n";
-                outstanding -= this->complete(static_cast<io*>(ev[n].data.ptr), ev[n].events);
+                this->complete(static_cast<io*>(ev[n].data.ptr), ev[n].events);
             }
         }
     }
@@ -256,7 +250,6 @@ namespace hidden::io_operation {
                 , receiver(r) {
             }
             friend void start(state& self) {
-                std::cout << "start(" << self.op.name << ", " << self.fd << ")\n";
                 if constexpr (requires(state& self, Operation op){ op.start(self); }) {
                     self.try_operation([&]{ return self.op.start(self); });
                 }
@@ -268,7 +261,7 @@ namespace hidden::io_operation {
             void try_operation(Fun fun) {
                 errno = 0;
                 auto rc{fun()};
-                std::cout << "try_op:" << rc << " -> " << std::strerror(errno) << "\n";
+                int err = errno;
                 if (std::invoke([rc]()->bool{
                     if constexpr (std::same_as<result_t, event_kind>) {
                         return rc == event_kind::none;
@@ -277,14 +270,12 @@ namespace hidden::io_operation {
                         return rc < 0;
                     }
                     })) {
-                    if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINPROGRESS) {
-                        std::cout << "setting up waiting (" << EAGAIN << "/" << errno << "\n";
+                    if (err == EAGAIN || err == EWOULDBLOCK || err == EINPROGRESS) {
                         cb.engage(*this);
                         c.add(this, op.event == event_kind::read? EPOLLIN: EPOLLOUT);
                         c.increment();
                     }
                     else {
-                        std::cout << "failing operation\n";
                         set_error(std::move(receiver), std::make_exception_ptr(std::system_error(errno, std::system_category())));
                     }
                 }
@@ -298,14 +289,13 @@ namespace hidden::io_operation {
                 }
             }
             int complete(short int flags) override final {
-                std::cout << "completing(" << fd << "\n";
                 cb.disengage();
                 event_kind event(std::invoke([flags]{
-                    switch (flags & (POLLIN | POLLOUT)) {
+                    switch (flags & (EPOLLIN | EPOLLOUT)) {
                         default: return event_kind::none;
-                        case POLLIN: return event_kind::read;
-                        case POLLOUT: return event_kind::write;
-                        case POLLIN | POLLOUT: return event_kind::both;
+                        case EPOLLIN: return event_kind::read;
+                        case EPOLLOUT: return event_kind::write;
+                        case EPOLLIN | EPOLLOUT: return event_kind::both;
                     }
                 }));
                 try_operation([&]{ return op(*this, event); });
