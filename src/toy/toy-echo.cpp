@@ -70,13 +70,13 @@ int main()
                             co_return;
                         }
                     }
+                    std::cout << "client done\n";
                 }, std::move(c)));
             }
             catch (std::exception const& ex) {
                 std::cout << "ERROR: " << ex.what() << "\n";
             }
         }
-        std::cout << "client done\n";
     }(io, server));
 
     io.run();

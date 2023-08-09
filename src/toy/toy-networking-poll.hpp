@@ -131,6 +131,7 @@ public:
             auto time{times.empty()
                      ? -1
                 : std::chrono::duration_cast<std::chrono::milliseconds>(times.top().first - now).count()};
+            
             if (0 < ::poll(fds.data(), fds.size(), time)) {
                 for (size_t i = fds.size(); i--; )
                     // The check for i < fds.size() is added as complete() may

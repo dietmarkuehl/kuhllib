@@ -28,6 +28,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <ostream>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -41,6 +42,9 @@ namespace toy
 struct none {
     none() = default;
     none(auto&&) {}
+    friend std::ostream& operator<< (std::ostream& out, none) {
+        return out << "<none>";
+    }
 };
 
 struct immovable {

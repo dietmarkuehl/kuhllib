@@ -105,6 +105,10 @@ public:
     int                   fd() const { return d_context->fd(d_id); }
     int                   id() const { return d_id; }
     toy::io_context_base* context() const { return d_context; }
+
+    friend std::ostream& operator<< (std::ostream& out, socket const& s) {
+        return out << s.fd();
+    }
 };
 
 using file = socket;
