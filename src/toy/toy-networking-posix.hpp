@@ -82,6 +82,12 @@ private:
         context.fcntl(fd(), F_SETFL, O_NONBLOCK);
     }
 public:
+    socket()
+        : d_context(nullptr)
+        , d_id(-1)
+        , d_kind(tag::special)
+    {
+    }
     socket(io_context_base& context, int domain, int type, int protocol)
         : socket(context, context.make_socket(domain, type, protocol), tag::normal)
     {
@@ -128,9 +134,9 @@ namespace hidden::io_operation {
             State& state;
             void operator()() {
                 if constexpr (Timer)
-                    state.c.erase_timer(&state);
+                    state.scheduler().erase_timer(&state);
                 else
-                    state.c.erase(&state);
+                    state.scheduler().erase(&state);
                 state.cb.disengage();
                 set_stopped(std::move(state.receiver));
             }
@@ -147,51 +153,34 @@ namespace hidden::io_operation {
         }
     };
 
-    enum class event_kind { none = 0x0, read = 0x1, write = 0x2, both = 0x3 };
-    event_kind operator| (event_kind a, event_kind b) {
-        return event_kind(int(a) | int(b));
-    }
-    event_kind operator& (event_kind a, event_kind b) {
-        return event_kind(int(a) & int(b));
-    }
-    std::ostream& operator<<(std::ostream& out, event_kind event) {
-        switch (event) {
-            default: return out << "unknown";
-            case event_kind::none:  return out << "none";
-            case event_kind::read:  return out << "read";
-            case event_kind::write: return out << "write";
-            case event_kind::both:  return out << "both";
-        }
-    }
-
     struct poll_op {
-        using result_t = event_kind;
-        event_kind event{};
+        using result_t = toy::event_kind;
+        toy::event_kind event{};
         static constexpr char const* name = "poll";
 
-        event_kind start(auto&) {
+        toy::event_kind start(auto&) {
             errno = EAGAIN;
-            return event_kind::none;
+            return toy::event_kind::none;
         }
-        event_kind operator()(auto&, event_kind revents) {
+        toy::event_kind operator()(auto&, toy::event_kind revents) {
             return revents;
         }
     };
 
     struct connect_op {
         using result_t = int;
-        static constexpr event_kind event = event_kind::write;
+        static constexpr toy::event_kind event = toy::event_kind::write;
         static constexpr char const* name = "connect";
 
         toy::address address;
 
         int start(auto& state) {
-            return ::connect(state.fd, &state.op.address.as_addr(), state.op.address.size());
+            return ::connect(state.fd(), &state.operation.address.as_addr(), state.operation.address.size());
         }
-        int operator()(auto& state, event_kind) {
+        int operator()(auto& state, toy::event_kind) {
             int         rc{};
             ::socklen_t len{sizeof rc};
-            if (::getsockopt(state.fd, SOL_SOCKET, SO_ERROR, &rc, &len)) {
+            if (::getsockopt(state.fd(), SOL_SOCKET, SO_ERROR, &rc, &len)) {
                 return -1;
             }
             else {
@@ -203,51 +192,51 @@ namespace hidden::io_operation {
 
     struct accept_op {
         using result_t = toy::socket;
-        static constexpr event_kind event = event_kind::read;
+        static constexpr toy::event_kind event = toy::event_kind::read;
         static constexpr char const* name = "accept";
 
-        int operator()(auto& state, event_kind) {
+        int operator()(auto& state, toy::event_kind) {
             ::sockaddr  addr{};
             ::socklen_t len{sizeof(addr)};
-            return ::accept(state.fd, &addr, &len);
+            return ::accept(state.fd(), &addr, &len);
         }
     };
 
     struct read_some_op {
         using result_t = int;
-        static constexpr event_kind event = event_kind::read;
+        static constexpr toy::event_kind event = toy::event_kind::read;
         static constexpr char const* name = "read_some";
 
         char*       buffer;
         std::size_t len;
 
-        int operator()(auto& state, event_kind) {
-            return ::read(state.fd, buffer, len);
+        int operator()(auto& state, toy::event_kind) {
+            return ::read(state.fd(), buffer, len);
         }
     };
 
     struct write_some_op {
         using result_t = int;
-        static constexpr event_kind event = event_kind::write;
+        static constexpr toy::event_kind event = toy::event_kind::write;
         static constexpr char const* name = "write_some";
 
         char const* buffer;
         std::size_t len;
 
-        int operator()(auto& state, event_kind) {
-            return ::write(state.fd, buffer, len);
+        int operator()(auto& state, toy::event_kind) {
+            return ::write(state.fd(), buffer, len);
         }
     };
 
     template <typename MBS>
     struct receive_op {
         using result_t = int;
-        static constexpr event_kind event = event_kind::read;
+        static constexpr toy::event_kind event = toy::event_kind::read;
         static constexpr char const* name = "receive";
 
         toy::message_flags flags;
         MBS                buffer;
-        ssize_t operator()(auto& state, event_kind) {
+        ssize_t operator()(auto& state, toy::event_kind) {
             msghdr msg{
                 .msg_name = nullptr,
                 .msg_namelen = 0,
@@ -257,20 +246,20 @@ namespace hidden::io_operation {
                 .msg_controllen = 0,
                 .msg_flags = 0
             };
-            return recvmsg(state.fd, &msg, int(flags));
+            return recvmsg(state.fd(), &msg, int(flags));
         }
     };
 
     template <typename MBS>
     struct receive_from_op {
         using result_t = std::size_t;
-        static constexpr event_kind event = event_kind::read;
+        static constexpr toy::event_kind event = toy::event_kind::read;
         static constexpr char const* name = "receive_from";
 
         MBS                buffer;
         toy::address&      addr;
         toy::message_flags flags;
-        ::ssize_t operator()(auto& state, event_kind) {
+        ::ssize_t operator()(auto& state, toy::event_kind) {
             msghdr msg{
                 .msg_name = &addr.as_addr(),
                 .msg_namelen = addr.capacity(),
@@ -280,7 +269,7 @@ namespace hidden::io_operation {
                 .msg_controllen = 0,
                 .msg_flags = 0
             };
-            ::ssize_t rc{recvmsg(state.fd, &msg, int(flags))};
+            ::ssize_t rc{recvmsg(state.fd(), &msg, int(flags))};
             if (0 <= rc) {
                 addr.resize(msg.msg_namelen);
             }
@@ -291,12 +280,12 @@ namespace hidden::io_operation {
     template <typename MBS>
     struct send_op {
         using result_t = std::size_t;
-        static constexpr event_kind event = event_kind::write;
+        static constexpr toy::event_kind event = toy::event_kind::write;
         static constexpr char const* name = "send";
 
         toy::message_flags flags;
         MBS                buffer;
-        ::ssize_t operator()(auto& state, event_kind) {
+        ::ssize_t operator()(auto& state, toy::event_kind) {
             msghdr msg{
                 .msg_name = nullptr,
                 .msg_namelen = 0,
@@ -306,20 +295,20 @@ namespace hidden::io_operation {
                 .msg_controllen = 0,
                 .msg_flags = 0
             };
-            return sendmsg(state.fd, &msg, int(flags));
+            return sendmsg(state.fd(), &msg, int(flags));
         }
     };
 
     template <typename MBS>
     struct send_to_op {
         using result_t = std::size_t;
-        static constexpr event_kind event = event_kind::write;
+        static constexpr toy::event_kind event = toy::event_kind::write;
         static constexpr char const* name = "send_to";
 
         MBS                buffer;
         toy::address       address;
         toy::message_flags flags;
-        ::ssize_t operator()(auto& state, event_kind) {
+        ::ssize_t operator()(auto& state, toy::event_kind) {
             msghdr msg{
                 .msg_name = &address.as_addr(),
                 .msg_namelen = address.size(),
@@ -329,7 +318,7 @@ namespace hidden::io_operation {
                 .msg_controllen = 0,
                 .msg_flags = 0
             };
-            return sendmsg(state.fd, &msg, int(flags));
+            return sendmsg(state.fd(), &msg, int(flags));
         }
     };
 }

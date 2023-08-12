@@ -36,13 +36,8 @@ int main() {
     context.spawn([&context]()->toy::task<toy::io_context::scheduler> {
         toy::socket client(context, PF_INET, SOCK_STREAM, 0);
 
-        ::sockaddr_in addr{};
-        addr.sin_family = AF_INET;
-        addr.sin_port = htons(80);
-        addr.sin_addr.s_addr = htonl(0x53f33a19);
-
-        if (co_await toy::async_connect(client, reinterpret_cast<::sockaddr const*>(&addr), sizeof addr) < 0) {
-            std::cout << "ERROR: failed to connect: " << toy::strerror(errno) << "\n";
+        if (co_await toy::async_connect(client, toy::address(AF_INET, htons(80), htonl(0x53f33a19))) < 0) {
+            std::cout << "ERROR: failed to connect: " << ::strerror(errno) << "\n";
             co_return;
         }
         std::cout << "connected\n";

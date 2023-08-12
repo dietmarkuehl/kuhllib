@@ -63,6 +63,23 @@ using in_port_t = unsigned short;
 
 namespace toy {
 
+    enum class event_kind { none = 0x0, read = 0x1, write = 0x2, both = 0x3 };
+    event_kind operator| (event_kind a, event_kind b) {
+        return event_kind(int(a) | int(b));
+    }
+    event_kind operator& (event_kind a, event_kind b) {
+        return event_kind(int(a) & int(b));
+    }
+    std::ostream& operator<<(std::ostream& out, event_kind event) {
+        switch (event) {
+            default: return out << "unknown";
+            case event_kind::none:  return out << "none";
+            case event_kind::read:  return out << "read";
+            case event_kind::write: return out << "write";
+            case event_kind::both:  return out << "both";
+        }
+    }
+
 // ----------------------------------------------------------------------------
 
 enum class message_flags {

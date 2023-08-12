@@ -53,31 +53,34 @@
 #include <netdb.h>
 #include <poll.h>
 
-namespace toy
+namespace toy::kqueue
 {
 
 // ----------------------------------------------------------------------------
 
-class io_context;
-struct io_scheduler {
-    io_context* context;
-};
+class context;
 
 struct io
-    : immovable {
-    io_context& c;
+    : immovable
+{
+    toy::kqueue::context& c;
     int         fd;
     short int   events;
-    virtual void complete(toy::hidden::io_operation::event_kind) = 0;
-    io(io_context& c, int fd, short int events): c(c), fd(fd), events(events)  {
+    virtual void complete(toy::event_kind) = 0;
+    io(toy::kqueue::context& c, int fd, short int events): c(c), fd(fd), events(events)  {
     }
 };
 
-class io_context
-    : public starter<io_scheduler>
+struct scheduler {
+    toy::kqueue::context* context;
+    using io_base = toy::kqueue::io;
+};
+
+class context
+    : public starter<toy::kqueue::scheduler>
     , public toy::io_context_base {
 public:
-    using scheduler = toy::io_scheduler;
+    using scheduler = toy::kqueue::scheduler;
     scheduler get_scheduler() { return { this }; }
 
 private:
@@ -93,14 +96,14 @@ private:
     toy::timer_queue<io*> times;
 
 public:
-    io_context()
+    context()
         : starter(get_scheduler())
         , queue(::kqueue()) {
         if (queue < 0) {
             throw std::runtime_error("can't create kqueue");
         }
     }
-    ~io_context() {
+    ~context() {
         ::close(queue);
     }
     void flush_changes() {
@@ -134,7 +137,7 @@ public:
             while (!times.empty() && times.top().first <= now) {
                 io* op{times.top().second};
                 times.pop();
-                op->complete(toy::hidden::io_operation::event_kind::none);
+                op->complete(toy::event_kind::none);
                 timed = true;
             }
             if (timed) {
@@ -152,7 +155,7 @@ public:
             changes = 0u;
             while (0 < n) {
                 --n;
-                using event_kind = toy::hidden::io_operation::event_kind;
+                using event_kind = toy::event_kind;
                 event_kind event(std::invoke([filter = result[n].filter]{
                     switch (filter) {
                         default: return event_kind::none;
@@ -179,16 +182,16 @@ namespace hidden::io_operation {
 
         template <typename R>
         struct state
-            : toy::io
+            : toy::kqueue::io
         {
             R                       receiver;
             Operation               op;
-            stop_callback<state, R> cb;
+            toy::hidden::io_operation::stop_callback<state, R> cb;
 
             state(R         receiver,
                   int       fd,
                   Operation op)
-                : io(*get_scheduler(receiver).context, fd, op.event == event_kind::read? EVFILT_READ: EVFILT_WRITE)
+                : io(*get_scheduler(receiver).context, fd, op.event == toy::event_kind::read? EVFILT_READ: EVFILT_WRITE)
                 , receiver(receiver)
                 , op(op)
                 , cb() {
@@ -198,10 +201,10 @@ namespace hidden::io_operation {
                 self.cb.engage(self);
                 self.c.add(&self);
             }
-            void complete(event_kind event) override final {
+            void complete(toy::event_kind event) override final {
                 cb.disengage();
                 auto res{op(*this, event)};
-                if constexpr (std::same_as<event_kind, decltype(res)>) {
+                if constexpr (std::same_as<toy::event_kind, decltype(res)>) {
                     set_value(std::move(receiver), result_t(res));
                 }
                 else if (0 <= res)
@@ -227,66 +230,66 @@ namespace hidden::io_operation {
     };
 }
 
-hidden::io_operation::sender<hidden::io_operation::poll_op>
-async_poll(toy::socket& s, toy::hidden::io_operation::event_kind events) {
+hidden::io_operation::sender<toy::hidden::io_operation::poll_op>
+async_poll(toy::socket& s, toy::event_kind events) {
     return {s, { events }};
 }
 
-hidden::io_operation::sender<hidden::io_operation::accept_op>
+hidden::io_operation::sender<toy::hidden::io_operation::accept_op>
 async_accept(toy::socket& s) {
     return {s, {}};
 }
 
-hidden::io_operation::sender<hidden::io_operation::read_some_op>
+hidden::io_operation::sender<toy::hidden::io_operation::read_some_op>
 async_read_some(toy::socket& s, char* buffer, std::size_t len) {
     return {s, {buffer, len}};
 }
 
-hidden::io_operation::sender<hidden::io_operation::write_some_op>
+hidden::io_operation::sender<toy::hidden::io_operation::write_some_op>
 async_write_some(toy::socket& s, char const* buffer, std::size_t len) {
     return {s, {buffer, len}};
 }
 
 template <typename MBS>
-hidden::io_operation::sender<hidden::io_operation::receive_op<MBS>>
+hidden::io_operation::sender<toy::hidden::io_operation::receive_op<MBS>>
 async_receive(toy::socket& s, toy::message_flags f, const MBS& b) {
     return {s, {f, b}};
 }
 template <typename MBS>
-hidden::io_operation::sender<hidden::io_operation::receive_op<MBS>>
+hidden::io_operation::sender<toy::hidden::io_operation::receive_op<MBS>>
 async_receive(toy::socket& s, const MBS& b) {
     return {s, {toy::message_flags{}, b}};
 }
 
 template <typename MBS>
-hidden::io_operation::sender<hidden::io_operation::receive_from_op<MBS>>
+hidden::io_operation::sender<toy::hidden::io_operation::receive_from_op<MBS>>
 async_receive_from(toy::socket& s, const MBS& b, toy::address& addr, toy::message_flags f) {
     return {s, {b, addr, f}};
 }
 template <typename MBS>
-hidden::io_operation::sender<hidden::io_operation::receive_from_op<MBS>>
+hidden::io_operation::sender<toy::hidden::io_operation::receive_from_op<MBS>>
 async_receive_from(toy::socket& s, const MBS& b, toy::address& addr) {
     return {s, {b, addr, toy::message_flags{}}};
 }
 
 template <typename MBS>
-hidden::io_operation::sender<hidden::io_operation::send_op<MBS>>
+hidden::io_operation::sender<toy::hidden::io_operation::send_op<MBS>>
 async_send(toy::socket& s, toy::message_flags f, const MBS& b) {
     return {s, {f, b}};
 }
 template <typename MBS>
-hidden::io_operation::sender<hidden::io_operation::send_op<MBS>>
+hidden::io_operation::sender<toy::hidden::io_operation::send_op<MBS>>
 async_send(toy::socket& s, const MBS& b) {
     return {s, {toy::message_flags{}, b}};
 }
 
 template <typename MBS>
-hidden::io_operation::sender<hidden::io_operation::send_to_op<MBS>>
+hidden::io_operation::sender<toy::hidden::io_operation::send_to_op<MBS>>
 async_send_to(toy::socket& s, const MBS& b, toy::address addr, toy::message_flags f) {
     return {s, {b, addr, f}};
 }
 template <typename MBS>
-hidden::io_operation::sender<hidden::io_operation::send_to_op<MBS>>
+hidden::io_operation::sender<toy::hidden::io_operation::send_to_op<MBS>>
 async_send_to(toy::socket& s, const MBS& b, toy::address addr) {
     return {s, {b, addr, toy::message_flags{}}};
 }
@@ -307,7 +310,7 @@ namespace hidden_async_connect {
             ::sockaddr const*       addr;
             ::socklen_t             len;
             R                       receiver;
-            hidden::io_operation::stop_callback<state, R> cb;
+            toy::hidden::io_operation::stop_callback<state, R> cb;
             state(int fd, ::sockaddr const* addr, ::socklen_t len, R r)
                 : io(*get_scheduler(r).context, fd, EVFILT_WRITE), addr(addr), len(len), receiver(r) {
             }
@@ -326,7 +329,7 @@ namespace hidden_async_connect {
                     break;
                 }
             }
-            void complete(toy::hidden::io_operation::event_kind) override final {
+            void complete(toy::event_kind) override final {
                 cb.disengage();
                 int         rc{};
                 ::socklen_t len{sizeof rc};
@@ -358,7 +361,7 @@ namespace hidden::async_sleep_for {
             : io {
             R                         receiver;
             std::chrono::milliseconds duration;
-            hidden::io_operation::stop_callback<state, R, true> cb;
+            toy::hidden::io_operation::stop_callback<state, R, true> cb;
             state(R receiver, duration_t duration)
                 : io(*get_scheduler(receiver).context, 0, 0)
                 , receiver(receiver)
@@ -368,7 +371,7 @@ namespace hidden::async_sleep_for {
                 self.cb.engage(self);
                 self.c.add(std::chrono::system_clock::now() + self.duration, &self);
             }
-            void complete(toy::hidden::io_operation::event_kind) override {
+            void complete(toy::event_kind) override {
                 cb.disengage();
                 set_value(std::move(receiver), result_t{});
             }

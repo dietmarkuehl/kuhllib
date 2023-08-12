@@ -54,11 +54,11 @@ namespace toy {
                 ares_library_cleanup();
             }
         };
-        static toy::task<toy::io_context::scheduler> poll_callback(void* data, int fd, toy::hidden::io_operation::event_kind events)
+        static toy::task<toy::io_context::scheduler> poll_callback(void* data, int fd, toy::event_kind events)
         {
-            using event_kind = toy::hidden::io_operation::event_kind;
+            using event_kind = toy::event_kind;
             resolver& res(*static_cast<resolver*>(data));
-            toy::socket sock(*res.context, fd);
+            toy::socket sock(res.scheduler.base(), fd);
             ares_socket_t socks[ARES_GETSOCK_MAXNUM];
             do {
                 event_kind rc = co_await toy::async_poll(sock, events);
@@ -83,20 +83,20 @@ namespace toy {
         }
         static void state_callback(void* data, int fd, int in, int out)
         {
-            using event_kind = toy::hidden::io_operation::event_kind;
+            using event_kind = toy::event_kind;
             event_kind events((in? event_kind::read: event_kind::none) | (out? event_kind::write: event_kind::none));
             if (bool(events)) {
                 resolver& res(*static_cast<resolver*>(data));
-                res.context->spawn(poll_callback(data, fd, events));
+                res.scheduler.spawn(poll_callback(data, fd, events));
             }
         }
         struct resolver {
-            toy::io_context* context;
+            toy::io_context::scheduler scheduler;
             ares_options     options;
             ares_channel     channel{};
 
-            resolver(toy::io_context* context)
-                : context(context)
+            resolver(toy::io_context::scheduler scheduler)
+                : scheduler(scheduler)
                 , options{ .sock_state_cb = state_callback, .sock_state_cb_data = this }
             {
                 int mask(ARES_OPT_SOCK_STATE_CB);
@@ -111,7 +111,7 @@ namespace toy {
         };
         static resolver& get_resolver(auto scheduler)
         {
-            static resolver rc(scheduler.context);
+            static resolver rc(scheduler);
             return rc;
         }
 

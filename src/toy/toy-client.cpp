@@ -41,13 +41,7 @@ int main() {
             toy::socket client(context, PF_INET, SOCK_STREAM, 0);
             toy::file   std_in(toy::std_in(context));
 
-            ::sockaddr_in addr{
-                .sin_family = AF_INET,
-                .sin_port = htons(12345)
-                };
-            addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-
-            if (co_await toy::async_connect(client, reinterpret_cast<::sockaddr*>(&addr), sizeof addr) < 0) {
+            if (co_await toy::async_connect(client, toy::address(AF_INET, htons(12345), htonl(INADDR_LOOPBACK))) < 0) {
                 std::cout << "ERROR: failed to connect: " << toy::strerror(errno) << "\n";
                 co_return;
             }
