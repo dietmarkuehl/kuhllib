@@ -107,7 +107,6 @@ namespace hidden::io_operation
         else {
             errno = rc;
             return -rc;
-        }
     }
 
     int operation(toy::socket& socket, toy::event_kind, toy::accept_t::args&)
