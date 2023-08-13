@@ -26,6 +26,9 @@
 #ifndef INCLUDED_TOY_NETWORKING_SENDER
 #define INCLUDED_TOY_NETWORKING_SENDER
 
+#include "toy-utility.hpp"
+#include <chrono>
+
 // ----------------------------------------------------------------------------
 
 namespace toy {
@@ -132,43 +135,65 @@ async_send_to(toy::socket& s, const MBS& b, toy::address addr) {
 
 // ----------------------------------------------------------------------------
 
-namespace hidden_async_sleep_for {
-    struct async_sleep_for {
+namespace hidden::time_operation
+{
+    template <typename Operation>
+    struct sender {
+        using result_t = typename Operation::result_t;
+
+        Operation     op;
+
+        template <typename R>
+        using scheduler_t = decltype(get_scheduler(std::declval<R const&>()));
+        template <typename R>
+        using state_t     = scheduler_t<R>::template time_state<R, Operation>;
+
+        template <typename R>
+        friend state_t<R> connect(sender const& self, R&& receiver) {
+            return state_t<R>(std::forward<R>(receiver), self.op);
+        }
+        template <typename R>
+        friend state_t<R> connect(sender&& self, R&& receiver) {
+            return state_t<R>(std::forward<R>(receiver), std::move(self.op));
+        }
+    };
+
+    struct sleep_for_op
+    {
         using result_t = toy::none;
-        using duration_t = std::chrono::milliseconds;
 
-        duration_t  duration;
+        std::chrono::milliseconds duration;
 
-        template <typename R>
-        struct state
-            : toy::io_base<R> {
-            R                            receiver;
-            duration_t                   duration;
-            toy::hidden::io_operation::stop_callback<state, R, true> cb;
+        std::chrono::time_point<std::chrono::system_clock> get_timepoint()
+        {
+            return std::chrono::system_clock::now() + duration;
+        }
+    };
 
-            state(R receiver, duration_t duration)
-                : toy::io_base<R>(0, toy::event_kind::none)
-                , receiver(receiver)
-                , duration(duration) {
-            }
-            toy::scheduler_t<R> scheduler() { return get_scheduler(receiver); }
+    struct sleep_to_op
+    {
+        using result_t = toy::none;
 
-            friend void start(state& self) {
-                self.cb.engage(self);
-                self.scheduler().await(std::chrono::system_clock::now() + self.duration, &self);
-            }
-            void complete(int) override {
-                cb.disengage();
-                set_value(std::move(receiver), result_t{});
-            }
-        };
-        template <typename R>
-        friend state<R> connect(async_sleep_for self, R receiver) {
-            return state<R>(receiver, self.duration);
+        std::chrono::time_point<std::chrono::system_clock> time;
+
+        std::chrono::time_point<std::chrono::system_clock> get_timepoint()
+        {
+            return time;
         }
     };
 }
-using async_sleep_for = hidden_async_sleep_for::async_sleep_for;
+
+// ----------------------------------------------------------------------------
+
+hidden::time_operation::sender<toy::hidden::time_operation::sleep_for_op>
+async_sleep_for(std::chrono::milliseconds duration) {
+    return { { duration }};
+}
+
+hidden::time_operation::sender<toy::hidden::time_operation::sleep_to_op>
+async_sleep_to(std::chrono::time_point<std::chrono::system_clock> time) {
+    return { { time }};
+}
 
 // ----------------------------------------------------------------------------
 

@@ -477,7 +477,7 @@ auto timeout(S&& sender, D duration) {
     };
     return toy::then(toy::when_any(
         std::forward<S>(sender),
-        toy::then(toy::async_sleep_for{duration}, [](auto v){ std::cout << "timer expired\n"; return v; })
+        toy::then(toy::async_sleep_for(duration), [](auto v){ std::cout << "timer expired\n"; return v; })
         ),
         [](auto v) { return std::visit(visitor(), std::move(v)); }
         );

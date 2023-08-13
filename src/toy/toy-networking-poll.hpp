@@ -118,7 +118,6 @@ struct io_state
 
     friend void start(io_state& self)
     {
-        std::cout << "poll::io_state::start\n";
         self.cb.engage(self);
         if constexpr (requires(Operation op, io_state& s){ op.start(s); })
         {
@@ -129,7 +128,6 @@ struct io_state
 
     void complete(int event)
     {
-        std::cout << "poll::io_state::complete\n";
         using result_t = typename Operation::result_t;
         cb.disengage();
         auto res{operation(*this, toy::poll::to_event_kind(event))};
@@ -151,6 +149,38 @@ struct io_state
     }
 };
 
+template <typename Receiver, typename Operation>
+struct time_state
+    : toy::poll::io_base
+{
+    using scheduler_t = decltype(get_scheduler(std::declval<Receiver const&>()));
+
+    Receiver  receiver;
+    Operation operation;
+    toy::hidden::io_operation::stop_callback<time_state, Receiver> cb;
+    time_state(Receiver receiver, Operation operation)
+        : io_base(0, toy::event_kind::none)
+        , receiver(receiver)
+        , operation(operation)
+    {
+    }
+
+    scheduler_t scheduler() { return get_scheduler(receiver); }
+
+    friend void start(time_state& self)
+    {
+        self.cb.engage(self);
+        get_scheduler(self.receiver).await(self.operation.get_timepoint(), &self);
+    }
+
+    void complete(int)
+    {
+        using result_t = typename Operation::result_t;
+        cb.disengage();
+        set_value(std::move(receiver), result_t());
+    }
+};
+
 class scheduler {
 private:
     friend class toy::poll::context;
@@ -169,6 +199,9 @@ public:
     using io_base = toy::poll::io_base;
     template <typename Receiver, typename Operation>
     using io_state = toy::poll::io_state<Receiver, Operation>;
+    template <typename Receiver, typename Operation>
+    using time_state = toy::poll::time_state<Receiver, Operation>;
+
     using time_point_t = std::chrono::system_clock::time_point;
 
     toy::io_context_base& base() const;

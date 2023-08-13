@@ -27,6 +27,7 @@ list(APPEND TOY_DEMOS
     toy-udp-client
     toy-udp-server
     toy-http-client
+    toy-time
 )
 
 set(CMAKE_REQUIRED_INCLUDES "/usr/local/include")
