@@ -11,3 +11,4 @@ Testing
 ci-build
 ci-debug
 src/toy/.vscode
+ssl/*

@@ -157,7 +157,7 @@ struct time_state
 
     Receiver  receiver;
     Operation operation;
-    toy::hidden::io_operation::stop_callback<time_state, Receiver> cb;
+    toy::hidden::io_operation::stop_callback<time_state, Receiver, true> cb;
     time_state(Receiver receiver, Operation operation)
         : io_base(0, toy::event_kind::none)
         , receiver(receiver)
@@ -207,7 +207,6 @@ public:
     toy::io_context_base& base() const;
 
     void await(time_point_t time, toy::poll::io_base* op);
-    void await_connect(io_base* i);
     void await(io_base* i);
     void erase(io_base* i);
     void erase_timer(io_base* i);
@@ -287,16 +286,15 @@ public:
     }
 };
 
-toy::io_context_base& scheduler::base() const { return *context; }
+inline toy::io_context_base& scheduler::base() const { return *context; }
 
-void scheduler::await(time_point_t time, toy::poll::io_base* op) { context->add(time, op); }
-void scheduler::await_connect(io_base* i) { context->add(i); }
-void scheduler::await(io_base* i) { context->add(i); }
-void scheduler::erase(io_base* i) { context->erase(i); }
-void scheduler::erase_timer(io_base* i) { context->erase(i); }
+inline void scheduler::await(time_point_t time, toy::poll::io_base* op) { context->add(time, op); }
+inline void scheduler::await(io_base* i) { context->add(i); }
+inline void scheduler::erase(io_base* i) { context->erase(i); }
+inline void scheduler::erase_timer(io_base* i) { context->erase(i); }
 
 template <typename Sender>
-void scheduler::spawn(Sender&& sender) { context->spawn(std::forward<Sender>(sender)); }
+inline void scheduler::spawn(Sender&& sender) { context->spawn(std::forward<Sender>(sender)); }
 
 }
 
