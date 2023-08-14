@@ -299,8 +299,4 @@ inline void scheduler::spawn(Sender&& sender) { context->spawn(std::forward<Send
 
 // ----------------------------------------------------------------------------
 
-namespace toy {
-    using poll_context = toy::poll::context;
-}
-
 #endif

@@ -5,7 +5,8 @@ include(CheckIncludeFile)
 set(CMAKE_CXX_STANDARD 20)
 
 if(CMAKE_COMPILER_IS_GNUCXX)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -g -W -Wall -Werror -Wno-error=subobject-linkage -Wno-subobject-linkage -Wno-missing-field-initializers -fconcepts-diagnostics-depth=4 -ftemplate-backtrace-limit=0")
+    #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -g -W -Wall -Werror -Wno-error=subobject-linkage -Wno-subobject-linkage -Wno-missing-field-initializers -fconcepts-diagnostics-depth=4 -ftemplate-backtrace-limit=0")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -W -Wall -Werror -Wno-error=subobject-linkage -Wno-subobject-linkage -Wno-missing-field-initializers -fconcepts-diagnostics-depth=4 -ftemplate-backtrace-limit=0")
 endif()
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -W -Wall -Werror -stdlib=libc++")
@@ -21,21 +22,21 @@ endif()
 # doesn't compile with gcc: toy-coro
 list(APPEND TOY_DEMOS
     toy-client
-    toy-time
 )
 
-list(APPEND TOY_DEMOS
+list(APPEND xTOY_DEMOS
     toy-cancel
     toy-echo
     toy-sender
     toy-udp-client
     toy-udp-server
     toy-http-client
+    toy-time
 )
 
 set(CMAKE_REQUIRED_INCLUDES "/usr/local/include")
 CHECK_INCLUDE_FILE("ares.h" TOY_HAS_ARES)
-if (TOY_HAS_ARES)
+if (xTOY_HAS_ARES)
     include_directories("/usr/local/include")
     link_directories("/usr/local/lib")
     set(TOY_LIB_CARES cares)
@@ -74,11 +75,11 @@ if (TOY_HAS_KQUEUE)
 endif()
 
 # try to use the POSIX interface
-if(TOY_HAS_UNISTD)
+if(xTOY_HAS_UNISTD)
     foreach(demo ${TOY_DEMOS})
         set(demo_executable ${demo}-${CMAKE_CXX_COMPILER_ID}-poll)
         add_executable(${demo_executable} ${demo}.cpp)
-        target_compile_definitions(${demo_executable} PRIVATE TOY_CONTEXT=toy::poll_context)
+        target_compile_definitions(${demo_executable} PRIVATE TOY_CONTEXT=toy::poll::context)
         target_link_libraries(${demo_executable} ${TOY_LIB_CARES})
     endforeach()
 
@@ -87,19 +88,20 @@ endif()
 
 # try to use liburing.h
 CHECK_INCLUDE_FILE(liburing.h TOY_HAS_LIBURING)
-IF(xTOY_HAS_LIBURING)
+IF(TOY_HAS_LIBURING)
+    add_compile_definitions(TOY_HAS_IO_URING)
     foreach(demo ${TOY_DEMOS})
         set(demo_executable ${demo}-${CMAKE_CXX_COMPILER_ID}-io_uring)
         add_executable(${demo_executable} ${demo}.cpp)
         target_compile_definitions(${demo_executable} PRIVATE TOY_NETWORKING_HPP="toy-networking-io_uring.hpp")
-        target_compile_definitions(${demo_executable} PRIVATE TOY_CONTEXT=toy::io_uring_context)
+        target_compile_definitions(${demo_executable} PRIVATE TOY_CONTEXT=toy::io_uring::context)
         target_link_libraries(${demo_executable} uring ${TOY_LIB_CARES})
     endforeach()
 ENDIF()
 
 # try to use sys/epoll.h
 CHECK_INCLUDE_FILE(sys/epoll.h TOY_HAS_EPOLL)
-IF(TOY_HAS_EPOLL)
+IF(xTOY_HAS_EPOLL)
     add_compile_definitions(TOY_HAS_EPOLL)
     foreach(demo ${TOY_DEMOS})
         set(demo_executable ${demo}-${CMAKE_CXX_COMPILER_ID}-epoll)
