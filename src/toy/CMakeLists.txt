@@ -5,7 +5,7 @@ include(CheckIncludeFile)
 set(CMAKE_CXX_STANDARD 20)
 
 if(CMAKE_COMPILER_IS_GNUCXX)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -W -Wall -Werror -Wno-error=subobject-linkage -Wno-subobject-linkage -Wno-missing-field-initializers -fconcepts-diagnostics-depth=4 -ftemplate-backtrace-limit=0")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -g -W -Wall -Werror -Wno-error=subobject-linkage -Wno-subobject-linkage -Wno-missing-field-initializers -fconcepts-diagnostics-depth=4 -ftemplate-backtrace-limit=0")
 endif()
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -W -Wall -Werror -stdlib=libc++")
@@ -21,13 +21,16 @@ endif()
 # doesn't compile with gcc: toy-coro
 list(APPEND TOY_DEMOS
     toy-client
+    toy-time
+)
+
+list(APPEND TOY_DEMOS
     toy-cancel
     toy-echo
     toy-sender
     toy-udp-client
     toy-udp-server
     toy-http-client
-    toy-time
 )
 
 set(CMAKE_REQUIRED_INCLUDES "/usr/local/include")
@@ -79,12 +82,12 @@ if(TOY_HAS_UNISTD)
         target_link_libraries(${demo_executable} ${TOY_LIB_CARES})
     endforeach()
 
-    add_executable(toy-cppcon-2022-${CMAKE_CXX_COMPILER_ID} toy-cppcon-2022.cpp)
+    #-dk:TODO add_executable(toy-cppcon-2022-${CMAKE_CXX_COMPILER_ID} toy-cppcon-2022.cpp)
 endif()
 
 # try to use liburing.h
 CHECK_INCLUDE_FILE(liburing.h TOY_HAS_LIBURING)
-IF(TOY_HAS_LIBURING)
+IF(xTOY_HAS_LIBURING)
     foreach(demo ${TOY_DEMOS})
         set(demo_executable ${demo}-${CMAKE_CXX_COMPILER_ID}-io_uring)
         add_executable(${demo_executable} ${demo}.cpp)
@@ -97,11 +100,12 @@ ENDIF()
 # try to use sys/epoll.h
 CHECK_INCLUDE_FILE(sys/epoll.h TOY_HAS_EPOLL)
 IF(TOY_HAS_EPOLL)
+    add_compile_definitions(TOY_HAS_EPOLL)
     foreach(demo ${TOY_DEMOS})
         set(demo_executable ${demo}-${CMAKE_CXX_COMPILER_ID}-epoll)
         add_executable(${demo_executable} ${demo}.cpp)
         target_compile_definitions(${demo_executable} PRIVATE TOY_NETWORKING_HPP="toy-networking-epoll.hpp")
-        target_compile_definitions(${demo_executable} PRIVATE TOY_CONTEXT=toy::epoll_context)
+        target_compile_definitions(${demo_executable} PRIVATE TOY_CONTEXT=toy::epoll::context)
         target_link_libraries(${demo_executable} ${TOY_LIB_CARES})
     endforeach()
 ENDIF()

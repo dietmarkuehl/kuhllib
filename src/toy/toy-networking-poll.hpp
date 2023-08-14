@@ -196,7 +196,6 @@ private:
     toy::poll::context& get_context() const { return *context; }
 
 public:
-    using io_base = toy::poll::io_base;
     template <typename Receiver, typename Operation>
     using io_state = toy::poll::io_state<Receiver, Operation>;
     template <typename Receiver, typename Operation>
