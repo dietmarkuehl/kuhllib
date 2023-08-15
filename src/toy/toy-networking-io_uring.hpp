@@ -46,8 +46,8 @@
 namespace toy::io_uring
 {
 
-struct context;
-struct scheduler;
+class context;
+class scheduler;
 
 // ----------------------------------------------------------------------------
 
@@ -333,10 +333,11 @@ public:
     void spawn(Sender&& sender);
 };
 
-struct context
-    : starter<scheduler>
-    , toy::io_context_base
+class context
+    : public starter<scheduler>
+    , public toy::io_context_base
 {
+public:
     using scheduler = toy::io_uring::scheduler;
     scheduler get_scheduler() { return scheduler(this); }
 

@@ -32,7 +32,7 @@
 int main() {
     toy::io_context context;
     
-    context.spawn([&context]()->toy::task<toy::io_context::scheduler> {
+    context.spawn([]()->toy::task<toy::io_context::scheduler> {
         for (int i = 0; i != 3; ++i) {
             using namespace std::chrono_literals;
             std::cout << "sleeping\n" << std::flush;
