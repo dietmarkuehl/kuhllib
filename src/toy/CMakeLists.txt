@@ -22,21 +22,21 @@ endif()
 # doesn't compile with gcc: toy-coro
 list(APPEND TOY_DEMOS
     toy-client
+    toy-sender
 )
 
-list(APPEND xTOY_DEMOS
-    toy-cancel
+list(APPEND TOY_DEMOS
     toy-echo
-    toy-sender
     toy-udp-client
     toy-udp-server
     toy-http-client
+    toy-cancel
     toy-time
 )
 
 set(CMAKE_REQUIRED_INCLUDES "/usr/local/include")
 CHECK_INCLUDE_FILE("ares.h" TOY_HAS_ARES)
-if (xTOY_HAS_ARES)
+if (TOY_HAS_ARES)
     include_directories("/usr/local/include")
     link_directories("/usr/local/lib")
     set(TOY_LIB_CARES cares)
@@ -75,7 +75,7 @@ if (TOY_HAS_KQUEUE)
 endif()
 
 # try to use the POSIX interface
-if(xTOY_HAS_UNISTD)
+if(TOY_HAS_UNISTD)
     foreach(demo ${TOY_DEMOS})
         set(demo_executable ${demo}-${CMAKE_CXX_COMPILER_ID}-poll)
         add_executable(${demo_executable} ${demo}.cpp)
@@ -83,7 +83,7 @@ if(xTOY_HAS_UNISTD)
         target_link_libraries(${demo_executable} ${TOY_LIB_CARES})
     endforeach()
 
-    #-dk:TODO add_executable(toy-cppcon-2022-${CMAKE_CXX_COMPILER_ID} toy-cppcon-2022.cpp)
+    add_executable(toy-cppcon-2022-${CMAKE_CXX_COMPILER_ID} toy-cppcon-2022.cpp)
 endif()
 
 # try to use liburing.h
@@ -101,7 +101,7 @@ ENDIF()
 
 # try to use sys/epoll.h
 CHECK_INCLUDE_FILE(sys/epoll.h TOY_HAS_EPOLL)
-IF(xTOY_HAS_EPOLL)
+IF(TOY_HAS_EPOLL)
     add_compile_definitions(TOY_HAS_EPOLL)
     foreach(demo ${TOY_DEMOS})
         set(demo_executable ${demo}-${CMAKE_CXX_COMPILER_ID}-epoll)
