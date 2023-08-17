@@ -96,19 +96,21 @@ struct io_base
     int fd() const { return d_fd; }
 };
 
-template <typename Receiver, typename Operation>
+template <typename Receiver, typename Args>
 struct io_state
     : toy::kqueue::io_base
 {
     using scheduler_t = decltype(get_scheduler(std::declval<Receiver const&>()));
 
-    Receiver  receiver;
-    Operation operation;
+    Receiver     receiver;
+    toy::socket& socket;
+    Args         args;
     toy::hidden::io_operation::stop_callback<io_state, Receiver> cb;
-    io_state(Receiver receiver, toy::socket& s, toy::event_kind events, Operation operation)
+    io_state(Receiver receiver, toy::socket& s, toy::event_kind events, Args args)
         : io_base(s.fd(), toy::kqueue::to_kqueue(events))
         , receiver(receiver)
-        , operation(operation)
+        , socket(s)
+        , args(args)
     {
     }
 
@@ -117,18 +119,18 @@ struct io_state
     friend void start(io_state& self)
     {
         self.cb.engage(self);
-        if constexpr (requires(Operation op, io_state& s){ op.start(s); })
+        if constexpr (requires(toy::socket& s, Args args){ toy::hidden::io_operation::start(s, args); })
         {
-            self.operation.start(self);
+            toy::hidden::io_operation::start(self.socket, self.args);
         }
         get_scheduler(self.receiver).await(&self);
     }
 
     void complete(toy::event_kind event)
     {
-        using result_t = typename Operation::result_t;
+        using result_t = typename Args::result_t;
         cb.disengage();
-        auto res{operation(*this, event)};
+        auto res{toy::hidden::io_operation::operation(socket, event, args)};
         if constexpr (std::same_as<toy::event_kind, decltype(res)>) {
             set_value(std::move(receiver), result_t(res));
         }
@@ -185,8 +187,8 @@ struct scheduler {
     using io_base = toy::kqueue::io_base;
     using time_point_t = std::chrono::system_clock::time_point;
 
-    template <typename Receiver, typename Operation>
-    using io_state = toy::kqueue::io_state<Receiver, Operation>;
+    template <typename Receiver, typename Args>
+    using io_state = toy::kqueue::io_state<Receiver, Args>;
     template <typename Receiver, typename Operation>
     using time_state = toy::kqueue::time_state<Receiver, Operation>;
 

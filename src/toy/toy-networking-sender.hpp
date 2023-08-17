@@ -26,6 +26,7 @@
 #ifndef INCLUDED_TOY_NETWORKING_SENDER
 #define INCLUDED_TOY_NETWORKING_SENDER
 
+#include "toy-socket.hpp"
 #include "toy-utility.hpp"
 #include <chrono>
 
@@ -64,74 +65,234 @@ namespace hidden::io_operation {
     };
 }
 
-hidden::io_operation::sender<toy::hidden::io_operation::poll_op>
-async_poll(toy::socket& s, toy::event_kind events) {
-    return {s, { events }};
+// ----------------------------------------------------------------------------
+
+namespace io
+{
+    struct poll_t
+    {
+        struct args
+        {
+            using result_t = toy::event_kind;
+            toy::event_kind event{};
+            static constexpr char const* name = "poll";
+        };
+
+        toy::hidden::io_operation::sender<toy::io::poll_t::args>
+        inline operator()(toy::socket& s, toy::event_kind events) const
+        {
+            return {s, { events }};
+        }
+    };
+
+    struct connect_t
+    {
+        struct args
+        {
+            using result_t = int;
+            static constexpr toy::event_kind event = toy::event_kind::write;
+            static constexpr char const* name = "connect";
+
+            toy::address address;
+        };
+
+        inline hidden::io_operation::sender<toy::io::connect_t::args>
+        operator()(toy::socket& s, toy::address addr) const
+        {
+            return {s, { addr }};
+        }
+    };
+
+    struct accept_t
+    {
+        struct args
+        {
+            using result_t = toy::socket;
+            static constexpr toy::event_kind event = toy::event_kind::read;
+            static constexpr char const* name = "accept";
+        };
+        inline hidden::io_operation::sender<toy::io::accept_t::args>
+        operator()(toy::socket& s) const
+        {
+            return {s, {}};
+        }
+    };
+
+    struct read_some_t
+    {
+        struct args {
+            using result_t = int;
+            static constexpr toy::event_kind event = toy::event_kind::read;
+            static constexpr char const* name = "read_some";
+
+            char*       buffer;
+            std::size_t len;
+        };
+
+        inline hidden::io_operation::sender<toy::io::read_some_t::args>
+        operator()(toy::socket& s, char* buffer, std::size_t len) const
+        {
+            return {s, {buffer, len}};
+        }
+    };
+
+    struct write_some_t
+    {
+        struct args
+        {
+            using result_t = int;
+            static constexpr toy::event_kind event = toy::event_kind::write;
+            static constexpr char const* name = "write_some";
+
+            char const* buffer;
+            std::size_t len;
+        };
+        inline hidden::io_operation::sender<toy::io::write_some_t::args>
+        operator()(toy::socket& s, char const* buffer, std::size_t len) const {
+            return {s, {buffer, len}};
+        }
+    };
+
+    struct receive_t
+    {
+        template <typename MBS>
+        struct args
+        {
+            using result_t = int;
+            static constexpr toy::event_kind event = toy::event_kind::read;
+            static constexpr char const* name = "receive";
+
+            toy::message_flags flags;
+            MBS                buffer;
+        };
+
+        template <typename MBS>
+        inline hidden::io_operation::sender<toy::io::receive_t::args<MBS>>
+        operator()(toy::socket& s, toy::message_flags f, const MBS& b) const
+        {
+            return {s, {f, b}};
+        }
+        template <typename MBS>
+        inline hidden::io_operation::sender<toy::io::receive_t::args<MBS>>
+        operator()(toy::socket& s, const MBS& b) const
+        {
+            return {s, {toy::message_flags{}, b}};
+        }
+    };
+
+    struct receive_from_t
+    {
+        template <typename MBS>
+        struct args
+        {
+            using result_t = std::size_t;
+            static constexpr toy::event_kind event = toy::event_kind::read;
+            static constexpr char const* name = "receive_from";
+
+            MBS                buffer;
+            toy::address&      addr;
+            toy::message_flags flags;
+        };
+        template <typename MBS>
+        inline hidden::io_operation::sender<toy::io::receive_from_t::args<MBS>>
+        operator()(toy::socket& s, const MBS& b, toy::address& addr, toy::message_flags f) const {
+            return {s, {b, addr, f}};
+        }
+        template <typename MBS>
+        inline hidden::io_operation::sender<toy::io::receive_from_t::args<MBS>>
+        operator()(toy::socket& s, const MBS& b, toy::address& addr) const {
+            return {s, {b, addr, toy::message_flags{}}};
+        }
+    };
+
+    struct send_t
+    {
+        template <typename MBS>
+        struct args
+        {
+            using result_t = std::size_t;
+            static constexpr toy::event_kind event = toy::event_kind::write;
+            static constexpr char const* name = "send";
+
+            toy::message_flags flags;
+            MBS                buffer;
+        };
+        template <typename MBS>
+        inline hidden::io_operation::sender<toy::io::send_t::args<MBS>>
+        operator()(toy::socket& s, toy::message_flags f, const MBS& b) const {
+            return {s, {f, b}};
+        }
+        template <typename MBS>
+        inline hidden::io_operation::sender<toy::io::send_t::args<MBS>>
+        operator()(toy::socket& s, const MBS& b) const {
+            return {s, {toy::message_flags{}, b}};
+        }
+    };
+
+    struct send_to_t
+    {
+        template <typename MBS>
+        struct args
+        {
+            using result_t = std::size_t;
+            static constexpr toy::event_kind event = toy::event_kind::write;
+            static constexpr char const* name = "send_to";
+
+            MBS                buffer;
+            toy::address       address;
+            toy::message_flags flags;
+        };
+        template <typename MBS>
+        inline hidden::io_operation::sender<toy::io::send_to_t::args<MBS>>
+        operator()(toy::socket& s, const MBS& b, toy::address addr, toy::message_flags f) const {
+            return {s, {b, addr, f}};
+        }
+        template <typename MBS>
+        inline hidden::io_operation::sender<toy::io::send_to_t::args<MBS>>
+        operator()(toy::socket& s, const MBS& b, toy::address addr) const {
+            return {s, {b, addr, toy::message_flags{}}};
+        }
+    };
 }
 
-hidden::io_operation::sender<toy::hidden::io_operation::connect_op>
-async_connect(toy::socket& s, toy::address addr) {
-    return {s, { addr }};
+namespace hidden::io::operation
+{
+    using poll_op    = toy::io::poll_t::args;
+    using connect_op = toy::io::connect_t::args;
+    using accept_op  = toy::io::accept_t::args;
+    using read_some_op  = toy::io::read_some_t::args;
+    using write_some_op  = toy::io::write_some_t::args;
+    template <typename MBS>
+    using receive_op  = toy::io::receive_t::args<MBS>;
+    template <typename MBS>
+    using receive_from_op  = toy::io::receive_from_t::args<MBS>;
+    template <typename MBS>
+    using send_op  = toy::io::send_t::args<MBS>;
+    template <typename MBS>
+    using send_to_op  = toy::io::send_to_t::args<MBS>;
 }
 
-hidden::io_operation::sender<toy::hidden::io_operation::accept_op>
-async_accept(toy::socket& s) {
-    return {s, {}};
-}
+using poll_t         = toy::io::poll_t;
+using connect_t      = toy::io::connect_t;
+using accept_t       = toy::io::accept_t;
+using read_some_t    = toy::io::read_some_t;
+using write_some_t   = toy::io::write_some_t;
+using receive_t      = toy::io::receive_t;
+using receive_from_t = toy::io::receive_from_t;
+using send_t         = toy::io::send_t;
+using send_to_t      = toy::io::send_to_t;
 
-hidden::io_operation::sender<toy::hidden::io_operation::read_some_op>
-async_read_some(toy::socket& s, char* buffer, std::size_t len) {
-    return {s, {buffer, len}};
-}
+inline constexpr toy::poll_t             async_poll{};
+inline constexpr toy::io::connect_t      async_connect{};
+inline constexpr toy::io::accept_t       async_accept{};
+inline constexpr toy::io::read_some_t    async_read_some{};
+inline constexpr toy::io::write_some_t   async_write_some{};
+inline constexpr toy::io::receive_t      async_receive{};
+inline constexpr toy::io::receive_from_t async_receive_from{};
+inline constexpr toy::io::send_t         async_send{};
+inline constexpr toy::io::send_to_t      async_send_to{};
 
-hidden::io_operation::sender<toy::hidden::io_operation::write_some_op>
-async_write_some(toy::socket& s, char const* buffer, std::size_t len) {
-    return {s, {buffer, len}};
-}
-
-template <typename MBS>
-hidden::io_operation::sender<toy::hidden::io_operation::receive_op<MBS>>
-async_receive(toy::socket& s, toy::message_flags f, const MBS& b) {
-    return {s, {f, b}};
-}
-template <typename MBS>
-hidden::io_operation::sender<toy::hidden::io_operation::receive_op<MBS>>
-async_receive(toy::socket& s, const MBS& b) {
-    return {s, {toy::message_flags{}, b}};
-}
-
-template <typename MBS>
-hidden::io_operation::sender<toy::hidden::io_operation::receive_from_op<MBS>>
-async_receive_from(toy::socket& s, const MBS& b, toy::address& addr, toy::message_flags f) {
-    return {s, {b, addr, f}};
-}
-template <typename MBS>
-hidden::io_operation::sender<toy::hidden::io_operation::receive_from_op<MBS>>
-async_receive_from(toy::socket& s, const MBS& b, toy::address& addr) {
-    return {s, {b, addr, toy::message_flags{}}};
-}
-
-template <typename MBS>
-hidden::io_operation::sender<toy::hidden::io_operation::send_op<MBS>>
-async_send(toy::socket& s, toy::message_flags f, const MBS& b) {
-    return {s, {f, b}};
-}
-template <typename MBS>
-hidden::io_operation::sender<toy::hidden::io_operation::send_op<MBS>>
-async_send(toy::socket& s, const MBS& b) {
-    return {s, {toy::message_flags{}, b}};
-}
-
-template <typename MBS>
-hidden::io_operation::sender<toy::hidden::io_operation::send_to_op<MBS>>
-async_send_to(toy::socket& s, const MBS& b, toy::address addr, toy::message_flags f) {
-    return {s, {b, addr, f}};
-}
-template <typename MBS>
-hidden::io_operation::sender<toy::hidden::io_operation::send_to_op<MBS>>
-async_send_to(toy::socket& s, const MBS& b, toy::address addr) {
-    return {s, {b, addr, toy::message_flags{}}};
-}
+// ----------------------------------------------------------------------------
 
 // ----------------------------------------------------------------------------
 
