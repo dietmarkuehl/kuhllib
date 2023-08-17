@@ -255,23 +255,6 @@ namespace io
     };
 }
 
-namespace hidden::io::operation
-{
-    using poll_op    = toy::io::poll_t::args;
-    using connect_op = toy::io::connect_t::args;
-    using accept_op  = toy::io::accept_t::args;
-    using read_some_op  = toy::io::read_some_t::args;
-    using write_some_op  = toy::io::write_some_t::args;
-    template <typename MBS>
-    using receive_op  = toy::io::receive_t::args<MBS>;
-    template <typename MBS>
-    using receive_from_op  = toy::io::receive_from_t::args<MBS>;
-    template <typename MBS>
-    using send_op  = toy::io::send_t::args<MBS>;
-    template <typename MBS>
-    using send_to_op  = toy::io::send_to_t::args<MBS>;
-}
-
 using poll_t         = toy::io::poll_t;
 using connect_t      = toy::io::connect_t;
 using accept_t       = toy::io::accept_t;
