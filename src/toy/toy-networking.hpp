@@ -38,6 +38,9 @@
 #if defined(TOY_HAS_KQUEUE)
 #   include "toy-networking-kqueue.hpp"
 #endif
+#if defined(TOY_HAS_IOCP)
+#   include "toy-networking-iocp.hpp"
+#endif
 #include "toy-networking-sender.hpp"
 
 namespace toy {

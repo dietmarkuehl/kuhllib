@@ -27,9 +27,18 @@
 #define INCLUDED_TOY_SOCKET
 
 #include "toy-networking-common.hpp"
-#include <sys/fcntl.h>
-#include <sys/socket.h>
-#include <unistd.h>
+#ifdef TOY_HAS_SYS_FCNTL
+#    include <sys/fcntl.h>
+#endif
+#ifdef TOY_HAS_SYS_SOCKET
+#    include <sys/socket.h>
+#endif
+#ifdef TOY_HAS_WINSOCK2
+#    include <winsock2.h>
+#endif
+#ifdef TOY_HAS_UNISTD
+#    include <unistd.h>
+#endif
 #include <ostream>
 #include <stdexcept>
 
@@ -37,24 +46,51 @@
 
 namespace toy
 {
+    struct socket;
+
+#ifdef TOY_HAS_WINSOCK2
+    using socket_handle = SOCKET;
+
+    inline socket_handle make_socket(int domain, int type, int protocol)
+    {
+        return WSASocketW(domain, type, protocol, nullptr, 0, WSA_FLAG_OVERLAPPED);
+    }
+    inline int close(socket_handle) { return 0; }
+    inline int fcntl(socket_handle fd, int cmd, int flag) { return 0; }
+    inline void set_non_blocking(socket_handle )
+    {
+    }
+#else
+    using file = toy::socket;
+    using socket_hanlde = int;
+
+    inline socket_handle make_socket(int domain, int type, int protocol) { return ::socket(domain, type, protocol); }
+    inline int close(socket_handle fd) { return ::close(fd); }
+    inline int fcntl(socket_handle fd, int cmd, int flag) { return ::fcntl(fd, cmd, flag); }
+    inline void set_non_blocking(socket_handle fd)
+    {
+        if (toy::fcntl(fd, F_SETFL, O_NONBLOCK) < 0) {
+            throw std::runtime_error("fcntl");
+        }
+    }
+#endif
+
 
 struct io_context_base {
     io_context_base() = default;
     io_context_base(io_context_base&&) = delete;
     ~io_context_base() = default;
-    virtual int make_socket(int domain, int type, int protocol)
+    virtual socket_handle make_socket(int domain, int type, int protocol)
     {
-        return ::socket(domain, type, protocol);
+        return toy::make_socket(domain, type, protocol);
     }
-    virtual int make_fd(int fd) { return fd; }
-    virtual int fd(int id) { return id; }
+    virtual socket_handle make_fd(socket_handle fd) { return fd; }
+    virtual socket_handle fd(socket_handle id) { return id; }
 
-    virtual int close(int fd)   { return ::close(fd); }
-    virtual void fcntl(int fd, int cmd, int flag)
+    virtual int close(socket_handle fd)   { return toy::close(fd); }
+    virtual void set_non_blocking(socket_handle fd)
     {
-        if (::fcntl(fd, cmd, flag) < 0) {
-            throw std::runtime_error("fcntl");
-        }
+        toy::set_non_blocking(fd);
     }
 };
 
@@ -65,15 +101,15 @@ struct socket
 private:
     enum class tag { normal, special };
     io_context_base* d_context;
-    int              d_id;
+    socket_handle    d_id;
     tag              d_kind;
 
-    socket(io_context_base& context, int id, tag kind)
+    socket(io_context_base& context, socket_handle id, tag kind)
         : d_context(&context)
         , d_id(id)
         , d_kind(kind)
     {
-        context.fcntl(fd(), F_SETFL, O_NONBLOCK);
+        context.set_non_blocking(fd());
     }
 public:
     socket()
@@ -86,7 +122,7 @@ public:
         : socket(context, context.make_socket(domain, type, protocol), tag::normal)
     {
     }
-    socket(io_context_base& context, int fd)
+    socket(io_context_base& context, socket_handle fd)
         : socket(context, context.make_fd(fd), tag::special)
     {
     }
@@ -102,8 +138,8 @@ public:
             d_context->close(d_id);
         }
     }
-    int                   fd() const { return d_context->fd(d_id); }
-    int                   id() const { return d_id; }
+    socket_handle         fd() const { return d_context->fd(d_id); }
+    socket_handle         id() const { return d_id; }
     toy::io_context_base* context() const { return d_context; }
 
     friend std::ostream& operator<< (std::ostream& out, socket const& s) {
@@ -111,7 +147,6 @@ public:
     }
 };
 
-using file = socket;
 }
 
 // ----------------------------------------------------------------------------

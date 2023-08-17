@@ -22,15 +22,15 @@ endif()
 # doesn't compile with gcc: toy-coro
 list(APPEND TOY_DEMOS
     toy-client
-    toy-sender
 )
 
-list(APPEND TOY_DEMOS
+list(APPEND xTOY_DEMOS
     toy-echo
     toy-udp-client
     toy-udp-server
     toy-http-client
     toy-cancel
+    toy-sender
     toy-time
 )
 
@@ -126,12 +126,14 @@ ENDIF()
 # try to use IOCP
 CHECK_INCLUDE_FILE(winsock2.h TOY_HAS_IOCP)
 IF(TOY_HAS_IOCP)
-    add_executable(toy-echo-iocp toy-echo.cpp)
-    target_compile_definitions(toy-echo-iocp PRIVATE TOY_NETWORKING_HPP="toy-networking-iocp.hpp")
+    add_compile_definitions(TOY_HAS_IOCP)
+    #add_executable(toy-echo-iocp toy-echo.cpp)
+    #target_compile_definitions(toy-echo-iocp PRIVATE TOY_NETWORKING_HPP="toy-networking-iocp.hpp")
     add_executable(toy-client-iocp toy-client.cpp)
     target_compile_definitions(toy-client-iocp PRIVATE TOY_NETWORKING_HPP="toy-networking-iocp.hpp")
+    target_compile_definitions(toy-client-iocp PRIVATE TOY_CONTEXT=toy::iocp::context)
     #add_executable(toy-http-client-iocp toy-http-client.cpp)
     #target_compile_definitions(toy-http-client-iocp PRIVATE TOY_NETWORKING_HPP="toy-networking-iocp.hpp")
-    add_executable(toy-cancel-iocp toy-cancel.cpp)
-    target_compile_definitions(toy-cancel-iocp PRIVATE TOY_NETWORKING_HPP="toy-networking-iocp.hpp")
+    #add_executable(toy-cancel-iocp toy-cancel.cpp)
+    #target_compile_definitions(toy-cancel-iocp PRIVATE TOY_NETWORKING_HPP="toy-networking-iocp.hpp")
 ENDIF()
