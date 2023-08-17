@@ -72,37 +72,37 @@ struct io_base
     virtual int complete(short int events) = 0;
 };
 
-template <typename Receiver, typename Operation>
+template <typename Receiver, typename Args>
 struct io_state
     : toy::epoll::io_base
 {
-    using result_t = Operation::result_t;
+    using result_t = Args::result_t;
     using scheduler_t = decltype(get_scheduler(std::declval<Receiver const&>()));
 
     Receiver     receiver;
-    Operation    operation;
+    Args         args;
     toy::socket& socket;
     toy::hidden::io_operation::stop_callback<io_state, Receiver> cb;
 
     scheduler_t scheduler() { return get_scheduler(receiver); }
     int fd() const { return socket.fd(); }
 
-    io_state(Receiver receiver, toy::socket& socket, toy::event_kind events, Operation op)
+    io_state(Receiver receiver, toy::socket& socket, toy::event_kind events, Args args)
         : toy::epoll::io_base(socket.id(), events)
         , receiver(receiver)
-        , operation(op)
+        , args(args)
         , socket(socket)
     {
     }
     friend void start(io_state& self)
     {
-        if constexpr (requires(io_state& self, Operation op){ op.start(self); })
+        if constexpr (requires(toy::socket& s, Args args){ toy::hidden::io_operation::start(s, args); })
         {
-            self.try_operation([&]{ return self.operation.start(self); });
+            self.try_operation([&]{ return toy::hidden::io_operation::start(self.socket, self.args); });
         }
         else
         {
-            self.try_operation([&]{ return self.operation(self, event_kind::none); });
+            self.try_operation([&]{ return toy::hidden::io_operation::operation(self.socket, event_kind::none, self.args); });
         }
     }
     template <typename Fun>
@@ -121,10 +121,10 @@ struct io_state
             })) {
             if (err == EAGAIN || err == EWOULDBLOCK || err == EINPROGRESS) {
                 cb.engage(*this);
-                if (bool(operation.event & event_kind::read)) {
+                if (bool(args.event & event_kind::read)) {
                     scheduler().await(this, EPOLLIN);
                 }
-                if (bool(operation.event & event_kind::write)) {
+                if (bool(args.event & event_kind::write)) {
                     scheduler().await(this,  EPOLLOUT);
                 }
             }
@@ -151,7 +151,7 @@ struct io_state
                 case EPOLLIN | EPOLLOUT: return event_kind::both;
             }
         }));
-        try_operation([&]{ return operation(*this, event); });
+        try_operation([&]{ return toy::hidden::io_operation::operation(socket, event, args); });
         return 0;
     }
 };

@@ -28,6 +28,7 @@
 
 #include "toy-networking-common.hpp"
 #include "toy-networking-posix.hpp"
+#include "toy-networking-sender.hpp"
 #include "toy-starter.hpp"
 #include "toy-utility.hpp"
 
@@ -81,39 +82,39 @@ struct storage_type
 template <typename Operation>
 using storage_t = typename storage_type<Operation>::type;
 
-inline void prepare(::io_uring_sqe* sqe, int fd, toy::hidden::io_operation::poll_op& op, toy::none)
+inline void prepare(::io_uring_sqe* sqe, int fd, toy::poll_t::args& op, toy::none)
 {
     ::io_uring_prep_poll_add(sqe, fd,
                               (bool(op.event & toy::event_kind::read)? POLLIN: 0)
                             | (bool(op.event & toy::event_kind::write)? POLLOUT: 0));
 }
 
-inline void prepare(::io_uring_sqe* sqe, int fd, toy::hidden::io_operation::connect_op& op, toy::none const&)
+inline void prepare(::io_uring_sqe* sqe, int fd, toy::connect_t::args& op, toy::none const&)
 {
     ::io_uring_prep_connect(sqe, fd, &op.address.as_addr(), op.address.size());
 }
 
 template <>
-struct storage_type<toy::hidden::io_operation::accept_op> { using type = toy::address; };
-inline void prepare(::io_uring_sqe* sqe, int fd, toy::hidden::io_operation::accept_op&, toy::address& address)
+struct storage_type<toy::accept_t::args> { using type = toy::address; };
+inline void prepare(::io_uring_sqe* sqe, int fd, toy::accept_t::args&, toy::address& address)
 {
     ::io_uring_prep_accept(sqe, fd, &address.as_addr(), &(address.len = address.capacity()), 0);
 }
 
-inline void prepare(::io_uring_sqe* sqe, int fd, toy::hidden::io_operation::read_some_op& op, toy::none const&)
+inline void prepare(::io_uring_sqe* sqe, int fd, toy::read_some_t::args& op, toy::none const&)
 {
     ::io_uring_prep_read(sqe, fd, op.buffer, op.len, 0);
 }
 
-inline void prepare(::io_uring_sqe* sqe, int fd, toy::hidden::io_operation::write_some_op& op, toy::none const&)
+inline void prepare(::io_uring_sqe* sqe, int fd, toy::write_some_t::args& op, toy::none const&)
 {
     ::io_uring_prep_write(sqe, fd, op.buffer, op.len, 0);
 }
 
 template <typename MBS>
-struct storage_type<toy::hidden::io_operation::receive_op<MBS>> { using type = ::msghdr; };
+struct storage_type<toy::receive_t::args<MBS>> { using type = ::msghdr; };
 template <typename MBS>
-inline void prepare(::io_uring_sqe* sqe, int fd, toy::hidden::io_operation::receive_op<MBS>& op, ::msghdr& header)
+inline void prepare(::io_uring_sqe* sqe, int fd, toy::receive_t::args<MBS>& op, ::msghdr& header)
 {
     header.msg_iov    = op.buffer.data();
     header.msg_iovlen = op.buffer.size();
@@ -121,9 +122,9 @@ inline void prepare(::io_uring_sqe* sqe, int fd, toy::hidden::io_operation::rece
 }
 
 template <typename MBS>
-struct storage_type<toy::hidden::io_operation::receive_from_op<MBS>> { using type = ::msghdr; };
+struct storage_type<toy::receive_from_t::args<MBS>> { using type = ::msghdr; };
 template <typename MBS>
-inline void prepare(::io_uring_sqe* sqe, int fd, toy::hidden::io_operation::receive_from_op<MBS>& op, ::msghdr& header)
+inline void prepare(::io_uring_sqe* sqe, int fd, toy::receive_from_t::args<MBS>& op, ::msghdr& header)
 {
     header.msg_name = &op.addr.as_addr();
     header.msg_namelen = op.addr.size();
@@ -132,15 +133,15 @@ inline void prepare(::io_uring_sqe* sqe, int fd, toy::hidden::io_operation::rece
     ::io_uring_prep_recvmsg(sqe, fd, &header, static_cast<unsigned int>(op.flags));
 }
 template <typename MBS>
-inline void finalize(toy::hidden::io_operation::receive_from_op<MBS>& op, ::msghdr& header)
+inline void finalize(toy::receive_from_t::args<MBS>& op, ::msghdr& header)
 {
     op.addr.resize(header.msg_namelen);
 }
 
 template <typename MBS>
-struct storage_type<toy::hidden::io_operation::send_op<MBS>> { using type = ::msghdr; };
+struct storage_type<toy::send_t::args<MBS>> { using type = ::msghdr; };
 template <typename MBS>
-inline void prepare(::io_uring_sqe* sqe, int fd, toy::hidden::io_operation::send_op<MBS>& op, ::msghdr& header)
+inline void prepare(::io_uring_sqe* sqe, int fd, toy::send_t::args<MBS>& op, ::msghdr& header)
 {
     header.msg_iov    = op.buffer.data();
     header.msg_iovlen = op.buffer.size();
@@ -148,9 +149,9 @@ inline void prepare(::io_uring_sqe* sqe, int fd, toy::hidden::io_operation::send
 }
 
 template <typename MBS>
-struct storage_type<toy::hidden::io_operation::send_to_op<MBS>> { using type = ::msghdr; };
+struct storage_type<toy::send_to_t::args<MBS>> { using type = ::msghdr; };
 template <typename MBS>
-inline void prepare(::io_uring_sqe* sqe, int fd, toy::hidden::io_operation::send_to_op<MBS>& op, ::msghdr& header)
+inline void prepare(::io_uring_sqe* sqe, int fd, toy::send_to_t::args<MBS>& op, ::msghdr& header)
 {
     header.msg_name = &op.address.as_addr();
     header.msg_namelen = op.address.size();
