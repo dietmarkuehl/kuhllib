@@ -159,7 +159,7 @@ struct io_state<toy::socket, Receiver, toy::connect_t::args>
     friend void start(io_state& self) {
         auto scheduler(get_scheduler(self.receiver));
         scheduler.connect(self.socket, &self.args.address.as_addr(), self.args.address.size(), &self);
-        std::cout << "start(connect) done\n" << std::flush;
+        std::cout << "start(connect) done; address=" << self.args.address << "\n" << std::flush;
     }
     void complete(std::size_t) override {
         std::cout << "async_connect completed\n" << std::flush;
@@ -273,7 +273,7 @@ struct timer_state
 
 struct context;
 struct scheduler {
-    template <typename Stream, typename Receiver, typename Args>
+    template <typename Receiver, typename Args, typename Stream>
     using io_state = toy::iocp::io_state<Stream, Receiver, Args>;
 
     context* context;
@@ -308,7 +308,8 @@ struct context
         DWORD       transferred{};
         ULONG_PTR   key{};
         OVERLAPPED* overlapped{};
-        if (FALSE == GetQueuedCompletionStatus(port, &transferred, &key, &overlapped, 60000 /* INFINITE /*-dk:TODO use more sensible time*/)) {
+        std::cout << "getting competion status\n" << std::flush;
+        if (FALSE == GetQueuedCompletionStatus(port, &transferred, &key, &overlapped, 6000 /* INFINITE /*-dk:TODO use more sensible time*/)) {
             std::cout << "run_one(): failure(" << GetLastError() << "): " << toy::iocp::wsa_to_string(GetLastError()) << "\n" << std::flush;
             return 0;
         }
@@ -360,6 +361,7 @@ inline void context::accept(toy::socket& server, toy::socket& client, void* buff
 
 inline void context::connect(toy::socket& client, ::sockaddr const* name, ::socklen_t namelen, LPOVERLAPPED overlapped)
 {
+    std::cout << "namelen=" << namelen << "\n";
     static LPFN_CONNECTEX connect_ex{};
     static bool const dummy = std::invoke([&client]{
         DWORD bytes{};
@@ -380,6 +382,7 @@ inline void context::connect(toy::socket& client, ::sockaddr const* name, ::sock
         };
     addr.sin_addr.s_addr = htonl(INADDR_ANY);
     if (bind(client.fd(), reinterpret_cast<SOCKADDR*>(&addr), sizeof(addr))) {
+        std::cout << "bind in connect failed\n";
         throw std::system_error(WSAGetLastError(), this->category(), "failed to bind before connect_ex");
     }
 
@@ -389,8 +392,9 @@ inline void context::connect(toy::socket& client, ::sockaddr const* name, ::sock
             std::cout << "connect error: err=" << err << "(" << wsa_to_string(err) << ")\n";
             throw std::system_error(err, this->category(), "failed to connect_ex");
         }
+        std::cout << "connect is pending\n";
     }
-    std::cout << "connect done\n";
+    std::cout << "connect done\n" << std::flush;
 }
 
 inline void scheduler::accept(toy::socket& server, toy::socket& client, void* buffer, DWORD* dummy, LPOVERLAPPED overlapped)
