@@ -98,7 +98,7 @@ public:
     int fd() const { return d_fd; }
 };
 
-template <typename Receiver, typename Args, typename = toy::socket>
+template <typename Receiver, typename Args>
 struct io_state
     : toy::poll::io_base
 {
@@ -199,7 +199,7 @@ private:
 
 public:
     template <typename Receiver, typename Args, typename Stream = toy::socket>
-    using io_state = toy::poll::io_state<Receiver, Args, Stream>;
+    using io_state = toy::poll::io_state<Receiver, Args>;
     template <typename Receiver, typename Operation>
     using time_state = toy::poll::time_state<Receiver, Operation>;
 

@@ -321,7 +321,7 @@ private:
 
     explicit scheduler(toy::io_uring::context* context): context(context) {}
 public:
-    template <typename Receiver, typename Operation>
+    template <typename Receiver, typename Operation, typename = toy::socket>
     using io_state = toy::io_uring::io_state<Receiver, Operation>;
     template <typename Receiver, typename Operation>
     using time_state = toy::io_uring::time_state<Receiver, Operation>;

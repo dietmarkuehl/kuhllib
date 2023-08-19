@@ -22,9 +22,6 @@ endif()
 # doesn't compile with gcc: toy-coro
 list(APPEND TOY_DEMOS
     toy-client
-)
-
-list(APPEND xTOY_DEMOS
     toy-echo
     toy-udp-client
     toy-udp-server
