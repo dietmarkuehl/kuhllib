@@ -42,7 +42,7 @@ int main() {
         addr.sin_addr.s_addr = htonl(0x53f33a19);
 
         if (co_await toy::async_connect(client, reinterpret_cast<::sockaddr const*>(&addr), sizeof addr) < 0) {
-            std::cout << "ERROR: failed to connect: " << ::strerror(errno) << "\n";
+            std::cout << "ERROR: failed to connect: " << toy::strerror(errno) << "\n";
             co_return;
         }
         std::cout << "connected\n";
@@ -51,16 +51,16 @@ int main() {
             "Host: dietmar-kuehl.de\r\n"
             "\r\n"
         };
-        int const size = ::strlen(request);
-        if (co_await toy::async_write_some(client, request, size) < 0) {
-            std::cout << "ERROR: failed to write request: " << ::strerror(errno) << "\n";
+        auto const size = ::strlen(request);
+        if (co_await toy::async_send(client, toy::buffer(request, size)) < 0) {
+            std::cout << "ERROR: failed to write request: " << toy::strerror(errno) << "\n";
             co_return;
         }
         std::cout << "wrote request\n";
         char buffer[65536];
-        int result = co_await toy::async_read_some(client, buffer, sizeof buffer);
+        auto result = co_await toy::async_receive(client, toy::buffer(buffer));
         if (result < 0) {
-            std::cout << "ERROR: failed to read response: " << ::strerror(errno) << "\n";
+            std::cout << "ERROR: failed to read response: " << toy::strerror(errno) << "\n";
             co_return;
         }
         std::cout << "received result\n";
