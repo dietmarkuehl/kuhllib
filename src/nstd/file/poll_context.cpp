@@ -266,7 +266,8 @@ auto NF::poll_context::do_accept(NF::context::native_handle_type fd,
         case EPROTO:
         case ENOPROTOOPT:
         case EHOSTDOWN:
-#ifndef __APPLE__
+#ifdef NSTD_HAS_ENONET
+#error "gets here"
         case ENONET:
 #endif
         case EHOSTUNREACH:

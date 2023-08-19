@@ -252,7 +252,7 @@ int main()
     clients         cs;
     ::std::cout << "using port=" << port << "\n";
 
-#ifndef __APPLE__
+#ifdef NSTD_HAS_LINUX_IO_URING
     NF::ring_context     ring(nstd::file::ring_context::queue_size{64});
     NN::io_context       context(::std::make_unique<NF::observer_context>(ring));
 #else
