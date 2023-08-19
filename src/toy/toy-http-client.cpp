@@ -52,7 +52,7 @@ int main() {
             "\r\n"
         };
         auto const size = ::strlen(request);
-        if (co_await toy::async_send(client, toy::buffer(request, size)) < 0) {
+        if (co_await toy::async_send(client, toy::buffer(request, size)) < 1u) {
             std::cout << "ERROR: failed to write request: " << toy::strerror(errno) << "\n";
             co_return;
         }
