@@ -125,14 +125,14 @@ struct address {
                 sockaddr_in const& saddr(reinterpret_cast<sockaddr_in const&>(addr.addr));
                 char buffer[INET_ADDRSTRLEN];
                 inet_ntop(AF_INET, &saddr.sin_addr.s_addr, buffer, sizeof(buffer));
-                return out << buffer << ":" << ::ntohs(saddr.sin_port);
+                return out << buffer << ":" << ntohs(saddr.sin_port);
             }
         case AF_INET6: {
 
                 sockaddr_in6 const& saddr(reinterpret_cast<sockaddr_in6 const&>(addr.addr));
                 char buffer[INET6_ADDRSTRLEN];
                 inet_ntop(AF_INET6, &saddr.sin6_addr, buffer, sizeof(buffer));
-                return out << "[" << buffer << "]:" << ::ntohs(saddr.sin6_port);
+                return out << "[" << buffer << "]:" << ntohs(saddr.sin6_port);
             }
         }
         return out << "address";
