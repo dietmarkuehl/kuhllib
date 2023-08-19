@@ -71,7 +71,6 @@ namespace hidden_task {
                 } 
                 friend void set_stopped(receiver&& self) {
                     self.a->stop();
-                    //-dk:TODO get rid of the handle?
                 }
                 friend Scheduler get_scheduler(receiver const& self) {
                     return self.a->sched;

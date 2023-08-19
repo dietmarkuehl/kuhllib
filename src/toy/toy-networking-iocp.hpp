@@ -74,12 +74,10 @@ struct winsock_setup {
         if (int error = WSAStartup(MAKEWORD(2, 2), &wsaData)) {
             throw std::runtime_error("failed to initialize winsock`");
         }
-        std::cout << "winsock setup\n" << std::flush;
     }
     winsock_setup(winsock_setup&&) = delete;
     ~winsock_setup() {
         WSACleanup();
-        std::cout << "winsock torn down\n" << std::flush;
     }
 };
 
@@ -135,9 +133,9 @@ struct io_state<toy::socket, Receiver, toy::accept_t::args>
         auto scheduler(get_scheduler(self.receiver));
         self.client.emplace(scheduler, PF_INET, SOCK_STREAM, IPPROTO_TCP);
         scheduler.accept(self.socket, *self.client, self.buffer, &self.dummy, &self);
+        scheduler.increment();
     }
     void complete(std::size_t) override {
-        std::cout << "async_accept completed\n";
         set_value(this->receiver, std::move(*client));
     }
 };
@@ -159,10 +157,9 @@ struct io_state<toy::socket, Receiver, toy::connect_t::args>
     friend void start(io_state& self) {
         auto scheduler(get_scheduler(self.receiver));
         scheduler.connect(self.socket, &self.args.address.as_addr(), self.args.address.size(), &self);
-        std::cout << "start(connect) done; address=" << self.args.address << "\n" << std::flush;
+        scheduler.increment();
     }
     void complete(std::size_t) override {
-        std::cout << "async_connect completed\n" << std::flush;
         set_value(this->receiver, 0);
     }
 };
@@ -183,24 +180,18 @@ struct io_state<toy::socket, Receiver, toy::receive_t::args<MBS>>
     }
     friend void start(io_state& self)
     {
-        std::cout << "starting receive\n" << std::flush;
         DWORD bytes{};
         DWORD flags{};
-        if (WSARecv(self.socket.fd(), self.args.buffer.data(), DWORD(self.args.buffer.size()), &bytes, &flags, &self, nullptr)) {
+        if (WSARecv(self.socket.fd(), self.args.buffer.data(), DWORD(self.args.buffer.size()), &bytes, &flags, static_cast<toy::iocp::io_base*>(&self), nullptr)) {
             int error = WSAGetLastError();
             if (error != WSA_IO_PENDING) {
                 //-dk:TODO deal with error
-            }
-            else {
-                std::cout << "receive started\n" << "\n";
+                return;
             }
         }
-        else {
-            std::cout << "receive immediately completed\n" << std::flush;
-        }
+        get_scheduler(self.receiver).increment();
     }
     void complete(std::size_t size) override {
-        std::cout << "async_receive done: " << size << "\n" << std::flush;
         set_value(this->receiver, int(size));
     }
 };
@@ -221,25 +212,19 @@ struct io_state<toy::socket, Receiver, toy::send_t::args<MBS>>
     }
     friend void start(io_state& self)
     {
-        std::cout << "starting send\n" << std::flush;
         DWORD bytes{};
         DWORD flags{};
-        if (WSASend(self.socket.fd(), self.args.buffer.data(), DWORD(self.args.buffer.size()), &bytes, flags, &self, nullptr)) {
+        if (WSASend(self.socket.fd(), self.args.buffer.data(), DWORD(self.args.buffer.size()), &bytes, flags, static_cast<toy::iocp::io_base*>(&self), nullptr)) {
             int error = WSAGetLastError();
             if (error != WSA_IO_PENDING) {
                 //-dk:TODO deal with error
-            }
-            else {
-                std::cout << "send started\n" << "\n";
+                return;
             }
         }
-        else {
-            std::cout << "send immediately completed\n" << std::flush;
-        }
+        get_scheduler(self.receiver).increment();
     }
     void complete(std::size_t size) override
     {
-        std::cout << "async_send done: " << size << "\n" << std::flush;
         set_value(this->receiver, int(size));
     }
 };
@@ -278,6 +263,7 @@ struct scheduler {
 
     context* context;
 
+    void increment();
     void accept(toy::socket& server, toy::socket& client, void* buffer, DWORD* dummy, LPOVERLAPPED overlapped);
     void connect(toy::socket& server, ::sockaddr const* name, ::socklen_t namelen, LPOVERLAPPED overlapped);
 };
@@ -293,38 +279,91 @@ struct context
         using io_base = toy::iocp::io_base;
     static std::error_category const& category() { return std::system_category(); } //-dk:TODO use custom category
     using scheduler = toy::iocp::scheduler;
+
+    struct record
+    {
+        socket_handle          fd{};
+        std::unique_ptr<ULONG> continuation;
+    };
+
+    HANDLE              port;
+    std::vector<record> sockets;
+    socket_handle       next_record{};
+    std::size_t         outstanding{};
+
+    bool empty() const { return outstanding == 0u; }
+    void increment() { ++outstanding; }
+    void decrement() { --outstanding; }
     scheduler get_scheduler() { return { this }; }
-    void run() {
+
+    socket_handle make_record()
+    {
+        if (sockets.size() == next_record)
+        {
+            sockets.resize(std::max(sockets.size(), std::size_t(16u)));
+            for (auto i{next_record}; i!= sockets.size(); ++i)
+            {
+                sockets[i].fd = i + 1;
+            }
+        }
+        return std::exchange(next_record, sockets[next_record].fd);
+    }
+    socket_handle make_socket(int domain, int type, int protocol) override
+    {
+        socket_handle index = make_record();
+        record& r(sockets[index]);
+        r = record{toy::make_socket(domain, type, protocol), std::unique_ptr<ULONG>(new ULONG())};
+        if (r.fd == INVALID_SOCKET) {
+            throw std::system_error(WSAGetLastError(), std::system_category(),
+                                    "failed to create socket");
+
+        }
+        if (CreateIoCompletionPort(reinterpret_cast<HANDLE>(r.fd), port, reinterpret_cast<ULONG_PTR>(r.continuation.get()), 0) != port)
+        {
+            throw std::system_error(WSAGetLastError(), std::system_category(),
+                                    "failed to set iocp");
+        }
+        return index;
+    }
+    socket_handle fd(socket_handle index) override { return sockets[index].fd; }
+    int close(socket_handle index) override
+    {
+        closesocket(sockets[index].fd);
+        next_record = std::exchange(sockets[index].fd, next_record);
+        return 0;
+    }
+
+    void run()
+    {
         std::size_t total{};
         std::size_t count{};
-        while (true /*-dk:TODO !empty()*/) {
+        while (!empty())
+        {
             ++total;
             count += run_one();
-            std::cout << "run(): " << count << "/" << total << "\n" << std::flush;
         }
     }
-    std::size_t run_one() {
-        std::cout << "run_one() start\n" << std::flush;
+    std::size_t run_one()
+    {
         DWORD       transferred{};
         ULONG_PTR   key{};
         OVERLAPPED* overlapped{};
-        std::cout << "getting competion status\n" << std::flush;
         if (FALSE == GetQueuedCompletionStatus(port, &transferred, &key, &overlapped, 6000 /* INFINITE /*-dk:TODO use more sensible time*/)) {
-            std::cout << "run_one(): failure(" << GetLastError() << "): " << toy::iocp::wsa_to_string(GetLastError()) << "\n" << std::flush;
             return 0;
         }
-        std::cout << "run_one() success\n";
         static_cast<context::io_base*>(overlapped)->complete(transferred);
+        decrement();
         return 1;
     }
 
     void accept(toy::socket& server, toy::socket& client, void* buffer, DWORD* dummy, LPOVERLAPPED overlapped);
     void connect(toy::socket& server, ::sockaddr const* name, ::socklen_t namelen, LPOVERLAPPED overlapped);
 
-    HANDLE port;
     context()
-        : port(CreateIoCompletionPort(INVALID_HANDLE_VALUE, nullptr, 0, 0))
-        , starter<toy::iocp::scheduler>(get_scheduler()) {
+        : starter<toy::iocp::scheduler>(get_scheduler()) 
+        , port(CreateIoCompletionPort(INVALID_HANDLE_VALUE, nullptr, 0, 0))
+        , sockets()
+    {
         if (!port) {
             throw std::system_error(WSAGetLastError(), this->category(),
                                     "failed to create completion port");
@@ -352,16 +391,13 @@ inline void context::accept(toy::socket& server, toy::socket& client, void* buff
     if (not accept_ex(server.fd(), client.fd(), buffer, 0, sizeof(sockaddr_storage) + 16, sizeof(sockaddr_storage) + 16, word, overlapped)) {
         int err = WSAGetLastError();
         if (err != ERROR_IO_PENDING) {
-            std::cout << "accept error: err=" << err << "(" << wsa_to_string(err) << ")\n";
             throw std::system_error(err, this->category(), "failed to accept_ex");
         }
     }
-    std::cout << "accept done\n";
 }
 
 inline void context::connect(toy::socket& client, ::sockaddr const* name, ::socklen_t namelen, LPOVERLAPPED overlapped)
 {
-    std::cout << "namelen=" << namelen << "\n";
     static LPFN_CONNECTEX connect_ex{};
     static bool const dummy = std::invoke([&client]{
         DWORD bytes{};
@@ -382,21 +418,18 @@ inline void context::connect(toy::socket& client, ::sockaddr const* name, ::sock
         };
     addr.sin_addr.s_addr = htonl(INADDR_ANY);
     if (bind(client.fd(), reinterpret_cast<SOCKADDR*>(&addr), sizeof(addr))) {
-        std::cout << "bind in connect failed\n";
         throw std::system_error(WSAGetLastError(), this->category(), "failed to bind before connect_ex");
     }
 
     if (not connect_ex(client.fd(), name, namelen, nullptr, 0, nullptr, overlapped)) {
         int err = WSAGetLastError();
         if (err != ERROR_IO_PENDING) {
-            std::cout << "connect error: err=" << err << "(" << wsa_to_string(err) << ")\n";
             throw std::system_error(err, this->category(), "failed to connect_ex");
         }
-        std::cout << "connect is pending\n";
     }
-    std::cout << "connect done\n" << std::flush;
 }
 
+inline void scheduler::increment() { context->increment(); }
 inline void scheduler::accept(toy::socket& server, toy::socket& client, void* buffer, DWORD* dummy, LPOVERLAPPED overlapped)
 {
     context->accept(server, client, buffer, dummy, overlapped);
