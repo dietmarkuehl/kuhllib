@@ -96,7 +96,7 @@ struct io_base
     int fd() const { return d_fd; }
 };
 
-template <typename Receiver, typename Args>
+template <typename Receiver, typename Args, typename = toy::socket>
 struct io_state
     : toy::kqueue::io_base
 {
@@ -187,8 +187,8 @@ struct scheduler {
     using io_base = toy::kqueue::io_base;
     using time_point_t = std::chrono::system_clock::time_point;
 
-    template <typename Receiver, typename Args>
-    using io_state = toy::kqueue::io_state<Receiver, Args>;
+    template <typename Receiver, typename Args, typename Stream = toy::socket>
+    using io_state = toy::kqueue::io_state<Receiver, Args, Stream>;
     template <typename Receiver, typename Operation>
     using time_state = toy::kqueue::time_state<Receiver, Operation>;
 

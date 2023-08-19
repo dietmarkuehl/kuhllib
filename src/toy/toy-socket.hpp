@@ -66,7 +66,6 @@ namespace toy
     {
     }
 #else
-    struct file: toy::socket { using toy::socket::socket; };
     using socket_handle = int;
 
     inline socket_handle make_socket(int domain, int type, int protocol) { return ::socket(domain, type, protocol); }
@@ -151,6 +150,10 @@ public:
         return out << s.fd();
     }
 };
+
+#ifndef TOY_HAS_WINSOCK2
+    struct file: toy::socket { using toy::socket::socket; };
+#endif
 
 }
 

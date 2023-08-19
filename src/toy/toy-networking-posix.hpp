@@ -107,6 +107,7 @@ namespace hidden::io_operation
         else {
             errno = rc;
             return -rc;
+        }
     }
 
     int operation(toy::socket& socket, toy::event_kind, toy::accept_t::args&)
@@ -116,7 +117,8 @@ namespace hidden::io_operation
         return ::accept(socket.fd(), &addr, &len);
     }
 
-    int operation(toy::socket& socket, toy::event_kind, toy::read_some_t::args& args) {
+    int operation(toy::socket& socket, toy::event_kind, toy::read_some_t::args& args)
+    {
         return ::read(socket.fd(), args.buffer, args.len);
     }
 

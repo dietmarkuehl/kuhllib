@@ -54,7 +54,7 @@ int main() {
                     int r{};
                     while (0 < (r = co_await toy::async_read_some(std_in, line, sizeof(line)))) {
                         auto n = co_await toy::async_send(client, toy::buffer(line, r));
-                        if (n < 0) {
+                        if (n < 1u) {
                             std::cout << "ERROR: failed to write: " << toy::strerror(errno) << "\n";
                             co_return;
                         }
