@@ -49,6 +49,11 @@ namespace toy
     struct socket;
 
 #ifdef TOY_HAS_WINSOCK2
+    struct file
+    {
+    };
+    toy::file std_in(auto&&) { return toy::file(); }
+
     using socket_handle = SOCKET;
 
     inline socket_handle make_socket(int domain, int type, int protocol)
@@ -61,8 +66,8 @@ namespace toy
     {
     }
 #else
-    using file = toy::socket;
-    using socket_hanlde = int;
+    struct file: toy::socket { using toy::socket::socket; };
+    using socket_handle = int;
 
     inline socket_handle make_socket(int domain, int type, int protocol) { return ::socket(domain, type, protocol); }
     inline int close(socket_handle fd) { return ::close(fd); }

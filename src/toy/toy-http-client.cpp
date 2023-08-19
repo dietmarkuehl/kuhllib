@@ -37,7 +37,7 @@ int main() {
         toy::socket client(context, PF_INET, SOCK_STREAM, 0);
 
         if (co_await toy::async_connect(client, toy::address(AF_INET, htons(80), htonl(0x53f33a19))) < 0) {
-            std::cout << "ERROR: failed to connect: " << ::strerror(errno) << "\n";
+            std::cout << "ERROR: failed to connect: " << toy::strerror(errno) << "\n";
             co_return;
         }
         std::cout << "connected\n";

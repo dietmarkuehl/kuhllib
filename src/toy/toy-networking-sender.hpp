@@ -42,25 +42,25 @@ namespace toy {
 // ----------------------------------------------------------------------------
 
 namespace hidden::io_operation {
-    template <typename Operation>
+    template <typename Operation, typename Stream = toy::socket>
     struct sender {
         using result_t = typename Operation::result_t;
 
-        toy::socket&  socket;
-        Operation     op;
+        Stream&   stream;
+        Operation op;
 
         template <typename R>
         using scheduler_t = decltype(get_scheduler(std::declval<R const&>()));
         template <typename R>
-        using state_t     = scheduler_t<R>::template io_state<R, Operation>;
+        using state_t     = scheduler_t<R>::template io_state<Stream, R, Operation>;
 
         template <typename R>
         friend state_t<R> connect(sender const& self, R&& receiver) {
-            return state_t<R>(std::forward<R>(receiver), self.socket.fd(), self.op.event, self.op);
+            return state_t<R>(std::forward<R>(receiver), self.stream, self.op.event, self.op);
         }
         template <typename R>
         friend state_t<R> connect(sender&& self, R&& receiver) {
-            return state_t<R>(std::forward<R>(receiver), self.socket, self.op.event, std::move(self.op));
+            return state_t<R>(std::forward<R>(receiver), self.stream, self.op.event, std::move(self.op));
         }
     };
 }
@@ -133,6 +133,11 @@ namespace io
         operator()(toy::socket& s, char* buffer, std::size_t len) const
         {
             return {s, {buffer, len}};
+        }
+        inline hidden::io_operation::sender<toy::io::read_some_t::args, toy::file>
+        operator()(toy::file& f, char* buffer, std::size_t len) const
+        {
+            return {f, {buffer, len}};
         }
     };
 
