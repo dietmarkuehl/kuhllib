@@ -25,6 +25,7 @@
 
 COMPILER = unknown
 BUILDDIR = build-$(COMPILER)
+RM       = rm -f
 
 .PHONY: default
 default: check
