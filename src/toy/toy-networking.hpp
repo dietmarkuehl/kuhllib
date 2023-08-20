@@ -41,6 +41,9 @@
 #if defined(TOY_HAS_IOCP)
 #   include "toy-networking-iocp.hpp"
 #endif
+#if defined(TOY_HAS_OPENSSL)
+#   include "toy-networking-openssl.hpp"
+#endif
 #include "toy-networking-generic.hpp"
 #include "toy-networking-sender.hpp"
 

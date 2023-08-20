@@ -29,6 +29,7 @@
 // ----------------------------------------------------------------------------
 
 #include "toy-networking-common.hpp"
+#include "toy-networking-sender.hpp"
 #include "toy-starter.hpp"
 #include "toy-utility.hpp"
 
@@ -56,12 +57,12 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 
-namespace toy
+namespace toy::openssl
 {
 
 // ----------------------------------------------------------------------------
 
-struct socket
+struct xsocket
 {
     static SSL_CTX* context() {
         static SSL_CTX* rc = []{
@@ -83,8 +84,8 @@ struct socket
     private:
     SSL* ssl{nullptr};
     public:
-    socket() = default;
-    socket(int fd)
+    xsocket() = default;
+    xsocket(int fd)
         : fd(fd)
     {
         if (::fcntl(fd, F_SETFL, O_NONBLOCK) < 0) {
@@ -107,80 +108,111 @@ struct socket
         }
         return ssl;
     }
-    socket(socket&& other)
+    xsocket(xsocket&& other)
         : fd(std::exchange(other.fd, -1))
         , ssl(std::exchange(other.ssl, nullptr))
     {
     }
-    socket& operator= (socket&& other) {
+    xsocket& operator= (xsocket&& other) {
         if (this != &other) {
             std::swap(fd, other.fd);
             std::swap(ssl, other.ssl);
         }
         return *this;
     }
-    ~socket() {
+    ~xsocket() {
         if (ssl != nullptr) {
             SSL_free(ssl);
         }
         if (fd != -1) ::close(fd);
     }
-    friend std::ostream& operator<< (std::ostream& out, socket const& self) {
+    friend std::ostream& operator<< (std::ostream& out, xsocket const& self) {
         return out << "fd=" << self.fd << ", ssl=" << self.ssl;
     }
 };
 
-class io_context;
-struct io_scheduler {
-    io_context* context;
-    friend std::ostream& operator<< (std::ostream& out, io_scheduler const& s) {
+class context_base;
+template <typename BaseContext = int>
+class context;
+struct scheduler;
+
+struct io_base
+    : toy::immovable {
+    int         fd;
+    short int   events;
+    virtual void complete() = 0;
+    io_base(int fd, short int events): fd(fd), events(events)  {}
+};
+
+template <typename Receiver, typename Operation>
+struct io_state
+    : toy::openssl::io_base
+{
+    Receiver receiver;
+    io_state(Receiver receiver, toy::socket&, toy::event_kind, Operation)
+        : io_base(0, 0)
+        , receiver(receiver)
+    {
+    }
+    friend void start(io_state& self)
+    {
+        set_error(std::move(self.receiver),
+                  std::make_exception_ptr(std::runtime_error("openssl " + std::string(Operation::name) + " is not, yet, implemented")));
+    }
+    void complete() override {}
+};
+
+class context_base
+    : public toy::io_context_base
+{
+};
+
+struct scheduler {
+    template <typename Receiver, typename Operation, typename Stream>
+    using io_state = toy::openssl::io_state<Receiver, Operation>;
+
+    context_base* context;
+    friend std::ostream& operator<< (std::ostream& out, scheduler const& s) {
         return out << s.context;
     }
 };
 
-struct io
-    : immovable {
-    io_context& c;
-    int         fd;
-    short int   events;
-    virtual void complete() = 0;
-    io(io_context& c, int fd, short int events): c(c), fd(fd), events(events)  {}
-};
-
-class io_context
-    : public starter<toy::io_scheduler>
+template <typename>
+class context
+    : public starter<toy::openssl::scheduler>
+    , public toy::openssl::context_base
 {
 public:
-    using scheduler = toy::io_scheduler;
+    using scheduler = toy::openssl::scheduler;
     scheduler get_scheduler() { return { this }; }
 
 private:
     using time_point_t = std::chrono::system_clock::time_point;
-    std::vector<io*>      ios;
+    std::vector<toy::openssl::io_base*>      ios;
     std::vector<::pollfd> fds;
-    toy::timer_queue<io*> times;
+    toy::timer_queue<toy::openssl::io_base*> times;
 
 public:
     static constexpr bool has_timer = true; //-dk:TODO remove - used while adding timers to contexts
 
-    io_context()
+    context()
         : starter(get_scheduler()) {
     }
-    void add(io* i) {
+    void add(toy::openssl::io_base* i) {
         ios.push_back(i);
         fds.push_back(  pollfd{ .fd = i->fd, .events = i->events });
     }
-    void add(time_point_t time, io* op) {
+    void add(time_point_t time, toy::openssl::io_base* op) {
         times.push(time, op);
     }
-    void erase(io* i) {
+    void erase(toy::openssl::io_base* i) {
         auto it = std::find(ios.begin(), ios.end(), i);
         if (it != ios.end()) {
             fds.erase(fds.begin() + (it - ios.begin()));
             ios.erase(it);
         }
     }
-    void erase_timer(io* i) {
+    void erase_timer(toy::openssl::io_base* i) {
         times.erase(i);
     }
     void run() {
@@ -189,7 +221,7 @@ public:
 
             bool timed{false};
             while (!times.empty() && times.top().first <= now) {
-                io* op{times.top().second};
+                toy::openssl::io_base* op{times.top().second};
                 times.pop();
                 op->complete();
                 timed = true;
@@ -237,6 +269,7 @@ ssl_error_category const& ssl_category() {
 
 // ----------------------------------------------------------------------------
 
+#if 0
 namespace hidden_async_accept {
     struct sender {
         using result_t = toy::socket;
@@ -267,7 +300,7 @@ namespace hidden_async_accept {
             void try_accept_or_submit() {
                 int rc(::accept(fd, reinterpret_cast<::sockaddr*>(&addr), &len));
                 if (0 <= rc) {
-                    d_result = toy::socket(rc);
+                    d_result = toy::openssl::xsocket(rc);
                     auto ssl = d_result.get_ssl();
                     SSL_set_accept_state(ssl);
                     shaking_hands = true;
@@ -703,6 +736,7 @@ namespace hidden_async_sleep_for {
     };
 }
 using async_sleep_for = hidden_async_sleep_for::async_sleep_for;
+#endif
 
 // ----------------------------------------------------------------------------
 
