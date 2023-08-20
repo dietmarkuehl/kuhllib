@@ -52,7 +52,7 @@ namespace hidden::io_operation {
         template <typename R>
         using scheduler_t = decltype(get_scheduler(std::declval<R const&>()));
         template <typename R>
-        using state_t     = scheduler_t<R>::template io_state<R, Operation, Stream>;
+        using state_t     = typename scheduler_t<R>::template io_state<R, Operation, Stream>;
 
         template <typename R>
         friend state_t<R> connect(sender const& self, R&& receiver) {
@@ -295,7 +295,7 @@ namespace hidden::time_operation
         template <typename R>
         using scheduler_t = decltype(get_scheduler(std::declval<R const&>()));
         template <typename R>
-        using state_t     = scheduler_t<R>::template time_state<R, Operation>;
+        using state_t     = typename scheduler_t<R>::template time_state<R, Operation>;
 
         template <typename R>
         friend state_t<R> connect(sender const& self, R&& receiver) {

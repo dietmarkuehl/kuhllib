@@ -243,7 +243,11 @@ public:
     }
     void add(io_base* i) {
         flush_changes();
-        change[changes++] = kevent_t{::uintptr_t(i->fd()), ::int16_t(i->events), EV_ADD | EV_ONESHOT| EV_EOF, ::uint32_t(), ::intptr_t(), i};
+        change[changes++] = kevent_t{::uintptr_t(i->fd()), ::int16_t(i->events), EV_ADD | EV_ONESHOT| EV_EOF, ::uint32_t(), ::intptr_t(), i
+#if TOY_KEVENT_HAS_EXT
+        , {}
+#endif
+        };
         ++outstanding;
     }
     void add(time_point_t time, io_base* op) {
@@ -251,7 +255,11 @@ public:
     }
     void erase(io_base* i) {
         flush_changes();
-        change[changes++] = kevent_t{::uintptr_t(i->fd()), ::int16_t(i->events), EV_DELETE, ::uint32_t(), ::intptr_t(), i};
+        change[changes++] = kevent_t{::uintptr_t(i->fd()), ::int16_t(i->events), EV_DELETE, ::uint32_t(), ::intptr_t(), i
+#if TOY_KEVENT_HAS_EXT
+        , {}
+#endif
+        };
         --outstanding;
     }
     void erase_timer(io_base* i) {

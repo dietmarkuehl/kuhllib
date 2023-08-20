@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.12.0)
 project(toy-networking VERSION 1.0.0)
 include(CheckIncludeFile)
+include(CheckCXXSourceCompiles)
 
 set(CMAKE_CXX_STANDARD 20)
 
@@ -73,6 +74,16 @@ endif()
 CHECK_INCLUDE_FILE(sys/event.h TOY_HAS_KQUEUE)
 if (TOY_HAS_KQUEUE)
     add_compile_definitions(TOY_HAS_KQUEUE)
+    CHECK_CXX_SOURCE_COMPILES("
+    #include <sys/event.h>
+    int main() {
+        kevent ev{::uintptr_t(), ::int16_t(), EV_DELETE, ::uint32_t(), ::intptr_t(), nullptr, {}};
+        (void)ev;
+    }
+    " TOY_KEVENT_HAS_EXT)
+    if (TOY_KEVENT_HAS_EXT)
+        add_compile_definitions(TOY_KEVENT_HAS_EXT)
+    endif()
 endif()
 
 # try to use the POSIX interface
@@ -120,7 +131,9 @@ IF(TOY_HAS_KQUEUE)
         add_executable(${demo_executable} ${demo}.cpp)
         target_compile_definitions(${demo_executable} PRIVATE TOY_NETWORKING_HPP="toy-networking-kqueue.hpp")
         target_compile_definitions(${demo_executable} PRIVATE TOY_CONTEXT=toy::kqueue::context)
-        target_link_libraries(${demo_executable} cares)
+        if(TOY_HAS_ARES)
+            target_link_libraries(${demo_executable} cares)
+        endif()
     endforeach()
 ENDIF()
 
