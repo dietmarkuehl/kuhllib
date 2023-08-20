@@ -26,10 +26,26 @@
 #ifndef INCLUDED_TOY_NETWORKING
 #define INCLUDED_TOY_NETWORKING
 
-#if !defined(TOY_NETWORKING_HPP)
-#   define TOY_NETWORKING_HPP "toy-networking-poll.hpp"
+#if defined(TOY_HAS_POLL)
+#    include "toy-networking-poll.hpp"
 #endif
-#include TOY_NETWORKING_HPP
+#if defined(TOY_HAS_IO_URING)
+#    include "toy-networking-io_uring.hpp"
+#endif
+#if defined(TOY_HAS_EPOLL)
+#    include "toy-networking-epoll.hpp"
+#endif
+#if defined(TOY_HAS_KQUEUE)
+#   include "toy-networking-kqueue.hpp"
+#endif
+#if defined(TOY_HAS_IOCP)
+#   include "toy-networking-iocp.hpp"
+#endif
+#include "toy-networking-sender.hpp"
+
+namespace toy {
+    using io_context = TOY_CONTEXT;
+}
 
 #if defined(TOY_HAS_WINSOCK2)
 #    include "toy-networking-winsock2.hpp"

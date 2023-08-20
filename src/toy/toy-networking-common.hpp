@@ -63,6 +63,23 @@ using in_port_t = unsigned short;
 
 namespace toy {
 
+    enum class event_kind { none = 0x0, read = 0x1, write = 0x2, both = 0x3 };
+    event_kind operator| (event_kind a, event_kind b) {
+        return event_kind(int(a) | int(b));
+    }
+    event_kind operator& (event_kind a, event_kind b) {
+        return event_kind(int(a) & int(b));
+    }
+    std::ostream& operator<<(std::ostream& out, event_kind event) {
+        switch (event) {
+            default: return out << "unknown";
+            case event_kind::none:  return out << "none";
+            case event_kind::read:  return out << "read";
+            case event_kind::write: return out << "write";
+            case event_kind::both:  return out << "both";
+        }
+    }
+
 // ----------------------------------------------------------------------------
 
 enum class message_flags {
@@ -108,14 +125,14 @@ struct address {
                 sockaddr_in const& saddr(reinterpret_cast<sockaddr_in const&>(addr.addr));
                 char buffer[INET_ADDRSTRLEN];
                 inet_ntop(AF_INET, &saddr.sin_addr.s_addr, buffer, sizeof(buffer));
-                return out << buffer << ":" << saddr.sin_port;
+                return out << buffer << ":" << ntohs(saddr.sin_port);
             }
         case AF_INET6: {
 
                 sockaddr_in6 const& saddr(reinterpret_cast<sockaddr_in6 const&>(addr.addr));
                 char buffer[INET6_ADDRSTRLEN];
                 inet_ntop(AF_INET6, &saddr.sin6_addr, buffer, sizeof(buffer));
-                return out << "[" << buffer << "]:" << saddr.sin6_port;
+                return out << "[" << buffer << "]:" << ntohs(saddr.sin6_port);
             }
         }
         return out << "address";

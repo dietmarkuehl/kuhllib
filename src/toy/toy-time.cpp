@@ -26,40 +26,21 @@
 #include "toy-networking.hpp"
 #include "toy-task.hpp"
 #include <iostream>
-#include <string.h>
 
 // ----------------------------------------------------------------------------
 
 int main() {
     toy::io_context context;
     
-    context.spawn([&context]()->toy::task<toy::io_context::scheduler> {
-        toy::socket client(context, PF_INET, SOCK_STREAM, 0);
+    context.spawn([]()->toy::task<toy::io_context::scheduler> {
+        for (int i = 0; i != 3; ++i) {
+            using namespace std::chrono_literals;
+            std::cout << "sleeping\n" << std::flush;
+            co_await toy::async_sleep_for(1s);
 
-        if (co_await toy::async_connect(client, toy::address(AF_INET, htons(80), htonl(0x53f33a19))) < 0) {
-            std::cout << "ERROR: failed to connect: " << toy::strerror(errno) << "\n";
-            co_return;
+            std::cout << "sleeping to\n" << std::flush;
+            co_await toy::async_sleep_to(std::chrono::system_clock::now() + 1s);
         }
-        std::cout << "connected\n";
-        char const request[] = {
-            "GET /index.html HTTP/1.0\r\n"
-            "Host: dietmar-kuehl.de\r\n"
-            "\r\n"
-        };
-        auto const size = ::strlen(request);
-        if (co_await toy::async_send(client, toy::buffer(request, size)) < 1u) {
-            std::cout << "ERROR: failed to write request: " << toy::strerror(errno) << "\n";
-            co_return;
-        }
-        std::cout << "wrote request\n";
-        char buffer[65536];
-        auto result = co_await toy::async_receive(client, toy::buffer(buffer));
-        if (result < 0) {
-            std::cout << "ERROR: failed to read response: " << toy::strerror(errno) << "\n";
-            co_return;
-        }
-        std::cout << "received result\n";
-        std::cout.write(buffer, result);
     }());
 
     context.run();

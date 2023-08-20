@@ -56,62 +56,199 @@
 #include <netdb.h>
 #include <poll.h>
 
-namespace toy
+namespace toy::poll
 {
 
 // ----------------------------------------------------------------------------
 
-class io_context;
-struct io_scheduler {
-    io_context* context;
-    io_scheduler(io_context* context): context(context) {}
-    friend std::ostream& operator<< (std::ostream& out, io_scheduler const& s) {
-        return out << s.context;
+constexpr toy::event_kind to_event_kind(int events)
+{
+    switch (events & (POLLIN | POLLOUT)) {
+        default: return toy::event_kind::none;
+        case POLLIN: return toy::event_kind::read;
+        case POLLOUT: return toy::event_kind::write;
+        case POLLIN | POLLOUT: return toy::event_kind::both;
+    }
+}
+
+constexpr short int to_poll(toy::event_kind events) {
+    switch (events) {
+        default:
+        case toy::event_kind::none: return 0;
+        case toy::event_kind::read: return POLLIN;
+        case toy::event_kind::write: return POLLOUT;
+        case toy::event_kind::both: return POLLIN | POLLOUT;
+    }
+}
+
+class context;
+class scheduler;
+
+class io_base
+    : public toy::immovable
+{
+private:
+    int d_fd;
+
+public:
+    toy::event_kind events;
+    virtual void    complete(int) = 0;
+    io_base(int fd, toy::event_kind events): d_fd(fd), events(events) {}
+
+    int fd() const { return d_fd; }
+};
+
+template <typename Receiver, typename Args>
+struct io_state
+    : toy::poll::io_base
+{
+    using scheduler_t = decltype(get_scheduler(std::declval<Receiver const&>()));
+
+    Receiver     receiver;
+    toy::socket& socket;
+    Args args;
+    toy::hidden::io_operation::stop_callback<io_state, Receiver> cb;
+    io_state(Receiver receiver, toy::socket& s, toy::event_kind events, Args args)
+        : io_base(s.fd(), events)
+        , receiver(receiver)
+        , socket(s)
+        , args(args)
+    {
+    }
+
+    scheduler_t scheduler() { return get_scheduler(receiver); }
+
+    friend void start(io_state& self)
+    {
+        self.cb.engage(self);
+        if constexpr (requires(toy::socket& s, Args args){ toy::hidden::io_operation::start(s, args); })
+        {
+            toy::hidden::io_operation::start(self.socket, self.args);
+        }
+        get_scheduler(self.receiver).await(&self);
+    }
+
+    void complete(int event)
+    {
+        using result_t = typename Args::result_t;
+        cb.disengage();
+        auto res{toy::hidden::io_operation::operation(socket, toy::poll::to_event_kind(event), args)};
+        if constexpr (std::same_as<toy::event_kind, decltype(res)>) {
+            set_value(std::move(receiver), result_t(res));
+        }
+        else if (0 <= res) {
+            if constexpr (requires(io_context_base& context, decltype(res) res){ result_t(context, res); }) {
+                auto& context(get_scheduler(receiver).base());
+                set_value(std::move(receiver), result_t(context, res));
+            }
+            else {
+                set_value(std::move(receiver), result_t(res));
+            }
+        }
+        else {
+            set_error(std::move(receiver), std::make_exception_ptr(std::system_error(errno, std::system_category())));
+        }
     }
 };
 
-struct io
-    : immovable {
-    io_context& c;
-    int         fd;
-    short int   events;
-    virtual void complete(int) = 0;
-    io(io_context& c, int fd, short int events): c(c), fd(fd), events(events)  {}
+template <typename Receiver, typename Operation>
+struct time_state
+    : toy::poll::io_base
+{
+    using scheduler_t = decltype(get_scheduler(std::declval<Receiver const&>()));
+
+    Receiver  receiver;
+    Operation operation;
+    toy::hidden::io_operation::stop_callback<time_state, Receiver, true> cb;
+    time_state(Receiver receiver, Operation operation)
+        : io_base(0, toy::event_kind::none)
+        , receiver(receiver)
+        , operation(operation)
+    {
+    }
+
+    scheduler_t scheduler() { return get_scheduler(receiver); }
+
+    friend void start(time_state& self)
+    {
+        self.cb.engage(self);
+        get_scheduler(self.receiver).await(self.operation.get_timepoint(), &self);
+    }
+
+    void complete(int)
+    {
+        using result_t = typename Operation::result_t;
+        cb.disengage();
+        set_value(std::move(receiver), result_t());
+    }
 };
 
-class io_context
-    : public starter<toy::io_scheduler>
+class scheduler {
+private:
+    friend class toy::poll::context;
+    friend class toy::poll::io_base;
+
+    toy::poll::context* context;
+    scheduler(toy::poll::context* context): context(context) {}
+
+    friend std::ostream& operator<< (std::ostream& out, scheduler const& s) {
+        return out << "poll(" << s.context << ")";
+    }
+
+    toy::poll::context& get_context() const { return *context; }
+
+public:
+    template <typename Receiver, typename Args, typename Stream = toy::socket>
+    using io_state = toy::poll::io_state<Receiver, Args>;
+    template <typename Receiver, typename Operation>
+    using time_state = toy::poll::time_state<Receiver, Operation>;
+
+    using time_point_t = std::chrono::system_clock::time_point;
+
+    toy::io_context_base& base() const;
+
+    void await(time_point_t time, toy::poll::io_base* op);
+    void await(io_base* i);
+    void erase(io_base* i);
+    void erase_timer(io_base* i);
+
+    template <typename Sender>
+    void spawn(Sender&& sender);
+};
+
+class context
+    : public starter<toy::poll::scheduler>
     , public toy::io_context_base
 {
 public:
-    using scheduler = toy::io_scheduler;
-    scheduler get_scheduler() { return { this }; }
+    using scheduler = toy::poll::scheduler;
+    scheduler get_scheduler() { return toy::poll::scheduler(this); }
 
 private:
     using time_point_t = std::chrono::system_clock::time_point;
-    std::vector<io*>      ios;
+    std::vector<toy::poll::io_base*>      ios;
     std::vector<::pollfd> fds;
-    toy::timer_queue<io*> times;
+    toy::timer_queue<toy::poll::io_base*> times;
 
 public:
-    io_context()
+    context()
         : starter(scheduler(this)) {
     }
-    void add(io* i) {
+    void add(toy::poll::io_base* i) {
         ios.push_back(i);
-        fds.push_back(  pollfd{ .fd = i->fd, .events = i->events });
+        fds.push_back(  pollfd{ .fd = i->fd(), .events = to_poll(i->events) });
     }
-    void add(time_point_t time, io* op) {
+    void add(time_point_t time, toy::poll::io_base* op) {
         times.push(time, op);
     }
-    void erase(io* i) {
+    void erase(toy::poll::io_base* i) {
         auto it = std::find(ios.begin(), ios.end(), i);
         if (it != ios.end()) {
             fds.erase(fds.begin() + (it - ios.begin()));
             ios.erase(it);
         }
     }
-    void erase_timer(io* i) {
+    void erase_timer(toy::poll::io_base* i) {
         times.erase(i);
     }
     void run() {
@@ -120,7 +257,7 @@ public:
 
             bool timed{false};
             while (!times.empty() && times.top().first <= now) {
-                io* op{times.top().second};
+                toy::poll::io_base* op{times.top().second};
                 times.pop();
                 op->complete(0);
                 timed = true;
@@ -143,241 +280,25 @@ public:
                         fds.pop_back();
                         auto c = std::exchange(ios[i], ios.back());
                         ios.pop_back();
-                        c->complete(revents);
+                        c->complete(int(to_event_kind(revents)));
                     }
             }
         }
     }
 };
 
-// ----------------------------------------------------------------------------
+inline toy::io_context_base& scheduler::base() const { return *context; }
 
-namespace hidden_async_connect {
-    struct async_connect {
-        using result_t = int;
+inline void scheduler::await(time_point_t time, toy::poll::io_base* op) { context->add(time, op); }
+inline void scheduler::await(io_base* i) { context->add(i); }
+inline void scheduler::erase(io_base* i) { context->erase(i); }
+inline void scheduler::erase_timer(io_base* i) { context->erase(i); }
 
-        int                fd;
-        ::sockaddr const*  addr;
-        ::socklen_t        len;
+template <typename Sender>
+inline void scheduler::spawn(Sender&& sender) { context->spawn(std::forward<Sender>(sender)); }
 
-        async_connect(socket& s, auto addr, auto len): fd(s.fd()), addr(reinterpret_cast<::sockaddr const*>(addr)), len(len) {}
-
-        template <typename R>
-        struct state: io {
-            ::sockaddr const*  addr;
-            ::socklen_t        len;
-            R                  receiver;
-            hidden::io_operation::stop_callback<state, R> cb;
-
-            state(int fd, auto addr, auto len, R r)
-                : io(*get_scheduler(r).context, fd, POLLOUT), addr(addr), len(len), receiver(r) {
-            }
-            friend void start(state& self) {
-                if (0 <= ::connect(self.fd, self.addr, self.len))
-                    set_value(self.receiver, 0);
-                else if (errno == EAGAIN || errno == EINPROGRESS) {
-                    self.cb.engage(self);
-                    self.c.add(&self);
-                }
-                else
-                    set_error(self.receiver, std::make_exception_ptr(std::runtime_error(std::string("connect: ") + ::strerror(errno))));
-            }
-            void complete(int) override final {
-                cb.disengage();
-                int         rc{};
-                ::socklen_t len{sizeof rc};
-                if (::getsockopt(fd, SOL_SOCKET, SO_ERROR, &rc, &len)) {
-                    set_error(receiver, std::make_exception_ptr(std::runtime_error(std::string("getsockopt: ") + ::strerror(errno))));
-                }
-                else if (rc) {
-                    set_error(receiver, std::make_exception_ptr(std::runtime_error(std::string("connect: ") + ::strerror(rc))));
-                }
-                else {
-                    set_value(receiver, rc);
-                }
-            }
-        };
-
-        template <typename R>
-        friend state<R> connect(async_connect const& self, R r) {
-            return state<R>(self.fd, self.addr, self.len, r);
-        }
-    };
-}
-using async_connect = hidden_async_connect::async_connect;
-
-// ----------------------------------------------------------------------------
-
-namespace hidden::io_operation {
-    template <typename Operation>
-    struct sender {
-        using result_t = typename Operation::result_t;
-
-        toy::socket&  socket;
-        Operation     op;
-
-        template <typename R>
-        struct state
-            : toy::io
-        {
-            R                       receiver;
-            Operation               d_op;
-            toy::io_context_base*   context;
-            stop_callback<state, R> cb;
-
-            state(R                receiver,
-                  int              fd,
-                  Operation        op)
-                : io(*get_scheduler(receiver).context, fd, op.event == event_kind::read? POLLIN: POLLOUT)
-                , receiver(receiver)
-                , d_op(op)
-                , cb() {
-            }
-
-            friend void start(state& self) {
-                self.cb.engage(self);
-                self.c.add(&self);
-            }
-            void complete(int revents) override final {
-                using result_t = typename Operation::result_t;
-                cb.disengage();
-                event_kind event(std::invoke([revents]{
-                    switch (revents & (POLLIN | POLLOUT)) {
-                        default: return event_kind::none;
-                        case POLLIN: return event_kind::read;
-                        case POLLOUT: return event_kind::write;
-                        case POLLIN | POLLOUT: return event_kind::both;
-                    }
-                }));
-                auto res{d_op(*this, event)};
-                if constexpr (std::same_as<event_kind, decltype(res)>) {
-                    set_value(std::move(receiver), result_t(res));
-                }
-                else if (0 <= res) {
-                    if constexpr (requires(io_context_base& context, decltype(res) res){ result_t(context, res); }) {
-                        auto& context(*get_scheduler(receiver).context);
-                        set_value(std::move(receiver), result_t(context, res));
-                    }
-                    else {
-                        set_value(std::move(receiver), result_t(res));
-                    }
-                }
-                else {
-                    set_error(std::move(receiver), std::make_exception_ptr(std::system_error(errno, std::system_category())));
-                }
-            }
-        };
-        template <typename R>
-        friend state<R> connect(sender const& self, R receiver) {
-            return state<R>(receiver, self.socket.fd(), self.op);
-        }
-    };
-}
-
-hidden::io_operation::sender<hidden::io_operation::poll_op>
-async_poll(toy::socket& s, toy::hidden::io_operation::event_kind events) {
-    return {s, { events }};
-}
-
-hidden::io_operation::sender<hidden::io_operation::accept_op>
-async_accept(toy::socket& s) {
-    return {s, {}};
-}
-
-hidden::io_operation::sender<hidden::io_operation::read_some_op>
-async_read_some(toy::socket& s, char* buffer, std::size_t len) {
-    return {s, {buffer, len}};
-}
-
-hidden::io_operation::sender<hidden::io_operation::write_some_op>
-async_write_some(toy::socket& s, char const* buffer, std::size_t len) {
-    return {s, {buffer, len}};
-}
-
-template <typename MBS>
-hidden::io_operation::sender<hidden::io_operation::receive_op<MBS>>
-async_receive(toy::socket& s, toy::message_flags f, const MBS& b) {
-    return {s, {f, b}};
-}
-template <typename MBS>
-hidden::io_operation::sender<hidden::io_operation::receive_op<MBS>>
-async_receive(toy::socket& s, const MBS& b) {
-    return {s, {toy::message_flags{}, b}};
-}
-
-template <typename MBS>
-hidden::io_operation::sender<hidden::io_operation::receive_from_op<MBS>>
-async_receive_from(toy::socket& s, const MBS& b, toy::address& addr, toy::message_flags f) {
-    return {s, {b, addr, f}};
-}
-template <typename MBS>
-hidden::io_operation::sender<hidden::io_operation::receive_from_op<MBS>>
-async_receive_from(toy::socket& s, const MBS& b, toy::address& addr) {
-    return {s, {b, addr, toy::message_flags{}}};
-}
-
-template <typename MBS>
-hidden::io_operation::sender<hidden::io_operation::send_op<MBS>>
-async_send(toy::socket& s, toy::message_flags f, const MBS& b) {
-    return {s, {f, b}};
-}
-template <typename MBS>
-hidden::io_operation::sender<hidden::io_operation::send_op<MBS>>
-async_send(toy::socket& s, const MBS& b) {
-    return {s, {toy::message_flags{}, b}};
-}
-
-template <typename MBS>
-hidden::io_operation::sender<hidden::io_operation::send_to_op<MBS>>
-async_send_to(toy::socket& s, const MBS& b, toy::address addr, toy::message_flags f) {
-    return {s, {b, addr, f}};
-}
-template <typename MBS>
-hidden::io_operation::sender<hidden::io_operation::send_to_op<MBS>>
-async_send_to(toy::socket& s, const MBS& b, toy::address addr) {
-    return {s, {b, addr, toy::message_flags{}}};
 }
 
 // ----------------------------------------------------------------------------
-
-namespace hidden_async_sleep_for {
-    struct async_sleep_for {
-        using result_t = toy::none;
-        using duration_t = std::chrono::milliseconds;
-
-        duration_t  duration;
-
-        template <typename R>
-        struct state
-            : io {
-            R                            receiver;
-            duration_t                   duration;
-            hidden::io_operation::stop_callback<state, R, true> cb;
-
-            state(R receiver, duration_t duration)
-                : io(*get_scheduler(receiver).context, 0, 0)
-                , receiver(receiver)
-                , duration(duration) {
-            }
-            friend void start(state& self) {
-                self.cb.engage(self);
-                self.c.add(std::chrono::system_clock::now() + self.duration, &self);;
-            }
-            void complete(int) override {
-                cb.disengage();
-                set_value(std::move(receiver), result_t{});
-            }
-        };
-        template <typename R>
-        friend state<R> connect(async_sleep_for self, R receiver) {
-            return state<R>(receiver, self.duration);
-        }
-    };
-}
-using async_sleep_for = hidden_async_sleep_for::async_sleep_for;
-
-// ----------------------------------------------------------------------------
-
-}
 
 #endif
