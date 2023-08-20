@@ -76,8 +76,9 @@ if (TOY_HAS_KQUEUE)
     add_compile_definitions(TOY_HAS_KQUEUE)
     CHECK_CXX_SOURCE_COMPILES("
     #include <sys/event.h>
+    #include <stdint.h>
     int main() {
-        kevent ev{::uintptr_t(), ::int16_t(), EV_DELETE, ::uint32_t(), ::intptr_t(), nullptr, {}};
+        struct kevent ev{::uintptr_t(), ::int16_t(), EV_DELETE, ::uint32_t(), ::intptr_t(), nullptr, {}};
         (void)ev;
     }
     " TOY_KEVENT_HAS_EXT)
