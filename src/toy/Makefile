@@ -26,12 +26,10 @@
 NAME     = toy-sender
 TECH     = poll
 CC       = $(CXX)
+RM       = rm -f
 CPPFLAGS = -DTOY_NETWORKING_HPP='"toy-networking-$(TECH).hpp"'
 CXXFLAGS = -W -Wall -std=c++20 -Wno-missing-field-initializers
 SYSTEM   = $(shell uname -s)
-ifeq ($(SYSTEM),Linux)
-    LDLIBS   = -luring
-endif
 
 .PHONY: default build distclean clean run
 default: build
@@ -45,7 +43,6 @@ run: build
 	./build/$(NAME)
 
 clean:
-	$(RM) build/$(NAME)
 	$(RM) mkerr olderr *~
 
 distclean: clean
