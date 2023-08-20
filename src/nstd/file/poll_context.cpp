@@ -23,6 +23,7 @@
 //  OTHER DEALINGS IN THE SOFTWARE. 
 // ----------------------------------------------------------------------------
 
+#include "nstd/nstd-config.hpp"
 #include "nstd/file/poll_context.hpp"
 #include "nstd/utility/forward.hpp"
 #include "nstd/utility/move.hpp"
@@ -267,7 +268,6 @@ auto NF::poll_context::do_accept(NF::context::native_handle_type fd,
         case ENOPROTOOPT:
         case EHOSTDOWN:
 #ifdef NSTD_HAS_ENONET
-#error "gets here"
         case ENONET:
 #endif
         case EHOSTUNREACH:
