@@ -42,7 +42,6 @@ run: build
 	./build/$(NAME)
 
 clean:
-	$(RM) build/$(NAME)
 	$(RM) mkerr olderr *~
 
 distclean: clean
