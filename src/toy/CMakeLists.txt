@@ -88,7 +88,7 @@ if (TOY_HAS_KQUEUE)
 endif()
 
 # try to use the POSIX interface
-if(xTOY_HAS_UNISTD)
+if(TOY_HAS_UNISTD)
     foreach(demo ${TOY_DEMOS})
         set(demo_executable ${demo}-${CMAKE_CXX_COMPILER_ID}-poll)
         add_executable(${demo_executable} ${demo}.cpp)
@@ -134,7 +134,7 @@ IF(TOY_HAS_EPOLL)
 ENDIF()
 
 # try to use sys/event.h
-IF(xTOY_HAS_KQUEUE)
+IF(TOY_HAS_KQUEUE)
     foreach(demo ${TOY_DEMOS})
         set(demo_executable ${demo}-${CMAKE_CXX_COMPILER_ID}-kqueue)
         add_executable(${demo_executable} ${demo}.cpp)
