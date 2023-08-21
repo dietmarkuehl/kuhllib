@@ -88,7 +88,7 @@ if (TOY_HAS_KQUEUE)
 endif()
 
 # try to use the POSIX interface
-if(TOY_HAS_UNISTD)
+if(xTOY_HAS_UNISTD)
     foreach(demo ${TOY_DEMOS})
         set(demo_executable ${demo}-${CMAKE_CXX_COMPILER_ID}-poll)
         add_executable(${demo_executable} ${demo}.cpp)
@@ -98,6 +98,14 @@ if(TOY_HAS_UNISTD)
 
     add_executable(toy-cppcon-2022-${CMAKE_CXX_COMPILER_ID} toy-cppcon-2022.cpp)
 endif()
+
+# use a generic context
+foreach(demo ${TOY_DEMOS})
+    set(demo_executable ${demo}-${CMAKE_CXX_COMPILER_ID}-generic)
+    add_executable(${demo_executable} ${demo}.cpp)
+        target_compile_definitions(${demo_executable} PRIVATE TOY_CONTEXT=toy::generic::context)
+    target_link_libraries(${demo_executable} ${TOY_LIB_CARES})
+endforeach()
 
 # try to use liburing.h
 CHECK_INCLUDE_FILE(liburing.h TOY_HAS_LIBURING)
@@ -126,7 +134,7 @@ IF(TOY_HAS_EPOLL)
 ENDIF()
 
 # try to use sys/event.h
-IF(TOY_HAS_KQUEUE)
+IF(xTOY_HAS_KQUEUE)
     foreach(demo ${TOY_DEMOS})
         set(demo_executable ${demo}-${CMAKE_CXX_COMPILER_ID}-kqueue)
         add_executable(${demo_executable} ${demo}.cpp)

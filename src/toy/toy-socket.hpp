@@ -83,7 +83,7 @@ namespace toy
 struct io_context_base {
     io_context_base() = default;
     io_context_base(io_context_base&&) = delete;
-    ~io_context_base() = default;
+    virtual ~io_context_base() = default;
     virtual socket_handle make_socket(int domain, int type, int protocol)
     {
         return toy::make_socket(domain, type, protocol);

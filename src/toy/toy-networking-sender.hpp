@@ -282,8 +282,6 @@ inline constexpr toy::io::send_to_t      async_send_to{};
 
 // ----------------------------------------------------------------------------
 
-// ----------------------------------------------------------------------------
-
 namespace hidden::time_operation
 {
     template <typename Operation>
