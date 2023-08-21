@@ -132,7 +132,7 @@ struct toy::generic::io_state
         toy::generic::io_base<typename Args::result_t>* state;
         void operator()() const { this->state->d_source.stop(); }
     };
-    using stop_callback = stop_token_t::template callback_type<callback>;
+    using stop_callback = typename stop_token_t::template callback_type<callback>;
 
     Receiver                     receiver;
     Stream&                      stream;
@@ -176,20 +176,23 @@ struct toy::generic::io_state
 
     friend void start(io_state& self)
     {
-        self.d_callback.emplace(get_stop_token(self.receiver), callback(&self));
-        self.state = get_scheduler(self.receiver).start(toy::generic::receiver<typename Args::result_t>(&self), self.stream, self.event,
+        self.d_callback.emplace(get_stop_token(self.receiver), callback{&self});
+        self.state = get_scheduler(self.receiver).start(toy::generic::receiver<typename Args::result_t>{&self}, self.stream, self.event,
             transform_args(self.args));
     }
     void do_set_value(typename Args::result_t value) override
     {
+	this->d_callback = std::nullopt;
         set_value(std::move(receiver), std::move(value));
     }
     void do_set_error(std::exception_ptr error) override
     {
+	this->d_callback = std::nullopt;
         set_error(std::move(receiver), error);
     }
     void do_set_stopped() override
     {
+	this->d_callback = std::nullopt;
         set_stopped(std::move(receiver));
     }
 };
@@ -198,9 +201,18 @@ template <typename Receiver, typename Operation>
 struct toy::generic::time_state
     : toy::generic::io_base<typename Operation::result_t>
 {
+    using stop_token_t = decltype(get_stop_token(std::declval<Receiver const&>()));
+    struct callback
+    {
+        toy::generic::io_base<typename Operation::result_t>* state;
+        void operator()() const { this->state->d_source.stop(); }
+    };
+    using stop_callback = typename stop_token_t::template callback_type<callback>;
+
     Receiver                     receiver;
     Operation                    operation;
     std::unique_ptr<inner_state> state;
+    std::optional<stop_callback> d_callback;
 
     time_state(Receiver receiver, Operation operation)
         : receiver(receiver)
@@ -210,18 +222,22 @@ struct toy::generic::time_state
 
     friend void start(time_state& self)
     {
-        self.state = get_scheduler(self.receiver).start(toy::generic::receiver<typename Operation::result_t>(&self), self.operation);
+        self.d_callback.emplace(get_stop_token(self.receiver), callback{&self});
+        self.state = get_scheduler(self.receiver).start(toy::generic::receiver<typename Operation::result_t>{&self}, self.operation);
     }
     void do_set_value(typename Operation::result_t value) override
     {
+	this->d_callback = std::nullopt;
         set_value(std::move(receiver), value);
     }
     void do_set_error(std::exception_ptr error) override
     {
+	this->d_callback = std::nullopt;
         set_error(std::move(receiver), error);
     }
     void do_set_stopped() override
     {
+	this->d_callback = std::nullopt;
         set_stopped(std::move(receiver));
     }
 };
