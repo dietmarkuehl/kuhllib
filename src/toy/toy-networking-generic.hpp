@@ -36,6 +36,7 @@
 #include "toy-socket.hpp"
 #include "toy-stop_token.hpp"
 #include "toy-starter.hpp"
+#include <memory>
 #include <span>
 #include <stdexcept>
 #include <string>
