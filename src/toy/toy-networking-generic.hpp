@@ -26,7 +26,13 @@
 #ifndef INCLUDED_TOY_NETWORKING_GENERIC
 #define INCLUDED_TOY_NETWORKING_GENERIC
 
-#include "toy-networking-poll.hpp"
+#ifdef TOY_HAS_POLL
+#    include "toy-networking-poll.hpp"
+#endif
+#ifdef TOY_HAS_IOCP
+#    include "toy-networking-iocp.hpp"
+#endif
+
 #include "toy-socket.hpp"
 #include "toy-stop_token.hpp"
 #include "toy-starter.hpp"
@@ -44,7 +50,7 @@ namespace toy::generic
     template <typename Result, typename Scheduler> struct receiver_scheduler;
     struct inner_state;
     template <typename State> struct concrete_state;
-    template <typename Receiver, typename Args> struct io_state;
+    template <typename Receiver, typename Args, typename Stream> struct io_state;
     template <typename Receiver, typename Operation> struct time_state;
     struct scheduler;
 
@@ -103,6 +109,7 @@ public:
     virtual return_t start(toy::generic::receiver<toy::accept_t::args::result_t>, toy::socket&, toy::event_kind, toy::accept_t::args) = 0;
     virtual return_t start(toy::generic::receiver<toy::connect_t::args::result_t>, toy::socket&, toy::event_kind, toy::connect_t::args) = 0;
     virtual return_t start(toy::generic::receiver<toy::read_some_t::args::result_t>, toy::socket&, toy::event_kind, toy::read_some_t::args) = 0;
+    virtual return_t start(toy::generic::receiver<toy::read_some_t::args::result_t>, toy::file&, toy::event_kind, toy::read_some_t::args) = 0;
     virtual return_t start(toy::generic::receiver<toy::write_some_t::args::result_t>, toy::socket&, toy::event_kind, toy::write_some_t::args) = 0;
     virtual return_t start(toy::generic::receiver<toy::receive_t::args<std::span<iovec>>::result_t>, toy::socket&, toy::event_kind, toy::receive_t::args<std::span<iovec>>) = 0;
     virtual return_t start(toy::generic::receiver<toy::receive_from_t::args<std::span<iovec>>::result_t>, toy::socket&, toy::event_kind, toy::receive_from_t::args<std::span<iovec>>) = 0;
@@ -115,7 +122,7 @@ public:
 
 // ----------------------------------------------------------------------------
 
-template <typename Receiver, typename Args>
+template <typename Receiver, typename Args, typename Stream>
 struct toy::generic::io_state
     : toy::generic::io_base<typename Args::result_t>
 {
@@ -128,15 +135,15 @@ struct toy::generic::io_state
     using stop_callback = stop_token_t::template callback_type<callback>;
 
     Receiver                     receiver;
-    toy::socket&                 socket;
+    Stream&                      stream;
     toy::event_kind              event;
     Args                         args;
     std::unique_ptr<inner_state> state;
     std::optional<stop_callback> d_callback;
 
-    io_state(Receiver receiver, toy::socket& socket, toy::event_kind event, Args args)
+    io_state(Receiver receiver, Stream& stream, toy::event_kind event, Args args)
         : receiver(receiver)
-        , socket(socket)
+        , stream(stream)
         , event(event)
         , args(args)
     {
@@ -170,7 +177,7 @@ struct toy::generic::io_state
     friend void start(io_state& self)
     {
         self.d_callback.emplace(get_stop_token(self.receiver), callback(&self));
-        self.state = get_scheduler(self.receiver).start(toy::generic::receiver<typename Args::result_t>(&self), self.socket, self.event,
+        self.state = get_scheduler(self.receiver).start(toy::generic::receiver<typename Args::result_t>(&self), self.stream, self.event,
             transform_args(self.args));
     }
     void do_set_value(typename Args::result_t value) override
@@ -223,8 +230,8 @@ struct toy::generic::time_state
 
 struct toy::generic::scheduler
 {
-    template <typename Receiver, typename Args, typename>
-    using io_state = toy::generic::io_state<Receiver, Args>;
+    template <typename Receiver, typename Args, typename Stream>
+    using io_state = toy::generic::io_state<Receiver, Args, Stream>;
     template <typename Receiver, typename Operation>
     using time_state = toy::generic::time_state<Receiver, Operation>;
 
@@ -235,11 +242,11 @@ struct toy::generic::scheduler
     toy::io_context_base& base() { return *this->context; }
 
 
-    template <typename Args>
+    template <typename Args, typename Stream>
     std::unique_ptr<toy::generic::inner_state>
-    start(toy::generic::receiver<typename Args::result_t> receiver, toy::socket& socket, toy::event_kind event, Args args)
+    start(toy::generic::receiver<typename Args::result_t> receiver, Stream& stream, toy::event_kind event, Args args)
     {
-        return context->start(receiver, socket, event, args);
+        return context->start(receiver, stream, event, args);
     }
 
     template <typename Operation>
@@ -268,9 +275,9 @@ struct toy::generic::concrete_state
     : toy::generic::inner_state
 {
     State state;
-    template <typename Receiver, typename Args>
-    concrete_state(Receiver receiver, toy::socket& socket, toy::event_kind event, Args args)
-        : state(receiver, socket, event, args)
+    template <typename Receiver, typename Stream, typename Args>
+    concrete_state(Receiver receiver, Stream& stream, toy::event_kind event, Args args)
+        : state(receiver, stream, event, args)
     {
     }
     template <typename Receiver, typename Operation>
@@ -306,14 +313,14 @@ public:
         return this->d_starter;
     }
 
-    template <typename Receiver, typename Args>
-    return_t common_start(Receiver receiver, toy::socket& socket, toy::event_kind events, Args args)
+    template <typename Receiver, typename Args, typename Stream>
+    return_t common_start(Receiver receiver, Stream& stream, toy::event_kind events, Args args)
     {
         using scheduler_t = decltype(this->d_context.get_scheduler());
         using receiver_t  = toy::generic::receiver_scheduler<typename Args::result_t, scheduler_t>;
-        using state_t     = typename scheduler_t::template io_state<receiver_t, Args, toy::socket>;
+        using state_t     = typename scheduler_t::template io_state<receiver_t, Args, Stream>;
 
-        return_t rc(new toy::generic::concrete_state<state_t>(receiver_t{ {receiver}, this->d_context.get_scheduler()}, socket, events, args));
+        return_t rc(new toy::generic::concrete_state<state_t>(receiver_t{ {receiver}, this->d_context.get_scheduler()}, stream, events, args));
         rc->do_start();
         return rc;
     }
@@ -332,6 +339,10 @@ public:
     return_t start(toy::generic::receiver<toy::read_some_t::args::result_t> receiver, toy::socket& socket, toy::event_kind events, toy::read_some_t::args args) override
     {
         return common_start(receiver, socket, events, args);
+    }
+    return_t start(toy::generic::receiver<toy::read_some_t::args::result_t> receiver, toy::file& file, toy::event_kind events, toy::read_some_t::args args) override
+    {
+        return common_start(receiver, file, events, args);
     }
     return_t start(toy::generic::receiver<toy::write_some_t::args::result_t> receiver, toy::socket& socket, toy::event_kind events, toy::write_some_t::args args) override
     {
@@ -381,7 +392,12 @@ class toy::generic::context
     : public toy::io_context_base
 {
 private:
-    std::unique_ptr<toy::poll::context>         d_default;
+#ifdef TOY_HAS_POLL
+    using default_context = toy::poll::context;
+#else
+    using default_context = toy::iocp::context;
+#endif
+    std::unique_ptr<default_context>            d_default;
     std::unique_ptr<toy::generic::context_base> d_object;
     toy::starter<toy::generic::scheduler>       d_starter;
 
@@ -396,8 +412,8 @@ public:
 
     context()
         : toy::io_context_base()
-        , d_default(new toy::poll::context)
-        , d_object(new toy::generic::concrete_context<toy::poll::context>(*this->d_default, this->d_starter))
+        , d_default(new default_context)
+        , d_object(new toy::generic::concrete_context<default_context>(*this->d_default, this->d_starter))
         , d_starter(toy::generic::scheduler(this->d_object.get()))
     {
     }

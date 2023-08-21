@@ -131,7 +131,7 @@ struct io_state<toy::socket, Receiver, toy::accept_t::args>
     }
     friend void start(io_state& self) {
         auto scheduler(get_scheduler(self.receiver));
-        self.client.emplace(scheduler, PF_INET, SOCK_STREAM, IPPROTO_TCP);
+        self.client.emplace(scheduler.base(), PF_INET, SOCK_STREAM, IPPROTO_TCP);
         scheduler.accept(self.socket, *self.client, self.buffer, &self.dummy, &self);
         scheduler.increment();
     }
@@ -229,6 +229,103 @@ struct io_state<toy::socket, Receiver, toy::send_t::args<MBS>>
     }
 };
 
+template <typename Receiver, typename MBS>
+struct io_state<toy::socket, Receiver, toy::send_to_t::args<MBS>>
+    : toy::iocp::io_base
+{
+    Receiver               receiver;
+    toy::socket&           socket;
+    toy::send_to_t::args<MBS> args;
+
+    io_state(Receiver receiver, toy::socket& socket, toy::event_kind, toy::send_to_t::args<MBS> args)
+        : receiver(receiver)
+        , socket(socket)
+        , args(args)
+    {
+    }
+    friend void start(io_state& self)
+    {
+        set_error(std::move(self.receiver), std::make_exception_ptr(std::runtime_error("IOCP send_to is not, yet, implemented")));
+    }
+    void complete(std::size_t size) override
+    {
+        set_value(this->receiver, int(size));
+    }
+};
+
+template <typename Receiver, typename MBS>
+struct io_state<toy::socket, Receiver, toy::receive_from_t::args<MBS>>
+    : toy::iocp::io_base
+{
+    Receiver               receiver;
+    toy::socket&           socket;
+    toy::receive_from_t::args<MBS> args;
+
+    io_state(Receiver receiver, toy::socket& socket, toy::event_kind, toy::receive_from_t::args<MBS> args)
+        : receiver(receiver)
+        , socket(socket)
+        , args(args)
+    {
+    }
+    friend void start(io_state& self)
+    {
+        set_error(std::move(self.receiver), std::make_exception_ptr(std::runtime_error("IOCP receive_from is not, yet, implemented")));
+    }
+    void complete(std::size_t size) override
+    {
+        set_value(this->receiver, int(size));
+    }
+};
+
+template <typename Receiver>
+struct io_state<toy::socket, Receiver, toy::write_some_t::args>
+    : toy::iocp::io_base
+{
+    Receiver                receiver;
+    toy::socket&            socket;
+    toy::write_some_t::args args;
+
+    io_state(Receiver receiver, toy::socket& socket, toy::event_kind, toy::write_some_t::args args)
+        : receiver(receiver)
+        , socket(socket)
+        , args(args)
+    {
+    }
+    friend void start(io_state& self)
+    {
+        set_error(std::move(self.receiver), std::make_exception_ptr(std::runtime_error("IOCP write_some is not, yet, implemented")));
+    }
+    void complete(std::size_t size) override
+    {
+        set_value(this->receiver, int(size));
+    }
+};
+
+template <typename Receiver>
+struct io_state<toy::socket, Receiver, toy::read_some_t::args>
+    : toy::iocp::io_base
+{
+    Receiver                receiver;
+    toy::socket&            socket;
+    toy::read_some_t::args args;
+
+    template <typename R>
+    io_state(R&& receiver, toy::socket& socket, toy::event_kind, toy::read_some_t::args args)
+        : receiver(std::forward<R>(receiver))
+        , socket(socket)
+        , args(args)
+    {
+    }
+    friend void start(io_state& self)
+    {
+        set_error(std::move(self.receiver), std::make_exception_ptr(std::runtime_error("IOCP read_some is not, yet, implemented")));
+    }
+    void complete(std::size_t size) override
+    {
+        set_value(this->receiver, int(size));
+    }
+};
+
 template <typename Receiver>
 struct io_state<toy::file, Receiver, toy::read_some_t::args>
     : toy::iocp::io_base
@@ -236,23 +333,51 @@ struct io_state<toy::file, Receiver, toy::read_some_t::args>
     Receiver               receiver;
     toy::file&             file;
     toy::read_some_t::args args;
-    io_state(Receiver receiver, toy::file& file, toy::event_kind event, toy::read_some_t::args args)
-        : receiver(receiver)
+    template <typename R>
+    io_state(R&& receiver, toy::file& file, toy::event_kind event, toy::read_some_t::args args)
+        : receiver(std::forward<R>(receiver))
         , file(file)
         , args(args)
     {
     }
-    friend void start(io_state&) {}
+    friend void start(io_state&) { /*-dk:TODO*/ }
     void complete(std::size_t) override {}
+};
+
+template <typename Receiver>
+struct io_state<toy::socket, Receiver, toy::poll_t::args>
+    : toy::iocp::io_base
+{
+    Receiver                receiver;
+    toy::socket&            socket;
+    toy::poll_t::args args;
+
+    io_state(Receiver receiver, toy::socket& socket, toy::event_kind, toy::poll_t::args args)
+        : receiver(receiver)
+        , socket(socket)
+        , args(args)
+    {
+    }
+    friend void start(io_state& self)
+    {
+        set_error(std::move(self.receiver), std::make_exception_ptr(std::runtime_error("IOCP poll is not implemented (and it is unclearly how to do it)")));
+    }
+    void complete(std::size_t) override
+    {
+        set_value(this->receiver, toy::event_kind::none);
+    }
 };
 
 // ----------------------------------------------------------------------------
 
 template <typename Receiver, typename Operation>
-struct timer_state
+struct time_state
     : toy::iocp::io_base
 {
-    friend void start(timer_state&) {}
+    Receiver  receiver;
+    Operation operation;
+    time_state(Receiver receiver, Operation operation): receiver(receiver), operation(operation) {}
+    friend void start(time_state&) {}
     void complete(std::size_t) override {}
 };
 
@@ -260,8 +385,11 @@ struct context;
 struct scheduler {
     template <typename Receiver, typename Args, typename Stream>
     using io_state = toy::iocp::io_state<Stream, Receiver, Args>;
+    template <typename Receiver, typename Operation>
+    using time_state = toy::iocp::time_state< Receiver, Operation>;
 
     context* context;
+    toy::io_context_base& base();
 
     void increment();
     void accept(toy::socket& server, toy::socket& client, void* buffer, DWORD* dummy, LPOVERLAPPED overlapped);
@@ -429,6 +557,7 @@ inline void context::connect(toy::socket& client, ::sockaddr const* name, ::sock
     }
 }
 
+inline toy::io_context_base& scheduler::base() { return *this->context; }
 inline void scheduler::increment() { context->increment(); }
 inline void scheduler::accept(toy::socket& server, toy::socket& client, void* buffer, DWORD* dummy, LPOVERLAPPED overlapped)
 {
@@ -441,45 +570,6 @@ inline void scheduler::connect(toy::socket& server, ::sockaddr const* name, ::so
 
 // ----------------------------------------------------------------------------
 
-#if 0
-struct async_sleep_for {
-    using result_t = none;
-    using duration_t = std::chrono::milliseconds;
-    duration_t duration;
-    template <typename Receiver>
-    struct state {
-        Receiver receiver;
-        friend void start(state& self) {
-            std::cout << "start(async_sleep_for)\n";
-            set_error(std::move(self.receiver), std::make_exception_ptr(std::runtime_error("async_sleep_for is not, yet, implemented")));
-        }
-    };
-    template <typename Receiver>
-    friend state<Receiver> connect(async_sleep_for, Receiver receiver) {
-        return { receiver };
-    }
-};
-
-// ----------------------------------------------------------------------------
-
-// ----------------------------------------------------------------------------
-
-// ----------------------------------------------------------------------------
-
-struct async_write_some {
-    using result_t = int;
-    struct state {
-        friend void start(state&) {}
-    };
-    async_write_some(toy::socket&, char const*, std::size_t) {}
-    friend state connect(async_write_some, auto) {
-        return {};
-    }
-};
-#endif
-
-// ----------------------------------------------------------------------------
-
 struct file {
     struct data {};
     HANDLE handle;
@@ -488,68 +578,6 @@ struct file {
         : handle(handle)
         , continuation(new data)
     {
-    }
-};
-
-struct async_read_some {
-    using result_t = int;
-
-    template <typename Receiver>
-    struct state
-        : toy::iocp::context::io_base
-    {
-        Receiver    receiver;
-        toy::iocp::file&  file;
-        char*       buffer;
-        std::size_t size;
-        state(Receiver receiver, toy::iocp::file& file, char* buffer, std::size_t size)
-            : receiver(receiver)
-            , file(file)
-            , buffer(buffer)
-            , size(size)
-        {
-        }
-        friend void start(state& self)
-        {
-            std::cout << "starting async_read_some\n" << std::flush;
-            auto& port = get_scheduler(self.receiver).context->port;
-
-            if (CreateIoCompletionPort(self.file.handle, port, reinterpret_cast<ULONG_PTR>(self.file.continuation.get()), 0) != port) {
-                std::cout << "async_read_some: CreateIoCompletionPort failed(" << GetLastError() << "): " << toy::iocp::wsa_to_string(GetLastError()) << "\n";
-            }
-            if (ReadFile(self.file.handle, self.buffer, DWORD(self.size), nullptr, &self)) {
-                int error = WSAGetLastError();
-                if (error != WSA_IO_PENDING) {
-                    //-dk:TODO deal with error
-                    std::cout << "async_read_some error: " << toy::iocp::wsa_to_string(error) << "\n";
-                }
-                else {
-                    std::cout << "async_read_some started\n";
-                }
-            }
-            else {
-                std::cout << "send immediately completed\n" << std::flush;
-            }
-
-        }
-        void complete(std::size_t size) override
-        {
-            std::cout << "async_read_some done: " << size << "\n" << std::flush;
-            set_value(this->receiver, int(size));
-        }
-    };
-
-    toy::iocp::file&  file;
-    char*       buffer;
-    std::size_t size;
-
-    async_read_some(toy::iocp::file& f, char* buffer, std::size_t size)
-        : file(f), buffer(buffer), size(size)
-    {
-    }
-    template <typename Receiver>
-    friend state<Receiver> connect(async_read_some const& self, Receiver receiver) {
-        return state<Receiver>(receiver, self.file, self.buffer, self.size);
     }
 };
 
