@@ -94,6 +94,7 @@ public:
     toy::event_kind events;
     virtual void    complete(int) = 0;
     io_base(int fd, toy::event_kind events): d_fd(fd), events(events) {}
+    virtual ~io_base() = default;
 
     int fd() const { return d_fd; }
 };

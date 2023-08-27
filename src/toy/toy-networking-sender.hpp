@@ -63,6 +63,78 @@ namespace hidden::io_operation {
             return state_t<R>(std::forward<R>(receiver), self.stream, self.op.event, std::move(self.op));
         }
     };
+
+    template <typename Operation, typename Stream = toy::socket>
+    struct incomplete_sender
+    {
+        Stream&   stream;
+
+        template <typename UpstreamSender>
+        struct sender
+        {
+            using args_t = typename Operation::template args_t<typename UpstreamSender::result_t>;
+            using result_t = typename args_t::result_t;
+
+            template <typename Receiver>
+            struct state
+            {
+                template <typename R>
+                using scheduler_t = decltype(get_scheduler(std::declval<R const&>()));
+                template <typename R>
+                using state_t     = typename scheduler_t<R>::template io_state<R, args_t, Stream>;
+
+                struct own_receiver
+                {
+                    using stop_token_t = decltype(get_stop_token(std::declval<Receiver>()));
+                    state* d_state;
+                    template <typename Value>
+                    friend void set_value(own_receiver self, Value&& value) {
+                        self.d_state->own_state.emplace(
+                            std::move(self.d_state->receiver), self.d_state->stream, args_t::event,
+                            Operation::make_args(value)
+                            );
+                        start(*self.d_state->own_state);
+                    }
+                    template <typename Error>
+                    friend void set_error(own_receiver self, Error&& error) { set_error(std::move(self.receiver), std::forward<Error>(error)); }
+                    template <typename Tag = bool>
+                    friend void set_stopped(own_receiver self, Tag = true) { set_stopped(std::move(self.d_state->receiver)); }
+                    template <typename Tag = bool>
+                    friend stop_token_t get_stop_token(own_receiver const& self, Tag = true) { return get_stop_token(self.d_state->receiver); }
+                };
+                using upstream_state_t = decltype(connect(std::declval<UpstreamSender>(), std::declval<own_receiver>()));
+
+                Stream&                          stream;
+                Receiver                         receiver;
+                upstream_state_t                 upstream_state;
+                std::optional<args_t>            args;
+                std::optional<state_t<Receiver>> own_state;
+                template <typename Upstream>
+                state(Stream& stream, Upstream&& upstream_sender, Receiver&& receiver)
+                    : stream(stream)
+                    , receiver(std::forward<Receiver>(receiver))
+                    , upstream_state(connect(std::forward<Upstream>(upstream_sender), own_receiver(this)))
+                {
+                }
+                friend void start(state& self) { start(self.upstream_state); }
+            };
+            Stream&        stream;
+            UpstreamSender upstream_sender;
+
+            template <typename Receiver>
+            friend state<Receiver> connect(sender const& self, Receiver&& receiver)
+            {
+                return state<Receiver>(self.stream, self.upstream_sender, std::forward<Receiver>(receiver));
+            }
+            template <typename Receiver>
+            friend state<Receiver> connect(sender&& self, Receiver&& receiver)
+            {
+                return state<Receiver>(self.stream, std::move(self.upstream_sender), std::forward<Receiver>(receiver));
+            }
+        };
+        template <typename UpstreamSender>
+        sender<UpstreamSender> operator()(UpstreamSender&& sender) { return { this->stream, std::forward<UpstreamSender>(sender) }; }
+    };
 }
 
 // ----------------------------------------------------------------------------
@@ -170,6 +242,11 @@ namespace io
             toy::message_flags flags;
             MBS                buffer;
         };
+        template <typename MBS>
+        using args_t = args<MBS>;
+
+        template <typename MBS>
+        static args<MBS> make_args(const MBS& b) { return args<MBS>{ toy::message_flags(), b }; }
 
         template <typename MBS>
         inline hidden::io_operation::sender<toy::io::receive_t::args<MBS>>
@@ -182,6 +259,10 @@ namespace io
         operator()(toy::socket& s, const MBS& b) const
         {
             return {s, {toy::message_flags{}, b}};
+        }
+        inline hidden::io_operation::incomplete_sender<toy::io::receive_t>
+        operator()(toy::socket& s) const{
+            return { s };
         }
     };
 
@@ -222,6 +303,13 @@ namespace io
             toy::message_flags flags;
             MBS                buffer;
         };
+
+        template <typename MBS>
+        using args_t = args<MBS>;
+
+        template <typename MBS>
+        static args<MBS> make_args(const MBS& b) { return args<MBS>{ toy::message_flags(), b }; }
+
         template <typename MBS>
         inline hidden::io_operation::sender<toy::io::send_t::args<MBS>>
         operator()(toy::socket& s, toy::message_flags f, const MBS& b) const {
@@ -231,6 +319,10 @@ namespace io
         inline hidden::io_operation::sender<toy::io::send_t::args<MBS>>
         operator()(toy::socket& s, const MBS& b) const {
             return {s, {toy::message_flags{}, b}};
+        }
+        inline hidden::io_operation::incomplete_sender<toy::io::send_t>
+        operator()(toy::socket& s) const{
+            return { s };
         }
     };
 

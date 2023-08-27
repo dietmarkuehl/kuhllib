@@ -162,6 +162,24 @@ struct io_state
     void complete() override {}
 };
 
+template <typename Receiver>
+struct io_state<Receiver, toy::io::connect_t::args>
+    : toy::openssl::io_base
+{
+    Receiver receiver;
+    io_state(Receiver receiver, toy::socket&, toy::event_kind, toy::io::connect_t::args)
+        : io_base(0, 0)
+        , receiver(receiver)
+    {
+    }
+    friend void start(io_state& self)
+    {
+        set_error(std::move(self.receiver),
+                  std::make_exception_ptr(std::runtime_error("openssl connect is being implemented")));
+    }
+    void complete() override {}
+};
+
 class context_base
     : public toy::io_context_base
 {
