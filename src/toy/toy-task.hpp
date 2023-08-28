@@ -44,7 +44,8 @@ namespace hidden_task {
     struct task
     {
         task() {}
-        task(auto&& handle): handle(std::move(handle)) {}
+        template <typename P>
+        task(std::coroutine_handle<P>&& handle): handle(std::move(handle)) {}
         task(task&& other): handle(std::exchange(other.handle, toy::coroutine_handle<promise_type>())) {}
         ~task() {
             if (handle) {
@@ -119,7 +120,9 @@ namespace hidden_task {
                 if (state) state->complete();
                 return {};
             }
-            void return_void() {}
+            void return_void()
+            {
+            }
             void unhandled_exception() { std::terminate() ; }
             template <typename S>
             awaiter<S> await_transform(S s) { return awaiter<S>(state->sched, std::move(s)); }

@@ -53,21 +53,34 @@ int main()
             toy::socket client = co_await toy::async_accept(server);
             std::cout << "accepted a client\n";
             io.spawn(std::invoke([](toy::socket client)->toy::task<toy::poll::context::scheduler>{
-                toy::ring_buffer<16> ring;
-                co_await toy::when_all(
-                    std::invoke([](toy::socket& client, auto& ring)->toy::task<toy::poll::context::scheduler>{
-                        for (std::string_view data; 0u < (data = co_await ring.produce(toy::async_receive(client))).size(); )
-                        {
-                            std::cout << "received=" << data << "\n";
-                        }
-                    }, client, ring),
-                    std::invoke([](toy::socket& client, auto& ring)->toy::task<toy::poll::context::scheduler>{
-                        for (std::string_view data; 0u < (data = co_await ring.consume(toy::async_send(client))).size(); )
-                        {
-                            std::cout << "sent=" << data << "\n";
-                        }
-                    }, client, ring)
+                toy::ring_buffer<8> ring;
+                int prod_n = 1;
+                int cons_n = 1;
+                co_await toy::when_any(
+                    toy::repeat_effect_until(
+                        toy::let_value(ring.produce(), [&client, &prod_n](auto&& buffer){
+                            return toy::then(toy::async_receive(client, toy::buffer(buffer.buffer)),
+                                [buffer, &prod_n](int r) mutable {
+                                    std::cout << "received(" << r << ")='" << std::string_view(buffer.buffer.data(), r) << "'\n";
+                                    buffer.advance(r);
+                                    prod_n = r;
+                                });
+                        }),
+                    [&prod_n]{ return prod_n == 0; })
+                    | toy::then([](auto&&){std::cout << "producer done\n"; })
+                    , toy::repeat_effect_until(
+                        toy::let_value(ring.consume(), [&client, &cons_n](auto&& buffer){
+                            return toy::then(toy::async_send(client, toy::buffer(buffer.buffer)),
+                                [buffer, &cons_n](int r) mutable {
+                                    std::cout << "sent(" << r << ")='" << std::string_view(buffer.buffer.data(), r) << "'\n";
+                                    buffer.advance(r);
+                                    cons_n = r;
+                                });
+                        }),
+                    [&cons_n]{ return cons_n == 0; })
+                    | toy::then([](auto&&){std::cout << "consumer done\n"; })
                 );
+                std::cout << "client done\n";
             }, std::move(client)));
         }
         std::cout << "exiting server\n";

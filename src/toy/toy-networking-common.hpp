@@ -30,6 +30,7 @@
 #include <concepts>
 #include <ostream>
 #include <optional>
+#include <span>
 #include <string>
 #include <cstring>
 #include <cstddef>
@@ -190,6 +191,10 @@ std::array<toy::iovec, 1> buffer(B* b, std::size_t n) {
 }
 template <toy::byte_type B>
 std::array<toy::iovec, 1> buffer(std::basic_string<B>& s) {
+    return std::array<toy::iovec, 1>{ toy::make_iovec(s.data(), s.size()) };
+}
+template <toy::byte_type B>
+std::array<toy::iovec, 1> buffer(std::span<B> const& s) {
     return std::array<toy::iovec, 1>{ toy::make_iovec(s.data(), s.size()) };
 }
 

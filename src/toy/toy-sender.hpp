@@ -167,6 +167,10 @@ namespace hidden_then {
         friend auto connect(then_sender const& self, R&& final_receiver) {
             return connect(self.sender, receiver<R>{ std::forward<R>(final_receiver), self.fun });
         }
+        template <typename R>
+        friend auto connect(then_sender&& self, R&& final_receiver) {
+            return connect(std::move(self.sender), receiver<R>{ std::forward<R>(final_receiver), self.fun });
+        }
     };
 }
 
@@ -378,14 +382,16 @@ namespace hidden_when_any {
     struct when_any {
         using result_t = std::variant<typename std::decay_t<S>::result_t...>;
 
-        std::tuple<S...> sender;
-        when_any(S... s)
-            : sender(s...)
+        std::tuple<std::decay_t<S>...> sender;
+        template <typename... A>
+        when_any(A&&... s)
+            : sender(std::forward<A>(s)...)
         {}
 
         template <typename R>
         struct state
             : toy::immovable {
+            template <std::size_t I>
             struct inner_receiver {
                 state* s;
                 friend toy::in_place_stop_source::stop_token get_stop_token(inner_receiver const& self) {
@@ -396,7 +402,7 @@ namespace hidden_when_any {
                 } 
                 friend void set_value(inner_receiver self, auto v) {
                     if (!self.s->result && !self.s->error) {
-                        self.s->result.emplace(std::move(v));
+                        self.s->result.emplace(std::in_place_index<I>, std::move(v));
                         self.s->source.stop();
                     }
                     self.s->complete();
@@ -413,27 +419,38 @@ namespace hidden_when_any {
                     self.s->complete();
                 }
             };
-            template <typename T>
+            template <std::size_t I, typename T>
             struct inner_state {
-                decltype(connect(std::declval<T>(), std::declval<inner_receiver>())) s;
+                decltype(connect(std::declval<T>(), std::declval<inner_receiver<I>>())) s;
                 inner_state(auto p)
-                    : s(connect(std::move(p.first), std::move(p.second))) {
+                    : s(connect(std::move(p.first), inner_receiver<I>(p.second))) {
                 }
                 friend void start(inner_state& self) {
                     start(self.s);
                 }
             };
+
+            template <typename, typename...> struct state_helper;
+            template <std::size_t... I, typename... X>
+            struct state_helper<std::index_sequence<I...>, X...>
+            {
+                using type = std::tuple<inner_state<I, S>...>;
+            };
+
+            template <typename... X>
+            using tuple_of_states = typename state_helper<std::make_index_sequence<sizeof...(X)>, X...>::type;
             
             R                             receiver;
             std::optional<result_t>       result;
             std::exception_ptr            error;
             toy::in_place_stop_source     source;
-            std::tuple<inner_state<S>...> is;
+            tuple_of_states<S...>         is;
             std::size_t                   outstanding{sizeof...(S)};
 
-            state(R receiver, S... s)
+            template <typename... A>
+            state(R receiver, A&&... s)
                 : receiver(receiver)
-                , is(std::make_pair(s, inner_receiver{this})...) {
+                , is(std::make_pair(std::forward<A>(s), this)...) {
             }
 
             friend void start(state& self) {
@@ -453,10 +470,16 @@ namespace hidden_when_any {
             }
         };
         template <typename R>
-        friend state<R> connect(when_any self, R receiver) {
+        friend state<R> connect(when_any const& self, R receiver) {
             return std::apply([&receiver](auto... s) {
                 return state<R>(receiver, s...);
             }, self.sender);
+        }
+        template <typename R>
+        friend state<R> connect(when_any&& self, R receiver) {
+            return std::apply([&receiver](auto... s) {
+                return state<R>(receiver, std::move(s)...);
+            }, std::move(self.sender));
         }
     };
 }
@@ -477,7 +500,7 @@ auto timeout(S&& sender, D duration) {
     };
     return toy::then(toy::when_any(
         std::forward<S>(sender),
-        toy::then(toy::async_sleep_for(duration), [](auto v){ std::cout << "timer expired\n"; return v; })
+        toy::then(toy::async_sleep_for(duration), [](auto v){ return v; })
         ),
         [](auto v) { return std::visit(visitor(), std::move(v)); }
         );
