@@ -27,7 +27,6 @@
 #define INCLUDED_TOY_RING_BUFFER
 
 #include "toy-sender.hpp"
-#include "toy-networking.hpp"
 #include <span>
 #include <type_traits>
 #include <utility>
@@ -148,6 +147,11 @@ private:
 public:
     sender<side::producer> produce() { return sender<side::producer>{this}; }
     sender<side::consumer> consume() { return sender<side::consumer>{this}; }
+
+    friend std::ostream& operator<< (std::ostream& out, ring_buffer const& ring)
+    {
+        return out << &ring << " prod=" << ring.pos[int(side::producer)] << " cons=" << ring.pos[int(side::consumer)] << "\n";
+    }
 };
 
 // ----------------------------------------------------------------------------

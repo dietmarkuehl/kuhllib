@@ -28,18 +28,23 @@
 
 // ----------------------------------------------------------------------------
 
+#include "toy-sender.hpp"
 #include "toy-networking-common.hpp"
 #include "toy-networking-sender.hpp"
+#include "toy-networking-poll.hpp"
 #include "toy-starter.hpp"
 #include "toy-utility.hpp"
+#include "toy-ring_buffer.hpp"
+#include "toy-task.hpp"
 
 #include <algorithm>
 #include <chrono>
+#include <list>
 #include <optional>
 #include <queue>
 #include <stdexcept>
-#include <system_error>
 #include <string>
+#include <system_error>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -47,6 +52,7 @@
 
 #include <stddef.h>
 #include <string.h>
+#include <cassert>
 
 #include <unistd.h>
 #include <sys/fcntl.h>
@@ -57,100 +63,176 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 
+// ----------------------------------------------------------------------------
+
 namespace toy::openssl
 {
+    template <typename, typename> struct signaller;
+
+    struct ssl_error_category;
+    inline ssl_error_category const& ssl_category();
+
+    class socket;
+    class context_base;
+    template <typename UpstreamContext = toy::poll::context> class context;
+    template <typename UpstreamContext> struct scheduler;
+    struct io_base;
+    template <typename Receiver, typename Operation> struct io_state;
+
+    template <typename Receiver> struct io_state<Receiver, toy::io::connect_t::args>;
+}
 
 // ----------------------------------------------------------------------------
 
-struct xsocket
+struct toy::openssl::ssl_error_category
+    : std::error_category
 {
-    static SSL_CTX* context() {
-        static SSL_CTX* rc = []{
-            SSL_library_init();
-            SSL_load_error_strings();
-            SSL_CTX* rc = SSL_CTX_new(TLS_method());
-
-            if (SSL_CTX_use_certificate_file(rc, "tmp/cert.pem", SSL_FILETYPE_PEM) != 1) {
-                throw std::runtime_error("failed to use certificated");
-            }
-            if (SSL_CTX_use_PrivateKey_file(rc, "tmp/cert.pem", SSL_FILETYPE_PEM) != 1) {
-                throw std::runtime_error("failed to use private key");
-            }
-            return rc;
-        }();
-        return rc;
-    }
-    int  fd = -1;
-    private:
-    SSL* ssl{nullptr};
-    public:
-    xsocket() = default;
-    xsocket(int fd)
-        : fd(fd)
+    ssl_error_category(): std::error_category() {}
+    char const* name() const noexcept override { return "ssl"; }
+    std::string message(int err) const override
     {
-        if (::fcntl(fd, F_SETFL, O_NONBLOCK) < 0) {
-            throw std::runtime_error("fcntl");
-        }
-    }
-    void make_ssl() {
-        auto ctx = context();
-        ssl = SSL_new(ctx);
-        if (!ssl) {
-            throw std::runtime_error("failed to create SSL socket");
-        }
-        if (!SSL_set_fd(ssl, fd)) {
-            throw std::runtime_error("failed to set file descriptor for SSL socket");
-        }
-    }
-    SSL* get_ssl() {
-        if (!ssl) {
-            make_ssl();
-        }
-        return ssl;
-    }
-    xsocket(xsocket&& other)
-        : fd(std::exchange(other.fd, -1))
-        , ssl(std::exchange(other.ssl, nullptr))
-    {
-    }
-    xsocket& operator= (xsocket&& other) {
-        if (this != &other) {
-            std::swap(fd, other.fd);
-            std::swap(ssl, other.ssl);
-        }
-        return *this;
-    }
-    ~xsocket() {
-        if (ssl != nullptr) {
-            SSL_free(ssl);
-        }
-        if (fd != -1) ::close(fd);
-    }
-    friend std::ostream& operator<< (std::ostream& out, xsocket const& self) {
-        return out << "fd=" << self.fd << ", ssl=" << self.ssl;
+        char error[256];
+        ERR_error_string_n(err, error, sizeof(error));
+        return error;
     }
 };
 
-class context_base;
-template <typename BaseContext = int>
-class context;
-struct scheduler;
+inline toy::openssl::ssl_error_category const& toy::openssl::ssl_category()
+{
+    static ssl_error_category rc{};
+    return rc;
+}
 
-struct io_base
-    : toy::immovable {
-    int         fd;
-    short int   events;
+// ----------------------------------------------------------------------------
+
+template <typename T, typename Fun>
+struct toy::openssl::signaller
+{
+    struct state_base
+    {
+        virtual void complete() = 0;
+    };
+    template <typename Receiver>
+    struct state
+        : state_base
+    {
+        struct stop_callback
+        {
+            state* s;
+            void operator()()
+            {
+                s->obj->awaiting = nullptr;
+                set_stopped(std::move(s->receiver));
+            }
+        };
+        using callback_t = decltype(get_stop_token(std::declval<Receiver>()))::template callback_type<stop_callback>;
+
+        signaller*                    obj;
+        std::remove_cvref_t<Receiver> receiver;
+        std::optional<callback_t>     callback;
+        template <typename R>
+        state(signaller* obj, R&& receiver)
+            : obj(obj)
+            , receiver(std::forward<R>(receiver))
+        {
+        }
+        friend void start(state& self)
+        {
+            if (self.obj->flag) // Fun()(self.obj->object))
+            {
+                set_value(std::move(self.receiver), toy::none());
+            }
+            else
+            {
+                self.callback.emplace(get_stop_token(self.receiver), stop_callback{&self});
+                self.obj->awaiting = &self;
+            }
+        }
+        void complete() override
+        {
+            callback.reset();
+            set_value(std::move(receiver), toy::none());
+        }
+    };
+    struct sender {
+        using result_t = toy::none;
+        signaller* obj;
+        template <typename Receiver>
+        friend state<Receiver> connect(sender const& self, Receiver&& receiver)
+        {
+            return { self.obj, std::forward<Receiver>(receiver) };
+        }
+    };
+    T*          object;
+    state_base* awaiting{};
+    bool        flag{false};
+
+    void resume()
+    {
+        flag = true;
+        if (awaiting)
+        {
+            std::exchange(awaiting, nullptr)->complete();
+        }
+    }
+    void stop()
+    {
+        flag = false;
+    }
+    sender wait()
+    {
+        return { this };
+    }
+};
+
+// ----------------------------------------------------------------------------
+
+struct toy::openssl::socket
+{
+    using ssl_free_t = decltype([](auto s){ SSL_free(s); });
+
+    static constexpr int buffer_size = 1024;
+
+    toy::socket                      upstream;
+    std::unique_ptr<SSL, ssl_free_t> ssl;
+    toy::ring_buffer<buffer_size>    from_network{};
+    toy::ring_buffer<buffer_size>    to_network{};
+    BIO*                             network_to_ssl{BIO_new(BIO_s_mem())}; 
+    BIO*                             ssl_to_network{BIO_new(BIO_s_mem())};
+    signaller<SSL, decltype([](SSL* ssl){ return SSL_want_read(ssl); })> await_write{};
+    bool done                        {false};
+    toy::openssl::io_base*           outstanding{nullptr};
+
+    socket(toy::socket&& upstream, SSL* ssl)
+        : upstream(std::move(upstream))
+        , ssl(ssl)
+        , await_write(this->ssl.get())
+    {
+        if (!ssl)
+        {
+            throw std::system_error(ERR_get_error(), toy::openssl::ssl_category(), "creating SSL socket");
+        }
+        SSL_set_bio(this->ssl.get(), this->network_to_ssl, this->ssl_to_network);
+    }
+};
+
+// ----------------------------------------------------------------------------
+
+struct toy::openssl::io_base
+    : toy::immovable
+{
     virtual void complete() = 0;
-    io_base(int fd, short int events): fd(fd), events(events)  {}
 };
+
+// ----------------------------------------------------------------------------
 
 template <typename Receiver, typename Operation>
-struct io_state
+struct toy::openssl::io_state final
     : toy::openssl::io_base
 {
     Receiver receiver;
     io_state(Receiver receiver, toy::socket&, toy::event_kind, Operation)
-        : io_base(0, 0)
+        : io_base()
         , receiver(receiver)
     {
     }
@@ -162,13 +244,15 @@ struct io_state
     void complete() override {}
 };
 
+// ----------------------------------------------------------------------------
+
 template <typename Receiver>
-struct io_state<Receiver, toy::io::connect_t::args>
+struct toy::openssl::io_state<Receiver, toy::io::connect_t::args> final
     : toy::openssl::io_base
 {
     Receiver receiver;
     io_state(Receiver receiver, toy::socket&, toy::event_kind, toy::io::connect_t::args)
-        : io_base(0, 0)
+        : io_base()
         , receiver(receiver)
     {
     }
@@ -180,585 +264,299 @@ struct io_state<Receiver, toy::io::connect_t::args>
     void complete() override {}
 };
 
-class context_base
-    : public toy::io_context_base
+// ----------------------------------------------------------------------------
+
+toy::task<toy::poll::context::scheduler> reader(toy::openssl::socket& client)
 {
-};
+    while (!client.done)
+    {
+        auto buffer = co_await client.from_network.consume();
+        if (buffer.buffer.size() == 0u) {
+            client.done = true;
+            co_return;
+        }
+        auto n = BIO_write(client.network_to_ssl, buffer.buffer.data(), buffer.buffer.size());
+        std::cout << "wrote " << n << " to SSL\n";
+        if (n < 0)
+        {
+            co_return; //-dk:TODO produce an error
+        }
+        if (!SSL_is_init_finished(client.ssl.get()))
+        {
+            std::cout << "init isn't finished\n";
+            switch (auto error = SSL_get_error(client.ssl.get(), SSL_accept(client.ssl.get())))
+            {
+            case SSL_ERROR_SSL:
+                std::cout << "no error\n";
+                break;
+            case SSL_ERROR_NONE:
+            case SSL_ERROR_WANT_READ:
+                std::cout << "want read\n";
+                client.await_write.resume();
+                break;
+            case SSL_ERROR_WANT_WRITE:
+                std::cout << "want write\n";
+                break;
+            default:
+                {
+                    char buffer[256];
+                    ERR_error_string_n(error, buffer, sizeof(buffer));
+                    std::cout << "SSL accept failure: " << error << ": " << buffer << "\n";
+                    co_return; //-dk:TODO produce an error
+                }
+            }
+            if (SSL_is_init_finished(client.ssl.get()))
+            {
+                std::cout << "*** SSL accept is complete\n";
+                if (client.outstanding)
+                {
+                    std::exchange(client.outstanding, nullptr)->complete();
+                }
+            }
+        }
+        else {
+            char rbuf[1024];
+            for (int r; 0 < (r = SSL_read(client.ssl.get(), rbuf, sizeof(rbuf))); )
+            {
+                std::cout << "received n=" << n << " bytes of data: '" << std::string_view(rbuf, r) << "'\n";
+                SSL_write(client.ssl.get(), rbuf, r);
+                client.await_write.resume();
+            }
+        }
+        if (n == 0) {
+            client.done = true;
+        }
+        buffer.advance(n);
+    }
+}
 
-struct scheduler {
-    template <typename Receiver, typename Operation, typename Stream>
-    using io_state = toy::openssl::io_state<Receiver, Operation>;
+toy::task<toy::poll::context::scheduler> writer(toy::openssl::socket& client)
+{
+    while (!client.done)
+    {
+        co_await client.await_write.wait();
 
-    context_base* context;
-    friend std::ostream& operator<< (std::ostream& out, scheduler const& s) {
-        return out << s.context;
+        auto buffer = co_await client.to_network.produce();
+        int n = BIO_read(client.ssl_to_network, buffer.data(), buffer.size());
+        if (n <= 0)
+        {
+            client.await_write.stop();
+            n = 0;
+        }
+        buffer.advance(n);
+    }
+}
+
+template <typename Receiver>
+struct toy::openssl::io_state<Receiver, toy::io::accept_t::args> final
+    : toy::openssl::io_base
+{
+    Receiver     receiver;
+    toy::socket& socket;
+    toy::socket  client;
+
+    io_state(Receiver receiver, toy::socket& socket, toy::event_kind, toy::io::accept_t::args)
+        : io_base()
+        , receiver(receiver)
+        , socket(socket)
+    {
+    }
+    friend void start(io_state& self)
+    {
+        auto scheduler = get_scheduler(self.receiver);
+        SSL_set_accept_state(scheduler.get_socket(self.socket).ssl.get());
+        scheduler.upstream_spawn(
+            toy::let_value(
+                toy::async_accept(scheduler.upstream_socket(self.socket)),
+                [&self](auto upstream){
+                    self.client = get_scheduler(self.receiver).make_socket(std::move(upstream));
+                    toy::openssl::socket& client = get_scheduler(self.receiver).get_socket(self.client);
+                    client.outstanding = &self;
+                    return toy::when_any(
+                        toy::repeat_effect_until(
+                            toy::let_value(client.from_network.produce(), [&client, n = 1](auto buffer) mutable {
+                                return toy::then(toy::async_receive(client.upstream, toy::buffer(buffer.buffer)),
+                                                 [&client, buffer, &n](int r) mutable {
+                                                    n = std::max(0, r);
+                                                    if (r <= 0)
+                                                    {
+                                                        client.done = true;
+                                                    }
+                                                    std::cout << "received(" << r << ")\n";
+                                                    buffer.advance(r);
+                                                 });
+                            })
+                            , [&client]{ return client.done; }
+                        )
+                        , reader(client)
+                        , writer(client)
+                        , toy::repeat_effect_until(
+                                toy::let_value(client.to_network.consume(), [&client](auto buffer) {
+                                    std::cout << "sending to the network\n";
+                                    return toy::then(toy::async_send(client.upstream, toy::buffer(buffer.buffer)),
+                                        [buffer](int r) mutable { std::cout << "sent(" << r << ")\n"; buffer.advance(std::max(0, r)); });
+                                })
+                                , [&client]{ return client.done; }
+                        )
+                    );
+                }
+            )
+        );
+    }
+    void complete() override
+    {
+        set_value(std::move(this->receiver), std::move(this->client));
     }
 };
 
-template <typename>
-class context
-    : public starter<toy::openssl::scheduler>
-    , public toy::openssl::context_base
+// ----------------------------------------------------------------------------
+
+class toy::openssl::context_base
+    : public toy::io_context_base
+{
+protected:
+    using ssl_ctx_free_t = decltype([](auto c){ SSL_CTX_free(c); });
+
+    socket_handle                                           d_next_id{16};
+    std::unordered_map<socket_handle, toy::openssl::socket> d_sockets;
+
+    std::unique_ptr<SSL_CTX, ssl_ctx_free_t>                d_ssl_context;
+    context_base()
+        : d_ssl_context(SSL_CTX_new(TLS_server_method())) //-dk:TODO TLS_method?
+    {
+        if (!this->d_ssl_context)
+        {
+            throw std::system_error(ERR_get_error(), toy::openssl::ssl_category(), "allocating SSL context");
+        }
+    }
+    context_base(std::string const& certificate, std::string const& key)
+        : context_base()
+    {
+        if(1 != SSL_CTX_use_certificate_file(this->d_ssl_context.get(), certificate.c_str(),  SSL_FILETYPE_PEM))
+        {
+            throw std::system_error(ERR_get_error(), toy::openssl::ssl_category(), "load certificate file");
+        }
+        if (1 != SSL_CTX_use_PrivateKey_file(this->d_ssl_context.get(), key.c_str(), SSL_FILETYPE_PEM))
+        {
+            throw std::system_error(ERR_get_error(), toy::openssl::ssl_category(), "load private key file");
+        }
+        if (1 != SSL_CTX_check_private_key(this->d_ssl_context.get()))
+        {
+            throw std::system_error(ERR_get_error(), toy::openssl::ssl_category(), "check private key");
+        }
+        SSL_CTX_set_options(this->d_ssl_context.get(), SSL_OP_ALL|SSL_OP_NO_SSLv2|SSL_OP_NO_SSLv3);
+    }
+
+    toy::openssl::socket& get_socket(socket_handle id)
+    {
+        auto it(this->d_sockets.find(id));
+        assert(it != this->d_sockets.end());
+        return it->second;
+    }
+    socket_handle fd(socket_handle id) override { return this->get_socket(id).upstream.fd(); }
+
+public:
+    toy::socket& upstream_socket(toy::socket& s)
+    {
+        std::cout << "upstream_socket: handle=" << s.id() << "\n";
+        auto it(this->d_sockets.find(s.id()));
+        assert(it != this->d_sockets.end());
+        return it->second.upstream;
+    }
+    toy::openssl::socket& get_socket(toy::socket& s) { return this->get_socket(s.id()); }
+};
+
+template <typename UpstreamContext>
+struct toy::openssl::scheduler {
+    template <typename Receiver, typename Operation, typename Stream>
+    using io_state = toy::openssl::io_state<Receiver, Operation>;
+
+    toy::openssl::context<UpstreamContext>* context;
+    friend std::ostream& operator<< (std::ostream& out, scheduler const& s) {
+        return out << s.context;
+    }
+
+    toy::socket& upstream_socket(toy::socket& s) { return this->context->upstream_socket(s); }
+    toy::socket  make_socket(toy::socket&& upstream) { return this->context->make_socket(std::move(upstream)); }
+    toy::openssl::socket& get_socket(toy::socket& s) { return this->context->get_socket(s); }
+    
+
+    template <typename Sender>
+    void upstream_spawn(Sender&& sender)
+    {
+        this->context->upstream_spawn(std::forward<Sender>(sender));
+    }
+};
+
+// ----------------------------------------------------------------------------
+
+template <typename UpstreamContext>
+class toy::openssl::context
+    : public toy::openssl::context_base
 {
 public:
-    using scheduler = toy::openssl::scheduler;
+    friend class toy::openssl::scheduler<UpstreamContext>;
+
+    using scheduler = toy::openssl::scheduler<UpstreamContext>;
     scheduler get_scheduler() { return { this }; }
 
 private:
-    using time_point_t = std::chrono::system_clock::time_point;
-    std::vector<toy::openssl::io_base*>      ios;
-    std::vector<::pollfd> fds;
-    toy::timer_queue<toy::openssl::io_base*> times;
+    std::unique_ptr<UpstreamContext> d_owned_context;
+    UpstreamContext&                 d_upstream_context;
+
+    socket_handle make_socket(int domain, int type, int protocol) override
+    {
+        socket_handle handle = ++this->d_next_id;
+        this->d_sockets.emplace( handle, toy::openssl::socket(toy::socket(this->d_upstream_context, domain, type, protocol), SSL_new(this->d_ssl_context.get())));
+        std::cout << "openssl::make_socket: handle=" << handle << "\n";
+        return handle;
+    }
+    toy::socket make_socket(toy::socket&& upstream)
+    {
+        std::cout << "openssl::make_socket\n";
+        auto id(++this->d_next_id);
+        this->d_sockets.emplace( id, toy::openssl::socket(std::move(upstream), SSL_new(this->d_ssl_context.get())) );
+        return toy::socket(*this, toy::socket::from_id(), id);
+    }
+
+    socket_handle make_fd(socket_handle fd) override
+    {
+        std::cout << "openssl::make_fd\n";
+        socket_handle handle = ++this->d_next_id;
+        this->d_sockets.emplace( handle, toy::openssl::socket(toy::socket(this->d_upstream_context, fd), SSL_new(this->d_ssl_context.get())));
+        return handle;
+    }
 
 public:
     static constexpr bool has_timer = true; //-dk:TODO remove - used while adding timers to contexts
 
     context()
-        : starter(get_scheduler()) {
+        : toy::openssl::context_base()
+        , d_owned_context(new UpstreamContext())
+        , d_upstream_context(*this->d_owned_context)
+    {
     }
-    void add(toy::openssl::io_base* i) {
-        ios.push_back(i);
-        fds.push_back(  pollfd{ .fd = i->fd, .events = i->events });
+    context(std::string const& certificate, std::string const& key)
+        : toy::openssl::context_base(certificate, key)
+        , d_owned_context(new UpstreamContext())
+        , d_upstream_context(*this->d_owned_context)
+    {
     }
-    void add(time_point_t time, toy::openssl::io_base* op) {
-        times.push(time, op);
+    context(UpstreamContext& context)
+        : toy::openssl::context_base()
+        , d_owned_context()
+        , d_upstream_context(context)
+    {
     }
-    void erase(toy::openssl::io_base* i) {
-        auto it = std::find(ios.begin(), ios.end(), i);
-        if (it != ios.end()) {
-            fds.erase(fds.begin() + (it - ios.begin()));
-            ios.erase(it);
-        }
+    void run()
+    {
+        return this->d_upstream_context.run();
     }
-    void erase_timer(toy::openssl::io_base* i) {
-        times.erase(i);
-    }
-    void run() {
-        while ( (!ios.empty() || not times.empty())) { 
-            auto now{std::chrono::system_clock::now()};
-
-            bool timed{false};
-            while (!times.empty() && times.top().first <= now) {
-                toy::openssl::io_base* op{times.top().second};
-                times.pop();
-                op->complete();
-                timed = true;
-            }
-            if (timed) {
-                continue;
-            }
-            auto time{times.empty()
-                     ? -1
-                : std::chrono::duration_cast<std::chrono::milliseconds>(times.top().first - now).count()};
-            if (0 < ::poll(fds.data(), fds.size(), time)) {
-                for (size_t i = fds.size(); i--; )
-                    // The check for i < fds.size() is added as complete() may
-                    // cause elements to get canceled and be removed from the
-                    // list.
-                    if (i < fds.size() && fds[i].events & fds[i].revents) {
-                        fds[i] = fds.back();
-                        fds.pop_back();
-                        auto c = std::exchange(ios[i], ios.back());
-                        ios.pop_back();
-                        c->complete();
-                    }
-            }
-        }
-    }
+    template <typename Sender>
+    void spawn(Sender&& sender) { this->d_upstream_context.spawn(toy::on(this->get_scheduler(), std::forward<Sender>(sender))); }
+    template <typename Sender>
+    void upstream_spawn(Sender&& sender) { this->d_upstream_context.spawn(std::forward<Sender>(sender)); }
 };
-
-// ----------------------------------------------------------------------------
-
-struct ssl_error_category
-    : std::error_category {
-    ssl_error_category(): std::error_category() {}
-    char const* name() const noexcept override { return "ssl"; }
-    std::string message(int err) const override {
-        char error[256];
-        ERR_error_string_n(err, error, sizeof(error));
-        return error;
-    }
-};
-
-ssl_error_category const& ssl_category() {
-    static ssl_error_category rc{};
-    return rc;
-}
-
-// ----------------------------------------------------------------------------
-
-#if 0
-namespace hidden_async_accept {
-    struct sender {
-        using result_t = toy::socket;
-
-        socket& d_socket;
-        sender(socket& s): d_socket(s) {}
-
-        template <typename R>
-        struct state: io {
-            socket&            d_socket;
-            ::sockaddr_storage addr{};
-            ::socklen_t        len{sizeof(::sockaddr_storage)};
-            bool               shaking_hands{false};
-            socket             d_result;
-            R                  receiver;
-            hidden::io_operation::stop_callback<state, R> cb;
-
-            state(socket& s, R r)
-                : io(*get_scheduler(r).context, s.fd, POLLIN)
-                , d_socket(s)
-                , receiver(r) {
-            }
-            friend void start(state& self) { self.try_accept_or_submit(); }
-            void submit() {
-                cb.engage(*this);
-                c.add(this);
-            }
-            void try_accept_or_submit() {
-                int rc(::accept(fd, reinterpret_cast<::sockaddr*>(&addr), &len));
-                if (0 <= rc) {
-                    d_result = toy::openssl::xsocket(rc);
-                    auto ssl = d_result.get_ssl();
-                    SSL_set_accept_state(ssl);
-                    shaking_hands = true;
-                    this->io::fd = rc;
-                    ssl_accept();
-                }
-                else if (errno == EINTR || errno == EWOULDBLOCK) {
-                    submit();
-                }
-                else {
-                    set_error(receiver, std::make_exception_ptr(std::runtime_error(std::string("accept: ") + ::strerror(errno))));
-                }
-            }
-            void complete() override final {
-                cb.disengage();
-
-                if (shaking_hands) {
-                    ssl_accept();
-                }
-                else {
-                    try_accept_or_submit();
-                }
-            }
-            void ssl_accept() {
-                ERR_clear_error();
-                auto ssl = d_result.get_ssl();
-                switch (int ret = SSL_accept(ssl)) {
-                default:
-                    switch (int error = SSL_get_error(ssl, ret)) {
-                        default:
-                            set_error(receiver, std::make_exception_ptr(std::system_error(error, ssl_category())));
-                            break;
-                        case SSL_ERROR_WANT_READ:
-                            ERR_get_error();
-                            this->events = POLLIN;
-                            submit();
-                            break;
-                        case SSL_ERROR_WANT_WRITE:
-                            ERR_get_error();
-                            this->events = POLLOUT;
-                            submit();
-                            break;
-                    }
-                    break;
-                case 1: // success
-                    set_value(receiver, std::move(d_result));
-                    break;
-                case 0:
-                    set_error(receiver, std::make_exception_ptr(std::system_error(SSL_get_error(ssl, ret), ssl_category())));
-                    break;
-                }
-            }
-        };
-
-        template <typename R>
-        friend state<R> connect(sender const& self, R r) {
-            return state<R>(self.d_socket, r);
-        }
-    };
-}
-using async_accept = hidden_async_accept::sender;
-
-// ----------------------------------------------------------------------------
-
-namespace hidden_async_connect {
-    struct sender {
-        using result_t = int;
-
-        socket&            d_socket;
-        ::sockaddr const*  addr;
-        ::socklen_t        len;
-
-        sender(socket& s, auto addr, auto len): d_socket(s), addr(addr), len(len) {}
-
-        template <typename R>
-        struct state: io {
-            socket&            d_socket;
-            ::sockaddr const*  addr;
-            ::socklen_t        len;
-            bool               shaking_hands{false};
-            R                  receiver;
-            hidden::io_operation::stop_callback<state, R> cb;
-
-            state(socket& s, auto addr, auto len, R r)
-                : io(*get_scheduler(r).context, s.fd, POLLOUT)
-                , d_socket(s)
-                , addr(addr)
-                , len(len)
-                , receiver(r) {
-            }
-            friend void start(state& self) {
-                if (0 <= ::connect(self.fd, self.addr, self.len)) {
-                    // immediate connect completed
-                    self.connect();
-                }
-                else if (errno == EAGAIN || errno == EINPROGRESS) {
-                    self.cb.engage(self);
-                    self.c.add(&self);
-                }
-                else {
-                    set_error(self.receiver, std::make_exception_ptr(std::runtime_error(std::string("connect: ") + ::strerror(errno))));
-                }
-            }
-            void complete() override final {
-                if (shaking_hands) {
-                    connect();
-                    return;
-                }
-
-                cb.disengage();
-                int         rc{};
-                ::socklen_t len{sizeof rc};
-                if (::getsockopt(fd, SOL_SOCKET, SO_ERROR, &rc, &len)) {
-                    set_error(receiver, std::make_exception_ptr(std::runtime_error(std::string("getsockopt: ") + ::strerror(errno))));
-                }
-                else if (rc) {
-                    set_error(receiver, std::make_exception_ptr(std::runtime_error(std::string("connect: ") + ::strerror(rc))));
-                }
-                else {
-                    this->connect();
-                }
-            }
-            void connect() {
-                auto ssl = d_socket.get_ssl();
-                if (not shaking_hands) {
-                    SSL_set_connect_state(ssl);
-                    shaking_hands = true;
-                }
-                switch (int ret = SSL_connect(ssl)) {
-                default:
-                    switch (int error = SSL_get_error(ssl, ret)) {
-                        default:
-                            set_error(receiver, std::make_exception_ptr(std::system_error(error, ssl_category())));
-                            break;
-                        case SSL_ERROR_WANT_READ:
-                            this->events = POLLIN;
-                            this->cb.engage(*this);
-                            this->c.add(this);
-                            break;
-                        case SSL_ERROR_WANT_WRITE:
-                            this->events = POLLOUT;
-                            this->cb.engage(*this);
-                            this->c.add(this);
-                            break;
-                    }
-                    break;
-                case 1: // success
-                    set_value(receiver, ret);
-                    break;
-                case 0:
-                    set_error(receiver, std::make_exception_ptr(std::system_error(SSL_get_error(ssl, ret), ssl_category())));
-                    break;
-                }
-            }
-        };
-
-        template <typename R>
-        friend state<R> connect(sender const& self, R r) {
-            return state<R>(self.d_socket, self.addr, self.len, r);
-        }
-    };
-}
-using async_connect = hidden_async_connect::sender;
-
-// ----------------------------------------------------------------------------
-
-namespace hidden_async_write_some {
-    struct sender {
-        using result_t = int;
-
-        toy::socket&  socket;
-        char const*   buffer;
-        std::size_t   len;
-
-        sender(toy::socket& socket, char const* buffer, std::size_t len)
-            : socket(socket)
-            , buffer(buffer)
-            , len(len) {
-        }
-        sender(toy::socket& socket, std::array<::iovec, 1> const& buffer)
-            : socket(socket)
-            , buffer(static_cast<char*>(buffer[0].iov_base))
-            , len(buffer[0].iov_len)
-        {
-        }
-
-        template <typename R>
-        struct state
-            : toy::io
-        {
-            toy::socket&                                  d_socket;
-            R                                             receiver;
-            char const*                                   buffer;
-            std::size_t                                   len;
-            hidden::io_operation::stop_callback<state, R> cb;
-
-            state(R            receiver,
-                  toy::socket& socket,
-                  char const*  buffer,
-                  std::size_t  len)
-                : io(*get_scheduler(receiver).context, socket.fd, POLLOUT)
-                , d_socket(socket)
-                , receiver(receiver)
-                , buffer(buffer)
-                , len(len)
-                , cb() {
-            }
-
-            friend void start(state& self) {
-                self.cb.engage(self);
-                self.c.add(&self);
-            }
-            void complete() override final {
-                cb.disengage();
-                auto ssl = d_socket.get_ssl();
-                auto res{SSL_write(ssl, buffer, len)};
-                if (0 < res) {
-                    set_value(std::move(receiver), result_t(res));
-                }
-                else {
-                    switch (int error = SSL_get_error(ssl, res)) {
-                        default:
-                            set_error(std::move(receiver), std::make_exception_ptr(std::system_error(error, ssl_category())));
-                            break;
-                        case SSL_ERROR_WANT_WRITE:
-                            this->events = POLLOUT;
-                            start(*this);
-                            break;
-                        case SSL_ERROR_WANT_READ:
-                            this->events = POLLIN;
-                            start(*this);
-                            break;
-                    }
-                }  
-            }
-        };
-        template <typename R>
-        friend state<R> connect(sender const& self, R receiver) {
-            return state<R>(receiver, self.socket, self.buffer, self.len);
-        }
-    };
-}
-
-using async_write_some = hidden_async_write_some::sender;
-using async_send = hidden_async_write_some::sender;
-
-// ----------------------------------------------------------------------------
-
-namespace hidden_async_read_some {
-    struct sender {
-        using result_t = int;
-
-        toy::socket&  socket;
-        char*         buffer;
-        std::size_t   len;
-
-        sender(toy::socket& socket, char* buffer, std::size_t len)
-            : socket(socket)
-            , buffer(buffer)
-            , len(len) {
-        }
-        sender(toy::socket& socket, std::array<::iovec, 1> const& buffer)
-            : socket(socket)
-            , buffer(static_cast<char*>(buffer[0].iov_base))
-            , len(buffer[0].iov_len)
-        {
-        }
-
-        template <typename R>
-        struct state
-            : toy::io
-        {
-            toy::socket&                                  d_socket;
-            R                                             receiver;
-            char*                                         buffer;
-            std::size_t                                   len;
-            hidden::io_operation::stop_callback<state, R> cb;
-
-            state(R            receiver,
-                  toy::socket& socket,
-                  char*        buffer,
-                  std::size_t  len)
-                : io(*get_scheduler(receiver).context, socket.fd, POLLIN)
-                , d_socket(socket)
-                , receiver(receiver)
-                , buffer(buffer)
-                , len(len)
-                , cb() {
-            }
-
-            friend void start(state& self) {
-                self.cb.engage(self);
-                self.c.add(&self);
-            }
-            void complete() override final {
-                cb.disengage();
-                auto ssl = d_socket.get_ssl();
-                auto res{SSL_read(ssl, buffer, len)};
-                if (0 < res) {
-                    set_value(std::move(receiver), result_t(res));
-                }
-                else {
-                    switch (int error = SSL_get_error(ssl, res)) {
-                        default:
-                            set_error(std::move(receiver), std::make_exception_ptr(std::system_error(error, ssl_category())));
-                            break;
-                        case SSL_ERROR_WANT_WRITE:
-                            this->events = POLLOUT;
-                            start(*this);
-                            break;
-                        case SSL_ERROR_WANT_READ:
-                            this->events = POLLIN;
-                            start(*this);
-                            break;
-                    }
-                }  
-            }
-        };
-        template <typename R>
-        friend state<R> connect(sender const& self, R receiver) {
-            return state<R>(receiver, self.socket, self.buffer, self.len);
-        }
-    };
-}
-
-using async_read_some = hidden_async_read_some::sender;
-using async_receive = hidden_async_read_some::sender;
-
-// ----------------------------------------------------------------------------
-
-namespace hidden::io_operation {
-    template <typename Operation>
-    struct sender {
-        using result_t = typename Operation::result_t;
-
-        toy::socket&  socket;
-        Operation     op;
-
-        template <typename R>
-        struct state
-            : toy::io
-        {
-            R                       receiver;
-            Operation               op;
-            stop_callback<state, R> cb;
-
-            state(R         receiver,
-                  int       fd,
-                  Operation op)
-                : io(*get_scheduler(receiver).context, fd, Operation::event == event_kind::read? POLLIN: POLLOUT)
-                , receiver(receiver)
-                , op(op)
-                , cb() {
-            }
-
-            friend void start(state& self) {
-                self.cb.engage(self);
-                self.c.add(&self);
-            }
-            void complete() override final {
-                cb.disengage();
-                auto res{op(*this)};
-                if (0 <= res)
-                    set_value(std::move(receiver), typename Operation::result_t(res));
-                else {
-                    set_error(std::move(receiver), std::make_exception_ptr(std::system_error(errno, std::system_category())));
-                }  
-            }
-        };
-        template <typename R>
-        friend state<R> connect(sender const& self, R receiver) {
-            return state<R>(receiver, self.socket.fd, self.op);
-        }
-    };
-}
-
-template <typename MBS>
-hidden::io_operation::sender<hidden::io_operation::receive_from_op<MBS>>
-async_receive_from(toy::socket& s, const MBS& b, toy::address& addr, toy::message_flags f) {
-    return {s, {b, addr, f}};
-}
-template <typename MBS>
-hidden::io_operation::sender<hidden::io_operation::receive_from_op<MBS>>
-async_receive_from(toy::socket& s, const MBS& b, toy::address& addr) {
-    return {s, {b, addr, toy::message_flags{}}};
-}
-
-template <typename MBS>
-hidden::io_operation::sender<hidden::io_operation::send_to_op<MBS>>
-async_send_to(toy::socket& s, const MBS& b, toy::address addr, toy::message_flags f) {
-    return {s, {b, addr, f}};
-}
-template <typename MBS>
-hidden::io_operation::sender<hidden::io_operation::send_to_op<MBS>>
-async_send_to(toy::socket& s, const MBS& b, toy::address addr) {
-    return {s, {b, addr, toy::message_flags{}}};
-}
-
-// ----------------------------------------------------------------------------
-
-namespace hidden_async_sleep_for {
-    struct async_sleep_for {
-        using result_t = toy::none;
-        using duration_t = std::chrono::milliseconds;
-
-        duration_t  duration;
-
-        template <typename R>
-        struct state
-            : io {
-            R                            receiver;
-            duration_t                   duration;
-            hidden::io_operation::stop_callback<state, R, true> cb;
-
-            state(R receiver, duration_t duration)
-                : io(*get_scheduler(receiver).context, 0, 0)
-                , receiver(receiver)
-                , duration(duration) {
-            }
-            friend void start(state& self) {
-                self.cb.engage(self);
-                self.c.add(std::chrono::system_clock::now() + self.duration, &self);;
-            }
-            void complete() override {
-                cb.disengage();
-                set_value(receiver, result_t{});
-            }
-        };
-        template <typename R>
-        friend state<R> connect(async_sleep_for self, R receiver) {
-            return state<R>(receiver, self.duration);
-        }
-    };
-}
-using async_sleep_for = hidden_async_sleep_for::async_sleep_for;
-#endif
-
-// ----------------------------------------------------------------------------
-
-}
 
 // ----------------------------------------------------------------------------
 

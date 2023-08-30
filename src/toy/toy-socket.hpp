@@ -116,10 +116,16 @@ private:
         context.set_non_blocking(fd());
     }
 public:
+    enum class from_id {};
+
     socket()
         : d_context(nullptr)
         , d_id(-1)
         , d_kind(tag::special)
+    {
+    }
+    socket(io_context_base& context, from_id, socket_handle id)
+        : socket(context, id, tag::normal)
     {
     }
     socket(io_context_base& context, int domain, int type, int protocol)
@@ -142,6 +148,8 @@ public:
             d_context->close(d_id);
         }
     }
+    socket& operator= (socket&& other) = default;
+
     socket_handle         fd() const { return d_context->fd(d_id); }
     socket_handle         id() const { return d_id; }
     toy::io_context_base* context() const { return d_context; }

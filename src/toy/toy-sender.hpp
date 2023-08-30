@@ -26,7 +26,6 @@
 #ifndef INCLUDED_TOY_SENDER
 #define INCLUDED_TOY_SENDER
 
-#include "toy-networking.hpp"
 #include "toy-stop_token.hpp"
 #include "toy-utility.hpp"
 #include <concepts>
@@ -491,23 +490,6 @@ hidden_when_any::when_any<S...> when_any(S&&... sender) {
 
 // ----------------------------------------------------------------------------
 
-template <typename S, typename D>
-auto timeout(S&& sender, D duration) {
-    using result_t = std::optional<typename S::result_t>;
-    struct visitor {
-        result_t operator()(typename S::result_t r) const { return result_t(std::move(r)); }
-        result_t operator()(toy::none) const { return result_t(); }
-    };
-    return toy::then(toy::when_any(
-        std::forward<S>(sender),
-        toy::then(toy::async_sleep_for(duration), [](auto v){ return v; })
-        ),
-        [](auto v) { return std::visit(visitor(), std::move(v)); }
-        );
-}
-
-// ----------------------------------------------------------------------------
-
 namespace hidden_repeat_effect_until {
     template <typename S, typename P>
     struct repeat_effect_until {
@@ -688,30 +670,6 @@ sequence_sender<std::make_index_sequence<sizeof...(S)>, S...> sequence(S... s) {
 
 // ----------------------------------------------------------------------------
 
-auto async_write(toy::socket& socket, char const* buffer, std::size_t n) {
-    return let_value(toy::just(toy::none{}),
-                     [&socket, it = buffer, end = buffer + n, n, error = false](auto) mutable {
-                        (void)error;
-                        (void)n;
-        return sequence(
-            repeat_effect_until(
-                then(async_write_some(socket, it, end - it),
-                    [&it, &error](std::size_t d){
-                        if (d <= 0)
-                            error = true;
-                        else {
-                            it += d;
-                        }
-                    }),
-                [&it, end, &error]{ return it == end || error; }
-            ),
-            just(n - (end - it))
-        );
-    });
-}
-
-// ----------------------------------------------------------------------------
-
 struct cancel {
     using result_t = toy::none;
     template <typename Receiver>
@@ -726,6 +684,56 @@ struct cancel {
         return state<Receiver>{ receiver };
     }
 };
+
+// ----------------------------------------------------------------------------
+
+namespace hidden_on
+{
+    template <typename Scheduler, typename Sender>
+    struct on_sender
+    {
+        using result_t = toy::sender_result_t<Sender>;
+
+        template <typename DownstreamReceiver>
+        struct receiver
+        {
+            std::remove_cvref_t<Scheduler>          scheduler;
+            std::remove_cvref_t<DownstreamReceiver> downstream_receiver;
+
+            friend auto get_scheduler(receiver const& self) { return self.scheduler; }
+            friend auto get_stop_token(receiver const& self) { return get_stop_token(self.downstream_receiver); }
+            template <typename Value>
+            friend auto set_value(receiver const& self, Value&& value) { return set_value(self.downstream_receiver, std::forward<Value>(value)); }
+            template <typename Error>
+            friend auto set_error(receiver const& self, Error&& error) { return set_error(self.downstream_receiver, std::forward<Error>(error)); }
+            friend auto set_stopped(receiver const& self) { return set_stopped(self.downstream_receiver); }
+        };
+
+        std::remove_cvref_t<Scheduler> scheduler;
+        std::remove_cvref_t<Sender>    sender;
+
+        template <typename DownstreamReceiver>
+        friend auto connect(on_sender&& self, DownstreamReceiver&& downstream_receiver)
+        {
+            return connect(std::move(self.sender),
+                           receiver<DownstreamReceiver>{ std::move(self.scheduler), std::forward<DownstreamReceiver>(downstream_receiver) }
+                           );
+        }
+        template <typename DownstreamReceiver>
+        friend auto connect(on_sender const& self, DownstreamReceiver&& downstream_receiver)
+        {
+            return connect(self.sender,
+                           receiver<DownstreamReceiver>{ self.scheduler, std::forward<DownstreamReceiver>(downstream_receiver) }
+                           );
+        }
+    };
+}
+
+template <typename Scheduler, typename Sender>
+auto on(Scheduler&& scheduler, Sender&& sender)
+{
+    return hidden_on::on_sender<Scheduler, Sender>{std::forward<Scheduler>(scheduler), std::forward<Sender>(sender)};
+}
 
 // ----------------------------------------------------------------------------
 

@@ -26,6 +26,7 @@
 #ifndef INCLUDED_TOY_NETWORKING_SENDER
 #define INCLUDED_TOY_NETWORKING_SENDER
 
+#include "toy-sender.hpp"
 #include "toy-socket.hpp"
 #include "toy-utility.hpp"
 #include <chrono>
@@ -432,6 +433,47 @@ async_sleep_for(std::chrono::milliseconds duration) {
 hidden::time_operation::sender<toy::hidden::time_operation::sleep_to_op>
 async_sleep_to(std::chrono::time_point<std::chrono::system_clock> time) {
     return { { time }};
+}
+
+// ----------------------------------------------------------------------------
+
+template <typename S, typename D>
+auto timeout(S&& sender, D duration) {
+    using result_t = std::optional<typename S::result_t>;
+    struct visitor {
+        result_t operator()(typename S::result_t r) const { return result_t(std::move(r)); }
+        result_t operator()(toy::none) const { return result_t(); }
+    };
+    return toy::then(toy::when_any(
+        std::forward<S>(sender),
+        toy::then(toy::async_sleep_for(duration), [](auto v){ return v; })
+        ),
+        [](auto v) { return std::visit(visitor(), std::move(v)); }
+        );
+}
+
+// ----------------------------------------------------------------------------
+
+auto async_write(toy::socket& socket, char const* buffer, std::size_t n) {
+    return let_value(toy::just(toy::none{}),
+                     [&socket, it = buffer, end = buffer + n, n, error = false](auto) mutable {
+                        (void)error;
+                        (void)n;
+        return sequence(
+            repeat_effect_until(
+                then(async_write_some(socket, it, end - it),
+                    [&it, &error](std::size_t d){
+                        if (d <= 0)
+                            error = true;
+                        else {
+                            it += d;
+                        }
+                    }),
+                [&it, end, &error]{ return it == end || error; }
+            ),
+            just(n - (end - it))
+        );
+    });
 }
 
 // ----------------------------------------------------------------------------

@@ -39,9 +39,11 @@
 
 int main()
 {
+    std::cout << std::unitbuf;
     try
     {
-    toy::io_context  io;
+    //toy::io_context  io;
+    toy::io_context  io("../../ssl/server_cert.pem", "../../ssl/server_keypair.pem");
 
     unsigned short port(12345);
     toy::socket server(io, PF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -54,16 +56,14 @@ int main()
     };
 
     io.spawn([](auto& io, auto& server)->toy::task<toy::io_context::scheduler> {
-        for (int i{}; i != 200; ++i) {
+        for (int i{}; i != 3; ++i) {
             try {
+                std::cout << "server.id()=" << server.id() << "\n";
                 auto c = co_await toy::async_accept(server);
                 std::cout << "accepted a client\n";
 
                 io.spawn(std::invoke([](auto socket)->toy::task<toy::io_context::scheduler> {
                     char   buf[4];
-                    // while (std::size_t n = co_await toy::async_read_some(socket, buf, sizeof buf)) {
-                    //    co_await toy::async_write(socket, buf, n);
-                    //}
                     while (int n = co_await toy::async_receive(socket, toy::buffer(buf))) {
                         if (n <= 0
                             || co_await toy::async_send(socket, toy::buffer(buf, n)) <= 0) {
